@@ -1,8 +1,13 @@
 package main
 
-import "fmt"
-import "net"
-import "log"
+import (
+    "fmt"
+    "net"
+    "log"
+    "io"
+    "bufio"
+    "strings"
+)
 
 func handleError( err error ) {
     if err != nil {
@@ -11,7 +16,27 @@ func handleError( err error ) {
 }
 
 func handleConnection(conn net.Conn) {
-    conn.Write( []byte("Hello!\n") )
+    io.WriteString(conn, "Welcome!\n")
+
+    reader := bufio.NewReader(conn)
+
+    for {
+        io.WriteString(conn, "> ")
+        bytes, _, err := reader.ReadLine()
+        handleError(err)
+
+        line := string(bytes)
+        line = strings.TrimSpace(line)
+        line = strings.ToLower(line)
+
+        if line == "quit" || line == "exit" {
+            io.WriteString(conn, "Goodbye!\n")
+            break
+        }
+
+        io.WriteString( conn, line + "\n" )
+    }
+
     conn.Close()
 }
 
@@ -24,7 +49,6 @@ func main() {
     for {
         conn, err := listener.Accept()
         handleError(err)
-
         go handleConnection(conn)
     }
 }
