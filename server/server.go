@@ -1,56 +1,56 @@
 package main
 
 import (
-    "fmt"
-    "net"
-    "log"
-    "io"
-    "bufio"
-    "strings"
+	"bufio"
+	"fmt"
+	"io"
+	"log"
+	"net"
+	"strings"
 )
 
-func handleError( err error ) {
-    if err != nil {
-        log.Fatal( "Error: %v\n", err )
-    }
+func handleError(err error) {
+	if err != nil {
+		log.Fatal("Error: %v\n", err)
+	}
 }
 
 func handleConnection(conn net.Conn) {
-    io.WriteString(conn, "Welcome!\n")
+	io.WriteString(conn, "Welcome!\n")
 
-    reader := bufio.NewReader(conn)
+	reader := bufio.NewReader(conn)
 
-    for {
-        io.WriteString(conn, "> ")
-        bytes, _, err := reader.ReadLine()
-        handleError(err)
+	for {
+		io.WriteString(conn, "> ")
+		bytes, _, err := reader.ReadLine()
+		handleError(err)
 
-        line := string(bytes)
-        line = strings.TrimSpace(line)
-        line = strings.ToLower(line)
+		line := string(bytes)
+		line = strings.TrimSpace(line)
+		line = strings.ToLower(line)
 
-        if line == "quit" || line == "exit" {
-            io.WriteString(conn, "Goodbye!\n")
-            break
-        }
+		if line == "quit" || line == "exit" {
+			io.WriteString(conn, "Goodbye!\n")
+			break
+		}
 
-        io.WriteString( conn, line + "\n" )
-    }
+		io.WriteString(conn, line+"\n")
+	}
 
-    conn.Close()
+	conn.Close()
 }
 
 func main() {
 	fmt.Printf("Here's a server!\n")
 
-    listener, err := net.Listen("tcp", ":8945")
-    handleError(err)
+	listener, err := net.Listen("tcp", ":8945")
+	handleError(err)
 
-    for {
-        conn, err := listener.Accept()
-        handleError(err)
-        go handleConnection(conn)
-    }
+	for {
+		conn, err := listener.Accept()
+		handleError(err)
+		go handleConnection(conn)
+	}
 }
 
 // vim: nocindent
