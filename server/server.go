@@ -78,7 +78,7 @@ func login(session *mgo.Session, conn net.Conn) error {
 		}
 
 		if count == 0 {
-			io.WriteString(conn, "User not found")
+			io.WriteString(conn, "User not found\n")
 		} else if count == 1 {
 			result := map[string]string{}
 			err := q.One(&result)
