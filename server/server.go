@@ -11,35 +11,110 @@ import (
     // "labix.org/v2/mgo/bson"
 )
 
+func readLine(conn net.Conn) (string, error) {
+	reader := bufio.NewReader(conn)
+    bytes, _, err := reader.ReadLine()
+    line := string(bytes)
+    line = strings.TrimSpace(line)
+    line = strings.ToLower(line)
+    return line, err
+}
+
 func handleError(err error) {
 	if err != nil {
-		log.Fatal("Error: %v\n", err)
+		log.Fatalf("Error: %s", err)
 	}
 }
 
-func handleConnection(conn net.Conn) {
-	io.WriteString(conn, "Welcome!\n")
+type Menu struct {
+    Actions map[string]func( net.Conn ) error
+    Text string
+}
 
-	reader := bufio.NewReader(conn)
+func NewMenu() Menu {
+    var menu Menu
+    menu.Actions = map[string]func(net.Conn)error{}
+    return menu
+}
+
+func (self *Menu) Exec(conn net.Conn) error {
+
+    for {
+        io.WriteString(conn, self.Text)
+        input, err := readLine(conn)
+
+        if err != nil {
+            return err
+        }
+
+        function, ok := self.Actions[input]
+
+        if ok {
+            return function(conn)
+            break
+        }
+    }
+
+    return nil
+}
+
+func login( conn net.Conn ) error {
+    io.WriteString(conn, "What's your name? ")
+    line, err := readLine(conn)
+
+    if err != nil {
+        return err
+    }
+
+    io.WriteString(conn, "Logging in as: " + line )
+
+    return nil
+}
+
+func mainMenu() Menu {
+
+    menu := NewMenu()
+
+    menu.Text = `
+----- MUD ------
+[L]ogin
+[N]ew user
+[A]bout
+> `
+
+    menu.Actions["l"] = login;
+
+    return menu
+}
+
+func handleConnection(conn net.Conn) {
+
+    defer conn.Close()
+
+    menu := mainMenu()
+    err := menu.Exec(conn)
+
+    if err != nil {
+        return
+    }
 
 	for {
-		io.WriteString(conn, "> ")
-		bytes, _, err := reader.ReadLine()
-		handleError(err)
+        io.WriteString(conn, "\n> ")
 
-		line := string(bytes)
-		line = strings.TrimSpace(line)
-		line = strings.ToLower(line)
+		line, err := readLine(conn)
+
+        if err != nil {
+            fmt.Printf( "Lost connection to client\n" )
+            break
+        }
 
 		if line == "quit" || line == "exit" {
 			io.WriteString(conn, "Goodbye!\n")
 			break
 		}
 
-		io.WriteString(conn, line+"\n")
+		io.WriteString(conn, line)
 	}
-
-	conn.Close()
 }
 
 func main() {
