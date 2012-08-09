@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"strings"
+    "db"
 )
 
 func readLine(conn net.Conn) (string, error) {
@@ -68,6 +69,7 @@ func login(session *mgo.Session, conn net.Conn) error {
 			return err
 		}
 
+/*
 		c := session.DB("mud").C("users")
 		q := c.Find(bson.M{"name": line})
 
@@ -76,8 +78,9 @@ func login(session *mgo.Session, conn net.Conn) error {
 		if err != nil {
 			return err
 		}
+        */
 
-		if count == 0 {
+		if db.FindUser(session, line) {
 			io.WriteString(conn, "User not found\n")
 		} else if count == 1 {
 			result := map[string]string{}
@@ -156,32 +159,37 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer conn.Close()
 	defer session.Close()
 
-	menu := mainMenu()
-	err := menu.Exec(session, conn)
-
 	if err != nil {
 		return
 	}
 
+    loggedIn := false
+
 	for {
-		io.WriteString(conn, "\n> ")
 
-		line, err := readLine(conn)
+        if loggedIn {
+            io.WriteString(conn, "\n> ")
 
-		if err != nil {
-			fmt.Printf("Lost connection to client\n")
-			break
-		}
+            line, err := readLine(conn)
 
-		if line == "quit" || line == "exit" {
-			quit(session, conn)
-			break
-		}
+            if err != nil {
+                fmt.Printf("Lost connection to client\n")
+                break
+            }
 
-		// if line == "x" || line == "logout" || line == "logoff" {
-		// }
+            if line == "quit" || line == "exit" {
+                quit(session, conn)
+                break
+            }
 
-		io.WriteString(conn, line)
+            // if line == "x" || line == "logout" || line == "logoff" {
+            // }
+
+            io.WriteString(conn, line)
+        } else {
+            menu := mainMenu()
+            err := menu.Exec(session, conn)
+        }
 	}
 }
 
