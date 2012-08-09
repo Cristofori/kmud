@@ -4,20 +4,20 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 	"log"
 	"net"
 	"strings"
-    // "labix.org/v2/mgo"
-    // "labix.org/v2/mgo/bson"
 )
 
 func readLine(conn net.Conn) (string, error) {
 	reader := bufio.NewReader(conn)
-    bytes, _, err := reader.ReadLine()
-    line := string(bytes)
-    line = strings.TrimSpace(line)
-    line = strings.ToLower(line)
-    return line, err
+	bytes, _, err := reader.ReadLine()
+	line := string(bytes)
+	line = strings.TrimSpace(line)
+	line = strings.ToLower(line)
+	return line, err
 }
 
 func handleError(err error) {
@@ -27,106 +27,182 @@ func handleError(err error) {
 }
 
 type Menu struct {
-    Actions map[string]func( net.Conn ) error
-    Text string
+	Actions map[string]func(*mgo.Session, net.Conn) error
+	Text    string
 }
 
 func NewMenu() Menu {
-    var menu Menu
-    menu.Actions = map[string]func(net.Conn)error{}
-    return menu
+	var menu Menu
+	menu.Actions = map[string]func(*mgo.Session, net.Conn) error{}
+	return menu
 }
 
-func (self *Menu) Exec(conn net.Conn) error {
+func (self *Menu) Exec(session *mgo.Session, conn net.Conn) error {
 
-    for {
-        io.WriteString(conn, self.Text)
-        input, err := readLine(conn)
+	for {
+		io.WriteString(conn, self.Text)
+		input, err := readLine(conn)
 
-        if err != nil {
-            return err
-        }
+		if err != nil {
+			return err
+		}
 
-        function, ok := self.Actions[input]
+		function, ok := self.Actions[input]
 
-        if ok {
-            return function(conn)
-            break
-        }
-    }
+		if ok {
+			return function(session, conn)
+			break
+		}
+	}
 
-    return nil
+	return nil
 }
 
-func login( conn net.Conn ) error {
-    io.WriteString(conn, "What's your name? ")
-    line, err := readLine(conn)
+func login(session *mgo.Session, conn net.Conn) error {
 
-    if err != nil {
-        return err
-    }
+	for {
+		io.WriteString(conn, "Username: ")
+		line, err := readLine(conn)
 
-    io.WriteString(conn, "Logging in as: " + line )
+		if err != nil {
+			return err
+		}
 
-    return nil
+		c := session.DB("mud").C("users")
+		q := c.Find(bson.M{"name": line})
+
+		count, err := q.Count()
+
+		if err != nil {
+			return err
+		}
+
+		if count == 0 {
+			io.WriteString(conn, "User not found")
+		} else if count == 1 {
+			result := map[string]string{}
+			err := q.One(&result)
+
+			if err != nil {
+				return err
+			}
+
+			io.WriteString(conn, "Logging in as: "+line)
+			break
+		}
+	}
+
+	return nil
+}
+
+func newUser(session *mgo.Session, conn net.Conn) error {
+
+	for {
+		io.WriteString(conn, "Desired username: ")
+
+		line, err := readLine(conn)
+
+		if err != nil {
+			return err
+		}
+
+		c := session.DB("mud").C("users")
+		q := c.Find(bson.M{"name": line})
+
+		count, err := q.Count()
+
+		if err != nil {
+			return err
+		}
+
+		if count == 0 {
+			c.Insert(bson.M{"name": line})
+			break
+		}
+
+		io.WriteString(conn, "That username is already in use\n")
+	}
+
+	return nil
+}
+
+func quit(session *mgo.Session, conn net.Conn) error {
+	io.WriteString(conn, "Goodbye!\n")
+	conn.Close()
+	return nil
 }
 
 func mainMenu() Menu {
 
-    menu := NewMenu()
+	menu := NewMenu()
 
-    menu.Text = `
+	menu.Text = `
 ----- MUD ------
 [L]ogin
 [N]ew user
 [A]bout
+[Q]uit
 > `
 
-    menu.Actions["l"] = login;
+	menu.Actions["l"] = login
+	menu.Actions["n"] = newUser
+	menu.Actions["q"] = quit
 
-    return menu
+	return menu
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(session *mgo.Session, conn net.Conn) {
 
-    defer conn.Close()
+	defer conn.Close()
+	defer session.Close()
 
-    menu := mainMenu()
-    err := menu.Exec(conn)
+	menu := mainMenu()
+	err := menu.Exec(session, conn)
 
-    if err != nil {
-        return
-    }
+	if err != nil {
+		return
+	}
 
 	for {
-        io.WriteString(conn, "\n> ")
+		io.WriteString(conn, "\n> ")
 
 		line, err := readLine(conn)
 
-        if err != nil {
-            fmt.Printf( "Lost connection to client\n" )
-            break
-        }
-
-		if line == "quit" || line == "exit" {
-			io.WriteString(conn, "Goodbye!\n")
+		if err != nil {
+			fmt.Printf("Lost connection to client\n")
 			break
 		}
+
+		if line == "quit" || line == "exit" {
+			quit(session, conn)
+			break
+		}
+
+		// if line == "x" || line == "logout" || line == "logoff" {
+		// }
 
 		io.WriteString(conn, line)
 	}
 }
 
 func main() {
-	fmt.Printf("Here's a server!\n")
+
+	fmt.Printf("Connecting to database... ")
+	session, err := mgo.Dial("localhost")
+
+	handleError(err)
+
+	fmt.Printf("done.\n")
 
 	listener, err := net.Listen("tcp", ":8945")
 	handleError(err)
 
+	fmt.Printf("Server listening on port 8945\n")
+
 	for {
 		conn, err := listener.Accept()
 		handleError(err)
-		go handleConnection(conn)
+		go handleConnection(session.Copy(), conn)
 	}
 }
 
