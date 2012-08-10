@@ -1,11 +1,11 @@
 package utils
 
 import (
-    "io"
-    "log"
-    "net"
-    "bufio"
-    "strings"
+	"bufio"
+	"io"
+	"log"
+	"net"
+	"strings"
 )
 
 func WriteLine(conn net.Conn, line string) (int, error) {
@@ -32,7 +32,7 @@ func GetUserInput(conn net.Conn, prompt string) (string, error) {
 
 		if input != "" {
 			return input, nil
-        }
+		}
 	}
 
 	panic("Unexpected code path")

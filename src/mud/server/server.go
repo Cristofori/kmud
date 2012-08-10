@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"labix.org/v2/mgo"
 	"mud/database"
-    "mud/game"
-    "mud/utils"
+	"mud/game"
+	"mud/utils"
 	"net"
 )
 
@@ -30,11 +30,11 @@ func (self *Menu) Exec(session *mgo.Session, conn net.Conn) (string, error) {
 		}
 
 		if self.Actions[input] {
-            return input, nil
-        }
+			return input, nil
+		}
 	}
 
-    panic("Unexpected code path")
+	panic("Unexpected code path")
 	return "", nil
 }
 
@@ -60,7 +60,7 @@ func login(session *mgo.Session, conn net.Conn) (string, error) {
 		}
 	}
 
-    panic("Unexpected code path")
+	panic("Unexpected code path")
 	return "", nil
 }
 
@@ -81,7 +81,7 @@ func newUser(session *mgo.Session, conn net.Conn) (string, error) {
 		utils.WriteLine(conn, err.Error())
 	}
 
-    panic("Unexpected code path")
+	panic("Unexpected code path")
 	return "", nil
 }
 
@@ -115,38 +115,38 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer conn.Close()
 	defer session.Close()
 
-    user := ""
+	user := ""
 
 	for {
 		if user == "" {
 			menu := mainMenu()
 			choice, err := menu.Exec(session, conn)
 
-            switch choice {
-                case "l":
-                    var err error
-                    user, err = login(session, conn)
-                    if err != nil {
-                        return
-                    }
-                case "n":
-                    var err error
-                    user, err = newUser(session, conn)
-                    if err != nil {
-                        return
-                    }
-                case "q":
-                    quit(session, conn)
-                    return
-            }
+			switch choice {
+			case "l":
+				var err error
+				user, err = login(session, conn)
+				if err != nil {
+					return
+				}
+			case "n":
+				var err error
+				user, err = newUser(session, conn)
+				if err != nil {
+					return
+				}
+			case "q":
+				quit(session, conn)
+				return
+			}
 
 			if err != nil {
 				return
 			}
 		} else {
-            game.Exec(session, conn, user)
-            user = ""
-        }
+			game.Exec(session, conn, user)
+			user = ""
+		}
 	}
 }
 
