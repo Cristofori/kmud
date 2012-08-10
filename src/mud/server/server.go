@@ -1,126 +1,92 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"labix.org/v2/mgo"
-	"log"
 	"mud/database"
+    "mud/game"
+    "mud/utils"
 	"net"
-	"strings"
 )
 
-func writeLine( conn net.Conn, line string ) (int, error) {
-    return io.WriteString( conn, line + "\n" )
-}
-
-func readLine(conn net.Conn) (string, error) {
-	reader := bufio.NewReader(conn)
-	bytes, _, err := reader.ReadLine()
-	line := string(bytes)
-	line = strings.TrimSpace(line)
-	line = strings.ToLower(line)
-	return line, err
-}
-
-func getUserInput(conn net.Conn, prompt string) (string, error) {
-    for {
-        io.WriteString(conn, prompt)
-        input, err := readLine(conn)
-
-        if err != nil {
-            return "", err
-        }
-
-        if input != "" {
-            return input, nil
-        }
-    }
-
-    panic("Unexpected code path")
-    return "", nil
-}
-
-func handleError(err error) {
-	if err != nil {
-		log.Fatalf("Error: %s", err)
-	}
-}
-
 type Menu struct {
-	Actions map[string]func(*mgo.Session, net.Conn) error
+	Actions map[string]bool
 	Text    string
 }
 
 func NewMenu() Menu {
 	var menu Menu
-	menu.Actions = map[string]func(*mgo.Session, net.Conn) error{}
+	menu.Actions = map[string]bool{}
 	return menu
 }
 
-func (self *Menu) Exec(session *mgo.Session, conn net.Conn) error {
+func (self *Menu) Exec(session *mgo.Session, conn net.Conn) (string, error) {
 
 	for {
-		input, err := getUserInput(conn, self.Text)
+		input, err := utils.GetUserInput(conn, self.Text)
 
 		if err != nil {
-			return err
+			return "", err
 		}
 
-		function, ok := self.Actions[input]
-
-		if ok {
-			return function(session, conn)
-			break
-		}
+		if self.Actions[input] {
+            return input, nil
+        }
 	}
 
-	return nil
+    panic("Unexpected code path")
+	return "", nil
 }
 
-func login(session *mgo.Session, conn net.Conn) error {
+func login(session *mgo.Session, conn net.Conn) (string, error) {
 
 	for {
-		line, err := getUserInput(conn, "Username: ")
+		line, err := utils.GetUserInput(conn, "Username: ")
 
 		if err != nil {
-			return err
+			return "", err
 		}
 
-		if !database.FindUser(session, line) {
-			writeLine(conn, "User not found")
+		found, err := database.FindUser(session, line)
+
+		if err != nil {
+			return "", err
+		}
+
+		if !found {
+			utils.WriteLine(conn, "User not found")
 		} else {
-			io.WriteString(conn, "Welcome!")
-			break
+			return line, nil
 		}
 	}
 
-	return nil
+    panic("Unexpected code path")
+	return "", nil
 }
 
-func newUser(session *mgo.Session, conn net.Conn) error {
+func newUser(session *mgo.Session, conn net.Conn) (string, error) {
 
 	for {
-		line, err := getUserInput(conn, "Desired username: ")
+		line, err := utils.GetUserInput(conn, "Desired username: ")
 
 		if err != nil {
-			return err
+			return "", err
 		}
 
-        err = database.NewUser(session, line)
+		err = database.NewUser(session, line)
 		if err == nil {
-			break
+			return line, nil
 		}
 
-		writeLine(conn, err.Error() )
+		utils.WriteLine(conn, err.Error())
 	}
 
-	return nil
+    panic("Unexpected code path")
+	return "", nil
 }
 
 func quit(session *mgo.Session, conn net.Conn) error {
-	writeLine(conn, "Goodbye!")
+	utils.WriteLine(conn, "Goodbye!")
 	conn.Close()
 	return nil
 }
@@ -137,9 +103,9 @@ func mainMenu() Menu {
   [Q]uit
 > `
 
-	menu.Actions["l"] = login
-	menu.Actions["n"] = newUser
-	menu.Actions["q"] = quit
+	menu.Actions["l"] = true
+	menu.Actions["n"] = true
+	menu.Actions["q"] = true
 
 	return menu
 }
@@ -149,37 +115,38 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer conn.Close()
 	defer session.Close()
 
-	loggedIn := false
+    user := ""
 
 	for {
-
-		if loggedIn {
-			line, err := getUserInput(conn "\n> ")
-
-			if err != nil {
-				fmt.Printf("Lost connection to client\n")
-				break
-			}
-
-			if line == "quit" || line == "exit" {
-				quit(session, conn)
-				break
-			}
-
-			// if line == "x" || line == "logout" || line == "logoff" {
-			// }
-
-			io.WriteString(conn, line)
-		} else {
+		if user == "" {
 			menu := mainMenu()
-			err := menu.Exec(session, conn)
+			choice, err := menu.Exec(session, conn)
+
+            switch choice {
+                case "l":
+                    var err error
+                    user, err = login(session, conn)
+                    if err != nil {
+                        return
+                    }
+                case "n":
+                    var err error
+                    user, err = newUser(session, conn)
+                    if err != nil {
+                        return
+                    }
+                case "q":
+                    quit(session, conn)
+                    return
+            }
 
 			if err != nil {
 				return
 			}
-
-			loggedIn = true
-		}
+		} else {
+            game.Exec(session, conn, user)
+            user = ""
+        }
 	}
 }
 
@@ -188,18 +155,18 @@ func main() {
 	fmt.Printf("Connecting to database... ")
 	session, err := mgo.Dial("localhost")
 
-	handleError(err)
+	utils.HandleError(err)
 
 	fmt.Printf("done.\n")
 
 	listener, err := net.Listen("tcp", ":8945")
-	handleError(err)
+	utils.HandleError(err)
 
 	fmt.Printf("Server listening on port 8945\n")
 
 	for {
 		conn, err := listener.Accept()
-		handleError(err)
+		utils.HandleError(err)
 		go handleConnection(session.Copy(), conn)
 	}
 }
