@@ -87,6 +87,28 @@ func newUser(session *mgo.Session, conn net.Conn) (string, error) {
 	return "", nil
 }
 
+// character, err = newCharacter(session, conn, user)
+func newCharacter(session *mgo.Session, conn net.Conn, user string) (string, error) {
+    for {
+        line, err := utils.GetUserInput(conn, "Desired character name: ")
+
+        if err != nil {
+            return "", err
+        }
+
+        err = database.NewCharacter(session, user, line)
+
+        if err == nil {
+            return line, err
+        }
+
+        utils.WriteLine(conn, err.Error())
+    }
+
+    panic("Unexpected code path")
+    return "", nil
+}
+
 func quit(session *mgo.Session, conn net.Conn) error {
 	utils.WriteLine(conn, "Goodbye!")
 	conn.Close()
@@ -115,19 +137,22 @@ func characterMenu(session *mgo.Session, user string) Menu {
 
     menuText := `
 -=-=- Character Select -=-=-
-  [N]ew character`
+  [N]ew character
+  [D]elete character
+`
 
     actions := map[string]bool{}
     actions["n"] = true
+    actions["d"] = true
 
     chars, _ := database.GetUserCharacters(session, user)
 
     for i, char := range chars {
-        menuText = fmt.Sprintf("\n" + menuText + "[%v] %v", char.Name)
+        menuText = fmt.Sprintf("\n" + menuText + "  [%v] %v", i+1, char)
         actions[strconv.Itoa(i)] = true
     }
 
-    menuText = menuText + "\n >"
+    menuText = menuText + "\n> "
 
     menu := NewMenu(menuText)
     menu.Actions = actions
@@ -183,11 +208,14 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 
             switch choice {
                 case "n":
-                // TODO
+                    character, err = newCharacter(session, conn, user)
+                case "d":
+                    // TODO
             }
 		} else {
 			game.Exec(session, conn, user)
 			user = ""
+            character = ""
 		}
 	}
 }

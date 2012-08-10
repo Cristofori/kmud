@@ -5,8 +5,8 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
-type Character struct {
-    Name string
+type dbCharacter struct {
+	Name string
 }
 
 type dbError struct {
@@ -24,7 +24,7 @@ func newDbError(message string) dbError {
 }
 
 func getCollection(session *mgo.Session, collection string) *mgo.Collection {
-    return session.DB("mud").C(collection)
+	return session.DB("mud").C(collection)
 }
 
 func FindUser(session *mgo.Session, name string) (bool, error) {
@@ -52,8 +52,11 @@ func NewUser(session *mgo.Session, name string) error {
 		return newDbError("That user already exists")
 	}
 
-	c := session.DB("mud").C("users")
+	c := getCollection(session, "users")
 	c.Insert(bson.M{"name": name})
+
+	c = getCollection(session, "characters")
+	c.Insert(bson.M{"user": name})
 
 	return nil
 }
@@ -73,32 +76,45 @@ func GetUserLocation(session *mgo.Session, name string) (string, error) {
 }
 
 func SetUserLocation(session *mgo.Session, name string, locationId string) error {
-	c := session.DB("mud").C("users")
+	c := getCollection(session, "users")
 	c.Update(bson.M{"name": name}, bson.M{"location": locationId})
 	return nil
 }
 
-func GetUserCharacters(session *mgo.Session, name string) ([]Character, error) {
+func GetUserCharacters(session *mgo.Session, name string) ([]string, error) {
 	c := getCollection(session, "characters")
 	q := c.Find(bson.M{"user": name})
 
-    var result []Character
+	var result []dbCharacter
 	err := q.All(&result)
 
-    return result, err
+	chars := make([]string, len(result))
+
+	for i, char := range result {
+		chars[i] = char.Name
+	}
+
+	return chars, err
 }
 
 func NewCharacter(session *mgo.Session, user string, character string) error {
-	c := getCollection(session, "characters")
-	c.Update(bson.M{"user" : user}, bson.M{ "$push" : bson.M{"name": character}})
-    return nil
+	c := getCollection(session, "users")
+	c.Update(bson.M{"name": user}, bson.M{"$push": bson.M{"characters": character}})
+
+    c = getCollection(session, "characters")
+    c.Insert(bson.M{"name": character, "user": user})
+
+	return nil
 }
 
 func DeleteCharacter(session *mgo.Session, user string, character string) error {
-	c := getCollection(session, "characters")
-	c.Update(bson.M{"user" : user}, bson.M{ "$pull" : bson.M{"name": character}})
+	c := getCollection(session, "users")
+	c.Update(bson.M{"user": user}, bson.M{"$pull": bson.M{"characters": character}})
 
-    return nil
+    c = getCollection(session, "characters")
+    c.Remove(bson.M{"name": character, "user":user})
+
+	return nil
 }
 
 // vim: nocindent
