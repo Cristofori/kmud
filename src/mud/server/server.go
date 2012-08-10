@@ -154,9 +154,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	for {
 
 		if loggedIn {
-			io.WriteString(conn, "\n> ")
-
-			line, err := readLine(conn)
+			line, err := getUserInput(conn "\n> ")
 
 			if err != nil {
 				fmt.Printf("Lost connection to client\n")
