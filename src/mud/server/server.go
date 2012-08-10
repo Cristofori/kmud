@@ -11,6 +11,10 @@ import (
 	"strings"
 )
 
+func writeLine( conn net.Conn, line string ) (int, error) {
+    return io.WriteString( conn, line + "\n" )
+}
+
 func readLine(conn net.Conn) (string, error) {
 	reader := bufio.NewReader(conn)
 	bytes, _, err := reader.ReadLine()
@@ -18,6 +22,24 @@ func readLine(conn net.Conn) (string, error) {
 	line = strings.TrimSpace(line)
 	line = strings.ToLower(line)
 	return line, err
+}
+
+func getUserInput(conn net.Conn, prompt string) (string, error) {
+    for {
+        io.WriteString(conn, prompt)
+        input, err := readLine(conn)
+
+        if err != nil {
+            return "", err
+        }
+
+        if input != "" {
+            return input, nil
+        }
+    }
+
+    panic("Unexpected code path")
+    return "", nil
 }
 
 func handleError(err error) {
@@ -40,8 +62,7 @@ func NewMenu() Menu {
 func (self *Menu) Exec(session *mgo.Session, conn net.Conn) error {
 
 	for {
-		io.WriteString(conn, self.Text)
-		input, err := readLine(conn)
+		input, err := getUserInput(conn, self.Text)
 
 		if err != nil {
 			return err
@@ -61,17 +82,16 @@ func (self *Menu) Exec(session *mgo.Session, conn net.Conn) error {
 func login(session *mgo.Session, conn net.Conn) error {
 
 	for {
-		io.WriteString(conn, "Username: ")
-		line, err := readLine(conn)
+		line, err := getUserInput(conn, "Username: ")
 
 		if err != nil {
 			return err
 		}
 
 		if !database.FindUser(session, line) {
-			io.WriteString(conn, "User not found\n")
+			writeLine(conn, "User not found")
 		} else {
-			io.WriteString(conn, "Logging in as: "+line)
+			io.WriteString(conn, "Welcome!")
 			break
 		}
 	}
@@ -82,26 +102,25 @@ func login(session *mgo.Session, conn net.Conn) error {
 func newUser(session *mgo.Session, conn net.Conn) error {
 
 	for {
-		io.WriteString(conn, "Desired username: ")
-
-		line, err := readLine(conn)
+		line, err := getUserInput(conn, "Desired username: ")
 
 		if err != nil {
 			return err
 		}
 
-		if database.NewUser(session, line) {
+        err = database.NewUser(session, line)
+		if err == nil {
 			break
 		}
 
-		io.WriteString(conn, "That username is already in use\n")
+		writeLine(conn, err.Error() )
 	}
 
 	return nil
 }
 
 func quit(session *mgo.Session, conn net.Conn) error {
-	io.WriteString(conn, "Goodbye!\n")
+	writeLine(conn, "Goodbye!")
 	conn.Close()
 	return nil
 }
@@ -111,11 +130,11 @@ func mainMenu() Menu {
 	menu := NewMenu()
 
 	menu.Text = `
------ MUD ------
-[L]ogin
-[N]ew user
-[A]bout
-[Q]uit
+-=-=- MUD -=-=-
+  [L]ogin
+  [N]ew user
+  [A]bout
+  [Q]uit
 > `
 
 	menu.Actions["l"] = login
