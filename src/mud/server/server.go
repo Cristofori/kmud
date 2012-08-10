@@ -7,6 +7,7 @@ import (
 	"mud/game"
 	"mud/utils"
 	"net"
+    "strconv"
 )
 
 type Menu struct {
@@ -14,9 +15,10 @@ type Menu struct {
 	Text    string
 }
 
-func NewMenu() Menu {
+func NewMenu( text string ) Menu {
 	var menu Menu
 	menu.Actions = map[string]bool{}
+    menu.Text = text
 	return menu
 }
 
@@ -93,21 +95,44 @@ func quit(session *mgo.Session, conn net.Conn) error {
 
 func mainMenu() Menu {
 
-	menu := NewMenu()
-
-	menu.Text = `
+	menu := NewMenu(`
 -=-=- MUD -=-=-
   [L]ogin
   [N]ew user
   [A]bout
   [Q]uit
-> `
+> `)
 
 	menu.Actions["l"] = true
 	menu.Actions["n"] = true
 	menu.Actions["q"] = true
+	menu.Actions["a"] = true
 
 	return menu
+}
+
+func characterMenu(session *mgo.Session, user string) Menu {
+
+    menuText := `
+-=-=- Character Select -=-=-
+  [N]ew character`
+
+    actions := map[string]bool{}
+    actions["n"] = true
+
+    chars, _ := database.GetUserCharacters(session, user)
+
+    for i, char := range chars {
+        menuText = fmt.Sprintf("\n" + menuText + "[%v] %v", char.Name)
+        actions[strconv.Itoa(i)] = true
+    }
+
+    menuText = menuText + "\n >"
+
+    menu := NewMenu(menuText)
+    menu.Actions = actions
+
+    return menu
 }
 
 func handleConnection(session *mgo.Session, conn net.Conn) {
@@ -116,11 +141,16 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer session.Close()
 
 	user := ""
+	character := ""
 
 	for {
 		if user == "" {
 			menu := mainMenu()
 			choice, err := menu.Exec(session, conn)
+
+			if err != nil {
+				return
+			}
 
 			switch choice {
 			case "l":
@@ -143,6 +173,18 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			if err != nil {
 				return
 			}
+        } else if character == "" {
+            menu := characterMenu(session, user)
+            choice, err := menu.Exec(session, conn)
+
+            if err != nil {
+                return
+            }
+
+            switch choice {
+                case "n":
+                // TODO
+            }
 		} else {
 			game.Exec(session, conn, user)
 			user = ""
