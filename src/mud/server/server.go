@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"io"
 	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
 	"log"
+	"mud/database"
 	"net"
 	"strings"
-    "db"
 )
 
 func readLine(conn net.Conn) (string, error) {
@@ -69,27 +68,9 @@ func login(session *mgo.Session, conn net.Conn) error {
 			return err
 		}
 
-/*
-		c := session.DB("mud").C("users")
-		q := c.Find(bson.M{"name": line})
-
-		count, err := q.Count()
-
-		if err != nil {
-			return err
-		}
-        */
-
-		if db.FindUser(session, line) {
+		if !database.FindUser(session, line) {
 			io.WriteString(conn, "User not found\n")
-		} else if count == 1 {
-			result := map[string]string{}
-			err := q.One(&result)
-
-			if err != nil {
-				return err
-			}
-
+		} else {
 			io.WriteString(conn, "Logging in as: "+line)
 			break
 		}
@@ -109,17 +90,7 @@ func newUser(session *mgo.Session, conn net.Conn) error {
 			return err
 		}
 
-		c := session.DB("mud").C("users")
-		q := c.Find(bson.M{"name": line})
-
-		count, err := q.Count()
-
-		if err != nil {
-			return err
-		}
-
-		if count == 0 {
-			c.Insert(bson.M{"name": line})
+		if database.NewUser(session, line) {
 			break
 		}
 
@@ -159,37 +130,39 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer conn.Close()
 	defer session.Close()
 
-	if err != nil {
-		return
-	}
-
-    loggedIn := false
+	loggedIn := false
 
 	for {
 
-        if loggedIn {
-            io.WriteString(conn, "\n> ")
+		if loggedIn {
+			io.WriteString(conn, "\n> ")
 
-            line, err := readLine(conn)
+			line, err := readLine(conn)
 
-            if err != nil {
-                fmt.Printf("Lost connection to client\n")
-                break
-            }
+			if err != nil {
+				fmt.Printf("Lost connection to client\n")
+				break
+			}
 
-            if line == "quit" || line == "exit" {
-                quit(session, conn)
-                break
-            }
+			if line == "quit" || line == "exit" {
+				quit(session, conn)
+				break
+			}
 
-            // if line == "x" || line == "logout" || line == "logoff" {
-            // }
+			// if line == "x" || line == "logout" || line == "logoff" {
+			// }
 
-            io.WriteString(conn, line)
-        } else {
-            menu := mainMenu()
-            err := menu.Exec(session, conn)
-        }
+			io.WriteString(conn, line)
+		} else {
+			menu := mainMenu()
+			err := menu.Exec(session, conn)
+
+			if err != nil {
+				return
+			}
+
+			loggedIn = true
+		}
 	}
 }
 
