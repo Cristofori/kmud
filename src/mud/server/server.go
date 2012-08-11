@@ -10,36 +10,6 @@ import (
     "strconv"
 )
 
-type Menu struct {
-	Actions map[string]bool
-	Text    string
-}
-
-func NewMenu( text string ) Menu {
-	var menu Menu
-	menu.Actions = map[string]bool{}
-    menu.Text = text
-	return menu
-}
-
-func (self *Menu) Exec(session *mgo.Session, conn net.Conn) (string, error) {
-
-	for {
-		input, err := utils.GetUserInput(conn, self.Text)
-
-		if err != nil {
-			return "", err
-		}
-
-		if self.Actions[input] {
-			return input, nil
-		}
-	}
-
-	panic("Unexpected code path")
-	return "", nil
-}
-
 func login(session *mgo.Session, conn net.Conn) (string, error) {
 
 	for {
@@ -117,45 +87,48 @@ func quit(session *mgo.Session, conn net.Conn) error {
 
 func mainMenu() Menu {
 
-	menu := NewMenu(`
--=-=- MUD -=-=-
-  [L]ogin
-  [N]ew user
-  [A]bout
-  [Q]uit
-> `)
+    menu := NewMenu("MUD")
 
-	menu.Actions["l"] = true
-	menu.Actions["n"] = true
-	menu.Actions["q"] = true
-	menu.Actions["a"] = true
+    menu.AddAction("l", "[L]ogin")
+    menu.AddAction("n", "[N]ew user")
+    menu.AddAction("a", "[A]bout")
+    menu.AddAction("q", "[Q]uit")
 
 	return menu
 }
 
 func characterMenu(session *mgo.Session, user string) Menu {
 
-    menuText := `
--=-=- Character Select -=-=-
-  [N]ew character
-  [D]elete character
-`
-
-    actions := map[string]bool{}
-    actions["n"] = true
-    actions["d"] = true
-
     chars, _ := database.GetUserCharacters(session, user)
 
-    for i, char := range chars {
-        menuText = fmt.Sprintf("\n" + menuText + "  [%v] %v", i+1, char)
-        actions[strconv.Itoa(i)] = true
+    menu := NewMenu( "Character Select" )
+    menu.AddAction( "n", "[N]ew character" )
+    if len(chars) > 0 {
+        menu.AddAction( "d", "[D]elete character" )
     }
 
-    menuText = menuText + "\n> "
+    for i, char := range chars {
+        indexStr := strconv.Itoa(i+1)
+        actionText := fmt.Sprintf("[%v]%v", indexStr, utils.FormatName(char))
+        menu.AddAction( indexStr, actionText )
+    }
 
-    menu := NewMenu(menuText)
-    menu.Actions = actions
+    return menu
+
+}
+
+func deleteMenu(session *mgo.Session, user string) Menu {
+    chars, _ := database.GetUserCharacters(session, user)
+
+    menu := NewMenu( "Delete character" )
+
+    menu.AddAction( "c", "[C]ancel" )
+
+    for i, char := range chars {
+        indexStr := strconv.Itoa(i+1)
+        actionText := fmt.Sprintf("[%v]%v", indexStr, utils.FormatName(char))
+        menu.AddAction( indexStr, actionText )
+    }
 
     return menu
 }
@@ -171,7 +144,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	for {
 		if user == "" {
 			menu := mainMenu()
-			choice, err := menu.Exec(session, conn)
+			choice, _, err := menu.Exec(conn)
 
 			if err != nil {
 				return
@@ -200,20 +173,34 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			}
         } else if character == "" {
             menu := characterMenu(session, user)
-            choice, err := menu.Exec(session, conn)
+            choice, charName, err := menu.Exec(conn)
 
             if err != nil {
                 return
             }
 
-            switch choice {
-                case "n":
-                    character, err = newCharacter(session, conn, user)
-                case "d":
-                    // TODO
+            _, err = strconv.Atoi(choice)
+
+            if err == nil {
+                character = charName
+            } else {
+                switch choice {
+                    case "n":
+                        character, err = newCharacter(session, conn, user)
+                    case "d":
+                        deleteMenu := deleteMenu(session, user)
+                        deleteChoice, deleteCharName, err := deleteMenu.Exec(conn)
+
+                        _, err = strconv.Atoi(deleteChoice)
+
+                        if err == nil {
+                            database.DeleteCharacter(session, user, deleteCharName)
+                        } else {
+                        }
+                }
             }
 		} else {
-			game.Exec(session, conn, user)
+			game.Exec(session, conn, character)
 			user = ""
             character = ""
 		}

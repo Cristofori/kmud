@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"strings"
+    "unicode"
 )
 
 func WriteLine(conn net.Conn, line string) (int, error) {
@@ -16,9 +17,14 @@ func readLine(conn net.Conn) (string, error) {
 	reader := bufio.NewReader(conn)
 	bytes, _, err := reader.ReadLine()
 	line := string(bytes)
-	line = strings.TrimSpace(line)
-	line = strings.ToLower(line)
+    line = Simplify(line)
 	return line, err
+}
+
+func Simplify(str string) string {
+    simpleStr := strings.TrimSpace(str)
+    simpleStr = strings.ToLower(str)
+    return simpleStr
 }
 
 func GetUserInput(conn net.Conn, prompt string) (string, error) {
@@ -43,6 +49,16 @@ func HandleError(err error) {
 	if err != nil {
 		log.Fatalf("Error: %s", err)
 	}
+}
+
+func FormatName(name string) string {
+    if name == "" {
+        return name
+    }
+
+    runes := []rune(Simplify(name))
+    runes[0] = unicode.ToUpper(runes[0])
+    return string(runes)
 }
 
 // vim: nocindent

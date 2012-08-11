@@ -3,11 +3,9 @@ package database
 import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+    "mud/utils"
+    //"fmt"
 )
-
-type dbCharacter struct {
-	Name string
-}
 
 type dbError struct {
 	message string
@@ -28,7 +26,7 @@ func getCollection(session *mgo.Session, collection string) *mgo.Collection {
 }
 
 func FindUser(session *mgo.Session, name string) (bool, error) {
-	c := session.DB("mud").C("users")
+	c := getCollection(session, "users")
 	q := c.Find(bson.M{"name": name})
 
 	count, err := q.Count()
@@ -55,14 +53,11 @@ func NewUser(session *mgo.Session, name string) error {
 	c := getCollection(session, "users")
 	c.Insert(bson.M{"name": name})
 
-	c = getCollection(session, "characters")
-	c.Insert(bson.M{"user": name})
-
 	return nil
 }
 
-func GetUserLocation(session *mgo.Session, name string) (string, error) {
-	c := session.DB("mud").C("users")
+func GetCharacterLocation(session *mgo.Session, name string) (string, error) {
+	c := getCollection(session, "characters")
 	q := c.Find(bson.M{"name": name})
 
 	result := map[string]string{}
@@ -82,19 +77,13 @@ func SetUserLocation(session *mgo.Session, name string, locationId string) error
 }
 
 func GetUserCharacters(session *mgo.Session, name string) ([]string, error) {
-	c := getCollection(session, "characters")
-	q := c.Find(bson.M{"user": name})
+	c := getCollection(session, "users")
+	q := c.Find(bson.M{"name": name})
 
-	var result []dbCharacter
-	err := q.All(&result)
+	result := map[string][]string{}
+	err := q.One(&result)
 
-	chars := make([]string, len(result))
-
-	for i, char := range result {
-		chars[i] = char.Name
-	}
-
-	return chars, err
+	return result["characters"], err
 }
 
 func NewCharacter(session *mgo.Session, user string, character string) error {
@@ -102,14 +91,14 @@ func NewCharacter(session *mgo.Session, user string, character string) error {
 	c.Update(bson.M{"name": user}, bson.M{"$push": bson.M{"characters": character}})
 
     c = getCollection(session, "characters")
-    c.Insert(bson.M{"name": character, "user": user})
+    c.Insert(bson.M{"name": character})
 
 	return nil
 }
 
 func DeleteCharacter(session *mgo.Session, user string, character string) error {
 	c := getCollection(session, "users")
-	c.Update(bson.M{"user": user}, bson.M{"$pull": bson.M{"characters": character}})
+	c.Update(bson.M{"user": user}, bson.M{"$pull": bson.M{"characters": utils.Simplify(character)}})
 
     c = getCollection(session, "characters")
     c.Remove(bson.M{"name": character, "user":user})

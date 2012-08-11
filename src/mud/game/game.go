@@ -12,10 +12,10 @@ import (
 type gameState struct {
 }
 
-func Exec(session *mgo.Session, conn net.Conn, user string) {
-	utils.WriteLine(conn, "Welcome")
+func Exec(session *mgo.Session, conn net.Conn, character string) {
+	utils.WriteLine(conn, "Welcome, " + utils.FormatName(character))
 	for {
-		location, err := database.GetUserLocation(session, user)
+		location, err := database.GetCharacterLocation(session, character)
 
 		if err != nil {
 			fmt.Printf("Database error: %s\n", err.Error())
@@ -26,7 +26,7 @@ func Exec(session *mgo.Session, conn net.Conn, user string) {
 		line, err := utils.GetUserInput(conn, "\n> ")
 
 		if err != nil {
-			fmt.Printf("Lost connection to user %v\n", user)
+			fmt.Printf("Lost connection to user %v\n", character)
 			break
 		}
 
