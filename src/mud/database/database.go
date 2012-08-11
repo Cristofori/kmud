@@ -3,8 +3,8 @@ package database
 import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-    "mud/utils"
-    //"fmt"
+	"mud/utils"
+	//"fmt"
 )
 
 type dbError struct {
@@ -29,14 +29,14 @@ func getCollection(session *mgo.Session, collection collectionName) *mgo.Collect
 
 // Collection names
 const (
-    cUsers = collectionName("users")
-    cCharacters = collectionName("characters")
+	cUsers      = collectionName("users")
+	cCharacters = collectionName("characters")
 )
 
 // Field names
 const (
-    fName = "name"
-    fCharacters = "characters"
+	fName       = "name"
+	fCharacters = "characters"
 )
 
 func FindUser(session *mgo.Session, name string) (bool, error) {
@@ -85,21 +85,21 @@ func NewUser(session *mgo.Session, name string) error {
 
 func NewCharacter(session *mgo.Session, user string, character string) error {
 
-    found, err := FindCharacter(session, character)
+	found, err := FindCharacter(session, character)
 
-    if err != nil {
-        return err
-    }
+	if err != nil {
+		return err
+	}
 
-    if found {
-        return newDbError("That character already exists")
-    }
+	if found {
+		return newDbError("That character already exists")
+	}
 
 	c := getCollection(session, cUsers)
 	c.Update(bson.M{fName: user}, bson.M{"$push": bson.M{fCharacters: character}})
 
-    c = getCollection(session, cCharacters)
-    c.Insert(bson.M{fName: character})
+	c = getCollection(session, cCharacters)
+	c.Insert(bson.M{fName: character})
 
 	return nil
 }
@@ -138,8 +138,8 @@ func DeleteCharacter(session *mgo.Session, user string, character string) error 
 	c := getCollection(session, cUsers)
 	c.Update(bson.M{fName: user}, bson.M{"$pull": bson.M{fCharacters: utils.Simplify(character)}})
 
-    c = getCollection(session, cCharacters)
-    c.Remove(bson.M{fName: character})
+	c = getCollection(session, cCharacters)
+	c.Remove(bson.M{fName: character})
 
 	return nil
 }

@@ -13,7 +13,7 @@ type gameState struct {
 }
 
 func Exec(session *mgo.Session, conn net.Conn, character string) {
-	utils.WriteLine(conn, "Welcome, " + utils.FormatName(character))
+	utils.WriteLine(conn, "Welcome, "+utils.FormatName(character))
 	for {
 		location, err := database.GetCharacterLocation(session, character)
 
