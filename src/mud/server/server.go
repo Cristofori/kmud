@@ -110,7 +110,7 @@ func characterMenu(session *mgo.Session, user string) Menu {
     for i, char := range chars {
         indexStr := strconv.Itoa(i+1)
         actionText := fmt.Sprintf("[%v]%v", indexStr, utils.FormatName(char))
-        menu.AddAction( indexStr, actionText )
+        menu.AddActionData( indexStr, actionText, char )
     }
 
     return menu
@@ -127,7 +127,7 @@ func deleteMenu(session *mgo.Session, user string) Menu {
     for i, char := range chars {
         indexStr := strconv.Itoa(i+1)
         actionText := fmt.Sprintf("[%v]%v", indexStr, utils.FormatName(char))
-        menu.AddAction( indexStr, actionText )
+        menu.AddActionData( indexStr, actionText, char )
     }
 
     return menu
