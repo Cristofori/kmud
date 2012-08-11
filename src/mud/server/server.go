@@ -85,9 +85,9 @@ func quit(session *mgo.Session, conn net.Conn) error {
 	return nil
 }
 
-func mainMenu() Menu {
+func mainMenu() utils.Menu {
 
-	menu := NewMenu("MUD")
+	menu := utils.NewMenu("MUD")
 
 	menu.AddAction("l", "[L]ogin")
 	menu.AddAction("n", "[N]ew user")
@@ -97,11 +97,11 @@ func mainMenu() Menu {
 	return menu
 }
 
-func characterMenu(session *mgo.Session, user string) Menu {
+func characterMenu(session *mgo.Session, user string) utils.Menu {
 
 	chars, _ := database.GetUserCharacters(session, user)
 
-	menu := NewMenu("Character Select")
+	menu := utils.NewMenu("Character Select")
 	menu.AddAction("n", "[N]ew character")
 	if len(chars) > 0 {
 		menu.AddAction("d", "[D]elete character")
@@ -117,10 +117,10 @@ func characterMenu(session *mgo.Session, user string) Menu {
 
 }
 
-func deleteMenu(session *mgo.Session, user string) Menu {
+func deleteMenu(session *mgo.Session, user string) utils.Menu {
 	chars, _ := database.GetUserCharacters(session, user)
 
-	menu := NewMenu("Delete character")
+	menu := utils.NewMenu("Delete character")
 
 	menu.AddAction("c", "[C]ancel")
 
