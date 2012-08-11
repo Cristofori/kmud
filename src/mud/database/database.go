@@ -31,12 +31,16 @@ func getCollection(session *mgo.Session, collection collectionName) *mgo.Collect
 const (
 	cUsers      = collectionName("users")
 	cCharacters = collectionName("characters")
+	fRooms      = collectionName("rooms")
 )
 
 // Field names
 const (
 	fName       = "name"
 	fCharacters = "characters"
+	fRoom       = "room"
+    fTitle = "title"
+    fDescription = "description"
 )
 
 func FindUser(session *mgo.Session, name string) (bool, error) {
@@ -104,23 +108,28 @@ func NewCharacter(session *mgo.Session, user string, character string) error {
 	return nil
 }
 
-func GetCharacterLocation(session *mgo.Session, name string) (string, error) {
+func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 	c := getCollection(session, cCharacters)
-	q := c.Find(bson.M{fName: name})
+	q := c.Find(bson.M{fName: character})
 
 	result := map[string]string{}
 	err := q.One(&result)
 
+    var room Room
+
 	if err != nil {
-		return "", err
+		return room, err
 	}
 
-	return result["location"], nil
+    room.Title = result[fTitle]
+    room.Description = result[fDescription]
+
+	return room, nil
 }
 
-func SetUserLocation(session *mgo.Session, name string, locationId string) error {
+func SetUserRoom(session *mgo.Session, name string, roomId string) error {
 	c := getCollection(session, cUsers)
-	c.Update(bson.M{fName: name}, bson.M{"location": locationId})
+	c.Update(bson.M{fName: name}, bson.M{fRoom: roomId})
 	return nil
 }
 
