@@ -27,14 +27,21 @@ func getCollection(session *mgo.Session, collection collectionName) *mgo.Collect
 	return session.DB("mud").C(string(collection))
 }
 
+// Collection names
 const (
     cUsers = collectionName("users")
     cCharacters = collectionName("characters")
 )
 
+// Field names
+const (
+    fName = "name"
+    fCharacters = "characters"
+)
+
 func FindUser(session *mgo.Session, name string) (bool, error) {
 	c := getCollection(session, cUsers)
-	q := c.Find(bson.M{"name": name})
+	q := c.Find(bson.M{fName: name})
 
 	count, err := q.Count()
 
@@ -47,7 +54,7 @@ func FindUser(session *mgo.Session, name string) (bool, error) {
 
 func FindCharacter(session *mgo.Session, name string) (bool, error) {
 	c := getCollection(session, cCharacters)
-	q := c.Find(bson.M{"name": name})
+	q := c.Find(bson.M{fName: name})
 
 	count, err := q.Count()
 
@@ -71,7 +78,7 @@ func NewUser(session *mgo.Session, name string) error {
 	}
 
 	c := getCollection(session, cUsers)
-	c.Insert(bson.M{"name": name})
+	c.Insert(bson.M{fName: name})
 
 	return nil
 }
@@ -89,17 +96,17 @@ func NewCharacter(session *mgo.Session, user string, character string) error {
     }
 
 	c := getCollection(session, cUsers)
-	c.Update(bson.M{"name": user}, bson.M{"$push": bson.M{"characters": character}})
+	c.Update(bson.M{fName: user}, bson.M{"$push": bson.M{fCharacters: character}})
 
     c = getCollection(session, cCharacters)
-    c.Insert(bson.M{"name": character})
+    c.Insert(bson.M{fName: character})
 
 	return nil
 }
 
 func GetCharacterLocation(session *mgo.Session, name string) (string, error) {
 	c := getCollection(session, cCharacters)
-	q := c.Find(bson.M{"name": name})
+	q := c.Find(bson.M{fName: name})
 
 	result := map[string]string{}
 	err := q.One(&result)
@@ -113,26 +120,26 @@ func GetCharacterLocation(session *mgo.Session, name string) (string, error) {
 
 func SetUserLocation(session *mgo.Session, name string, locationId string) error {
 	c := getCollection(session, cUsers)
-	c.Update(bson.M{"name": name}, bson.M{"location": locationId})
+	c.Update(bson.M{fName: name}, bson.M{"location": locationId})
 	return nil
 }
 
 func GetUserCharacters(session *mgo.Session, name string) ([]string, error) {
 	c := getCollection(session, cUsers)
-	q := c.Find(bson.M{"name": name})
+	q := c.Find(bson.M{fName: name})
 
 	result := map[string][]string{}
 	err := q.One(&result)
 
-	return result["characters"], err
+	return result[fCharacters], err
 }
 
 func DeleteCharacter(session *mgo.Session, user string, character string) error {
 	c := getCollection(session, cUsers)
-	c.Update(bson.M{"name": user}, bson.M{"$pull": bson.M{"characters": utils.Simplify(character)}})
+	c.Update(bson.M{fName: user}, bson.M{"$pull": bson.M{fCharacters: utils.Simplify(character)}})
 
     c = getCollection(session, cCharacters)
-    c.Remove(bson.M{"name": character})
+    c.Remove(bson.M{fName: character})
 
 	return nil
 }
