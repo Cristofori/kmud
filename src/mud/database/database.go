@@ -45,6 +45,19 @@ func FindUser(session *mgo.Session, name string) (bool, error) {
 	return count > 0, nil
 }
 
+func FindCharacter(session *mgo.Session, name string) (bool, error) {
+	c := getCollection(session, cCharacters)
+	q := c.Find(bson.M{"name": name})
+
+	count, err := q.Count()
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
 func NewUser(session *mgo.Session, name string) error {
 
 	found, err := FindUser(session, name)
@@ -59,6 +72,27 @@ func NewUser(session *mgo.Session, name string) error {
 
 	c := getCollection(session, cUsers)
 	c.Insert(bson.M{"name": name})
+
+	return nil
+}
+
+func NewCharacter(session *mgo.Session, user string, character string) error {
+
+    found, err := FindCharacter(session, character)
+
+    if err != nil {
+        return err
+    }
+
+    if found {
+        return newDbError("That character already exists")
+    }
+
+	c := getCollection(session, cUsers)
+	c.Update(bson.M{"name": user}, bson.M{"$push": bson.M{"characters": character}})
+
+    c = getCollection(session, cCharacters)
+    c.Insert(bson.M{"name": character})
 
 	return nil
 }
@@ -91,16 +125,6 @@ func GetUserCharacters(session *mgo.Session, name string) ([]string, error) {
 	err := q.One(&result)
 
 	return result["characters"], err
-}
-
-func NewCharacter(session *mgo.Session, user string, character string) error {
-	c := getCollection(session, cUsers)
-	c.Update(bson.M{"name": user}, bson.M{"$push": bson.M{"characters": character}})
-
-    c = getCollection(session, cCharacters)
-    c.Insert(bson.M{"name": character})
-
-	return nil
 }
 
 func DeleteCharacter(session *mgo.Session, user string, character string) error {

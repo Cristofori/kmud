@@ -57,7 +57,6 @@ func newUser(session *mgo.Session, conn net.Conn) (string, error) {
 	return "", nil
 }
 
-// character, err = newCharacter(session, conn, user)
 func newCharacter(session *mgo.Session, conn net.Conn, user string) (string, error) {
     for {
         line, err := utils.GetUserInput(conn, "Desired character name: ")
