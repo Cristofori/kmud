@@ -1,8 +1,7 @@
-package main
+package utils
 
 import (
 	"fmt"
-	"mud/utils"
 	"net"
 )
 
@@ -31,17 +30,18 @@ func (self *Menu) AddAction(key string, text string) {
 func (self *Menu) AddActionData(key string, text string, data string) {
 	self.Actions = append(self.Actions, action{key: key, text: text, data: data})
 }
+
 func (self *Menu) Exec(conn net.Conn) (string, string, error) {
 
 	border := "-=-=-"
 	for {
-		utils.WriteLine(conn, fmt.Sprintf("%s %s %s", border, self.Title, border))
+		WriteLine(conn, fmt.Sprintf("%s %s %s", border, self.Title, border))
 
 		for _, action := range self.Actions {
-			utils.WriteLine(conn, fmt.Sprintf("  %s", action.text))
+			WriteLine(conn, fmt.Sprintf("  %s", action.text))
 		}
 
-		input, err := utils.GetUserInput(conn, "> ")
+		input, err := GetUserInput(conn, "> ")
 
 		if err != nil {
 			return "", "", err
