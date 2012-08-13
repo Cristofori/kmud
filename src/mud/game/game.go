@@ -13,7 +13,10 @@ import (
 func processCommand(session *mgo.Session, conn net.Conn, command string ) {
     fmt.Printf("Processing command: %v\n", command)
 
-    if command == "newroom" {
+    switch command {
+        case "new":
+        case "edit":
+            // Enter edit mode (show room with [] markers indicating portions that can be modified)
     }
 }
 
@@ -21,31 +24,26 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 	utils.WriteLine(conn, "Welcome, "+utils.FormatName(character))
 	for {
 		room, err := database.GetCharacterRoom(session, character)
-
-		if err != nil {
-			fmt.Printf("Database error: %s\n", err.Error())
-			break
-		}
+        utils.PanicIfError(err)
 
 		utils.WriteLine(conn, room.ToString())
-		line, err := utils.GetUserInput(conn, "\n> ")
+		input := utils.GetUserInput(conn, "\n> ")
 
-		if err != nil {
-			fmt.Printf("Lost connection to user %v\n", character)
-			break
-		}
-
-        if strings.HasPrefix(line, "/") {
-            processCommand( session, conn, line[1:len(line)] )
+        if strings.HasPrefix(input, "/") {
+            processCommand( session, conn, input[1:len(input)] )
         }
 
-		if line == "quite" || line == "exit" {
+		if input == "quit" || input == "exit" {
 			utils.WriteLine(conn, "Goodbye")
 			conn.Close()
 			break
 		}
 
-		io.WriteString(conn, line)
+        if room.HasExit(input) {
+            database.SetCharacterRoom(session, character, room.ExitId(input))
+        } else {
+            io.WriteString(conn, "You can't do that.")
+        }
 	}
 }
 

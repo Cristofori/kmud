@@ -31,7 +31,7 @@ func (self *Menu) AddActionData(key string, text string, data string) {
 	self.Actions = append(self.Actions, action{key: key, text: text, data: data})
 }
 
-func (self *Menu) Exec(conn net.Conn) (string, string, error) {
+func (self *Menu) Exec(conn net.Conn) (string, string) {
 
 	border := "-=-=-"
 	for {
@@ -41,21 +41,17 @@ func (self *Menu) Exec(conn net.Conn) (string, string, error) {
 			WriteLine(conn, fmt.Sprintf("  %s", action.text))
 		}
 
-		input, err := GetUserInput(conn, "> ")
-
-		if err != nil {
-			return "", "", err
-		}
+		input := GetUserInput(conn, "> ")
 
 		for _, action := range self.Actions {
 			if action.key == input {
-				return input, action.data, nil
+				return input, action.data
 			}
 		}
 	}
 
 	panic("Unexpected code path")
-	return "", "", nil
+	return "", ""
 }
 
 // vim: nocindent

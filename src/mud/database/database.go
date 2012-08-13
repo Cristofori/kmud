@@ -1,10 +1,10 @@
 package database
 
 import (
+	"fmt"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"mud/utils"
-	//"fmt"
 )
 
 type dbError struct {
@@ -31,16 +31,16 @@ func getCollection(session *mgo.Session, collection collectionName) *mgo.Collect
 const (
 	cUsers      = collectionName("users")
 	cCharacters = collectionName("characters")
-	fRooms      = collectionName("rooms")
+	cRooms      = collectionName("rooms")
 )
 
 // Field names
 const (
-	fName       = "name"
-	fCharacters = "characters"
-	fRoom       = "room"
-    fTitle = "title"
-    fDescription = "description"
+	fName        = "name"
+	fCharacters  = "characters"
+	fRoom        = "room"
+	fTitle       = "title"
+	fDescription = "description"
 )
 
 func FindUser(session *mgo.Session, name string) (bool, error) {
@@ -115,21 +115,40 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 	result := map[string]string{}
 	err := q.One(&result)
 
-    var room Room
+	var room Room
+	if err != nil {
+		return room, err
+	}
+
+	c = getCollection(session, cRooms)
+	q = c.Find(bson.M{"_id": result[fRoom]})
+
+	count, err := q.Count()
 
 	if err != nil {
 		return room, err
 	}
 
-    room.Title = result[fTitle]
-    room.Description = result[fDescription]
+	if count == 0 {
+		SetCharacterRoom(session, character, "1")
+		q = c.Find(bson.M{"_id": "1"})
+	}
+
+	err = q.One(&result)
+
+	if err != nil {
+		return room, err
+	}
+
+	room.Title = result[fTitle]
+	room.Description = result[fDescription]
 
 	return room, nil
 }
 
-func SetUserRoom(session *mgo.Session, name string, roomId string) error {
-	c := getCollection(session, cUsers)
-	c.Update(bson.M{fName: name}, bson.M{fRoom: roomId})
+func SetCharacterRoom(session *mgo.Session, character string, roomId string) error {
+	c := getCollection(session, cCharacters)
+	c.Update(bson.M{fName: character}, bson.M{"$set": bson.M{fRoom: roomId}})
 	return nil
 }
 
@@ -152,5 +171,18 @@ func DeleteCharacter(session *mgo.Session, user string, character string) error 
 
 	return nil
 }
+
+func GenerateDefaultMap(session *mgo.Session) {
+	c := getCollection(session, cRooms)
+	c.DropCollection()
+
+	c.Insert(bson.M{"_id": "1",
+		fTitle: "The Void",
+		fDescription: "You are floating in the blackness of space. Complete darkness surrounds" +
+			"you in all directions. There is no escape, there is no hope, just the emptiness. " +
+			"You are likely to be eaten by a grue."})
+}
+
+func useFmt() { fmt.Printf("") }
 
 // vim: nocindent

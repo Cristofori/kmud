@@ -10,73 +10,58 @@ import (
 	"strconv"
 )
 
-func login(session *mgo.Session, conn net.Conn) (string, error) {
+func login(session *mgo.Session, conn net.Conn) string {
 
 	for {
-		line, err := utils.GetUserInput(conn, "Username: ")
-
-		if err != nil {
-			return "", err
-		}
+		line := utils.GetUserInput(conn, "Username: ")
 
 		found, err := database.FindUser(session, line)
-
-		if err != nil {
-			return "", err
-		}
+        utils.PanicIfError(err)
 
 		if !found {
 			utils.WriteLine(conn, "User not found")
 		} else {
-			return line, nil
+			return line
 		}
 	}
 
 	panic("Unexpected code path")
-	return "", nil
+	return ""
 }
 
-func newUser(session *mgo.Session, conn net.Conn) (string, error) {
+func newUser(session *mgo.Session, conn net.Conn) string {
 
 	for {
-		line, err := utils.GetUserInput(conn, "Desired username: ")
+		line := utils.GetUserInput(conn, "Desired username: ")
+		err := database.NewUser(session, line)
 
-		if err != nil {
-			return "", err
-		}
-
-		err = database.NewUser(session, line)
 		if err == nil {
-			return line, nil
+			return line
 		}
 
 		utils.WriteLine(conn, err.Error())
 	}
 
 	panic("Unexpected code path")
-	return "", nil
+	return ""
 }
 
-func newCharacter(session *mgo.Session, conn net.Conn, user string) (string, error) {
+func newCharacter(session *mgo.Session, conn net.Conn, user string) string {
 	// TODO: character slot limit
 	for {
-		line, err := utils.GetUserInput(conn, "Desired character name: ")
+		line := utils.GetUserInput(conn, "Desired character name: ")
 
-		if err != nil {
-			return "", err
-		}
-
-		err = database.NewCharacter(session, user, line)
+		err := database.NewCharacter(session, user, line)
 
 		if err == nil {
-			return line, err
+			return line
 		}
 
 		utils.WriteLine(conn, err.Error())
 	}
 
 	panic("Unexpected code path")
-	return "", nil
+	return ""
 }
 
 func quit(session *mgo.Session, conn net.Conn) error {
@@ -138,58 +123,44 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer conn.Close()
 	defer session.Close()
 
+    defer func() {
+        if r:= recover(); r!= nil {
+            fmt.Printf( "Lost connection to client: %v, %v\n", conn.RemoteAddr(), r )
+        }
+    }()
+
 	user := ""
 	character := ""
 
 	for {
 		if user == "" {
 			menu := mainMenu()
-			choice, _, err := menu.Exec(conn)
-
-			if err != nil {
-				return
-			}
+			choice, _ := menu.Exec(conn)
 
 			switch choice {
 			case "l":
-				var err error
-				user, err = login(session, conn)
-				if err != nil {
-					return
-				}
+				user = login(session, conn)
 			case "n":
-				var err error
-				user, err = newUser(session, conn)
-				if err != nil {
-					return
-				}
+				user = newUser(session, conn)
 			case "q":
 				quit(session, conn)
 				return
 			}
-
-			if err != nil {
-				return
-			}
 		} else if character == "" {
 			menu := characterMenu(session, user)
-			choice, charName, err := menu.Exec(conn)
+			choice, charName := menu.Exec(conn)
 
-			if err != nil {
-				return
-			}
-
-			_, err = strconv.Atoi(choice)
+			_, err := strconv.Atoi(choice)
 
 			if err == nil {
 				character = charName
 			} else {
 				switch choice {
 				case "n":
-					character, err = newCharacter(session, conn, user)
+					character = newCharacter(session, conn, user)
 				case "d":
 					deleteMenu := deleteMenu(session, user)
-					deleteChoice, deleteCharName, err := deleteMenu.Exec(conn)
+					deleteChoice, deleteCharName := deleteMenu.Exec(conn)
 
 					_, err = strconv.Atoi(deleteChoice)
 
@@ -219,7 +190,9 @@ func main() {
 	listener, err := net.Listen("tcp", ":8945")
 	utils.HandleError(err)
 
-	fmt.Printf("Server listening on port 8945\n")
+	fmt.Println("Server listening on port 8945")
+
+    database.GenerateDefaultMap(session)
 
 	for {
 		conn, err := listener.Accept()

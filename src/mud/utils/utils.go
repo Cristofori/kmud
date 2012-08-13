@@ -27,22 +27,19 @@ func Simplify(str string) string {
 	return simpleStr
 }
 
-func GetUserInput(conn net.Conn, prompt string) (string, error) {
+func GetUserInput(conn net.Conn, prompt string) string {
 	for {
 		io.WriteString(conn, prompt)
 		input, err := readLine(conn)
-
-		if err != nil {
-			return "", err
-		}
+        PanicIfError(err)
 
 		if input != "" {
-			return input, nil
+			return input
 		}
 	}
 
 	panic("Unexpected code path")
-	return "", nil
+	return ""
 }
 
 func HandleError(err error) {
@@ -59,6 +56,12 @@ func FormatName(name string) string {
 	runes := []rune(Simplify(name))
 	runes[0] = unicode.ToUpper(runes[0])
 	return string(runes)
+}
+
+func PanicIfError(err error) {
+    if err != nil {
+        panic(err)
+    }
 }
 
 // vim: nocindent
