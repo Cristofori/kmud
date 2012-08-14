@@ -76,7 +76,7 @@ func mainMenu() utils.Menu {
 
 	menu.AddAction("l", "[L]ogin")
 	menu.AddAction("n", "[N]ew user")
-	menu.AddAction("a", "[A]bout")
+	menu.AddAction("a", "[A]dmin")
 	menu.AddAction("q", "[Q]uit")
 
 	return menu
@@ -142,6 +142,8 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				user = login(session, conn)
 			case "n":
 				user = newUser(session, conn)
+            case "a":
+                utils.WriteLine(conn, "*** Admin menu goes here") // TODO
 			case "q":
 				quit(session, conn)
 				return

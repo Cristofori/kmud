@@ -10,25 +10,27 @@ import (
 	"strings"
 )
 
-func processCommand(session *mgo.Session, conn net.Conn, command string) {
-	fmt.Printf("Processing command: %v\n", command)
-
-	switch command {
-	case "?":
-		fallthrough
-	case "help":
-	case "dig":
-	case "edit":
-		// Enter edit mode (show room with [] markers indicating portions that can be modified)
-	default:
-		io.WriteString(conn, "Unrecognized command")
-	}
-}
-
 func Exec(session *mgo.Session, conn net.Conn, character string) {
-	utils.WriteLine(conn, "Welcome, "+utils.FormatName(character))
 
 	room, err := database.GetCharacterRoom(session, character)
+
+    processCommand := func(session *mgo.Session, conn net.Conn, command string) {
+        fmt.Printf("Processing command: %v\n", command)
+
+        switch command {
+        case "?":
+            fallthrough
+        case "help":
+        case "dig":
+        case "edit":
+            // Enter edit mode (show room with [] markers indicating portions that can be modified)
+        default:
+            io.WriteString(conn, "Unrecognized command")
+        }
+    }
+
+	utils.WriteLine(conn, "Welcome, "+utils.FormatName(character))
+
 	utils.WriteLine(conn, room.ToString())
 
 	for {
@@ -46,7 +48,9 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 				utils.WriteLine(conn, "Goodbye")
 				conn.Close()
 			case "l":
-				utils.WriteLine(conn, room.ToString())
+				io.WriteString(conn, room.ToString())
+            case "i":
+				io.WriteString(conn, "You aren't carrying anything")
 			default:
 				if room.HasExit(input) {
 					database.SetCharacterRoom(session, character, room.ExitId(input))
