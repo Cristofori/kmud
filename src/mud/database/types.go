@@ -18,9 +18,20 @@ type Room struct {
 	Exits       []Exit
 }
 
-func (self *Room) ToString() string {
+type PrintMode int
+const (
+    ReadMode PrintMode = iota
+    EditMode PrintMode = iota
+)
 
-    str := fmt.Sprintf( "\n %v \n\n %v \n\n Exits: ", self.Title, self.Description )
+func (self *Room) ToString( mode PrintMode ) string {
+
+    var str string
+    if mode == ReadMode {
+        str = fmt.Sprintf( "\n >>> %v <<<\n\n %v \n\n Exits: ", self.Title, self.Description )
+    } else {
+        str = fmt.Sprintf( "\n [1] %v \n\n [2] %v \n\n [3] Exits: ", self.Title, self.Description )
+    }
 
 	var exitList []string
 	if len(self.Exits) > 0 {
