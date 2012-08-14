@@ -16,7 +16,7 @@ func login(session *mgo.Session, conn net.Conn) string {
 		line := utils.GetUserInput(conn, "Username: ")
 
 		found, err := database.FindUser(session, line)
-        utils.PanicIfError(err)
+		utils.PanicIfError(err)
 
 		if !found {
 			utils.WriteLine(conn, "User not found")
@@ -123,11 +123,11 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer conn.Close()
 	defer session.Close()
 
-    defer func() {
-        if r:= recover(); r!= nil {
-            fmt.Printf( "Lost connection to client: %v, %v\n", conn.RemoteAddr(), r )
-        }
-    }()
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Lost connection to client: %v, %v\n", conn.RemoteAddr(), r)
+		}
+	}()
 
 	user := ""
 	character := ""
@@ -192,7 +192,7 @@ func main() {
 
 	fmt.Println("Server listening on port 8945")
 
-    database.GenerateDefaultMap(session)
+	database.GenerateDefaultMap(session)
 
 	for {
 		conn, err := listener.Accept()

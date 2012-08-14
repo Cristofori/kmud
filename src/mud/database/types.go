@@ -21,9 +21,9 @@ func (self *Room) ToString() string {
 	str := "\n" + self.Title + "\n\n" + self.Description + "\n"
 
 	var exitList []string
-    if len(self.Exits) > 0 {
-        str = str + "\n"
-    }
+	if len(self.Exits) > 0 {
+		str = str + "\n"
+	}
 
 	for _, exit := range self.Exits {
 		exitList = append(exitList, exit.Text)

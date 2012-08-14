@@ -31,7 +31,7 @@ func GetUserInput(conn net.Conn, prompt string) string {
 	for {
 		io.WriteString(conn, prompt)
 		input, err := readLine(conn)
-        PanicIfError(err)
+		PanicIfError(err)
 
 		if input != "" {
 			return input
@@ -59,9 +59,9 @@ func FormatName(name string) string {
 }
 
 func PanicIfError(err error) {
-    if err != nil {
-        panic(err)
-    }
+	if err != nil {
+		panic(err)
+	}
 }
 
 // vim: nocindent
