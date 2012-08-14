@@ -14,37 +14,46 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 
 	room, err := database.GetCharacterRoom(session, character)
 
-    processCommand := func(session *mgo.Session, conn net.Conn, command string) {
-        fmt.Printf("Processing command: %v\n", command)
+	processCommand := func(session *mgo.Session, conn net.Conn, command string) {
+		fmt.Printf("Processing command: %v\n", command)
 
-        switch command {
-        case "?":
-            fallthrough
-        case "help":
-        case "dig":
-        case "edit":
-            for {
-                io.WriteString(conn, room.ToString(database.EditMode))
-                input := utils.GetUserInput(conn, "\nSelect a section to edit> ")
+		switch command {
+		case "?":
+			fallthrough
+		case "help":
+		case "dig":
+		case "edit":
+			io.WriteString(conn, room.ToString(database.EditMode))
 
-                switch input {
-                    case "x":
-                        return
-                    case "1":
-                        input = utils.GetUserInput(conn, "\nEnter new title: ")
-                    case "2":
-                        input = utils.GetUserInput(conn, "\nEnter new description: ")
-                    case "3":
-                }
-            }
-        default:
-            io.WriteString(conn, "Unrecognized command")
-        }
-    }
+			for {
+				input := utils.GetUserInput(conn, "Select a section to edit> ")
+
+				switch input {
+				case "x":
+					utils.WriteLine(conn, room.ToString(database.ReadMode))
+					return
+				case "1":
+					input = utils.GetRawUserInput(conn, "Enter new title: ")
+					room.Title = input
+					database.SetRoomTitle(session, room.Id, input)
+					utils.WriteLine(conn, room.ToString(database.EditMode))
+				case "2":
+					input = utils.GetRawUserInput(conn, "Enter new description: ")
+					room.Description = input
+					database.SetRoomDescription(session, room.Id, input)
+					utils.WriteLine(conn, room.ToString(database.EditMode))
+				case "3":
+				default:
+					utils.WriteLine(conn, "Invalid selection")
+				}
+			}
+		default:
+			io.WriteString(conn, "Unrecognized command")
+		}
+	}
 
 	utils.WriteLine(conn, "Welcome, "+utils.FormatName(character))
-
-	utils.WriteLine(conn, room.ToString(database.ReadMode))
+	io.WriteString(conn, room.ToString(database.ReadMode))
 
 	for {
 		utils.PanicIfError(err)
@@ -62,7 +71,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 				conn.Close()
 			case "l":
 				io.WriteString(conn, room.ToString(database.ReadMode))
-            case "i":
+			case "i":
 				io.WriteString(conn, "You aren't carrying anything")
 			default:
 				if room.HasExit(input) {

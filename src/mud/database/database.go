@@ -7,6 +7,8 @@ import (
 	"mud/utils"
 )
 
+func useFmt() { fmt.Printf("") }
+
 type dbError struct {
 	message string
 }
@@ -36,6 +38,7 @@ const (
 
 // Field names
 const (
+	fId          = "_id"
 	fName        = "name"
 	fCharacters  = "characters"
 	fRoom        = "room"
@@ -121,7 +124,7 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 	}
 
 	c = getCollection(session, cRooms)
-	q = c.Find(bson.M{"_id": result[fRoom]})
+	q = c.Find(bson.M{fId: result[fRoom]})
 
 	count, err := q.Count()
 
@@ -131,7 +134,7 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 
 	if count == 0 {
 		SetCharacterRoom(session, character, "1")
-		q = c.Find(bson.M{"_id": "1"})
+		q = c.Find(bson.M{fId: "1"})
 	}
 
 	err = q.One(&result)
@@ -140,6 +143,7 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 		return room, err
 	}
 
+	room.Id = result[fId]
 	room.Title = result[fTitle]
 	room.Description = result[fDescription]
 
@@ -148,8 +152,7 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 
 func SetCharacterRoom(session *mgo.Session, character string, roomId string) error {
 	c := getCollection(session, cCharacters)
-	c.Update(bson.M{fName: character}, bson.M{"$set": bson.M{fRoom: roomId}})
-	return nil
+	return c.Update(bson.M{fName: character}, bson.M{"$set": bson.M{fRoom: roomId}})
 }
 
 func GetUserCharacters(session *mgo.Session, name string) ([]string, error) {
@@ -176,13 +179,21 @@ func GenerateDefaultMap(session *mgo.Session) {
 	c := getCollection(session, cRooms)
 	c.DropCollection()
 
-	c.Insert(bson.M{"_id": "1",
+	c.Insert(bson.M{fId: "1",
 		fTitle: "The Void",
 		fDescription: "You are floating in the blackness of space. Complete darkness surrounds" +
 			"you in all directions. There is no escape, there is no hope, just the emptiness. " +
 			"You are likely to be eaten by a grue."})
 }
 
-func useFmt() { fmt.Printf("") }
+func SetRoomTitle(session *mgo.Session, roomId string, title string) error {
+	c := getCollection(session, cRooms)
+	return c.Update(bson.M{fId: roomId}, bson.M{"$set": bson.M{fTitle: title}})
+}
+
+func SetRoomDescription(session *mgo.Session, roomId string, description string) error {
+	c := getCollection(session, cRooms)
+	return c.Update(bson.M{fId: roomId}, bson.M{"$set": bson.M{fDescription: description}})
+}
 
 // vim: nocindent

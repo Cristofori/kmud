@@ -16,9 +16,7 @@ func WriteLine(conn net.Conn, line string) (int, error) {
 func readLine(conn net.Conn) (string, error) {
 	reader := bufio.NewReader(conn)
 	bytes, _, err := reader.ReadLine()
-	line := string(bytes)
-	line = Simplify(line)
-	return line, err
+	return string(bytes), err
 }
 
 func Simplify(str string) string {
@@ -28,6 +26,11 @@ func Simplify(str string) string {
 }
 
 func GetUserInput(conn net.Conn, prompt string) string {
+	input := GetRawUserInput(conn, prompt)
+	return Simplify(input)
+}
+
+func GetRawUserInput(conn net.Conn, prompt string) string {
 	for {
 		io.WriteString(conn, prompt)
 		input, err := readLine(conn)
@@ -35,6 +38,10 @@ func GetUserInput(conn net.Conn, prompt string) string {
 
 		if input != "" {
 			return input
+		}
+
+		if input == "x" || input == "X" {
+			return ""
 		}
 	}
 

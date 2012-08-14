@@ -142,8 +142,8 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				user = login(session, conn)
 			case "n":
 				user = newUser(session, conn)
-            case "a":
-                utils.WriteLine(conn, "*** Admin menu goes here") // TODO
+			case "a":
+				utils.WriteLine(conn, "*** Admin menu goes here") // TODO
 			case "q":
 				quit(session, conn)
 				return
