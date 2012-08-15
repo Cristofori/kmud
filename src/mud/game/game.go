@@ -15,7 +15,6 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 	room, err := database.GetCharacterRoom(session, character)
 
 	processCommand := func(session *mgo.Session, conn net.Conn, command string) {
-		fmt.Printf("Processing command: %v\n", command)
 
 		switch command {
 		case "?":
