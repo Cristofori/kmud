@@ -194,8 +194,6 @@ func main() {
 
 	fmt.Println("Server listening on port 8945")
 
-	database.GenerateDefaultMap(session)
-
 	for {
 		conn, err := listener.Accept()
 		utils.HandleError(err)

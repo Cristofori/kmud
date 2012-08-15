@@ -36,12 +36,10 @@ func GetRawUserInput(conn net.Conn, prompt string) string {
 		input, err := readLine(conn)
 		PanicIfError(err)
 
-		if input != "" {
-			return input
-		}
-
 		if input == "x" || input == "X" {
 			return ""
+		} else if input != "" {
+			return input
 		}
 	}
 

@@ -28,8 +28,10 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 			for {
 				input := utils.GetUserInput(conn, "Select a section to edit> ")
 
+                fmt.Printf( "Input: %v\n", input)
+
 				switch input {
-				case "x":
+				case "":
 					utils.WriteLine(conn, room.ToString(database.ReadMode))
 					return
 				case "1":
@@ -47,6 +49,12 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 					utils.WriteLine(conn, "Invalid selection")
 				}
 			}
+        case "rebuild":
+            input := utils.GetUserInput(conn, "Are you sure (deletes all rooms and starts from scratch)? ")
+            if input[0] == 'y' || input == "yes" {
+                database.GenerateDefaultMap(session)
+            }
+            room, err = database.GetCharacterRoom(session, character)
 		default:
 			io.WriteString(conn, "Unrecognized command")
 		}
