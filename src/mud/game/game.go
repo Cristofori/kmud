@@ -79,8 +79,9 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 			case "i":
 				io.WriteString(conn, "You aren't carrying anything")
 			default:
-				if room.HasExit(input) {
-					database.SetCharacterRoom(session, character, room.ExitId(input))
+                exit := database.StringToDirection(input)
+				if room.HasExit(exit) {
+					database.SetCharacterRoom(session, character, room.ExitId(exit))
 				} else {
 					io.WriteString(conn, "You can't do that")
 				}

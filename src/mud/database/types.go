@@ -9,7 +9,7 @@ type Exit struct {
 	Id         string
 	Text       string
 	DestRoomId string
-	Shortcut   string
+	Direction  ExitDirection
 }
 
 type Room struct {
@@ -18,6 +18,18 @@ type Room struct {
 	Description string
 	Exits       []Exit
 }
+
+type ExitDirection int
+
+const (
+    None ExitDirection = iota
+    North ExitDirection = iota
+    East ExitDirection = iota
+    South ExitDirection = iota
+    West ExitDirection = iota
+    Up ExitDirection = iota
+    Down ExitDirection = iota
+)
 
 type PrintMode int
 
@@ -49,23 +61,38 @@ func (self *Room) ToString(mode PrintMode) string {
 	return str
 }
 
-func (self *Room) GetExit(shortcut string) Exit {
+func (self *Room) GetExit(dir ExitDirection) Exit {
 	for _, exit := range self.Exits {
-		if exit.Shortcut == shortcut {
+		if exit.Direction == dir {
 			return exit
 		}
 	}
 
 	var exit Exit
+    exit.Direction = None
 	return exit
 }
 
-func (self *Room) ExitId(shortcut string) string {
-	return self.GetExit(shortcut).Id
+func (self *Room) ExitId(dir ExitDirection) string {
+	return self.GetExit(dir).Id
 }
 
-func (self *Room) HasExit(shortcut string) bool {
-	return self.GetExit(shortcut).Id != ""
+func (self *Room) HasExit(dir ExitDirection) bool {
+	return self.GetExit(dir).Id != ""
+}
+
+func StringToDirection( str string ) ExitDirection {
+    dirStr := strings.ToLower(str)
+    switch dirStr {
+        case "n": return North
+        case "s": return South
+        case "e": return East
+        case "w": return West
+        case "u": return Up
+        case "d": return Down
+    }
+
+    return None
 }
 
 // vim: nocindent
