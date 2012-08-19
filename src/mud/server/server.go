@@ -123,14 +123,18 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer conn.Close()
 	defer session.Close()
 
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("Lost connection to client: %v, %v\n", conn.RemoteAddr(), r)
-		}
-	}()
-
 	user := ""
 	character := ""
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
+				utils.FormatName(user),
+				utils.FormatName(character),
+				conn.RemoteAddr(),
+				r)
+		}
+	}()
 
 	for {
 		if user == "" {
@@ -197,6 +201,7 @@ func main() {
 	for {
 		conn, err := listener.Accept()
 		utils.HandleError(err)
+        fmt.Printf("Client connected: %v\n", conn.RemoteAddr())
 		go handleConnection(session.Copy(), conn)
 	}
 }

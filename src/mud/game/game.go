@@ -1,7 +1,6 @@
 package game
 
 import (
-	"fmt"
 	"io"
 	"labix.org/v2/mgo"
 	"mud/database"
@@ -14,7 +13,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 
 	room, err := database.GetCharacterRoom(session, character)
 
-	processCommand := func(session *mgo.Session, conn net.Conn, command string) {
+	processCommand := func(command string) {
 
 		switch command {
 		case "?":
@@ -26,8 +25,6 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 
 			for {
 				input := utils.GetUserInput(conn, "Select a section to edit> ")
-
-                fmt.Printf( "Input: %v\n", input)
 
 				switch input {
 				case "":
@@ -49,7 +46,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 				}
 			}
         case "rebuild":
-            input := utils.GetUserInput(conn, "Are you sure (deletes all rooms and starts from scratch)? ")
+            input := utils.GetUserInput(conn, "Are you sure (delete all rooms and starts from scratch)? ")
             if input[0] == 'y' || input == "yes" {
                 database.GenerateDefaultMap(session)
             }
@@ -68,7 +65,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 		input := utils.GetUserInput(conn, "\n> ")
 
 		if strings.HasPrefix(input, "/") {
-			processCommand(session, conn, input[1:len(input)])
+			processCommand(input[1:len(input)])
 		} else {
 			switch input {
 			case "quit":
@@ -76,6 +73,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 			case "exit":
 				utils.WriteLine(conn, "Goodbye")
 				conn.Close()
+                panic("User quit")
 			case "l":
 				io.WriteString(conn, room.ToString(database.ReadMode))
 			case "i":
