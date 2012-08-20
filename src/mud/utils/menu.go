@@ -43,6 +43,10 @@ func (self *Menu) Exec(conn net.Conn) (string, string) {
 
 		input := GetUserInput(conn, "> ")
 
+		if input == "" {
+			return "", ""
+		}
+
 		for _, action := range self.Actions {
 			if action.key == input {
 				return input, action.data

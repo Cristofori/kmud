@@ -9,6 +9,31 @@ import (
 	"strings"
 )
 
+func toggleExit(room database.Room, dir database.ExitDirection) {
+}
+
+func getToggleExitMenu(room database.Room) utils.Menu {
+
+	onOrOff := func(on bool) string {
+		if on {
+			return "On"
+		}
+
+		return "Off"
+	}
+
+	menu := utils.NewMenu("Edit Exits")
+
+	menu.AddAction("n", "[N]orth: "+onOrOff(room.HasExit(database.North)))
+	menu.AddAction("e", "[E]ast: "+onOrOff(room.HasExit(database.East)))
+	menu.AddAction("s", "[S]outh: "+onOrOff(room.HasExit(database.South)))
+	menu.AddAction("w", "[W]est: "+onOrOff(room.HasExit(database.West)))
+	menu.AddAction("u", "[U]p: "+onOrOff(room.HasExit(database.Up)))
+	menu.AddAction("d", "[D]own: "+onOrOff(room.HasExit(database.Down)))
+
+	return menu
+}
+
 func Exec(session *mgo.Session, conn net.Conn, character string) {
 
 	room, err := database.GetCharacterRoom(session, character)
@@ -24,7 +49,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 			io.WriteString(conn, room.ToString(database.EditMode))
 
 			for {
-				input := utils.GetUserInput(conn, "Select a section to edit> ")
+				input := utils.GetUserInput(conn, "\nSelect a section to edit> ")
 
 				switch input {
 				case "":
@@ -41,16 +66,47 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 					database.SetRoomDescription(session, room.Id, input)
 					utils.WriteLine(conn, room.ToString(database.EditMode))
 				case "3":
+
+					for {
+
+						done := false
+						menu := getToggleExitMenu(room)
+						choice, _ := menu.Exec(conn)
+
+						switch choice {
+						case "n":
+							toggleExit(room, database.North)
+						case "e":
+							toggleExit(room, database.East)
+						case "s":
+							toggleExit(room, database.South)
+						case "w":
+							toggleExit(room, database.West)
+						case "u":
+							toggleExit(room, database.Up)
+						case "d":
+							toggleExit(room, database.Down)
+						case "":
+							done = true
+						}
+
+						if done {
+							break
+						}
+					}
+
+					io.WriteString(conn, room.ToString(database.EditMode))
+
 				default:
 					utils.WriteLine(conn, "Invalid selection")
 				}
 			}
-        case "rebuild":
-            input := utils.GetUserInput(conn, "Are you sure (delete all rooms and starts from scratch)? ")
-            if input[0] == 'y' || input == "yes" {
-                database.GenerateDefaultMap(session)
-            }
-            room, err = database.GetCharacterRoom(session, character)
+		case "rebuild":
+			input := utils.GetUserInput(conn, "Are you sure (delete all rooms and starts from scratch)? ")
+			if input[0] == 'y' || input == "yes" {
+				database.GenerateDefaultMap(session)
+			}
+			room, err = database.GetCharacterRoom(session, character)
 		default:
 			io.WriteString(conn, "Unrecognized command")
 		}
@@ -73,13 +129,13 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 			case "exit":
 				utils.WriteLine(conn, "Goodbye")
 				conn.Close()
-                panic("User quit")
+				panic("User quit")
 			case "l":
 				io.WriteString(conn, room.ToString(database.ReadMode))
 			case "i":
 				io.WriteString(conn, "You aren't carrying anything")
 			default:
-                exit := database.StringToDirection(input)
+				exit := database.StringToDirection(input)
 				if room.HasExit(exit) {
 					database.SetCharacterRoom(session, character, room.ExitId(exit))
 				} else {
