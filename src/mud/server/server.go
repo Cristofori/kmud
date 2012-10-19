@@ -73,7 +73,7 @@ func newCharacter(session *mgo.Session, conn net.Conn, user string) string {
 }
 
 func quit(session *mgo.Session, conn net.Conn) error {
-	utils.WriteLine(conn, "Goodbye!")
+	utils.WriteLine(conn, "Take luck!")
 	conn.Close()
 	return nil
 }
