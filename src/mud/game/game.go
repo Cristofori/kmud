@@ -59,20 +59,20 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 				case "1":
 					input = utils.GetRawUserInput(conn, "Enter new title: ")
 
-                    if input != "" {
-                        room.Title = input
-                        database.SetRoomTitle(session, room.Id, input)
-                    }
-                    utils.WriteLine(conn, room.ToString(database.EditMode))
+					if input != "" {
+						room.Title = input
+						database.SetRoomTitle(session, room.Id, input)
+					}
+					utils.WriteLine(conn, room.ToString(database.EditMode))
 
 				case "2":
 					input = utils.GetRawUserInput(conn, "Enter new description: ")
 
-                    if input != "" {
-                        room.Description = input
-                        database.SetRoomDescription(session, room.Id, input)
-                    }
-                    utils.WriteLine(conn, room.ToString(database.EditMode))
+					if input != "" {
+						room.Description = input
+						database.SetRoomDescription(session, room.Id, input)
+					}
+					utils.WriteLine(conn, room.ToString(database.EditMode))
 
 				case "3":
 					for {

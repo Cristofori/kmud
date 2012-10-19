@@ -201,7 +201,7 @@ func main() {
 	for {
 		conn, err := listener.Accept()
 		utils.HandleError(err)
-        fmt.Printf("Client connected: %v\n", conn.RemoteAddr())
+		fmt.Printf("Client connected: %v\n", conn.RemoteAddr())
 		go handleConnection(session.Copy(), conn)
 	}
 }

@@ -22,13 +22,13 @@ type Room struct {
 type ExitDirection int
 
 const (
-    None ExitDirection = iota
-    North ExitDirection = iota
-    East ExitDirection = iota
-    South ExitDirection = iota
-    West ExitDirection = iota
-    Up ExitDirection = iota
-    Down ExitDirection = iota
+	None  ExitDirection = iota
+	North ExitDirection = iota
+	East  ExitDirection = iota
+	South ExitDirection = iota
+	West  ExitDirection = iota
+	Up    ExitDirection = iota
+	Down  ExitDirection = iota
 )
 
 type PrintMode int
@@ -69,7 +69,7 @@ func (self *Room) GetExit(dir ExitDirection) Exit {
 	}
 
 	var exit Exit
-    exit.Direction = None
+	exit.Direction = None
 	return exit
 }
 
@@ -81,18 +81,24 @@ func (self *Room) HasExit(dir ExitDirection) bool {
 	return self.GetExit(dir).Id != ""
 }
 
-func StringToDirection( str string ) ExitDirection {
-    dirStr := strings.ToLower(str)
-    switch dirStr {
-        case "n": return North
-        case "s": return South
-        case "e": return East
-        case "w": return West
-        case "u": return Up
-        case "d": return Down
-    }
+func StringToDirection(str string) ExitDirection {
+	dirStr := strings.ToLower(str)
+	switch dirStr {
+	case "n":
+		return North
+	case "s":
+		return South
+	case "e":
+		return East
+	case "w":
+		return West
+	case "u":
+		return Up
+	case "d":
+		return Down
+	}
 
-    return None
+	return None
 }
 
 // vim: nocindent
