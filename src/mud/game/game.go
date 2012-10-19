@@ -1,7 +1,6 @@
 package game
 
 import (
-	"io"
 	"labix.org/v2/mgo"
 	"mud/database"
 	"mud/utils"
@@ -46,10 +45,10 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 		case "help":
 		case "dig":
 		case "edit":
-			io.WriteString(conn, room.ToString(database.EditMode))
+			utils.WriteLine(conn, room.ToString(database.EditMode))
 
 			for {
-				input := utils.GetUserInput(conn, "\nSelect a section to edit> ")
+				input := utils.GetUserInput(conn, "Select a section to edit> ")
 
 				switch input {
 				case "":
@@ -102,7 +101,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 						}
 					}
 
-					io.WriteString(conn, room.ToString(database.EditMode))
+					utils.WriteLine(conn, room.ToString(database.EditMode))
 
 				default:
 					utils.WriteLine(conn, "Invalid selection")
@@ -117,17 +116,17 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 			room, err = database.GetCharacterRoom(session, character)
 
 		default:
-			io.WriteString(conn, "Unrecognized command")
+			utils.WriteLine(conn, "Unrecognized command")
 		}
 	}
 
 	utils.WriteLine(conn, "Welcome, "+utils.FormatName(character))
-	io.WriteString(conn, room.ToString(database.ReadMode))
+	utils.WriteLine(conn, room.ToString(database.ReadMode))
 
 	for {
 		utils.PanicIfError(err)
 
-		input := utils.GetUserInput(conn, "\n> ")
+		input := utils.GetUserInput(conn, "> ")
 
 		if strings.HasPrefix(input, "/") {
 			processCommand(input[1:len(input)])
@@ -153,15 +152,15 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 				conn.Close()
 				panic("User quit")
 			case "l":
-				io.WriteString(conn, room.ToString(database.ReadMode))
+				utils.WriteLine(conn, room.ToString(database.ReadMode))
 			case "i":
-				io.WriteString(conn, "You aren't carrying anything")
+				utils.WriteLine(conn, "You aren't carrying anything")
 			default:
 				exit := database.StringToDirection(input)
 				if room.HasExit(exit) {
 					database.SetCharacterRoom(session, character, room.ExitId(exit))
 				} else {
-					io.WriteString(conn, "You can't do that")
+					utils.WriteLine(conn, "You can't do that")
 				}
 			}
 		}
