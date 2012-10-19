@@ -55,20 +55,27 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 				case "":
 					utils.WriteLine(conn, room.ToString(database.ReadMode))
 					return
+
 				case "1":
 					input = utils.GetRawUserInput(conn, "Enter new title: ")
-					room.Title = input
-					database.SetRoomTitle(session, room.Id, input)
-					utils.WriteLine(conn, room.ToString(database.EditMode))
+
+                    if input != "" {
+                        room.Title = input
+                        database.SetRoomTitle(session, room.Id, input)
+                    }
+                    utils.WriteLine(conn, room.ToString(database.EditMode))
+
 				case "2":
 					input = utils.GetRawUserInput(conn, "Enter new description: ")
-					room.Description = input
-					database.SetRoomDescription(session, room.Id, input)
-					utils.WriteLine(conn, room.ToString(database.EditMode))
+
+                    if input != "" {
+                        room.Description = input
+                        database.SetRoomDescription(session, room.Id, input)
+                    }
+                    utils.WriteLine(conn, room.ToString(database.EditMode))
+
 				case "3":
-
 					for {
-
 						done := false
 						menu := getToggleExitMenu(room)
 						choice, _ := menu.Exec(conn)
@@ -101,12 +108,14 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 					utils.WriteLine(conn, "Invalid selection")
 				}
 			}
+
 		case "rebuild":
 			input := utils.GetUserInput(conn, "Are you sure (delete all rooms and starts from scratch)? ")
 			if input[0] == 'y' || input == "yes" {
 				database.GenerateDefaultMap(session)
 			}
 			room, err = database.GetCharacterRoom(session, character)
+
 		default:
 			io.WriteString(conn, "Unrecognized command")
 		}
