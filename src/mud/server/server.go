@@ -15,6 +15,10 @@ func login(session *mgo.Session, conn net.Conn) string {
 	for {
 		line := utils.GetUserInput(conn, "Username: ")
 
+        if line == "" {
+            return ""
+        }
+
 		found, err := database.FindUser(session, line)
 		utils.PanicIfError(err)
 
