@@ -46,6 +46,14 @@ const (
 	fDescription = "description"
 )
 
+// DB commands
+const (
+    SET  = "$set"
+    PUSH = "$push"
+    PULL = "$pull"
+)
+
+
 func FindUser(session *mgo.Session, name string) (bool, error) {
 	c := getCollection(session, cUsers)
 	q := c.Find(bson.M{fName: name})
@@ -103,7 +111,7 @@ func NewCharacter(session *mgo.Session, user string, character string) error {
 	}
 
 	c := getCollection(session, cUsers)
-	c.Update(bson.M{fName: user}, bson.M{"$push": bson.M{fCharacters: character}})
+	c.Update(bson.M{fName: user}, bson.M{PUSH: bson.M{fCharacters: character}})
 
 	c = getCollection(session, cCharacters)
 	c.Insert(bson.M{fName: character})
@@ -152,7 +160,7 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 
 func SetCharacterRoom(session *mgo.Session, character string, roomId string) error {
 	c := getCollection(session, cCharacters)
-	return c.Update(bson.M{fName: character}, bson.M{"$set": bson.M{fRoom: roomId}})
+	return c.Update(bson.M{fName: character}, bson.M{SET: bson.M{fRoom: roomId}})
 }
 
 func GetUserCharacters(session *mgo.Session, name string) ([]string, error) {
@@ -167,7 +175,7 @@ func GetUserCharacters(session *mgo.Session, name string) ([]string, error) {
 
 func DeleteCharacter(session *mgo.Session, user string, character string) error {
 	c := getCollection(session, cUsers)
-	c.Update(bson.M{fName: user}, bson.M{"$pull": bson.M{fCharacters: utils.Simplify(character)}})
+	c.Update(bson.M{fName: user}, bson.M{PULL: bson.M{fCharacters: utils.Simplify(character)}})
 
 	c = getCollection(session, cCharacters)
 	c.Remove(bson.M{fName: character})
@@ -188,12 +196,12 @@ func GenerateDefaultMap(session *mgo.Session) {
 
 func SetRoomTitle(session *mgo.Session, roomId string, title string) error {
 	c := getCollection(session, cRooms)
-	return c.Update(bson.M{fId: roomId}, bson.M{"$set": bson.M{fTitle: title}})
+	return c.Update(bson.M{fId: roomId}, bson.M{SET: bson.M{fTitle: title}})
 }
 
 func SetRoomDescription(session *mgo.Session, roomId string, description string) error {
 	c := getCollection(session, cRooms)
-	return c.Update(bson.M{fId: roomId}, bson.M{"$set": bson.M{fDescription: description}})
+	return c.Update(bson.M{fId: roomId}, bson.M{SET: bson.M{fDescription: description}})
 }
 
 // vim: nocindent
