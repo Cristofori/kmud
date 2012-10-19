@@ -84,18 +84,18 @@ func mainMenu() utils.Menu {
 
 	menu.AddAction("l", "[L]ogin")
 	menu.AddAction("n", "[N]ew user")
-	menu.AddAction("a", "[A]dmin")
 	menu.AddAction("q", "[Q]uit")
 
 	return menu
 }
 
-func characterMenu(session *mgo.Session, user string) utils.Menu {
+func userMenu(session *mgo.Session, user string) utils.Menu {
 
 	chars, _ := database.GetUserCharacters(session, user)
 
-	menu := utils.NewMenu("Character Select")
+	menu := utils.NewMenu(user)
 	menu.AddAction("l", "[L]ogout")
+	menu.AddAction("a", "[A]dmin")
 	menu.AddAction("n", "[N]ew character")
 	if len(chars) > 0 {
 		menu.AddAction("d", "[D]elete character")
@@ -155,8 +155,6 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				user = login(session, conn)
 			case "n":
 				user = newUser(session, conn)
-			case "a":
-				utils.WriteLine(conn, "*** Admin menu goes here") // TODO
 			case "":
 				fallthrough
 			case "q":
@@ -164,31 +162,33 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				return
 			}
 		} else if character == "" {
-			menu := characterMenu(session, user)
+			menu := userMenu(session, user)
 			choice, charName := menu.Exec(conn)
 
-			if choice == "" || choice == "l" {
+			switch choice {
+			case "":
+				fallthrough
+			case "l":
 				user = ""
-			} else {
+			case "a":
+				utils.WriteLine(conn, "*** Admin menu goes here") // TODO
+			case "n":
+				character = newCharacter(session, conn, user)
+			case "d":
+				deleteMenu := deleteMenu(session, user)
+				deleteChoice, deleteCharName := deleteMenu.Exec(conn)
+
+				_, err := strconv.Atoi(deleteChoice)
+
+				if err == nil {
+					database.DeleteCharacter(session, user, deleteCharName)
+				}
+
+			default:
 				_, err := strconv.Atoi(choice)
 
 				if err == nil {
 					character = charName
-				} else {
-					switch choice {
-					case "n":
-						character = newCharacter(session, conn, user)
-					case "d":
-						deleteMenu := deleteMenu(session, user)
-						deleteChoice, deleteCharName := deleteMenu.Exec(conn)
-
-						_, err = strconv.Atoi(deleteChoice)
-
-						if err == nil {
-							database.DeleteCharacter(session, user, deleteCharName)
-						} else {
-						}
-					}
 				}
 			}
 		} else {
