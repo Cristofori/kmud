@@ -15,9 +15,9 @@ func login(session *mgo.Session, conn net.Conn) string {
 	for {
 		line := utils.GetUserInput(conn, "Username: ")
 
-        if line == "" {
-            return ""
-        }
+		if line == "" {
+			return ""
+		}
 
 		found, err := database.FindUser(session, line)
 		utils.PanicIfError(err)
@@ -55,9 +55,9 @@ func newCharacter(session *mgo.Session, conn net.Conn, user string) string {
 	for {
 		line := utils.GetUserInput(conn, "Desired character name: ")
 
-        if line == "" {
-            return ""
-        }
+		if line == "" {
+			return ""
+		}
 
 		err := database.NewCharacter(session, user, line)
 

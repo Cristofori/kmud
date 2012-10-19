@@ -48,11 +48,10 @@ const (
 
 // DB commands
 const (
-    SET  = "$set"
-    PUSH = "$push"
-    PULL = "$pull"
+	SET  = "$set"
+	PUSH = "$push"
+	PULL = "$pull"
 )
-
 
 func FindUser(session *mgo.Session, name string) (bool, error) {
 	c := getCollection(session, cUsers)
