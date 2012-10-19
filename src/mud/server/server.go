@@ -55,6 +55,10 @@ func newCharacter(session *mgo.Session, conn net.Conn, user string) string {
 	for {
 		line := utils.GetUserInput(conn, "Desired character name: ")
 
+        if line == "" {
+            return ""
+        }
+
 		err := database.NewCharacter(session, user, line)
 
 		if err == nil {
