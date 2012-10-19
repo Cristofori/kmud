@@ -181,7 +181,7 @@ func GenerateDefaultMap(session *mgo.Session) {
 
 	c.Insert(bson.M{fId: "1",
 		fTitle: "The Void",
-		fDescription: "You are floating in the blackness of space. Complete darkness surrounds" +
+		fDescription: "You are floating in the blackness of space. Complete darkness surrounds " +
 			"you in all directions. There is no escape, there is no hope, just the emptiness. " +
 			"You are likely to be eaten by a grue."})
 }
