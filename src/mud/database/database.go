@@ -44,6 +44,12 @@ const (
 	fRoom        = "room"
 	fTitle       = "title"
 	fDescription = "description"
+	fNorth       = "exit_north"
+	fEast        = "exit_east"
+	fSouth       = "exit_south"
+	fWest        = "exit_west"
+	fUp          = "exit_up"
+	fDown        = "exit_down"
 )
 
 // DB commands
@@ -122,8 +128,8 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 	c := getCollection(session, cCharacters)
 	q := c.Find(bson.M{fName: character})
 
-	result := map[string]string{}
-	err := q.One(&result)
+	charResult := map[string]string{}
+	err := q.One(&charResult)
 
 	var room Room
 	if err != nil {
@@ -131,7 +137,7 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 	}
 
 	c = getCollection(session, cRooms)
-	q = c.Find(bson.M{fId: result[fRoom]})
+	q = c.Find(bson.M{fId: charResult[fRoom]})
 
 	count, err := q.Count()
 
@@ -144,15 +150,24 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 		q = c.Find(bson.M{fId: "1"})
 	}
 
-	err = q.One(&result)
+	roomResult := map[string]string{}
+	err = q.One(&roomResult)
 
 	if err != nil {
 		return room, err
 	}
 
-	room.Id = result[fId]
-	room.Title = result[fTitle]
-	room.Description = result[fDescription]
+	room.Id = roomResult[fId]
+	room.Title = roomResult[fTitle]
+	room.Description = roomResult[fDescription]
+
+	room.Exits = map[ExitDirection]bool{}
+	room.Exits[DirectionNorth] = roomResult[fNorth] == "true"
+	room.Exits[DirectionEast] = roomResult[fEast] == "true"
+	room.Exits[DirectionSouth] = roomResult[fSouth] == "true"
+	room.Exits[DirectionWest] = roomResult[fWest] == "true"
+	room.Exits[DirectionUp] = roomResult[fUp] == "true"
+	room.Exits[DirectionDown] = roomResult[fDown] == "true"
 
 	return room, nil
 }
@@ -193,14 +208,46 @@ func GenerateDefaultMap(session *mgo.Session) {
 			"You are likely to be eaten by a grue."})
 }
 
-func SetRoomTitle(session *mgo.Session, roomId string, title string) error {
+func SetRoomTitle(session *mgo.Session, room Room, title string) error {
 	c := getCollection(session, cRooms)
-	return c.Update(bson.M{fId: roomId}, bson.M{SET: bson.M{fTitle: title}})
+	return c.Update(bson.M{fId: room.Id}, bson.M{SET: bson.M{fTitle: title}})
 }
 
-func SetRoomDescription(session *mgo.Session, roomId string, description string) error {
+func SetRoomDescription(session *mgo.Session, room Room, description string) error {
 	c := getCollection(session, cRooms)
-	return c.Update(bson.M{fId: roomId}, bson.M{SET: bson.M{fDescription: description}})
+	return c.Update(bson.M{fId: room.Id}, bson.M{SET: bson.M{fDescription: description}})
+}
+
+func directionToFieldName(direction ExitDirection) string {
+	switch direction {
+	case DirectionNorth:
+		return fNorth
+	case DirectionEast:
+		return fEast
+	case DirectionSouth:
+		return fSouth
+	case DirectionWest:
+		return fWest
+	case DirectionUp:
+		return fUp
+	case DirectionDown:
+		return fDown
+	}
+
+	// Wouldn't ever expect DirectionNone to be passed here
+	panic("Unexpected code path")
+}
+
+func SetRoomExitEnabled(session *mgo.Session, room Room, direction ExitDirection, enabled bool) error {
+	c := getCollection(session, cRooms)
+	directionField := directionToFieldName(direction)
+
+	value := "false"
+	if enabled {
+		value = "true"
+	}
+
+	return c.Update(bson.M{fId: room.Id}, bson.M{SET: bson.M{directionField: value}})
 }
 
 // vim: nocindent

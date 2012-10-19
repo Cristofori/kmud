@@ -8,13 +8,11 @@ import (
 	"strings"
 )
 
-func toggleExit(room database.Room, dir database.ExitDirection) {
-}
-
 func getToggleExitMenu(room database.Room) utils.Menu {
 
-	onOrOff := func(on bool) string {
-		if on {
+	onOrOff := func(direction database.ExitDirection) string {
+
+		if room.HasExit(direction) {
 			return "On"
 		}
 
@@ -23,12 +21,12 @@ func getToggleExitMenu(room database.Room) utils.Menu {
 
 	menu := utils.NewMenu("Edit Exits")
 
-	menu.AddAction("n", "[N]orth: "+onOrOff(room.HasExit(database.North)))
-	menu.AddAction("e", "[E]ast: "+onOrOff(room.HasExit(database.East)))
-	menu.AddAction("s", "[S]outh: "+onOrOff(room.HasExit(database.South)))
-	menu.AddAction("w", "[W]est: "+onOrOff(room.HasExit(database.West)))
-	menu.AddAction("u", "[U]p: "+onOrOff(room.HasExit(database.Up)))
-	menu.AddAction("d", "[D]own: "+onOrOff(room.HasExit(database.Down)))
+	menu.AddAction("n", "[N]orth: "+onOrOff(database.DirectionNorth))
+	menu.AddAction("e", "[E]ast: "+onOrOff(database.DirectionEast))
+	menu.AddAction("s", "[S]outh: "+onOrOff(database.DirectionSouth))
+	menu.AddAction("w", "[W]est: "+onOrOff(database.DirectionWest))
+	menu.AddAction("u", "[U]p: "+onOrOff(database.DirectionUp))
+	menu.AddAction("d", "[D]own: "+onOrOff(database.DirectionDown))
 
 	return menu
 }
@@ -60,7 +58,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 
 					if input != "" {
 						room.Title = input
-						database.SetRoomTitle(session, room.Id, input)
+						database.SetRoomTitle(session, room, input)
 					}
 					utils.WriteLine(conn, room.ToString(database.EditMode))
 
@@ -69,35 +67,30 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 
 					if input != "" {
 						room.Description = input
-						database.SetRoomDescription(session, room.Id, input)
+						database.SetRoomDescription(session, room, input)
 					}
 					utils.WriteLine(conn, room.ToString(database.EditMode))
 
 				case "3":
 					for {
-						done := false
 						menu := getToggleExitMenu(room)
 						choice, _ := menu.Exec(conn)
 
-						switch choice {
-						case "n":
-							toggleExit(room, database.North)
-						case "e":
-							toggleExit(room, database.East)
-						case "s":
-							toggleExit(room, database.South)
-						case "w":
-							toggleExit(room, database.West)
-						case "u":
-							toggleExit(room, database.Up)
-						case "d":
-							toggleExit(room, database.Down)
-						case "":
-							done = true
+						toggleExit := func(direction database.ExitDirection) {
+							enable := !room.HasExit(direction)
+							err := database.SetRoomExitEnabled(session, room, direction, !room.HasExit(direction))
+							if err == nil {
+								room.Exits[direction] = enable
+							}
 						}
 
-						if done {
+						if choice == "" {
 							break
+						} else {
+							direction := database.StringToDirection(choice)
+							if direction != database.DirectionNone {
+								toggleExit(direction)
+							}
 						}
 					}
 
@@ -132,19 +125,6 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 			processCommand(input[1:len(input)])
 		} else {
 			switch input {
-			case "n":
-				fallthrough
-			case "e":
-				fallthrough
-			case "s":
-				fallthrough
-			case "w":
-				fallthrough
-			case "u":
-				fallthrough
-			case "d":
-				utils.WriteLine(conn, "You can't go that way")
-
 			case "l":
 				utils.WriteLine(conn, room.ToString(database.ReadMode))
 
@@ -159,14 +139,19 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 			case "quit":
 				fallthrough
 			case "exit":
-				utils.WriteLine(conn, "Goodbye")
+				utils.WriteLine(conn, "Take luck!")
 				conn.Close()
 				panic("User quit")
 
 			default:
 				exit := database.StringToDirection(input)
-				if room.HasExit(exit) {
-					database.SetCharacterRoom(session, character, room.ExitId(exit))
+
+				if exit != database.DirectionNone {
+					if room.HasExit(exit) {
+						utils.WriteLine(conn, "TODO: Implement moving into the next room") // TODO
+					} else {
+						utils.WriteLine(conn, "You can't go that way")
+					}
 				} else {
 					utils.WriteLine(conn, "You can't do that")
 				}

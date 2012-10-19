@@ -5,30 +5,23 @@ import (
 	"strings"
 )
 
-type Exit struct {
-	Id         string
-	Text       string
-	DestRoomId string
-	Direction  ExitDirection
-}
-
 type Room struct {
 	Id          string
 	Title       string
 	Description string
-	Exits       []Exit
+	Exits       map[ExitDirection]bool
 }
 
 type ExitDirection int
 
 const (
-	None  ExitDirection = iota
-	North ExitDirection = iota
-	East  ExitDirection = iota
-	South ExitDirection = iota
-	West  ExitDirection = iota
-	Up    ExitDirection = iota
-	Down  ExitDirection = iota
+	DirectionNone  ExitDirection = iota
+	DirectionNorth ExitDirection = iota
+	DirectionEast  ExitDirection = iota
+	DirectionSouth ExitDirection = iota
+	DirectionWest  ExitDirection = iota
+	DirectionUp    ExitDirection = iota
+	DirectionDown  ExitDirection = iota
 )
 
 type PrintMode int
@@ -37,6 +30,27 @@ const (
 	ReadMode PrintMode = iota
 	EditMode PrintMode = iota
 )
+
+func directionToExitString(direction ExitDirection) string {
+	switch direction {
+	case DirectionNorth:
+		return "[N]orth"
+	case DirectionEast:
+		return "[E]ast"
+	case DirectionSouth:
+		return "[S]outh"
+	case DirectionWest:
+		return "[W]est"
+	case DirectionUp:
+		return "[U]p"
+	case DirectionDown:
+		return "[D]own"
+	case DirectionNone:
+		return "None"
+	}
+
+	panic("Unexpected code path")
+}
 
 func (self *Room) ToString(mode PrintMode) string {
 
@@ -48,57 +62,53 @@ func (self *Room) ToString(mode PrintMode) string {
 	}
 
 	var exitList []string
-	if len(self.Exits) > 0 {
-		for _, exit := range self.Exits {
-			exitList = append(exitList, exit.Text)
+
+	appendIfExists := func(direction ExitDirection) {
+		if self.HasExit(direction) {
+			exitList = append(exitList, directionToExitString(direction))
 		}
-		str = str + strings.Join(exitList, ", ")
-	} else {
-		str = str + "None"
 	}
+
+	appendIfExists(DirectionNorth)
+	appendIfExists(DirectionEast)
+	appendIfExists(DirectionSouth)
+	appendIfExists(DirectionWest)
+	appendIfExists(DirectionUp)
+	appendIfExists(DirectionDown)
+
+	if len(exitList) == 0 {
+		str = str + "None"
+	} else {
+		str = str + strings.Join(exitList, " ")
+	}
+
 	str = str + "\n"
 
 	return str
 }
 
-func (self *Room) GetExit(dir ExitDirection) Exit {
-	for _, exit := range self.Exits {
-		if exit.Direction == dir {
-			return exit
-		}
-	}
-
-	var exit Exit
-	exit.Direction = None
-	return exit
-}
-
-func (self *Room) ExitId(dir ExitDirection) string {
-	return self.GetExit(dir).Id
-}
-
 func (self *Room) HasExit(dir ExitDirection) bool {
-	return self.GetExit(dir).Id != ""
+	return self.Exits[dir] == true
 }
 
 func StringToDirection(str string) ExitDirection {
 	dirStr := strings.ToLower(str)
 	switch dirStr {
 	case "n":
-		return North
+		return DirectionNorth
 	case "s":
-		return South
+		return DirectionSouth
 	case "e":
-		return East
+		return DirectionEast
 	case "w":
-		return West
+		return DirectionWest
 	case "u":
-		return Up
+		return DirectionUp
 	case "d":
-		return Down
+		return DirectionDown
 	}
 
-	return None
+	return DirectionNone
 }
 
 // vim: nocindent
