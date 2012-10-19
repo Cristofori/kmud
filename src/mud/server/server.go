@@ -93,7 +93,7 @@ func userMenu(session *mgo.Session, user string) utils.Menu {
 
 	chars, _ := database.GetUserCharacters(session, user)
 
-	menu := utils.NewMenu(user)
+	menu := utils.NewMenu(utils.FormatName(user))
 	menu.AddAction("l", "[L]ogout")
 	menu.AddAction("a", "[A]dmin")
 	menu.AddAction("n", "[N]ew character")
