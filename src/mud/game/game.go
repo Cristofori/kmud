@@ -145,16 +145,24 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 			case "d":
 				utils.WriteLine(conn, "You can't go that way")
 
+			case "l":
+				utils.WriteLine(conn, room.ToString(database.ReadMode))
+
+			case "i":
+				utils.WriteLine(conn, "You aren't carrying anything")
+
+			case "":
+				fallthrough
+			case "logout":
+				return
+
 			case "quit":
 				fallthrough
 			case "exit":
 				utils.WriteLine(conn, "Goodbye")
 				conn.Close()
 				panic("User quit")
-			case "l":
-				utils.WriteLine(conn, room.ToString(database.ReadMode))
-			case "i":
-				utils.WriteLine(conn, "You aren't carrying anything")
+
 			default:
 				exit := database.StringToDirection(input)
 				if room.HasExit(exit) {

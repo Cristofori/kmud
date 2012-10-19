@@ -95,6 +95,7 @@ func characterMenu(session *mgo.Session, user string) utils.Menu {
 	chars, _ := database.GetUserCharacters(session, user)
 
 	menu := utils.NewMenu("Character Select")
+	menu.AddAction("l", "[L]ogout")
 	menu.AddAction("n", "[N]ew character")
 	if len(chars) > 0 {
 		menu.AddAction("d", "[D]elete character")
@@ -156,6 +157,8 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				user = newUser(session, conn)
 			case "a":
 				utils.WriteLine(conn, "*** Admin menu goes here") // TODO
+			case "":
+				fallthrough
 			case "q":
 				quit(session, conn)
 				return
@@ -164,29 +167,32 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			menu := characterMenu(session, user)
 			choice, charName := menu.Exec(conn)
 
-			_, err := strconv.Atoi(choice)
-
-			if err == nil {
-				character = charName
+			if choice == "" || choice == "l" {
+				user = ""
 			} else {
-				switch choice {
-				case "n":
-					character = newCharacter(session, conn, user)
-				case "d":
-					deleteMenu := deleteMenu(session, user)
-					deleteChoice, deleteCharName := deleteMenu.Exec(conn)
+				_, err := strconv.Atoi(choice)
 
-					_, err = strconv.Atoi(deleteChoice)
+				if err == nil {
+					character = charName
+				} else {
+					switch choice {
+					case "n":
+						character = newCharacter(session, conn, user)
+					case "d":
+						deleteMenu := deleteMenu(session, user)
+						deleteChoice, deleteCharName := deleteMenu.Exec(conn)
 
-					if err == nil {
-						database.DeleteCharacter(session, user, deleteCharName)
-					} else {
+						_, err = strconv.Atoi(deleteChoice)
+
+						if err == nil {
+							database.DeleteCharacter(session, user, deleteCharName)
+						} else {
+						}
 					}
 				}
 			}
 		} else {
 			game.Exec(session, conn, character)
-			user = ""
 			character = ""
 		}
 	}
