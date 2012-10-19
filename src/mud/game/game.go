@@ -133,6 +133,19 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 			processCommand(input[1:len(input)])
 		} else {
 			switch input {
+            case "n":
+                fallthrough
+            case "e":
+                fallthrough
+            case "s":
+                fallthrough
+            case "w":
+                fallthrough
+            case "u":
+                fallthrough
+            case "d":
+                utils.WriteLine(conn, "You can't go that way")
+
 			case "quit":
 				fallthrough
 			case "exit":
