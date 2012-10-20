@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"labix.org/v2/mgo/bson"
 	"strings"
 )
 
@@ -11,8 +12,14 @@ type Coordinate struct {
 	Z int
 }
 
+type Character struct {
+	Id   bson.ObjectId `bson:"_id,omitempty"`
+	Name string
+	Room bson.ObjectId
+}
+
 type Room struct {
-	Id          string `bson:"_id"`
+	Id          bson.ObjectId `bson:"_id,omitempty"`
 	Title       string
 	Description string
 	Location    Coordinate
@@ -22,6 +29,7 @@ type Room struct {
 	ExitWest    bool
 	ExitUp      bool
 	ExitDown    bool
+	Default     bool
 }
 
 type ExitDirection int
@@ -68,7 +76,12 @@ func (self *Room) ToString(mode PrintMode) string {
 
 	var str string
 	if mode == ReadMode {
-		str = fmt.Sprintf("\n >>> %v <<<\n\n %v \n\n Exits: ", self.Title, self.Description)
+		str = fmt.Sprintf("\n >>> %v <<< (%v %v %v)\n\n %v \n\n Exits: ",
+			self.Title,
+			self.Location.X,
+			self.Location.Y,
+			self.Location.Z,
+			self.Description)
 	} else {
 		str = fmt.Sprintf("\n [1] %v \n\n [2] %v \n\n [3] Exits: ", self.Title, self.Description)
 	}

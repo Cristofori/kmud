@@ -1,12 +1,15 @@
 package game
 
 import (
+	"fmt"
 	"labix.org/v2/mgo"
 	"mud/database"
 	"mud/utils"
 	"net"
 	"strings"
 )
+
+func useFmt() { fmt.Printf("") }
 
 func getToggleExitMenu(room database.Room) utils.Menu {
 
@@ -35,6 +38,18 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 
 	room, err := database.GetCharacterRoom(session, character)
 
+	printLine := func(line string) {
+		utils.WriteLine(conn, line)
+	}
+
+	printRoom := func() {
+		printLine(room.ToString(database.ReadMode))
+	}
+
+	printRoomEditor := func() {
+		printLine(room.ToString(database.EditMode))
+	}
+
 	processCommand := func(command string) {
 
 		switch command {
@@ -43,14 +58,14 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 		case "help":
 		case "dig":
 		case "edit":
-			utils.WriteLine(conn, room.ToString(database.EditMode))
+			printRoomEditor()
 
 			for {
 				input := utils.GetUserInput(conn, "Select a section to edit> ")
 
 				switch input {
 				case "":
-					utils.WriteLine(conn, room.ToString(database.ReadMode))
+					printRoom()
 					return
 
 				case "1":
@@ -60,7 +75,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 						room.Title = input
 						database.SetRoomTitle(session, room, input)
 					}
-					utils.WriteLine(conn, room.ToString(database.EditMode))
+					printRoomEditor()
 
 				case "2":
 					input = utils.GetRawUserInput(conn, "Enter new description: ")
@@ -69,7 +84,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 						room.Description = input
 						database.SetRoomDescription(session, room, input)
 					}
-					utils.WriteLine(conn, room.ToString(database.EditMode))
+					printRoomEditor()
 
 				case "3":
 					for {
@@ -92,10 +107,10 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 						}
 					}
 
-					utils.WriteLine(conn, room.ToString(database.EditMode))
+					printRoomEditor()
 
 				default:
-					utils.WriteLine(conn, "Invalid selection")
+					printLine("Invalid selection")
 				}
 			}
 
@@ -105,14 +120,20 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 				database.GenerateDefaultMap(session)
 			}
 			room, err = database.GetCharacterRoom(session, character)
+			printRoom()
+
+		case "loc":
+			fallthrough
+		case "location":
+			printLine(fmt.Sprintf("%v", room.Location))
 
 		default:
-			utils.WriteLine(conn, "Unrecognized command")
+			printLine("Unrecognized command")
 		}
 	}
 
-	utils.WriteLine(conn, "Welcome, "+utils.FormatName(character))
-	utils.WriteLine(conn, room.ToString(database.ReadMode))
+	printLine("Welcome, " + utils.FormatName(character))
+	printRoom()
 
 	for {
 		utils.PanicIfError(err)
@@ -124,10 +145,10 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 		} else {
 			switch input {
 			case "l":
-				utils.WriteLine(conn, room.ToString(database.ReadMode))
+				printRoom()
 
 			case "i":
-				utils.WriteLine(conn, "You aren't carrying anything")
+				printLine("You aren't carrying anything")
 
 			case "":
 				fallthrough
@@ -137,21 +158,28 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 			case "quit":
 				fallthrough
 			case "exit":
-				utils.WriteLine(conn, "Take luck!")
+				printLine("Take luck!")
 				conn.Close()
 				panic("User quit")
 
 			default:
-				exit := database.StringToDirection(input)
+				direction := database.StringToDirection(input)
 
-				if exit != database.DirectionNone {
-					if room.HasExit(exit) {
-						utils.WriteLine(conn, "TODO: Implement moving into the next room") // TODO
+				if direction != database.DirectionNone {
+					if room.HasExit(direction) {
+						newRoom, err := database.MoveCharacter(session, character, direction)
+						if err == nil {
+							room = newRoom
+							printRoom()
+						} else {
+							printLine(err.Error())
+						}
+
 					} else {
-						utils.WriteLine(conn, "You can't go that way")
+						printLine("You can't go that way")
 					}
 				} else {
-					utils.WriteLine(conn, "You can't do that")
+					printLine("You can't do that")
 				}
 			}
 		}

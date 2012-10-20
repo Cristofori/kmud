@@ -127,6 +127,12 @@ func deleteMenu(session *mgo.Session, user string) utils.Menu {
 	return menu
 }
 
+func adminMenu(session *mgo.Session) utils.Menu {
+	menu := utils.NewMenu("Admin")
+	menu.AddAction("r", "[R]ebuild")
+	return menu
+}
+
 func handleConnection(session *mgo.Session, conn net.Conn) {
 
 	defer conn.Close()
@@ -171,7 +177,11 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			case "l":
 				user = ""
 			case "a":
-				utils.WriteLine(conn, "*** Admin menu goes here") // TODO
+				adminMenu := adminMenu(session)
+				choice, _ := adminMenu.Exec(conn)
+				if choice == "r" {
+					database.GenerateDefaultMap(session)
+				}
 			case "n":
 				character = newCharacter(session, conn, user)
 			case "d":

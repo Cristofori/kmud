@@ -7,8 +7,6 @@ import (
 	"mud/utils"
 )
 
-func useFmt() { fmt.Printf("") }
-
 type dbError struct {
 	message string
 }
@@ -42,6 +40,7 @@ const (
 	fName        = "name"
 	fCharacters  = "characters"
 	fRoom        = "room"
+	fLocation    = "location"
 	fTitle       = "title"
 	fDescription = "description"
 	fNorth       = "exit_north"
@@ -50,6 +49,7 @@ const (
 	fWest        = "exit_west"
 	fUp          = "exit_up"
 	fDown        = "exit_down"
+	fDefault     = "default"
 )
 
 // DB commands
@@ -124,20 +124,20 @@ func NewCharacter(session *mgo.Session, user string, character string) error {
 	return nil
 }
 
-func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
-	c := getCollection(session, cCharacters)
-	q := c.Find(bson.M{fName: character})
+func GetCharacterRoom(session *mgo.Session, charName string) (Room, error) {
+	charCollection := getCollection(session, cCharacters)
+	q := charCollection.Find(bson.M{fName: charName})
 
-	charResult := map[string]string{}
-	err := q.One(&charResult)
+	var character Character
+	err := q.One(&character)
 
 	var room Room
 	if err != nil {
 		return room, err
 	}
 
-	c = getCollection(session, cRooms)
-	q = c.Find(bson.M{fId: charResult[fRoom]})
+	roomCollection := getCollection(session, cRooms)
+	q = roomCollection.Find(bson.M{fId: character.Room})
 
 	count, err := q.Count()
 
@@ -146,8 +146,31 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 	}
 
 	if count == 0 {
-		SetCharacterRoom(session, character, "1")
-		q = c.Find(bson.M{fId: "1"})
+		room, err = StartingRoom(session)
+
+		if err == nil {
+			SetCharacterRoom(session, charName, room.Id)
+		}
+	} else {
+		err = q.One(&room)
+	}
+
+	return room, err
+}
+
+func GetRoomByLocation(session *mgo.Session, location Coordinate) (Room, error) {
+	c := getCollection(session, cRooms)
+	q := c.Find(bson.M{fLocation: location})
+
+	count, err := q.Count()
+
+	var room Room
+	if err != nil {
+		return room, err
+	}
+
+	if count == 0 {
+		return room, newDbError("Room not found")
 	}
 
 	err = q.One(&room)
@@ -155,9 +178,29 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 	return room, err
 }
 
-func SetCharacterRoom(session *mgo.Session, character string, roomId string) error {
+func CreateRoom(session *mgo.Session, room Room) (bson.ObjectId, error) {
+	c := getCollection(session, cRooms)
+	err := c.Insert(room)
+
+	if err != nil {
+		fmt.Printf("Error creating room: %v\n", err)
+		return "", err
+	}
+
+	room, err = GetRoomByLocation(session, room.Location)
+
+	return room.Id, err
+}
+
+func SetCharacterRoom(session *mgo.Session, character string, roomId bson.ObjectId) error {
 	c := getCollection(session, cCharacters)
-	return c.Update(bson.M{fName: character}, bson.M{SET: bson.M{fRoom: roomId}})
+	err := c.Update(bson.M{fName: character}, bson.M{SET: bson.M{fRoom: roomId}})
+
+	if err != nil {
+		fmt.Printf("Failed setting character room :%v\n", err)
+	}
+
+	return err
 }
 
 func GetUserCharacters(session *mgo.Session, name string) ([]string, error) {
@@ -180,12 +223,9 @@ func DeleteCharacter(session *mgo.Session, user string, character string) error 
 	return nil
 }
 
-func GenerateDefaultMap(session *mgo.Session) {
-	c := getCollection(session, cRooms)
-	c.DropCollection()
-
+func defaultRoom() Room {
 	var room Room
-	room.Id = "1"
+	room.Id = ""
 	room.Title = "The Void"
 	room.Description = "You are floating in the blackness of space. Complete darkness surrounds " +
 		"you in all directions. There is no escape, there is no hope, just the emptiness. " +
@@ -200,7 +240,44 @@ func GenerateDefaultMap(session *mgo.Session) {
 
 	room.Location = Coordinate{0, 0, 0}
 
-	c.Insert(room)
+	room.Default = false
+
+	return room
+}
+
+func StartingRoom(session *mgo.Session) (Room, error) {
+	c := getCollection(session, cRooms)
+	q := c.Find(bson.M{fDefault: true})
+
+	count, err := q.Count()
+
+	var room Room
+	if err != nil {
+		return room, err
+	}
+
+	if count == 0 {
+		return room, newDbError("No default room found")
+	}
+
+	if count > 1 {
+		fmt.Printf("Warning: More than one default room found\n")
+	}
+
+	err = q.One(&room)
+
+	return room, err
+}
+
+func GenerateDefaultMap(session *mgo.Session) {
+	c := getCollection(session, cRooms)
+	c.DropCollection()
+
+	room := defaultRoom()
+	room.Location = Coordinate{0, 0, 0}
+	room.Default = true
+
+	CreateRoom(session, room)
 }
 
 func SetRoomTitle(session *mgo.Session, room Room, title string) error {
@@ -233,15 +310,72 @@ func directionToFieldName(direction ExitDirection) string {
 	panic("Unexpected code path")
 }
 
-func SetRoomExitEnabled(session *mgo.Session, room Room, direction ExitDirection, enabled bool) error {
-	c := getCollection(session, cRooms)
-	directionField := directionToFieldName(direction)
-	return c.Update(bson.M{fId: room.Id}, bson.M{SET: bson.M{directionField: enabled}})
-}
-
 func CommitRoom(session *mgo.Session, room Room) error {
 	c := getCollection(session, cRooms)
 	return c.Update(bson.M{fId: room.Id}, room)
+}
+
+func MoveCharacter(session *mgo.Session, character string, direction ExitDirection) (Room, error) {
+	room, err := GetCharacterRoom(session, character)
+
+	if err != nil {
+		return room, err
+	}
+
+	newLocation := room.Location
+
+	switch direction {
+	case DirectionNorth:
+		newLocation.Y -= 1
+	case DirectionEast:
+		newLocation.X += 1
+	case DirectionSouth:
+		newLocation.Y += 1
+	case DirectionWest:
+		newLocation.X -= 1
+	case DirectionUp:
+		newLocation.Z -= 1
+	case DirectionDown:
+		newLocation.Z += 1
+	default:
+		panic("Unexpected code path")
+	}
+
+	newRoom, err := GetRoomByLocation(session, newLocation)
+	var newRoomId bson.ObjectId
+
+	if err == nil {
+		newRoomId = newRoom.Id
+	} else {
+		fmt.Printf("No room found at location %v, creating a new one\n", newLocation)
+		newRoom = defaultRoom()
+
+		switch direction {
+		case DirectionNorth:
+			newRoom.ExitSouth = true
+		case DirectionEast:
+			newRoom.ExitWest = true
+		case DirectionSouth:
+			newRoom.ExitNorth = true
+		case DirectionWest:
+			newRoom.ExitEast = true
+		case DirectionUp:
+			newRoom.ExitDown = true
+		case DirectionDown:
+			newRoom.ExitUp = true
+		default:
+			panic("Unexpected code path")
+		}
+
+		newRoom.Location = newLocation
+		newRoomId, err = CreateRoom(session, newRoom)
+	}
+
+	if err == nil {
+		err = SetCharacterRoom(session, character, newRoomId)
+	}
+
+	return newRoom, err
 }
 
 // vim: nocindent
