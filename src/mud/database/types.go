@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"labix.org/v2/mgo/bson"
+	"mud/utils"
 	"strings"
 )
 
@@ -13,9 +14,18 @@ type Coordinate struct {
 }
 
 type Character struct {
-	Id   bson.ObjectId `bson:"_id,omitempty"`
-	Name string
-	Room bson.ObjectId
+	Id     bson.ObjectId `bson:"_id,omitempty"`
+	Name   string
+	RoomId bson.ObjectId `bson:"roomid,omitempty"`
+}
+
+func newCharacter(name string) Character {
+	var character Character
+	character.Id = ""
+	character.Name = name
+	character.RoomId = ""
+	return character
+
 }
 
 type Room struct {
@@ -30,6 +40,28 @@ type Room struct {
 	ExitUp      bool
 	ExitDown    bool
 	Default     bool
+}
+
+func newRoom() Room {
+	var room Room
+	room.Id = ""
+	room.Title = "The Void"
+	room.Description = "You are floating in the blackness of space. Complete darkness surrounds " +
+		"you in all directions. There is no escape, there is no hope, just the emptiness. " +
+		"You are likely to be eaten by a grue."
+
+	room.ExitNorth = false
+	room.ExitEast = false
+	room.ExitSouth = false
+	room.ExitWest = false
+	room.ExitUp = false
+	room.ExitDown = false
+
+	room.Location = Coordinate{0, 0, 0}
+
+	room.Default = false
+
+	return room
 }
 
 type ExitDirection int
@@ -146,6 +178,10 @@ func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
 	case DirectionDown:
 		self.ExitDown = enabled
 	}
+}
+
+func (self *Character) PrettyName() string {
+	return utils.FormatName(self.Name)
 }
 
 func StringToDirection(str string) ExitDirection {

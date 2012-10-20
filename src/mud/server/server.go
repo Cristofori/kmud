@@ -50,26 +50,20 @@ func newUser(session *mgo.Session, conn net.Conn) string {
 	return ""
 }
 
-func newCharacter(session *mgo.Session, conn net.Conn, user string) string {
+func newCharacter(session *mgo.Session, conn net.Conn, user string) (database.Character, error) {
 	// TODO: character slot limit
 	for {
 		line := utils.GetUserInput(conn, "Desired character name: ")
 
 		if line == "" {
-			return ""
+			return database.Character{}, nil
 		}
 
-		err := database.NewCharacter(session, user, line)
-
-		if err == nil {
-			return line
-		}
-
-		utils.WriteLine(conn, err.Error())
+		return database.CreateCharacter(session, user, line)
 	}
 
 	panic("Unexpected code path")
-	return ""
+	return database.Character{}, nil
 }
 
 func quit(session *mgo.Session, conn net.Conn) error {
@@ -103,12 +97,11 @@ func userMenu(session *mgo.Session, user string) utils.Menu {
 
 	for i, char := range chars {
 		indexStr := strconv.Itoa(i + 1)
-		actionText := fmt.Sprintf("[%v]%v", indexStr, utils.FormatName(char))
-		menu.AddActionData(indexStr, actionText, char)
+		actionText := fmt.Sprintf("[%v]%v", indexStr, char.PrettyName())
+		menu.AddActionData(indexStr, actionText, char.Name)
 	}
 
 	return menu
-
 }
 
 func deleteMenu(session *mgo.Session, user string) utils.Menu {
@@ -120,8 +113,8 @@ func deleteMenu(session *mgo.Session, user string) utils.Menu {
 
 	for i, char := range chars {
 		indexStr := strconv.Itoa(i + 1)
-		actionText := fmt.Sprintf("[%v]%v", indexStr, utils.FormatName(char))
-		menu.AddActionData(indexStr, actionText, char)
+		actionText := fmt.Sprintf("[%v]%v", indexStr, char.Name)
+		menu.AddActionData(indexStr, actionText, char.Name)
 	}
 
 	return menu
@@ -139,13 +132,13 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer session.Close()
 
 	user := ""
-	character := ""
+	var character database.Character
 
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
 				utils.FormatName(user),
-				utils.FormatName(character),
+				utils.FormatName(character.Name),
 				conn.RemoteAddr(),
 				r)
 		}
@@ -167,7 +160,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				quit(session, conn)
 				return
 			}
-		} else if character == "" {
+		} else if character.Name == "" {
 			menu := userMenu(session, user)
 			choice, charName := menu.Exec(conn)
 
@@ -183,7 +176,11 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 					database.GenerateDefaultMap(session)
 				}
 			case "n":
-				character = newCharacter(session, conn, user)
+				var err error
+				character, err = newCharacter(session, conn, user)
+				if err != nil {
+					utils.WriteLine(conn, err.Error())
+				}
 			case "d":
 				deleteMenu := deleteMenu(session, user)
 				deleteChoice, deleteCharName := deleteMenu.Exec(conn)
@@ -198,12 +195,12 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				_, err := strconv.Atoi(choice)
 
 				if err == nil {
-					character = charName
+					character, _ = database.GetCharacterByName(session, charName)
 				}
 			}
 		} else {
 			game.Exec(session, conn, character)
-			character = ""
+			character = database.Character{}
 		}
 	}
 }

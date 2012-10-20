@@ -72,19 +72,6 @@ func FindUser(session *mgo.Session, name string) (bool, error) {
 	return count > 0, nil
 }
 
-func FindCharacter(session *mgo.Session, name string) (bool, error) {
-	c := getCollection(session, cCharacters)
-	q := c.Find(bson.M{fName: name})
-
-	count, err := q.Count()
-
-	if err != nil {
-		return false, err
-	}
-
-	return count > 0, nil
-}
-
 func NewUser(session *mgo.Session, name string) error {
 
 	found, err := FindUser(session, name)
@@ -103,64 +90,13 @@ func NewUser(session *mgo.Session, name string) error {
 	return nil
 }
 
-func NewCharacter(session *mgo.Session, user string, character string) error {
-
-	found, err := FindCharacter(session, character)
-
-	if err != nil {
-		return err
-	}
-
-	if found {
-		return newDbError("That character already exists")
-	}
-
-	c := getCollection(session, cUsers)
-	c.Update(bson.M{fName: user}, bson.M{PUSH: bson.M{fCharacters: character}})
-
-	c = getCollection(session, cCharacters)
-	c.Insert(bson.M{fName: character})
-
-	return nil
+func GetCharacterRoom(session *mgo.Session, character Character) (Room, error) {
+	return GetRoom(session, character.RoomId)
 }
 
-func GetCharacterRoom(session *mgo.Session, charName string) (Room, error) {
-	charCollection := getCollection(session, cCharacters)
-	q := charCollection.Find(bson.M{fName: charName})
-
-	var character Character
-	err := q.One(&character)
-
-	var room Room
-	if err != nil {
-		return room, err
-	}
-
-	roomCollection := getCollection(session, cRooms)
-	q = roomCollection.Find(bson.M{fId: character.Room})
-
-	count, err := q.Count()
-
-	if err != nil {
-		return room, err
-	}
-
-	if count == 0 {
-		room, err = StartingRoom(session)
-
-		if err == nil {
-			SetCharacterRoom(session, charName, room.Id)
-		}
-	} else {
-		err = q.One(&room)
-	}
-
-	return room, err
-}
-
-func GetRoomByLocation(session *mgo.Session, location Coordinate) (Room, error) {
+func FindRoom(session *mgo.Session, query interface{}) (Room, error) {
 	c := getCollection(session, cRooms)
-	q := c.Find(bson.M{fLocation: location})
+	q := c.Find(query)
 
 	count, err := q.Count()
 
@@ -170,7 +106,7 @@ func GetRoomByLocation(session *mgo.Session, location Coordinate) (Room, error) 
 	}
 
 	if count == 0 {
-		return room, newDbError("Room not found")
+		return room, newDbError(fmt.Sprintf("Room not found, query: %v", query))
 	}
 
 	err = q.One(&room)
@@ -178,18 +114,100 @@ func GetRoomByLocation(session *mgo.Session, location Coordinate) (Room, error) 
 	return room, err
 }
 
-func CreateRoom(session *mgo.Session, room Room) (bson.ObjectId, error) {
+func FindCharacter(session *mgo.Session, query interface{}) (Character, error) {
+	c := getCollection(session, cCharacters)
+	q := c.Find(query)
+
+	count, err := q.Count()
+
+	var character Character
+	if err != nil {
+		return character, err
+	}
+
+	if count == 0 {
+		return character, newDbError(fmt.Sprintf("Character not found, query: %v", query))
+	}
+
+	err = q.One(&character)
+
+	return character, err
+}
+
+func GetCharacter(session *mgo.Session, id bson.ObjectId) (Character, error) {
+	return FindCharacter(session, bson.M{fId: id})
+}
+
+func GetCharacterByName(session *mgo.Session, name string) (Character, error) {
+	return FindCharacter(session, bson.M{fName: name})
+}
+
+func GetRoom(session *mgo.Session, id bson.ObjectId) (Room, error) {
+	return FindRoom(session, bson.M{fId: id})
+}
+
+func GetRoomByLocation(session *mgo.Session, location Coordinate) (Room, error) {
+	return FindRoom(session, bson.M{fLocation: location})
+}
+
+func CreateRoom(session *mgo.Session, room Room) (Room, error) {
 	c := getCollection(session, cRooms)
 	err := c.Insert(room)
 
 	if err != nil {
 		fmt.Printf("Error creating room: %v\n", err)
-		return "", err
+		return room, err
 	}
 
 	room, err = GetRoomByLocation(session, room.Location)
 
-	return room.Id, err
+	return room, err
+}
+
+func CreateCharacter(session *mgo.Session, userName string, characterName string) (Character, error) {
+	character, err := GetCharacterByName(session, characterName)
+
+	if err == nil {
+		return character, newDbError("That character already exists")
+	}
+
+	character = newCharacter(characterName)
+
+	characterCollection := getCollection(session, cCharacters)
+	err = characterCollection.Insert(character)
+
+	if err != nil {
+		fmt.Printf("Error inserting new character object into database: %v\n", err)
+		return character, err
+	}
+
+	character, err = GetCharacterByName(session, character.Name)
+
+	startingRoom, err := StartingRoom(session)
+
+	if err != nil {
+		fmt.Printf("Error getting starting room: %v\n", err)
+		return character, err
+	}
+
+	character.RoomId = startingRoom.Id
+	err = CommitCharacter(session, character)
+
+	if err != nil {
+		fmt.Printf("Error committing character object: %v\n", err)
+		return character, err
+	}
+
+	if err == nil {
+		userCollection := getCollection(session, cUsers)
+		err = userCollection.Update(bson.M{fName: userName}, bson.M{PUSH: bson.M{fCharacters: character.Id}})
+
+		if err != nil {
+			fmt.Printf("Error updating user with new character data: %v\n", err)
+		}
+	}
+
+	return character, err
 }
 
 func SetCharacterRoom(session *mgo.Session, character string, roomId bson.ObjectId) error {
@@ -203,14 +221,25 @@ func SetCharacterRoom(session *mgo.Session, character string, roomId bson.Object
 	return err
 }
 
-func GetUserCharacters(session *mgo.Session, name string) ([]string, error) {
+func GetUserCharacters(session *mgo.Session, userName string) ([]Character, error) {
 	c := getCollection(session, cUsers)
-	q := c.Find(bson.M{fName: name})
+	q := c.Find(bson.M{fName: userName})
 
-	result := map[string][]string{}
+	result := map[string][]bson.ObjectId{}
 	err := q.One(&result)
 
-	return result[fCharacters], err
+	var characters []Character
+	for _, charId := range result[fCharacters] {
+		character, err := GetCharacter(session, charId)
+
+		if err != nil {
+			fmt.Printf("Failed to find character with id %s, belonging to user %s: %s\n", charId, userName, err)
+		} else {
+			characters = append(characters, character)
+		}
+	}
+
+	return characters, err
 }
 
 func DeleteCharacter(session *mgo.Session, user string, character string) error {
@@ -221,28 +250,6 @@ func DeleteCharacter(session *mgo.Session, user string, character string) error 
 	c.Remove(bson.M{fName: character})
 
 	return nil
-}
-
-func defaultRoom() Room {
-	var room Room
-	room.Id = ""
-	room.Title = "The Void"
-	room.Description = "You are floating in the blackness of space. Complete darkness surrounds " +
-		"you in all directions. There is no escape, there is no hope, just the emptiness. " +
-		"You are likely to be eaten by a grue."
-
-	room.ExitNorth = false
-	room.ExitEast = false
-	room.ExitSouth = false
-	room.ExitWest = false
-	room.ExitUp = false
-	room.ExitDown = false
-
-	room.Location = Coordinate{0, 0, 0}
-
-	room.Default = false
-
-	return room
 }
 
 func StartingRoom(session *mgo.Session) (Room, error) {
@@ -273,7 +280,7 @@ func GenerateDefaultMap(session *mgo.Session) {
 	c := getCollection(session, cRooms)
 	c.DropCollection()
 
-	room := defaultRoom()
+	room := newRoom()
 	room.Location = Coordinate{0, 0, 0}
 	room.Default = true
 
@@ -315,8 +322,13 @@ func CommitRoom(session *mgo.Session, room Room) error {
 	return c.Update(bson.M{fId: room.Id}, room)
 }
 
-func MoveCharacter(session *mgo.Session, character string, direction ExitDirection) (Room, error) {
-	room, err := GetCharacterRoom(session, character)
+func CommitCharacter(session *mgo.Session, character Character) error {
+	c := getCollection(session, cCharacters)
+	return c.Update(bson.M{fId: character.Id}, character)
+}
+
+func MoveCharacter(session *mgo.Session, character *Character, direction ExitDirection) (Room, error) {
+	room, err := GetRoom(session, character.RoomId)
 
 	if err != nil {
 		return room, err
@@ -341,41 +353,37 @@ func MoveCharacter(session *mgo.Session, character string, direction ExitDirecti
 		panic("Unexpected code path")
 	}
 
-	newRoom, err := GetRoomByLocation(session, newLocation)
-	var newRoomId bson.ObjectId
+	room, err = GetRoomByLocation(session, newLocation)
 
-	if err == nil {
-		newRoomId = newRoom.Id
-	} else {
+	if err != nil {
 		fmt.Printf("No room found at location %v, creating a new one\n", newLocation)
-		newRoom = defaultRoom()
+		room = newRoom()
 
 		switch direction {
 		case DirectionNorth:
-			newRoom.ExitSouth = true
+			room.ExitSouth = true
 		case DirectionEast:
-			newRoom.ExitWest = true
+			room.ExitWest = true
 		case DirectionSouth:
-			newRoom.ExitNorth = true
+			room.ExitNorth = true
 		case DirectionWest:
-			newRoom.ExitEast = true
+			room.ExitEast = true
 		case DirectionUp:
-			newRoom.ExitDown = true
+			room.ExitDown = true
 		case DirectionDown:
-			newRoom.ExitUp = true
+			room.ExitUp = true
 		default:
 			panic("Unexpected code path")
 		}
 
-		newRoom.Location = newLocation
-		newRoomId, err = CreateRoom(session, newRoom)
+		room.Location = newLocation
+		room, err = CreateRoom(session, room)
+	} else {
+		character.RoomId = room.Id
+		err = CommitCharacter(session, *character)
 	}
 
-	if err == nil {
-		err = SetCharacterRoom(session, character, newRoomId)
-	}
-
-	return newRoom, err
+	return room, err
 }
 
 // vim: nocindent

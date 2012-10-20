@@ -34,7 +34,7 @@ func getToggleExitMenu(room database.Room) utils.Menu {
 	return menu
 }
 
-func Exec(session *mgo.Session, conn net.Conn, character string) {
+func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 
 	room, err := database.GetCharacterRoom(session, character)
 
@@ -132,7 +132,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 		}
 	}
 
-	printLine("Welcome, " + utils.FormatName(character))
+	printLine("Welcome, " + utils.FormatName(character.Name))
 	printRoom()
 
 	for {
@@ -167,7 +167,7 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 
 				if direction != database.DirectionNone {
 					if room.HasExit(direction) {
-						newRoom, err := database.MoveCharacter(session, character, direction)
+						newRoom, err := database.MoveCharacter(session, &character, direction)
 						if err == nil {
 							room = newRoom
 							printRoom()
