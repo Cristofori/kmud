@@ -78,10 +78,8 @@ func Exec(session *mgo.Session, conn net.Conn, character string) {
 
 						toggleExit := func(direction database.ExitDirection) {
 							enable := !room.HasExit(direction)
-							err := database.SetRoomExitEnabled(session, room, direction, !room.HasExit(direction))
-							if err == nil {
-								room.Exits[direction] = enable
-							}
+							room.SetExitEnabled(direction, enable)
+							database.CommitRoom(session, room)
 						}
 
 						if choice == "" {

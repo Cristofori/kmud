@@ -150,26 +150,9 @@ func GetCharacterRoom(session *mgo.Session, character string) (Room, error) {
 		q = c.Find(bson.M{fId: "1"})
 	}
 
-	roomResult := map[string]string{}
-	err = q.One(&roomResult)
+	err = q.One(&room)
 
-	if err != nil {
-		return room, err
-	}
-
-	room.Id = roomResult[fId]
-	room.Title = roomResult[fTitle]
-	room.Description = roomResult[fDescription]
-
-	room.Exits = map[ExitDirection]bool{}
-	room.Exits[DirectionNorth] = roomResult[fNorth] == "true"
-	room.Exits[DirectionEast] = roomResult[fEast] == "true"
-	room.Exits[DirectionSouth] = roomResult[fSouth] == "true"
-	room.Exits[DirectionWest] = roomResult[fWest] == "true"
-	room.Exits[DirectionUp] = roomResult[fUp] == "true"
-	room.Exits[DirectionDown] = roomResult[fDown] == "true"
-
-	return room, nil
+	return room, err
 }
 
 func SetCharacterRoom(session *mgo.Session, character string, roomId string) error {
@@ -201,11 +184,23 @@ func GenerateDefaultMap(session *mgo.Session) {
 	c := getCollection(session, cRooms)
 	c.DropCollection()
 
-	c.Insert(bson.M{fId: "1",
-		fTitle: "The Void",
-		fDescription: "You are floating in the blackness of space. Complete darkness surrounds " +
-			"you in all directions. There is no escape, there is no hope, just the emptiness. " +
-			"You are likely to be eaten by a grue."})
+	var room Room
+	room.Id = "1"
+	room.Title = "The Void"
+	room.Description = "You are floating in the blackness of space. Complete darkness surrounds " +
+		"you in all directions. There is no escape, there is no hope, just the emptiness. " +
+		"You are likely to be eaten by a grue."
+
+	room.ExitNorth = false
+	room.ExitEast = false
+	room.ExitSouth = false
+	room.ExitWest = false
+	room.ExitUp = false
+	room.ExitDown = false
+
+	room.Location = Coordinate{0, 0, 0}
+
+	c.Insert(room)
 }
 
 func SetRoomTitle(session *mgo.Session, room Room, title string) error {
@@ -241,13 +236,12 @@ func directionToFieldName(direction ExitDirection) string {
 func SetRoomExitEnabled(session *mgo.Session, room Room, direction ExitDirection, enabled bool) error {
 	c := getCollection(session, cRooms)
 	directionField := directionToFieldName(direction)
+	return c.Update(bson.M{fId: room.Id}, bson.M{SET: bson.M{directionField: enabled}})
+}
 
-	value := "false"
-	if enabled {
-		value = "true"
-	}
-
-	return c.Update(bson.M{fId: room.Id}, bson.M{SET: bson.M{directionField: value}})
+func CommitRoom(session *mgo.Session, room Room) error {
+	c := getCollection(session, cRooms)
+	return c.Update(bson.M{fId: room.Id}, room)
 }
 
 // vim: nocindent

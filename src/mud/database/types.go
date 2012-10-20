@@ -5,11 +5,23 @@ import (
 	"strings"
 )
 
+type Coordinate struct {
+	X int
+	Y int
+	Z int
+}
+
 type Room struct {
-	Id          string
+	Id          string `bson:"_id"`
 	Title       string
 	Description string
-	Exits       map[ExitDirection]bool
+	Location    Coordinate
+	ExitNorth   bool
+	ExitEast    bool
+	ExitSouth   bool
+	ExitWest    bool
+	ExitUp      bool
+	ExitDown    bool
 }
 
 type ExitDirection int
@@ -88,7 +100,39 @@ func (self *Room) ToString(mode PrintMode) string {
 }
 
 func (self *Room) HasExit(dir ExitDirection) bool {
-	return self.Exits[dir] == true
+	switch dir {
+	case DirectionNorth:
+		return self.ExitNorth
+	case DirectionEast:
+		return self.ExitEast
+	case DirectionSouth:
+		return self.ExitSouth
+	case DirectionWest:
+		return self.ExitWest
+	case DirectionUp:
+		return self.ExitUp
+	case DirectionDown:
+		return self.ExitDown
+	}
+
+	panic("Unexpected code path")
+}
+
+func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
+	switch dir {
+	case DirectionNorth:
+		self.ExitNorth = enabled
+	case DirectionEast:
+		self.ExitEast = enabled
+	case DirectionSouth:
+		self.ExitSouth = enabled
+	case DirectionWest:
+		self.ExitWest = enabled
+	case DirectionUp:
+		self.ExitUp = enabled
+	case DirectionDown:
+		self.ExitDown = enabled
+	}
 }
 
 func StringToDirection(str string) ExitDirection {
