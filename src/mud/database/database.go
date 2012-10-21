@@ -36,12 +36,12 @@ const (
 
 // Field names
 const (
-	fId          = "_id"
-	fName        = "name"
-	fCharacters  = "characters"
-	fRoom        = "room"
-	fLocation    = "location"
-	fDefault     = "default"
+	fId         = "_id"
+	fName       = "name"
+	fCharacters = "characters"
+	fRoom       = "room"
+	fLocation   = "location"
+	fDefault    = "default"
 )
 
 // DB commands
