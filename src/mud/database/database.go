@@ -115,57 +115,12 @@ func GetRoomByLocation(session *mgo.Session, location Coordinate) (Room, error) 
 	return findRoom(session, bson.M{fLocation: location})
 }
 
-func CreateUser(session *mgo.Session, name string) (User, error) {
-	user, err := findUser(session, name)
-
-	if err == nil {
-		return user, newDbError("That user already exists")
-	}
-
-	user = newUser(name)
-
-	c := getCollection(session, cUsers)
-	err = c.Insert(user)
-
-	if err == nil {
-		user, err = GetUserByName(session, user.Name)
-	}
-
-	return user, err
-}
-
-func CreateRoom(session *mgo.Session, room Room) (Room, error) {
-	c := getCollection(session, cRooms)
-	err := c.Insert(room)
-
-	if err != nil {
-		fmt.Printf("Error creating room: %v\n", err)
-		return room, err
-	}
-
-	room, err = GetRoomByLocation(session, room.Location)
-
-	return room, err
-}
-
 func CreateCharacter(session *mgo.Session, user *User, characterName string) (Character, error) {
 	character, err := GetCharacterByName(session, characterName)
 
 	if err == nil {
 		return character, newDbError("That character already exists")
 	}
-
-	character = newCharacter(characterName)
-
-	characterCollection := getCollection(session, cCharacters)
-	err = characterCollection.Insert(character)
-
-	if err != nil {
-		fmt.Printf("Error inserting new character object into database: %v\n", err)
-		return character, err
-	}
-
-	character, err = GetCharacterByName(session, character.Name)
 
 	startingRoom, err := StartingRoom(session)
 
@@ -174,11 +129,13 @@ func CreateCharacter(session *mgo.Session, user *User, characterName string) (Ch
 		return character, err
 	}
 
+	character = newCharacter(characterName)
 	character.RoomId = startingRoom.Id
+
 	err = CommitCharacter(session, character)
 
 	if err != nil {
-		fmt.Printf("Error committing character object: %v\n", err)
+		fmt.Printf("Error inserting new character object into database: %v\n", err)
 		return character, err
 	}
 
@@ -271,22 +228,37 @@ func GenerateDefaultMap(session *mgo.Session) {
 	room.Location = Coordinate{0, 0, 0}
 	room.Default = true
 
-	CreateRoom(session, room)
+	CommitRoom(session, room)
+}
+
+func CreateUser(session *mgo.Session, name string) (User, error) {
+	user, err := findUser(session, bson.M{fName: name})
+
+	if err == nil {
+		return user, newDbError("That user already exists")
+	}
+
+	user = newUser(name)
+	err = CommitUser(session, user)
+	return user, err
 }
 
 func CommitUser(session *mgo.Session, user User) error {
 	c := getCollection(session, cUsers)
-	return c.Update(bson.M{fId: user.Id}, user)
+	_, err := c.UpsertId(user.Id, user)
+	return err
 }
 
 func CommitRoom(session *mgo.Session, room Room) error {
 	c := getCollection(session, cRooms)
-	return c.Update(bson.M{fId: room.Id}, room)
+	_, err := c.UpsertId(room.Id, room)
+	return err
 }
 
 func CommitCharacter(session *mgo.Session, character Character) error {
 	c := getCollection(session, cCharacters)
-	return c.Update(bson.M{fId: character.Id}, character)
+	_, err := c.UpsertId(character.Id, character)
+	return err
 }
 
 func MoveCharacter(session *mgo.Session, character *Character, direction ExitDirection) (Room, error) {
@@ -339,7 +311,7 @@ func MoveCharacter(session *mgo.Session, character *Character, direction ExitDir
 		}
 
 		room.Location = newLocation
-		room, err = CreateRoom(session, room)
+		err = CommitRoom(session, room)
 	} else {
 		character.RoomId = room.Id
 		err = CommitCharacter(session, *character)

@@ -11,7 +11,6 @@ import (
 )
 
 func login(session *mgo.Session, conn net.Conn) database.User {
-
 	for {
 		line := utils.GetUserInput(conn, "Username: ")
 
@@ -33,7 +32,6 @@ func login(session *mgo.Session, conn net.Conn) database.User {
 }
 
 func newUser(session *mgo.Session, conn net.Conn) database.User {
-
 	for {
 		line := utils.GetUserInput(conn, "Desired username: ")
 

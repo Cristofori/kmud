@@ -21,26 +21,27 @@ type User struct {
 
 func newUser(name string) User {
 	var user User
+	user.Id = bson.NewObjectId()
 	user.Name = name
 	return user
 }
 
 type Character struct {
-	Id     bson.ObjectId `bson:"_id,omitempty"`
+	Id     bson.ObjectId `bson:"_id"`
 	Name   string
-	RoomId bson.ObjectId `bson:"roomid,omitempty"`
+	RoomId bson.ObjectId `bson:"roomid"`
 }
 
 func newCharacter(name string) Character {
 	var character Character
-	character.Id = ""
+	character.Id = bson.NewObjectId()
 	character.Name = name
 	character.RoomId = ""
 	return character
 }
 
 type Room struct {
-	Id          bson.ObjectId `bson:"_id,omitempty"`
+	Id          bson.ObjectId `bson:"_id"`
 	Title       string
 	Description string
 	Location    Coordinate
