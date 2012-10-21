@@ -10,70 +10,79 @@ import (
 	"strconv"
 )
 
-func login(session *mgo.Session, conn net.Conn) string {
+func login(session *mgo.Session, conn net.Conn) database.User {
 
 	for {
 		line := utils.GetUserInput(conn, "Username: ")
 
 		if line == "" {
-			return ""
+			return database.User{}
 		}
 
-		found, err := database.FindUser(session, line)
-		utils.PanicIfError(err)
+		user, err := database.GetUserByName(session, line)
 
-		if !found {
+		if err != nil {
 			utils.WriteLine(conn, "User not found")
 		} else {
-			return line
+			return user
 		}
 	}
 
 	panic("Unexpected code path")
-	return ""
+	return database.User{}
 }
 
-func newUser(session *mgo.Session, conn net.Conn) string {
+func newUser(session *mgo.Session, conn net.Conn) database.User {
 
 	for {
 		line := utils.GetUserInput(conn, "Desired username: ")
-		err := database.NewUser(session, line)
+
+		var user database.User
+		if line == "" {
+			return user
+		}
+
+		user, err := database.CreateUser(session, line)
 
 		if err == nil {
-			return line
+			return user
 		}
 
 		utils.WriteLine(conn, err.Error())
 	}
 
 	panic("Unexpected code path")
-	return ""
+	return database.User{}
 }
 
-func newCharacter(session *mgo.Session, conn net.Conn, user string) (database.Character, error) {
+func newCharacter(session *mgo.Session, conn net.Conn, user *database.User) database.Character {
 	// TODO: character slot limit
 	for {
 		line := utils.GetUserInput(conn, "Desired character name: ")
 
 		if line == "" {
-			return database.Character{}, nil
+			return database.Character{}
 		}
 
-		return database.CreateCharacter(session, user, line)
+		character, err := database.CreateCharacter(session, user, line)
+
+		if err == nil {
+			return character
+		}
+
+		utils.WriteLine(conn, err.Error())
 	}
 
 	panic("Unexpected code path")
-	return database.Character{}, nil
+	return database.Character{}
 }
 
-func quit(session *mgo.Session, conn net.Conn) error {
+func quit(session *mgo.Session, conn net.Conn) {
 	utils.WriteLine(conn, "Take luck!")
 	conn.Close()
-	return nil
 }
 
 func mainMenu() utils.Menu {
-
 	menu := utils.NewMenu("MUD")
 
 	menu.AddAction("l", "[L]ogin")
@@ -83,11 +92,10 @@ func mainMenu() utils.Menu {
 	return menu
 }
 
-func userMenu(session *mgo.Session, user string) utils.Menu {
+func userMenu(session *mgo.Session, user database.User) utils.Menu {
+	chars := database.GetUserCharacters(session, user)
 
-	chars, _ := database.GetUserCharacters(session, user)
-
-	menu := utils.NewMenu(utils.FormatName(user))
+	menu := utils.NewMenu(user.PrettyName())
 	menu.AddAction("l", "[L]ogout")
 	menu.AddAction("a", "[A]dmin")
 	menu.AddAction("n", "[N]ew character")
@@ -98,14 +106,14 @@ func userMenu(session *mgo.Session, user string) utils.Menu {
 	for i, char := range chars {
 		indexStr := strconv.Itoa(i + 1)
 		actionText := fmt.Sprintf("[%v]%v", indexStr, char.PrettyName())
-		menu.AddActionData(indexStr, actionText, char.Name)
+		menu.AddActionData(indexStr, actionText, char.Id)
 	}
 
 	return menu
 }
 
-func deleteMenu(session *mgo.Session, user string) utils.Menu {
-	chars, _ := database.GetUserCharacters(session, user)
+func deleteMenu(session *mgo.Session, user database.User) utils.Menu {
+	chars := database.GetUserCharacters(session, user)
 
 	menu := utils.NewMenu("Delete character")
 
@@ -113,8 +121,8 @@ func deleteMenu(session *mgo.Session, user string) utils.Menu {
 
 	for i, char := range chars {
 		indexStr := strconv.Itoa(i + 1)
-		actionText := fmt.Sprintf("[%v]%v", indexStr, char.Name)
-		menu.AddActionData(indexStr, actionText, char.Name)
+		actionText := fmt.Sprintf("[%v]%v", indexStr, char.PrettyName())
+		menu.AddActionData(indexStr, actionText, char.Id)
 	}
 
 	return menu
@@ -131,21 +139,21 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer conn.Close()
 	defer session.Close()
 
-	user := ""
+	var user database.User
 	var character database.Character
 
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
-				utils.FormatName(user),
-				utils.FormatName(character.Name),
+				user.PrettyName(),
+				character.PrettyName(),
 				conn.RemoteAddr(),
 				r)
 		}
 	}()
 
 	for {
-		if user == "" {
+		if user.Name == "" {
 			menu := mainMenu()
 			choice, _ := menu.Exec(conn)
 
@@ -162,13 +170,13 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			}
 		} else if character.Name == "" {
 			menu := userMenu(session, user)
-			choice, charName := menu.Exec(conn)
+			choice, charId := menu.Exec(conn)
 
 			switch choice {
 			case "":
 				fallthrough
 			case "l":
-				user = ""
+				user = database.User{}
 			case "a":
 				adminMenu := adminMenu(session)
 				choice, _ := adminMenu.Exec(conn)
@@ -176,26 +184,26 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 					database.GenerateDefaultMap(session)
 				}
 			case "n":
-				var err error
-				character, err = newCharacter(session, conn, user)
-				if err != nil {
-					utils.WriteLine(conn, err.Error())
-				}
+				character = newCharacter(session, conn, &user)
 			case "d":
 				deleteMenu := deleteMenu(session, user)
-				deleteChoice, deleteCharName := deleteMenu.Exec(conn)
+				deleteChoice, deleteCharId := deleteMenu.Exec(conn)
 
 				_, err := strconv.Atoi(deleteChoice)
 
 				if err == nil {
-					database.DeleteCharacter(session, user, deleteCharName)
+					err = database.DeleteCharacter(session, &user, deleteCharId)
+
+					if err != nil {
+						utils.WriteLine(conn, fmt.Sprintf("Error deleting character: %s", err))
+					}
 				}
 
 			default:
 				_, err := strconv.Atoi(choice)
 
 				if err == nil {
-					character, _ = database.GetCharacterByName(session, charName)
+					character, _ = database.GetCharacter(session, charId)
 				}
 			}
 		} else {

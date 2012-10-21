@@ -13,6 +13,18 @@ type Coordinate struct {
 	Z int
 }
 
+type User struct {
+	Id           bson.ObjectId `bson:"_id,omitempty"`
+	Name         string
+	CharacterIds []bson.ObjectId `bson:"characterids,omitempty"`
+}
+
+func newUser(name string) User {
+	var user User
+	user.Name = name
+	return user
+}
+
 type Character struct {
 	Id     bson.ObjectId `bson:"_id,omitempty"`
 	Name   string
@@ -25,7 +37,6 @@ func newCharacter(name string) Character {
 	character.Name = name
 	character.RoomId = ""
 	return character
-
 }
 
 type Room struct {
@@ -181,6 +192,10 @@ func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
 }
 
 func (self *Character) PrettyName() string {
+	return utils.FormatName(self.Name)
+}
+
+func (self *User) PrettyName() string {
 	return utils.FormatName(self.Name)
 }
 

@@ -2,13 +2,14 @@ package utils
 
 import (
 	"fmt"
+	"labix.org/v2/mgo/bson"
 	"net"
 )
 
 type action struct {
 	key  string
 	text string
-	data string
+	data bson.ObjectId
 }
 
 type Menu struct {
@@ -27,11 +28,11 @@ func (self *Menu) AddAction(key string, text string) {
 	self.Actions = append(self.Actions, action{key: key, text: text})
 }
 
-func (self *Menu) AddActionData(key string, text string, data string) {
+func (self *Menu) AddActionData(key string, text string, data bson.ObjectId) {
 	self.Actions = append(self.Actions, action{key: key, text: text, data: data})
 }
 
-func (self *Menu) Exec(conn net.Conn) (string, string) {
+func (self *Menu) Exec(conn net.Conn) (string, bson.ObjectId) {
 
 	border := "-=-=-"
 	for {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-	"mud/utils"
 )
 
 type dbError struct {
@@ -36,12 +35,12 @@ const (
 
 // Field names
 const (
-	fId         = "_id"
-	fName       = "name"
-	fCharacters = "characters"
-	fRoom       = "room"
-	fLocation   = "location"
-	fDefault    = "default"
+	fId           = "_id"
+	fName         = "name"
+	fCharacterIds = "characterids"
+	fRoom         = "room"
+	fLocation     = "location"
+	fDefault      = "default"
 )
 
 // DB commands
@@ -51,42 +50,11 @@ const (
 	PULL = "$pull"
 )
 
-func FindUser(session *mgo.Session, name string) (bool, error) {
-	c := getCollection(session, cUsers)
-	q := c.Find(bson.M{fName: name})
-
-	count, err := q.Count()
-
-	if err != nil {
-		return false, err
-	}
-
-	return count > 0, nil
-}
-
-func NewUser(session *mgo.Session, name string) error {
-
-	found, err := FindUser(session, name)
-
-	if err != nil {
-		return err
-	}
-
-	if found {
-		return newDbError("That user already exists")
-	}
-
-	c := getCollection(session, cUsers)
-	c.Insert(bson.M{fName: name})
-
-	return nil
-}
-
 func GetCharacterRoom(session *mgo.Session, character Character) (Room, error) {
 	return GetRoom(session, character.RoomId)
 }
 
-func FindObject(session *mgo.Session, collection collectionName, query interface{}, object interface{}) error {
+func findObject(session *mgo.Session, collection collectionName, query interface{}, object interface{}) error {
 	c := getCollection(session, collection)
 	q := c.Find(query)
 
@@ -105,32 +73,65 @@ func FindObject(session *mgo.Session, collection collectionName, query interface
 	return err
 }
 
-func FindRoom(session *mgo.Session, query interface{}) (Room, error) {
+func findRoom(session *mgo.Session, query interface{}) (Room, error) {
 	var room Room
-	err := FindObject(session, cRooms, query, &room)
+	err := findObject(session, cRooms, query, &room)
 	return room, err
 }
 
-func FindCharacter(session *mgo.Session, query interface{}) (Character, error) {
+func findCharacter(session *mgo.Session, query interface{}) (Character, error) {
 	var character Character
-	err := FindObject(session, cCharacters, query, &character)
+	err := findObject(session, cCharacters, query, &character)
 	return character, err
 }
 
+func findUser(session *mgo.Session, query interface{}) (User, error) {
+	var user User
+	err := findObject(session, cUsers, query, &user)
+	return user, err
+}
+
+func GetUser(session *mgo.Session, id bson.ObjectId) (User, error) {
+	return findUser(session, bson.M{fId: id})
+}
+
+func GetUserByName(session *mgo.Session, name string) (User, error) {
+	return findUser(session, bson.M{fName: name})
+}
+
 func GetCharacter(session *mgo.Session, id bson.ObjectId) (Character, error) {
-	return FindCharacter(session, bson.M{fId: id})
+	return findCharacter(session, bson.M{fId: id})
 }
 
 func GetCharacterByName(session *mgo.Session, name string) (Character, error) {
-	return FindCharacter(session, bson.M{fName: name})
+	return findCharacter(session, bson.M{fName: name})
 }
 
 func GetRoom(session *mgo.Session, id bson.ObjectId) (Room, error) {
-	return FindRoom(session, bson.M{fId: id})
+	return findRoom(session, bson.M{fId: id})
 }
 
 func GetRoomByLocation(session *mgo.Session, location Coordinate) (Room, error) {
-	return FindRoom(session, bson.M{fLocation: location})
+	return findRoom(session, bson.M{fLocation: location})
+}
+
+func CreateUser(session *mgo.Session, name string) (User, error) {
+	user, err := findUser(session, name)
+
+	if err == nil {
+		return user, newDbError("That user already exists")
+	}
+
+	user = newUser(name)
+
+	c := getCollection(session, cUsers)
+	err = c.Insert(user)
+
+	if err == nil {
+		user, err = GetUserByName(session, user.Name)
+	}
+
+	return user, err
 }
 
 func CreateRoom(session *mgo.Session, room Room) (Room, error) {
@@ -147,7 +148,7 @@ func CreateRoom(session *mgo.Session, room Room) (Room, error) {
 	return room, err
 }
 
-func CreateCharacter(session *mgo.Session, userName string, characterName string) (Character, error) {
+func CreateCharacter(session *mgo.Session, user *User, characterName string) (Character, error) {
 	character, err := GetCharacterByName(session, characterName)
 
 	if err == nil {
@@ -182,8 +183,8 @@ func CreateCharacter(session *mgo.Session, userName string, characterName string
 	}
 
 	if err == nil {
-		userCollection := getCollection(session, cUsers)
-		err = userCollection.Update(bson.M{fName: userName}, bson.M{PUSH: bson.M{fCharacters: character.Id}})
+		user.CharacterIds = append(user.CharacterIds, character.Id)
+		CommitUser(session, *user)
 
 		if err != nil {
 			fmt.Printf("Error updating user with new character data: %v\n", err)
@@ -193,35 +194,49 @@ func CreateCharacter(session *mgo.Session, userName string, characterName string
 	return character, err
 }
 
-func GetUserCharacters(session *mgo.Session, userName string) ([]Character, error) {
-	c := getCollection(session, cUsers)
-	q := c.Find(bson.M{fName: userName})
-
-	result := map[string][]bson.ObjectId{}
-	err := q.One(&result)
-
+func GetUserCharacters(session *mgo.Session, user User) []Character {
 	var characters []Character
-	for _, charId := range result[fCharacters] {
+	for _, charId := range user.CharacterIds {
 		character, err := GetCharacter(session, charId)
 
 		if err != nil {
-			fmt.Printf("Failed to find character with id %s, belonging to user %s: %s\n", charId, userName, err)
+			fmt.Printf("Failed to find character with id %s, belonging to user %s: %s\n", charId, user.Name, err)
 		} else {
 			characters = append(characters, character)
 		}
 	}
 
-	return characters, err
+	return characters
 }
 
-func DeleteCharacter(session *mgo.Session, user string, character string) error {
+func DeleteCharacter(session *mgo.Session, user *User, charId bson.ObjectId) error {
+	// TODO - Figure out how to remove an element from the middle of a slice,
+	//        and then just modify the user object and use CommitUser
 	c := getCollection(session, cUsers)
-	c.Update(bson.M{fName: user}, bson.M{PULL: bson.M{fCharacters: utils.Simplify(character)}})
+	err := c.Update(bson.M{fId: user.Id}, bson.M{PULL: bson.M{fCharacterIds: charId}})
+
+	if err != nil {
+		fmt.Printf("Failed 1: %v %v\n", user.Id, charId)
+		return err
+	}
+
+	modifiedUser, err := GetUser(session, user.Id)
+
+	if err != nil {
+		fmt.Printf("Failed 2\n")
+		return err
+	}
+
+	user.CharacterIds = modifiedUser.CharacterIds
 
 	c = getCollection(session, cCharacters)
-	c.Remove(bson.M{fName: character})
+	err = c.Remove(bson.M{fId: charId})
 
-	return nil
+	if err != nil {
+		fmt.Printf("Failed 3\n")
+	}
+
+	return err
 }
 
 func StartingRoom(session *mgo.Session) (Room, error) {
@@ -257,6 +272,11 @@ func GenerateDefaultMap(session *mgo.Session) {
 	room.Default = true
 
 	CreateRoom(session, room)
+}
+
+func CommitUser(session *mgo.Session, user User) error {
+	c := getCollection(session, cUsers)
+	return c.Update(bson.M{fId: user.Id}, user)
 }
 
 func CommitRoom(session *mgo.Session, room Room) error {
