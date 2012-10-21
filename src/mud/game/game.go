@@ -73,7 +73,7 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 
 					if input != "" {
 						room.Title = input
-						database.SetRoomTitle(session, room, input)
+                        database.CommitRoom(session, room)
 					}
 					printRoomEditor()
 
@@ -82,7 +82,7 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 
 					if input != "" {
 						room.Description = input
-						database.SetRoomDescription(session, room, input)
+                        database.CommitRoom(session, room)
 					}
 					printRoomEditor()
 

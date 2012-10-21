@@ -41,14 +41,6 @@ const (
 	fCharacters  = "characters"
 	fRoom        = "room"
 	fLocation    = "location"
-	fTitle       = "title"
-	fDescription = "description"
-	fNorth       = "exit_north"
-	fEast        = "exit_east"
-	fSouth       = "exit_south"
-	fWest        = "exit_west"
-	fUp          = "exit_up"
-	fDown        = "exit_down"
 	fDefault     = "default"
 )
 
@@ -265,36 +257,6 @@ func GenerateDefaultMap(session *mgo.Session) {
 	room.Default = true
 
 	CreateRoom(session, room)
-}
-
-func SetRoomTitle(session *mgo.Session, room Room, title string) error {
-	c := getCollection(session, cRooms)
-	return c.Update(bson.M{fId: room.Id}, bson.M{SET: bson.M{fTitle: title}})
-}
-
-func SetRoomDescription(session *mgo.Session, room Room, description string) error {
-	c := getCollection(session, cRooms)
-	return c.Update(bson.M{fId: room.Id}, bson.M{SET: bson.M{fDescription: description}})
-}
-
-func directionToFieldName(direction ExitDirection) string {
-	switch direction {
-	case DirectionNorth:
-		return fNorth
-	case DirectionEast:
-		return fEast
-	case DirectionSouth:
-		return fSouth
-	case DirectionWest:
-		return fWest
-	case DirectionUp:
-		return fUp
-	case DirectionDown:
-		return fDown
-	}
-
-	// Wouldn't ever expect DirectionNone to be passed here
-	panic("Unexpected code path")
 }
 
 func CommitRoom(session *mgo.Session, room Room) error {
