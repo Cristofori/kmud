@@ -94,43 +94,34 @@ func GetCharacterRoom(session *mgo.Session, character Character) (Room, error) {
 	return GetRoom(session, character.RoomId)
 }
 
-func FindRoom(session *mgo.Session, query interface{}) (Room, error) {
-	c := getCollection(session, cRooms)
+func FindObject(session *mgo.Session, collection collectionName, query interface{}, object interface{}) error {
+	c := getCollection(session, collection)
 	q := c.Find(query)
 
 	count, err := q.Count()
 
-	var room Room
 	if err != nil {
-		return room, err
+		return err
 	}
 
 	if count == 0 {
-		return room, newDbError(fmt.Sprintf("Room not found, query: %v", query))
+		return newDbError(fmt.Sprintf("Query return no results: %v", query))
 	}
 
-	err = q.One(&room)
+	err = q.One(object)
 
+	return err
+}
+
+func FindRoom(session *mgo.Session, query interface{}) (Room, error) {
+	var room Room
+	err := FindObject(session, cRooms, query, &room)
 	return room, err
 }
 
 func FindCharacter(session *mgo.Session, query interface{}) (Character, error) {
-	c := getCollection(session, cCharacters)
-	q := c.Find(query)
-
-	count, err := q.Count()
-
 	var character Character
-	if err != nil {
-		return character, err
-	}
-
-	if count == 0 {
-		return character, newDbError(fmt.Sprintf("Character not found, query: %v", query))
-	}
-
-	err = q.One(&character)
-
+	err := FindObject(session, cCharacters, query, &character)
 	return character, err
 }
 
