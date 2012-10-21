@@ -201,17 +201,6 @@ func CreateCharacter(session *mgo.Session, userName string, characterName string
 	return character, err
 }
 
-func SetCharacterRoom(session *mgo.Session, character string, roomId bson.ObjectId) error {
-	c := getCollection(session, cCharacters)
-	err := c.Update(bson.M{fName: character}, bson.M{SET: bson.M{fRoom: roomId}})
-
-	if err != nil {
-		fmt.Printf("Failed setting character room :%v\n", err)
-	}
-
-	return err
-}
-
 func GetUserCharacters(session *mgo.Session, userName string) ([]Character, error) {
 	c := getCollection(session, cUsers)
 	q := c.Find(bson.M{fName: userName})
