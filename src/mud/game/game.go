@@ -233,19 +233,22 @@ func Exec(conn net.Conn, character database.Character) {
 	}
 
 	processEvent := func(event engine.Event) {
+		message := ""
 
 		switch event.Type() {
 		case engine.MessageEventType:
-			printLine(fmt.Sprintf("\nMessage: %v", event.ToString()))
+			message = "Message: " + event.ToString()
 		case engine.MoveEventType:
 			moveEvent := event.(engine.MoveEvent)
-
 			if moveEvent.RoomId == room.Id && moveEvent.Character != character {
-				printLine(fmt.Sprintf("\n%v", event.ToString()))
+				message = event.ToString()
 			}
-
 		}
-		printString(prompt())
+
+		if message != "" {
+			printLine("\n" + message)
+			printString(prompt())
+		}
 	}
 
 	printLine("Welcome, " + utils.FormatName(character.Name))
