@@ -6,6 +6,28 @@ import (
 	"mud/database"
 )
 
+var _listeners map[*chan Event]bool
+
+func Register() *chan Event {
+	if _listeners == nil {
+		_listeners = map[*chan Event]bool{}
+	}
+
+	listener := make(chan Event, 100)
+	_listeners[&listener] = true
+	return &listener
+}
+
+func Unregister(listener *chan Event) {
+	delete(_listeners, listener)
+}
+
+func broadcast(event Event) {
+	for listener, _ := range _listeners {
+		*listener <- event
+	}
+}
+
 type EventType int
 
 const (
@@ -31,28 +53,6 @@ type EnterEvent struct {
 type LeaveEvent struct {
 	Character database.Character
 	RoomId    bson.ObjectId
-}
-
-var _listeners map[*chan Event]bool
-
-func Register() *chan Event {
-	if _listeners == nil {
-		_listeners = map[*chan Event]bool{}
-	}
-
-	listener := make(chan Event, 100)
-	_listeners[&listener] = true
-	return &listener
-}
-
-func Unregister(listener *chan Event) {
-	delete(_listeners, listener)
-}
-
-func broadcast(event Event) {
-	for listener, _ := range _listeners {
-		*listener <- event
-	}
 }
 
 func (self MessageEvent) Type() EventType {
