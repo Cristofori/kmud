@@ -175,9 +175,32 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 		if strings.HasPrefix(input, "/") {
 			processCommand(input[1:len(input)])
 		} else {
-			switch input {
+			inputFields := strings.Fields(input)
+			fieldCount := len(inputFields)
+			action := inputFields[0]
+
+			switch action {
 			case "l":
-				printRoom()
+				fallthrough
+			case "look":
+
+				if fieldCount == 1 {
+					printRoom()
+				} else if fieldCount == 2 {
+					arg := database.StringToDirection(inputFields[1])
+
+					if arg == database.DirectionNone {
+						printLine("Nothing to see")
+					} else {
+						loc := room.Location.Next(arg)
+						roomToSee, err := database.GetRoomByLocation(session, loc)
+						if err == nil {
+							printLine(roomToSee.ToString(database.ReadMode))
+						} else {
+							printLine("Nothing to see")
+						}
+					}
+				}
 
 			case "i":
 				printLine("You aren't carrying anything")

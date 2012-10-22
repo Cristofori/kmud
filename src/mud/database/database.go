@@ -277,25 +277,7 @@ func MoveCharacter(session *mgo.Session, character *Character, direction ExitDir
 		return room, err
 	}
 
-	newLocation := room.Location
-
-	switch direction {
-	case DirectionNorth:
-		newLocation.Y -= 1
-	case DirectionEast:
-		newLocation.X += 1
-	case DirectionSouth:
-		newLocation.Y += 1
-	case DirectionWest:
-		newLocation.X -= 1
-	case DirectionUp:
-		newLocation.Z -= 1
-	case DirectionDown:
-		newLocation.Z += 1
-	default:
-		panic("Unexpected code path")
-	}
-
+	newLocation := room.Location.Next(direction)
 	room, err = GetRoomByLocation(session, newLocation)
 
 	if err != nil {

@@ -200,20 +200,51 @@ func (self *User) PrettyName() string {
 	return utils.FormatName(self.Name)
 }
 
+func (self *Coordinate) Next(direction ExitDirection) Coordinate {
+	newCoord := *self
+	switch direction {
+	case DirectionNorth:
+		newCoord.Y -= 1
+	case DirectionEast:
+		newCoord.X += 1
+	case DirectionSouth:
+		newCoord.Y += 1
+	case DirectionWest:
+		newCoord.X -= 1
+	case DirectionUp:
+		newCoord.Z -= 1
+	case DirectionDown:
+		newCoord.Z += 1
+	}
+	return newCoord
+}
+
 func StringToDirection(str string) ExitDirection {
 	dirStr := strings.ToLower(str)
 	switch dirStr {
 	case "n":
+		fallthrough
+	case "north":
 		return DirectionNorth
 	case "s":
+		fallthrough
+	case "south":
 		return DirectionSouth
 	case "e":
+		fallthrough
+	case "east":
 		return DirectionEast
 	case "w":
+		fallthrough
+	case "west":
 		return DirectionWest
 	case "u":
+		fallthrough
+	case "up":
 		return DirectionUp
 	case "d":
+		fallthrough
+	case "down":
 		return DirectionDown
 	}
 
