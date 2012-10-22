@@ -50,6 +50,12 @@ const (
 	PULL = "$pull"
 )
 
+func printError(err error) {
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+	}
+}
+
 func GetCharacterRoom(session *mgo.Session, character Character) (Room, error) {
 	return GetRoom(session, character.RoomId)
 }
@@ -246,18 +252,21 @@ func CreateUser(session *mgo.Session, name string) (User, error) {
 func CommitUser(session *mgo.Session, user User) error {
 	c := getCollection(session, cUsers)
 	_, err := c.UpsertId(user.Id, user)
+	printError(err)
 	return err
 }
 
 func CommitRoom(session *mgo.Session, room Room) error {
 	c := getCollection(session, cRooms)
 	_, err := c.UpsertId(room.Id, room)
+	printError(err)
 	return err
 }
 
 func CommitCharacter(session *mgo.Session, character Character) error {
 	c := getCollection(session, cCharacters)
 	_, err := c.UpsertId(character.Id, character)
+	printError(err)
 	return err
 }
 
@@ -312,10 +321,10 @@ func MoveCharacter(session *mgo.Session, character *Character, direction ExitDir
 
 		room.Location = newLocation
 		err = CommitRoom(session, room)
-	} else {
-		character.RoomId = room.Id
-		err = CommitCharacter(session, *character)
 	}
+
+	character.RoomId = room.Id
+	err = CommitCharacter(session, *character)
 
 	return room, err
 }
