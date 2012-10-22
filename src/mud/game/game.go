@@ -8,7 +8,6 @@ import (
 	"mud/utils"
 	"net"
 	"strings"
-	"time"
 )
 
 func getToggleExitMenu(room database.Room) utils.Menu {
@@ -233,8 +232,8 @@ func Exec(conn net.Conn, character database.Character) {
 		}
 	}
 
-	processEvent := func(event string) {
-		printLine(fmt.Sprintf("\nAn event happened: %s", event))
+	processEvent := func(event interface{}) {
+		printLine(fmt.Sprintf("\nAn event happened: %v", event))
 		printString(prompt())
 	}
 
@@ -253,14 +252,8 @@ func Exec(conn net.Conn, character database.Character) {
 		}
 	}()
 
-	eventChannel := make(chan string)
-
-	go func() {
-		for {
-			eventChannel <- "event"
-			time.Sleep(5 * time.Second)
-		}
-	}()
+	eventChannel := engine.Register()
+	defer engine.Unregister(eventChannel)
 
 	// Main loop
 	for {
@@ -272,7 +265,7 @@ func Exec(conn net.Conn, character database.Character) {
 				processAction(input)
 			}
 			sync <- true
-		case event := <-eventChannel:
+		case event := <-*eventChannel:
 			processEvent(event)
 		}
 	}

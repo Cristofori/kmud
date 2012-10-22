@@ -7,6 +7,7 @@ import (
 	"mud/database"
 	"mud/utils"
 	"sync"
+	"time"
 )
 
 type engineError struct {
@@ -32,6 +33,14 @@ var _session *mgo.Session
 // TODO Use a read/write mutex
 var _mutex sync.Mutex
 
+func spewEvents() {
+	for {
+		fmt.Printf("Broadcasting...\n")
+		broadcast("Here's an event")
+		time.Sleep(5 * time.Second)
+	}
+}
+
 func StartUp(session *mgo.Session) error {
 	_session = session
 	_model = globalModel{}
@@ -52,6 +61,8 @@ func StartUp(session *mgo.Session) error {
 	for _, character := range characters {
 		_model.Characters[character.Id] = character
 	}
+
+	go spewEvents()
 
 	return err
 }

@@ -135,7 +135,6 @@ func adminMenu(session *mgo.Session) utils.Menu {
 }
 
 func handleConnection(session *mgo.Session, conn net.Conn) {
-
 	defer conn.Close()
 	defer session.Close()
 
