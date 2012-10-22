@@ -8,6 +8,7 @@ import (
 	"mud/utils"
 	"net"
 	"strings"
+	"time"
 )
 
 func getToggleExitMenu(room database.Room) utils.Menu {
@@ -53,8 +54,75 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 		printLine(room.ToString(database.EditMode))
 	}
 
-	processCommand := func(command string) {
+	prompt := func() string {
+		return "> "
+	}
 
+	processAction := func(input string) {
+		inputFields := strings.Fields(input)
+		fieldCount := len(inputFields)
+		action := inputFields[0]
+
+		switch action {
+		case "l":
+			fallthrough
+		case "look":
+			if fieldCount == 1 {
+				printRoom()
+			} else if fieldCount == 2 {
+				arg := database.StringToDirection(inputFields[1])
+
+				if arg == database.DirectionNone {
+					printLine("Nothing to see")
+				} else {
+					loc := room.Location.Next(arg)
+					roomToSee, err := database.GetRoomByLocation(session, loc)
+					if err == nil {
+						printLine(roomToSee.ToString(database.ReadMode))
+					} else {
+						printLine("Nothing to see")
+					}
+				}
+			}
+
+		case "i":
+			printLine("You aren't carrying anything")
+
+		case "":
+			fallthrough
+		case "logout":
+			return
+
+		case "quit":
+			fallthrough
+		case "exit":
+			printLine("Take luck!")
+			conn.Close()
+			panic("User quit")
+
+		default:
+			direction := database.StringToDirection(input)
+
+			if direction != database.DirectionNone {
+				if room.HasExit(direction) {
+					newRoom, err := database.MoveCharacter(session, &character, direction)
+					if err == nil {
+						room = newRoom
+						printRoom()
+					} else {
+						printLine(err.Error())
+					}
+
+				} else {
+					printLine("You can't go that way")
+				}
+			} else {
+				printLine("You can't do that")
+			}
+		}
+	}
+
+	processCommand := func(command string) {
 		switch command {
 		case "?":
 			fallthrough
@@ -162,78 +230,47 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 		}
 	}
 
+	processEvent := func(event string) {
+		printLine(fmt.Sprintf("\nAn event happened: %s", event))
+		printString(prompt())
+	}
+
 	printLine("Welcome, " + utils.FormatName(character.Name))
 	printRoom()
 
+	userInputChannel := make(chan string)
+	sync := make(chan bool)
+
+	go func() {
+		// TODO: Don't crash (due to panic) when client disconnects at the prompt
+		for {
+			input := utils.GetUserInput(conn, prompt())
+			userInputChannel <- input
+			<-sync
+		}
+	}()
+
+	eventChannel := make(chan string)
+
+	go func() {
+		for {
+			eventChannel <- "event"
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	// Main loop
 	for {
-		utils.PanicIfError(err)
-
-		input := utils.GetUserInput(conn, "> ")
-
-		if strings.HasPrefix(input, "/") {
-			processCommand(input[1:len(input)])
-		} else {
-			inputFields := strings.Fields(input)
-			fieldCount := len(inputFields)
-			action := inputFields[0]
-
-			switch action {
-			case "l":
-				fallthrough
-			case "look":
-				if fieldCount == 1 {
-					printRoom()
-				} else if fieldCount == 2 {
-					arg := database.StringToDirection(inputFields[1])
-
-					if arg == database.DirectionNone {
-						printLine("Nothing to see")
-					} else {
-						loc := room.Location.Next(arg)
-						roomToSee, err := database.GetRoomByLocation(session, loc)
-						if err == nil {
-							printLine(roomToSee.ToString(database.ReadMode))
-						} else {
-							printLine("Nothing to see")
-						}
-					}
-				}
-
-			case "i":
-				printLine("You aren't carrying anything")
-
-			case "":
-				fallthrough
-			case "logout":
-				return
-
-			case "quit":
-				fallthrough
-			case "exit":
-				printLine("Take luck!")
-				conn.Close()
-				panic("User quit")
-
-			default:
-				direction := database.StringToDirection(input)
-
-				if direction != database.DirectionNone {
-					if room.HasExit(direction) {
-						newRoom, err := database.MoveCharacter(session, &character, direction)
-						if err == nil {
-							room = newRoom
-							printRoom()
-						} else {
-							printLine(err.Error())
-						}
-
-					} else {
-						printLine("You can't go that way")
-					}
-				} else {
-					printLine("You can't do that")
-				}
+		select {
+		case input := <-userInputChannel:
+			if strings.HasPrefix(input, "/") {
+				processCommand(input[1:len(input)])
+			} else {
+				processAction(input)
 			}
+			sync <- true
+		case event := <-eventChannel:
+			processEvent(event)
 		}
 	}
 }

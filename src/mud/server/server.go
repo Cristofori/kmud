@@ -7,6 +7,7 @@ import (
 	"mud/game"
 	"mud/utils"
 	"net"
+	"runtime"
 	"strconv"
 )
 
@@ -212,6 +213,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(8)
 
 	fmt.Printf("Connecting to database... ")
 	session, err := mgo.Dial("localhost")
