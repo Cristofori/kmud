@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"io"
 	"labix.org/v2/mgo"
 	"mud/database"
 	"mud/utils"
@@ -37,6 +38,10 @@ func getToggleExitMenu(room database.Room) utils.Menu {
 func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 
 	room, err := database.GetCharacterRoom(session, character)
+
+	printString := func(data string) {
+		io.WriteString(conn, data)
+	}
 
 	printLine := func(line string) {
 		utils.WriteLine(conn, line)
@@ -126,6 +131,33 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 			fallthrough
 		case "location":
 			printLine(fmt.Sprintf("%v", room.Location))
+
+		case "map":
+			width := 20 // Should be even
+
+			startX := room.Location.X - (width / 2)
+			startY := room.Location.Y - (width / 2)
+			endX := startX + width
+			endY := startY + width
+
+			z := room.Location.Z
+
+			for y := startY; y <= endY; y += 1 {
+				printString("\n")
+				for x := startX; x <= endX; x += 1 {
+					currentRoom, err := database.GetRoomByLocation(session, database.Coordinate{x, y, z})
+					if err == nil {
+						if currentRoom == room {
+							printString("*")
+						} else {
+							printString("#")
+						}
+					} else {
+						printString(" ")
+					}
+				}
+			}
+			printString("\n")
 
 		default:
 			printLine("Unrecognized command")
