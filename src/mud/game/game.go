@@ -278,6 +278,9 @@ func Exec(conn net.Conn, character database.Character) {
 	for {
 		select {
 		case input := <-userInputChannel:
+			if input == "" {
+				return
+			}
 			if strings.HasPrefix(input, "/") {
 				processCommand(input[1:len(input)])
 			} else {
