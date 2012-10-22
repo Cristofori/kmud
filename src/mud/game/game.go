@@ -10,8 +10,6 @@ import (
 	"strings"
 )
 
-func useFmt() { fmt.Printf("") }
-
 func getToggleExitMenu(room database.Room) utils.Menu {
 
 	onOrOff := func(direction database.ExitDirection) string {
