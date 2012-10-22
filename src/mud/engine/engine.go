@@ -72,6 +72,14 @@ func UpdateRoom(room database.Room) error {
 	return database.CommitRoom(_session, room)
 }
 
+func AddRoom(room database.Room) error {
+	_mutex.Lock()
+	_model.Rooms[room.Id] = room
+	_mutex.Unlock()
+
+	return UpdateRoom(room)
+}
+
 func MoveCharacter(character database.Character, direction database.ExitDirection) (database.Character, database.Room, error) {
 	_mutex.Lock()
 	room := _model.Rooms[character.RoomId]
@@ -110,8 +118,7 @@ func MoveCharacter(character database.Character, direction database.ExitDirectio
 		}
 
 		room.Location = newLocation
-		err := UpdateRoom(room)
-
+		err := AddRoom(room)
 		utils.HandleError(err)
 	}
 
@@ -146,6 +153,21 @@ func GetRoomByLocation(coordinate database.Coordinate) (database.Room, bool) {
 	}
 
 	return ret, found
+}
+
+func GenerateDefaultMap() {
+	_mutex.Lock()
+	{
+		_model.Rooms = map[bson.ObjectId]database.Room{}
+		database.DeleteAllRooms(_session)
+	}
+	_mutex.Unlock()
+
+	room := database.NewRoom()
+	room.Location = database.Coordinate{0, 0, 0}
+	room.Default = true
+
+	AddRoom(room)
 }
 
 // vim: nocindent

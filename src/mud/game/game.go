@@ -3,7 +3,6 @@ package game
 import (
 	"fmt"
 	"io"
-	"labix.org/v2/mgo"
 	"mud/database"
 	"mud/engine"
 	"mud/utils"
@@ -35,7 +34,7 @@ func getToggleExitMenu(room database.Room) utils.Menu {
 	return menu
 }
 
-func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
+func Exec(conn net.Conn, character database.Character) {
 
 	room := engine.GetCharacterRoom(character)
 
@@ -147,7 +146,6 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 
 					if input != "" {
 						room.Title = input
-						// database.CommitRoom(session, room)
 						engine.UpdateRoom(room)
 					}
 					printRoomEditor()
@@ -157,7 +155,6 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 
 					if input != "" {
 						room.Description = input
-						//database.CommitRoom(session, room)
 						engine.UpdateRoom(room)
 					}
 					printRoomEditor()
@@ -170,7 +167,6 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 						toggleExit := func(direction database.ExitDirection) {
 							enable := !room.HasExit(direction)
 							room.SetExitEnabled(direction, enable)
-							// database.CommitRoom(session, room)
 							engine.UpdateRoom(room)
 						}
 
@@ -194,7 +190,7 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 		case "rebuild":
 			input := utils.GetUserInput(conn, "Are you sure (delete all rooms and starts from scratch)? ")
 			if input[0] == 'y' || input == "yes" {
-				database.GenerateDefaultMap(session)
+				engine.GenerateDefaultMap()
 			}
 
 			room = engine.GetCharacterRoom(character)

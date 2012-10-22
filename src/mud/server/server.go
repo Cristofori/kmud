@@ -181,7 +181,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				adminMenu := adminMenu(session)
 				choice, _ := adminMenu.Exec(conn)
 				if choice == "r" {
-					database.GenerateDefaultMap(session)
+					engine.GenerateDefaultMap()
 				}
 			case "n":
 				character = newCharacter(session, conn, &user)
@@ -207,7 +207,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				}
 			}
 		} else {
-			game.Exec(session, conn, character)
+			game.Exec(conn, character)
 			character = database.Character{}
 		}
 	}

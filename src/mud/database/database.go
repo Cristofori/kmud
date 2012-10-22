@@ -244,15 +244,9 @@ func StartingRoom(session *mgo.Session) (Room, error) {
 	return room, err
 }
 
-func GenerateDefaultMap(session *mgo.Session) {
+func DeleteAllRooms(session *mgo.Session) {
 	c := getCollection(session, cRooms)
 	c.DropCollection()
-
-	room := NewRoom()
-	room.Location = Coordinate{0, 0, 0}
-	room.Default = true
-
-	CommitRoom(session, room)
 }
 
 func CreateUser(session *mgo.Session, name string) (User, error) {
