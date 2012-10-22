@@ -56,19 +56,15 @@ func Exec(conn net.Conn, character database.Character) {
 		return "> "
 	}
 
-	processAction := func(input string) {
-		inputFields := strings.Fields(input)
-		fieldCount := len(inputFields)
-		action := inputFields[0]
-
+	processAction := func(action string, args []string) {
 		switch action {
 		case "l":
 			fallthrough
 		case "look":
-			if fieldCount == 1 {
+			if len(args) == 0 {
 				printRoom()
-			} else if fieldCount == 2 {
-				arg := database.StringToDirection(inputFields[1])
+			} else if len(args) == 1 {
+				arg := database.StringToDirection(args[0])
 
 				if arg == database.DirectionNone {
 					printLine("Nothing to see")
@@ -99,7 +95,7 @@ func Exec(conn net.Conn, character database.Character) {
 			panic("User quit")
 
 		default:
-			direction := database.StringToDirection(input)
+			direction := database.StringToDirection(action)
 
 			if direction != database.DirectionNone {
 				if room.HasExit(direction) {
@@ -122,7 +118,7 @@ func Exec(conn net.Conn, character database.Character) {
 		}
 	}
 
-	processCommand := func(command string) {
+	processCommand := func(command string, args []string) {
 		switch command {
 		case "?":
 			fallthrough
@@ -226,6 +222,8 @@ func Exec(conn net.Conn, character database.Character) {
 			}
 			printString("\n")
 
+			//case "message":
+
 		default:
 			printLine("Unrecognized command")
 		}
@@ -279,6 +277,19 @@ func Exec(conn net.Conn, character database.Character) {
 	eventChannel := engine.Register()
 	defer engine.Unregister(eventChannel)
 
+	argify := func(data string) (string, []string) {
+		fields := strings.Fields(data)
+
+		if len(fields) == 0 {
+			return "", []string{}
+		}
+
+		arg1 := fields[0]
+		args := fields[1:]
+
+		return arg1, args
+	}
+
 	// Main loop
 	for {
 		select {
@@ -287,9 +298,9 @@ func Exec(conn net.Conn, character database.Character) {
 				return
 			}
 			if strings.HasPrefix(input, "/") {
-				processCommand(input[1:len(input)])
+				processCommand(argify(input[1:len(input)]))
 			} else {
-				processAction(input)
+				processAction(argify(input))
 			}
 			sync <- true
 		case event := <-*eventChannel:
