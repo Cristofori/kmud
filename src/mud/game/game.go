@@ -183,7 +183,6 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 			case "l":
 				fallthrough
 			case "look":
-
 				if fieldCount == 1 {
 					printRoom()
 				} else if fieldCount == 2 {
