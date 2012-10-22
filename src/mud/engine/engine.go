@@ -7,7 +7,6 @@ import (
 	"mud/database"
 	"mud/utils"
 	"sync"
-	"time"
 )
 
 type engineError struct {
@@ -33,13 +32,6 @@ var _session *mgo.Session
 // TODO Use a read/write mutex
 var _mutex sync.Mutex
 
-func spewMessages() {
-	for {
-		broadcast(MessageEvent{"Here's a message event"})
-		time.Sleep(5 * time.Second)
-	}
-}
-
 func StartUp(session *mgo.Session) error {
 	_session = session
 	_model = globalModel{}
@@ -60,8 +52,6 @@ func StartUp(session *mgo.Session) error {
 	for _, character := range characters {
 		_model.Characters[character.Id] = character
 	}
-
-	// go spewMessages()
 
 	return err
 }
@@ -103,6 +93,8 @@ func MoveCharacter(character database.Character, direction database.ExitDirectio
 		return character, room, newEngineError("Attempted to move through an exit that the room does not contain")
 	}
 
+	oldRoomId := character.RoomId
+
 	newLocation := room.Location.Next(direction)
 	room, found := GetRoomByLocation(newLocation)
 
@@ -138,10 +130,8 @@ func MoveCharacter(character database.Character, direction database.ExitDirectio
 	utils.HandleError(err)
 
 	if err == nil {
-		var event MoveEvent
-		event.Character = character
-		event.RoomId = character.RoomId
-		broadcast(event)
+		broadcast(EnterEvent{Character: character, RoomId: room.Id})
+		broadcast(LeaveEvent{Character: character, RoomId: oldRoomId})
 	}
 
 	return character, room, err

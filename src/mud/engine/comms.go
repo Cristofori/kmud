@@ -10,12 +10,27 @@ type EventType int
 
 const (
 	MessageEventType EventType = iota
-	MoveEventType    EventType = iota
+	EnterEventType   EventType = iota
+	LeaveEventType   EventType = iota
 )
 
 type Event interface {
 	Type() EventType
 	ToString() string
+}
+
+type MessageEvent struct {
+	Message string
+}
+
+type EnterEvent struct {
+	Character database.Character
+	RoomId    bson.ObjectId
+}
+
+type LeaveEvent struct {
+	Character database.Character
+	RoomId    bson.ObjectId
 }
 
 var _listeners map[*chan Event]bool
@@ -40,15 +55,6 @@ func broadcast(event Event) {
 	}
 }
 
-type MessageEvent struct {
-	Message string
-}
-
-type MoveEvent struct {
-	Character database.Character
-	RoomId    bson.ObjectId
-}
-
 func (self MessageEvent) Type() EventType {
 	return MessageEventType
 }
@@ -57,12 +63,20 @@ func (self MessageEvent) ToString() string {
 	return self.Message
 }
 
-func (self MoveEvent) Type() EventType {
-	return MoveEventType
+func (self EnterEvent) Type() EventType {
+	return EnterEventType
 }
 
-func (self MoveEvent) ToString() string {
+func (self EnterEvent) ToString() string {
 	return fmt.Sprintf("%s has entered the room", self.Character.PrettyName())
+}
+
+func (self LeaveEvent) Type() EventType {
+	return LeaveEventType
+}
+
+func (self LeaveEvent) ToString() string {
+	return fmt.Sprintf("%s has left the room", self.Character.PrettyName())
 }
 
 // vim: nocindent

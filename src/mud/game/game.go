@@ -238,8 +238,13 @@ func Exec(conn net.Conn, character database.Character) {
 		switch event.Type() {
 		case engine.MessageEventType:
 			message = "Message: " + event.ToString()
-		case engine.MoveEventType:
-			moveEvent := event.(engine.MoveEvent)
+		case engine.EnterEventType:
+			enterEvent := event.(engine.EnterEvent)
+			if enterEvent.RoomId == room.Id && enterEvent.Character != character {
+				message = event.ToString()
+			}
+		case engine.LeaveEventType:
+			moveEvent := event.(engine.LeaveEvent)
 			if moveEvent.RoomId == room.Id && moveEvent.Character != character {
 				message = event.ToString()
 			}
