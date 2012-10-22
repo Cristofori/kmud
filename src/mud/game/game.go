@@ -34,7 +34,6 @@ func getToggleExitMenu(room database.Room) utils.Menu {
 }
 
 func Exec(conn net.Conn, character database.Character) {
-
 	room := engine.GetCharacterRoom(character)
 
 	printString := func(data string) {
@@ -261,9 +260,15 @@ func Exec(conn net.Conn, character database.Character) {
 
 	userInputChannel := make(chan string)
 	sync := make(chan bool)
+	panicChannel := make(chan interface{})
 
 	go func() {
-		// TODO: Don't crash (due to panic) when client disconnects at the prompt
+		defer func() {
+			if r := recover(); r != nil {
+				panicChannel <- r
+			}
+		}()
+
 		for {
 			input := utils.GetUserInput(conn, prompt())
 			userInputChannel <- input
@@ -289,6 +294,8 @@ func Exec(conn net.Conn, character database.Character) {
 			sync <- true
 		case event := <-*eventChannel:
 			processEvent(event)
+		case quitMessage := <-panicChannel:
+			panic(quitMessage)
 		}
 	}
 }
