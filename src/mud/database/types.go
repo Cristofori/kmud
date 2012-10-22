@@ -56,7 +56,7 @@ type Room struct {
 
 func newRoom() Room {
 	var room Room
-	room.Id = ""
+	room.Id = bson.NewObjectId()
 	room.Title = "The Void"
 	room.Description = "You are floating in the blackness of space. Complete darkness surrounds " +
 		"you in all directions. There is no escape, there is no hope, just the emptiness. " +
