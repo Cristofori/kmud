@@ -33,10 +33,9 @@ var _session *mgo.Session
 // TODO Use a read/write mutex
 var _mutex sync.Mutex
 
-func spewEvents() {
+func spewMessages() {
 	for {
-		fmt.Printf("Broadcasting...\n")
-		broadcast("Here's an event")
+		broadcast(MessageEvent{"Here's a message event"})
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -62,7 +61,7 @@ func StartUp(session *mgo.Session) error {
 		_model.Characters[character.Id] = character
 	}
 
-	go spewEvents()
+	// go spewMessages()
 
 	return err
 }
@@ -137,6 +136,13 @@ func MoveCharacter(character database.Character, direction database.ExitDirectio
 	err := UpdateCharacter(character)
 
 	utils.HandleError(err)
+
+	if err == nil {
+		var event MoveEvent
+		event.Character = character
+		event.RoomId = character.RoomId
+		broadcast(event)
+	}
 
 	return character, room, err
 }
