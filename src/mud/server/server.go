@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"labix.org/v2/mgo"
 	"mud/database"
+	"mud/engine"
 	"mud/game"
 	"mud/utils"
 	"net"
@@ -224,6 +225,8 @@ func main() {
 
 	listener, err := net.Listen("tcp", ":8945")
 	utils.HandleError(err)
+
+	err = engine.StartUp(session.Copy())
 
 	fmt.Println("Server listening on port 8945")
 

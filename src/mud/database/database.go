@@ -79,6 +79,24 @@ func findObject(session *mgo.Session, collection collectionName, query interface
 	return err
 }
 
+func findObjects(session *mgo.Session, collection collectionName, objects interface{}) error {
+	c := getCollection(session, collection)
+	iter := c.Find(nil).Iter()
+	return iter.All(objects)
+}
+
+func GetAllRooms(session *mgo.Session) ([]Room, error) {
+	var rooms []Room
+	err := findObjects(session, cRooms, &rooms)
+	return rooms, err
+}
+
+func GetAllCharacters(session *mgo.Session) ([]Character, error) {
+	var characters []Character
+	err := findObjects(session, cCharacters, &characters)
+	return characters, err
+}
+
 func findRoom(session *mgo.Session, query interface{}) (Room, error) {
 	var room Room
 	err := findObject(session, cRooms, query, &room)
@@ -135,7 +153,7 @@ func CreateCharacter(session *mgo.Session, user *User, characterName string) (Ch
 		return character, err
 	}
 
-	character = newCharacter(characterName)
+	character = NewCharacter(characterName)
 	character.RoomId = startingRoom.Id
 
 	err = CommitCharacter(session, character)
@@ -230,7 +248,7 @@ func GenerateDefaultMap(session *mgo.Session) {
 	c := getCollection(session, cRooms)
 	c.DropCollection()
 
-	room := newRoom()
+	room := NewRoom()
 	room.Location = Coordinate{0, 0, 0}
 	room.Default = true
 
@@ -244,7 +262,7 @@ func CreateUser(session *mgo.Session, name string) (User, error) {
 		return user, newDbError("That user already exists")
 	}
 
-	user = newUser(name)
+	user = NewUser(name)
 	err = CommitUser(session, user)
 	return user, err
 }
@@ -268,47 +286,6 @@ func CommitCharacter(session *mgo.Session, character Character) error {
 	_, err := c.UpsertId(character.Id, character)
 	printError(err)
 	return err
-}
-
-func MoveCharacter(session *mgo.Session, character *Character, direction ExitDirection) (Room, error) {
-	room, err := GetRoom(session, character.RoomId)
-
-	if err != nil {
-		return room, err
-	}
-
-	newLocation := room.Location.Next(direction)
-	room, err = GetRoomByLocation(session, newLocation)
-
-	if err != nil {
-		fmt.Printf("No room found at location %v, creating a new one\n", newLocation)
-		room = newRoom()
-
-		switch direction {
-		case DirectionNorth:
-			room.ExitSouth = true
-		case DirectionEast:
-			room.ExitWest = true
-		case DirectionSouth:
-			room.ExitNorth = true
-		case DirectionWest:
-			room.ExitEast = true
-		case DirectionUp:
-			room.ExitDown = true
-		case DirectionDown:
-			room.ExitUp = true
-		default:
-			panic("Unexpected code path")
-		}
-
-		room.Location = newLocation
-		err = CommitRoom(session, room)
-	}
-
-	character.RoomId = room.Id
-	err = CommitCharacter(session, *character)
-
-	return room, err
 }
 
 // vim: nocindent

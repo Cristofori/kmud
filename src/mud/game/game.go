@@ -5,6 +5,7 @@ import (
 	"io"
 	"labix.org/v2/mgo"
 	"mud/database"
+	"mud/engine"
 	"mud/utils"
 	"net"
 	"strings"
@@ -36,7 +37,7 @@ func getToggleExitMenu(room database.Room) utils.Menu {
 
 func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 
-	room, err := database.GetCharacterRoom(session, character)
+	room := engine.GetCharacterRoom(character)
 
 	printString := func(data string) {
 		io.WriteString(conn, data)
@@ -76,8 +77,8 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 					printLine("Nothing to see")
 				} else {
 					loc := room.Location.Next(arg)
-					roomToSee, err := database.GetRoomByLocation(session, loc)
-					if err == nil {
+					roomToSee, found := engine.GetRoomByLocation(loc)
+					if found {
 						printLine(roomToSee.ToString(database.ReadMode))
 					} else {
 						printLine("Nothing to see")
@@ -105,7 +106,9 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 
 			if direction != database.DirectionNone {
 				if room.HasExit(direction) {
-					newRoom, err := database.MoveCharacter(session, &character, direction)
+					var newRoom database.Room
+					var err error
+					character, newRoom, err = engine.MoveCharacter(character, direction)
 					if err == nil {
 						room = newRoom
 						printRoom()
@@ -144,7 +147,8 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 
 					if input != "" {
 						room.Title = input
-						database.CommitRoom(session, room)
+						// database.CommitRoom(session, room)
+						engine.UpdateRoom(room)
 					}
 					printRoomEditor()
 
@@ -153,7 +157,8 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 
 					if input != "" {
 						room.Description = input
-						database.CommitRoom(session, room)
+						//database.CommitRoom(session, room)
+						engine.UpdateRoom(room)
 					}
 					printRoomEditor()
 
@@ -165,7 +170,8 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 						toggleExit := func(direction database.ExitDirection) {
 							enable := !room.HasExit(direction)
 							room.SetExitEnabled(direction, enable)
-							database.CommitRoom(session, room)
+							// database.CommitRoom(session, room)
+							engine.UpdateRoom(room)
 						}
 
 						if choice == "" {
@@ -190,7 +196,8 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 			if input[0] == 'y' || input == "yes" {
 				database.GenerateDefaultMap(session)
 			}
-			room, err = database.GetCharacterRoom(session, character)
+
+			room = engine.GetCharacterRoom(character)
 			printRoom()
 
 		case "loc":
@@ -211,8 +218,8 @@ func Exec(session *mgo.Session, conn net.Conn, character database.Character) {
 			for y := startY; y <= endY; y += 1 {
 				printString("\n")
 				for x := startX; x <= endX; x += 1 {
-					currentRoom, err := database.GetRoomByLocation(session, database.Coordinate{x, y, z})
-					if err == nil {
+					currentRoom, found := engine.GetRoomByLocation(database.Coordinate{x, y, z})
+					if found {
 						if currentRoom == room {
 							printString("*")
 						} else {

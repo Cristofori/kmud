@@ -19,7 +19,7 @@ type User struct {
 	CharacterIds []bson.ObjectId `bson:"characterids,omitempty"`
 }
 
-func newUser(name string) User {
+func NewUser(name string) User {
 	var user User
 	user.Id = bson.NewObjectId()
 	user.Name = name
@@ -32,7 +32,7 @@ type Character struct {
 	RoomId bson.ObjectId `bson:"roomid"`
 }
 
-func newCharacter(name string) Character {
+func NewCharacter(name string) Character {
 	var character Character
 	character.Id = bson.NewObjectId()
 	character.Name = name
@@ -54,7 +54,7 @@ type Room struct {
 	Default     bool
 }
 
-func newRoom() Room {
+func NewRoom() Room {
 	var room Room
 	room.Id = bson.NewObjectId()
 	room.Title = "The Void"
