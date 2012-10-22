@@ -20,6 +20,8 @@ func login(session *mgo.Session, conn net.Conn) database.User {
 			return database.User{}
 		}
 
+        // TODO: Prevent multiple login with same user
+
 		user, err := database.GetUserByName(session, line)
 
 		if err != nil {
