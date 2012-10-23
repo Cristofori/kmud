@@ -68,6 +68,8 @@ func UpdateRoom(room database.Room) error {
 	_mutex.Lock()
 	defer _mutex.Unlock()
 
+	broadcast(RoomUpdateEvent{room})
+
 	_model.Rooms[room.Id] = room
 	return database.CommitRoom(_session, room)
 }

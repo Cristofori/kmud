@@ -31,9 +31,10 @@ func broadcast(event Event) {
 type EventType int
 
 const (
-	MessageEventType EventType = iota
-	EnterEventType   EventType = iota
-	LeaveEventType   EventType = iota
+	MessageEventType    EventType = iota
+	EnterEventType      EventType = iota
+	LeaveEventType      EventType = iota
+	RoomUpdateEventType EventType = iota
 )
 
 type Event interface {
@@ -53,6 +54,10 @@ type EnterEvent struct {
 type LeaveEvent struct {
 	Character database.Character
 	RoomId    bson.ObjectId
+}
+
+type RoomUpdateEvent struct {
+	Room database.Room
 }
 
 func (self MessageEvent) Type() EventType {
@@ -77,6 +82,14 @@ func (self LeaveEvent) Type() EventType {
 
 func (self LeaveEvent) ToString() string {
 	return fmt.Sprintf("%s has left the room", self.Character.PrettyName())
+}
+
+func (self RoomUpdateEvent) Type() EventType {
+	return RoomUpdateEventType
+}
+
+func (self RoomUpdateEvent) ToString() string {
+	return "This room has been modified"
 }
 
 // vim: nocindent

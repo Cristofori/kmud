@@ -247,8 +247,14 @@ func Exec(conn net.Conn, character database.Character) {
 			}
 		case engine.LeaveEventType:
 			moveEvent := event.(engine.LeaveEvent)
-			if moveEvent.RoomId == room.Id && moveEvent.Character != character {
+			if moveEvent.RoomId == room.Id && moveEvent.Character.Id != character.Id {
 				message = event.ToString()
+			}
+		case engine.RoomUpdateEventType:
+			roomEvent := event.(engine.RoomUpdateEvent)
+			if roomEvent.Room.Id == room.Id {
+				message = event.ToString()
+				room = roomEvent.Room
 			}
 		}
 
