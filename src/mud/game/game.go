@@ -309,7 +309,7 @@ func Exec(conn net.Conn, character database.Character) {
 				return
 			}
 			if strings.HasPrefix(input, "/") {
-				processCommand(argify(input[1:len(input)]))
+				processCommand(argify(input[1:]))
 			} else {
 				processAction(argify(input))
 			}
