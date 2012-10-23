@@ -177,4 +177,9 @@ func GenerateDefaultMap() {
 	AddRoom(room)
 }
 
+func BroadcastMessage(from database.Character, message string) {
+	msg := from.PrettyName() + ": " + message
+	broadcast(MessageEvent{msg})
+}
+
 // vim: nocindent

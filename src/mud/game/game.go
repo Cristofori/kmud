@@ -222,7 +222,12 @@ func Exec(conn net.Conn, character database.Character) {
 			}
 			printString("\n")
 
-			//case "message":
+		case "message":
+			if len(args) == 0 {
+				printLine("Nothing to say")
+			} else {
+				engine.BroadcastMessage(character, strings.Join(args, " "))
+			}
 
 		default:
 			printLine("Unrecognized command")
@@ -234,7 +239,7 @@ func Exec(conn net.Conn, character database.Character) {
 
 		switch event.Type() {
 		case engine.MessageEventType:
-			message = "Message: " + event.ToString()
+			message = event.ToString()
 		case engine.EnterEventType:
 			enterEvent := event.(engine.EnterEvent)
 			if enterEvent.RoomId == room.Id && enterEvent.Character != character {
