@@ -10,6 +10,13 @@ import (
 	"strings"
 )
 
+type userInputMode int
+
+const (
+	CleanUserInput userInputMode = iota
+	RawUserInput   userInputMode = iota
+)
+
 func getToggleExitMenu(room database.Room) utils.Menu {
 
 	onOrOff := func(direction database.ExitDirection) string {
@@ -54,6 +61,63 @@ func Exec(conn net.Conn, character database.Character) {
 
 	prompt := func() string {
 		return "> "
+	}
+
+	processEvent := func(event engine.Event) string {
+		message := ""
+
+		switch event.Type() {
+		case engine.MessageEventType:
+			message = event.ToString()
+		case engine.EnterEventType:
+			enterEvent := event.(engine.EnterEvent)
+			if enterEvent.RoomId == room.Id && enterEvent.Character != character {
+				message = event.ToString()
+			}
+		case engine.LeaveEventType:
+			moveEvent := event.(engine.LeaveEvent)
+			if moveEvent.RoomId == room.Id && moveEvent.Character.Id != character.Id {
+				message = event.ToString()
+			}
+		case engine.RoomUpdateEventType:
+			roomEvent := event.(engine.RoomUpdateEvent)
+			if roomEvent.Room.Id == room.Id {
+				message = event.ToString()
+				room = roomEvent.Room
+			}
+		}
+
+		return message
+	}
+
+	eventChannel := engine.Register()
+	defer engine.Unregister(eventChannel)
+
+	userInputChannel := make(chan string)
+	promptChannel := make(chan string)
+
+	inputModeChannel := make(chan userInputMode)
+	panicChannel := make(chan interface{})
+
+	getUserInput := func(inputMode userInputMode, prompt string) string {
+		inputModeChannel <- inputMode
+		promptChannel <- prompt
+
+		for {
+			select {
+			case input := <-userInputChannel:
+				return input
+			case event := <-*eventChannel:
+				message := processEvent(event)
+				if message != "" {
+					printLine("\n" + message)
+					printString(prompt)
+				}
+			case quitMessage := <-panicChannel:
+				panic(quitMessage)
+			}
+		}
+		panic("Unexpected code path")
 	}
 
 	processAction := func(action string, args []string) {
@@ -128,7 +192,7 @@ func Exec(conn net.Conn, character database.Character) {
 			printRoomEditor()
 
 			for {
-				input := utils.GetUserInput(conn, "Select a section to edit> ")
+				input := getUserInput(CleanUserInput, "Select a section to edit> ")
 
 				switch input {
 				case "":
@@ -136,7 +200,7 @@ func Exec(conn net.Conn, character database.Character) {
 					return
 
 				case "1":
-					input = utils.GetRawUserInput(conn, "Enter new title: ")
+					input = getUserInput(RawUserInput, "Enter new title: ")
 
 					if input != "" {
 						room.Title = input
@@ -145,7 +209,7 @@ func Exec(conn net.Conn, character database.Character) {
 					printRoomEditor()
 
 				case "2":
-					input = utils.GetRawUserInput(conn, "Enter new description: ")
+					input = getUserInput(RawUserInput, "Enter new description: ")
 
 					if input != "" {
 						room.Description = input
@@ -182,7 +246,7 @@ func Exec(conn net.Conn, character database.Character) {
 			}
 
 		case "rebuild":
-			input := utils.GetUserInput(conn, "Are you sure (delete all rooms and starts from scratch)? ")
+			input := getUserInput(CleanUserInput, "Are you sure (delete all rooms and starts from scratch)? ")
 			if input[0] == 'y' || input == "yes" {
 				engine.GenerateDefaultMap()
 			}
@@ -234,42 +298,8 @@ func Exec(conn net.Conn, character database.Character) {
 		}
 	}
 
-	processEvent := func(event engine.Event) {
-		message := ""
-
-		switch event.Type() {
-		case engine.MessageEventType:
-			message = event.ToString()
-		case engine.EnterEventType:
-			enterEvent := event.(engine.EnterEvent)
-			if enterEvent.RoomId == room.Id && enterEvent.Character != character {
-				message = event.ToString()
-			}
-		case engine.LeaveEventType:
-			moveEvent := event.(engine.LeaveEvent)
-			if moveEvent.RoomId == room.Id && moveEvent.Character.Id != character.Id {
-				message = event.ToString()
-			}
-		case engine.RoomUpdateEventType:
-			roomEvent := event.(engine.RoomUpdateEvent)
-			if roomEvent.Room.Id == room.Id {
-				message = event.ToString()
-				room = roomEvent.Room
-			}
-		}
-
-		if message != "" {
-			printLine("\n" + message)
-			printString(prompt())
-		}
-	}
-
 	printLine("Welcome, " + utils.FormatName(character.Name))
 	printRoom()
-
-	userInputChannel := make(chan string)
-	sync := make(chan bool)
-	panicChannel := make(chan interface{})
 
 	go func() {
 		defer func() {
@@ -279,38 +309,35 @@ func Exec(conn net.Conn, character database.Character) {
 		}()
 
 		for {
-			input := utils.GetUserInput(conn, prompt())
+			mode := <-inputModeChannel
+			prompt := <-promptChannel
+			input := ""
+
+			switch mode {
+			case CleanUserInput:
+				input = utils.GetUserInput(conn, prompt)
+			case RawUserInput:
+				input = utils.GetRawUserInput(conn, prompt)
+			default:
+				panic("Unhandled case in switch statement (userInputMode)")
+			}
+
 			userInputChannel <- input
-			<-sync
 		}
 	}()
 
-	eventChannel := engine.Register()
-	defer engine.Unregister(eventChannel)
-
-	getUserInput := func() {
-		for {
-			select {
-			case input := <-userInputChannel:
-				if input == "" {
-					return
-				}
-				if strings.HasPrefix(input, "/") {
-					processCommand(utils.Argify(input[1:]))
-				} else {
-					processAction(utils.Argify(input))
-				}
-				sync <- true
-			case event := <-*eventChannel:
-				processEvent(event)
-			case quitMessage := <-panicChannel:
-				panic(quitMessage)
-			}
+	// Main loop
+	for {
+		input := getUserInput(CleanUserInput, prompt())
+		if input == "" {
+			return
+		}
+		if strings.HasPrefix(input, "/") {
+			processCommand(utils.Argify(input[1:]))
+		} else {
+			processAction(utils.Argify(input))
 		}
 	}
-
-	// Main loop
-	getUserInput()
 }
 
 // vim: nocindent
