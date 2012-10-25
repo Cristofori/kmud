@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"container/list"
 	"fmt"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
@@ -32,6 +33,8 @@ var _session *mgo.Session
 // TODO Use a read/write mutex
 var _mutex sync.Mutex
 
+var eventQueueChannel chan Event
+
 func StartUp(session *mgo.Session) error {
 	_session = session
 	_model = globalModel{}
@@ -53,6 +56,10 @@ func StartUp(session *mgo.Session) error {
 		_model.Characters[character.Id] = character
 	}
 
+	// Start the event loop
+	eventQueueChannel = make(chan Event, 100)
+	go eventLoop()
+
 	return err
 }
 
@@ -68,9 +75,10 @@ func UpdateRoom(room database.Room) error {
 	_mutex.Lock()
 	defer _mutex.Unlock()
 
-	broadcast(RoomUpdateEvent{room})
-
 	_model.Rooms[room.Id] = room
+
+	queueEvent(RoomUpdateEvent{room})
+
 	return database.CommitRoom(_session, room)
 }
 
@@ -101,7 +109,7 @@ func MoveCharacter(character database.Character, direction database.ExitDirectio
 	room, found := GetRoomByLocation(newLocation)
 
 	if !found {
-		fmt.Printf("No room found at location %v, creating a new one\n", newLocation)
+		fmt.Printf("No room found at location %v, creating a new one (%s)\n", newLocation, character.PrettyName())
 		room = database.NewRoom()
 
 		switch direction {
@@ -132,8 +140,8 @@ func MoveCharacter(character database.Character, direction database.ExitDirectio
 	utils.HandleError(err)
 
 	if err == nil {
-		broadcast(EnterEvent{Character: character, RoomId: room.Id})
-		broadcast(LeaveEvent{Character: character, RoomId: oldRoomId})
+		queueEvent(EnterEvent{Character: character, RoomId: room.Id})
+		queueEvent(LeaveEvent{Character: character, RoomId: oldRoomId})
 	}
 
 	return character, room, err
@@ -181,7 +189,41 @@ func GenerateDefaultMap() {
 
 func BroadcastMessage(from database.Character, message string) {
 	msg := from.PrettyName() + ": " + message
-	broadcast(MessageEvent{msg})
+	queueEvent(MessageEvent{msg})
+}
+
+func queueEvent(event Event) {
+	eventQueueChannel <- event
+}
+
+func eventLoop() {
+	var m sync.Mutex
+	cond := sync.NewCond(&m)
+
+	eventQueue := list.New()
+
+	go func() {
+		for {
+			event := <-eventQueueChannel
+
+			cond.L.Lock()
+			eventQueue.PushBack(event)
+			cond.L.Unlock()
+			cond.Signal()
+		}
+	}()
+
+	for {
+		cond.L.Lock()
+		for eventQueue.Len() == 0 {
+			cond.Wait()
+		}
+
+		event := eventQueue.Remove(eventQueue.Front())
+		cond.L.Unlock()
+
+		broadcast(event.(Event))
+	}
 }
 
 // vim: nocindent

@@ -288,25 +288,29 @@ func Exec(conn net.Conn, character database.Character) {
 	eventChannel := engine.Register()
 	defer engine.Unregister(eventChannel)
 
-	// Main loop
-	for {
-		select {
-		case input := <-userInputChannel:
-			if input == "" {
-				return
+	getUserInput := func() {
+		for {
+			select {
+			case input := <-userInputChannel:
+				if input == "" {
+					return
+				}
+				if strings.HasPrefix(input, "/") {
+					processCommand(utils.Argify(input[1:]))
+				} else {
+					processAction(utils.Argify(input))
+				}
+				sync <- true
+			case event := <-*eventChannel:
+				processEvent(event)
+			case quitMessage := <-panicChannel:
+				panic(quitMessage)
 			}
-			if strings.HasPrefix(input, "/") {
-				processCommand(utils.Argify(input[1:]))
-			} else {
-				processAction(utils.Argify(input))
-			}
-			sync <- true
-		case event := <-*eventChannel:
-			processEvent(event)
-		case quitMessage := <-panicChannel:
-			panic(quitMessage)
 		}
 	}
+
+	// Main loop
+	getUserInput()
 }
 
 // vim: nocindent

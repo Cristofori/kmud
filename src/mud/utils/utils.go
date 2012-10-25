@@ -70,17 +70,16 @@ func PanicIfError(err error) {
 }
 
 func Argify(data string) (string, []string) {
-    fields := strings.Fields(data)
+	fields := strings.Fields(data)
 
-    if len(fields) == 0 {
-        return "", []string{}
-    }
+	if len(fields) == 0 {
+		return "", []string{}
+	}
 
-    arg1 := fields[0]
-    args := fields[1:]
+	arg1 := fields[0]
+	args := fields[1:]
 
-    return arg1, args
+	return arg1, args
 }
-
 
 // vim: nocindent
