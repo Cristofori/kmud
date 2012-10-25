@@ -222,6 +222,12 @@ func Exec(conn net.Conn, character database.Character) {
 						menu := getToggleExitMenu(room)
 						choice, _ := menu.Exec(conn)
 
+						/*
+						 * TODO - Do something like this to make it non-blocking
+						 * menu.Print(conn)
+						 * choice := getUserInput(CleanUserInput, menu.prompt())
+						 */
+
 						toggleExit := func(direction database.ExitDirection) {
 							enable := !room.HasExit(direction)
 							room.SetExitEnabled(direction, enable)
