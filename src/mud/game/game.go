@@ -273,20 +273,55 @@ func Exec(conn net.Conn, character database.Character) {
 
 			z := room.Location.Z
 
-			for y := startY; y <= endY; y += 1 {
+			for y := startY; y < endY; y += 1 {
+				exitRow := ""
 				printString("\n")
-				for x := startX; x <= endX; x += 1 {
-					currentRoom, found := engine.GetRoomByLocation(database.Coordinate{x, y, z})
-					if found {
+				for x := startX; x < endX; x += 1 {
+					currentRoom, currentFound := engine.GetRoomByLocation(database.Coordinate{x, y, z})
+					eastRoom, eastFound := engine.GetRoomByLocation(database.Coordinate{x + 1, y, z})
+					southRoom, southFound := engine.GetRoomByLocation(database.Coordinate{x, y + 1, z})
+
+					if currentFound {
 						if currentRoom == room {
-							printString("*")
+							printString("O")
 						} else {
 							printString("#")
 						}
+
+						if eastFound {
+							if currentRoom.HasExit(database.DirectionEast) {
+								if eastRoom.HasExit(database.DirectionWest) {
+									printString("-")
+								} else {
+									printString(">")
+								}
+							} else if eastRoom.HasExit(database.DirectionWest) {
+								printString("<")
+							}
+						} else {
+							printString(" ")
+						}
+
+						if southFound {
+							if currentRoom.HasExit(database.DirectionSouth) {
+								if southRoom.HasExit(database.DirectionNorth) {
+									exitRow = exitRow + "|"
+								} else {
+									exitRow = exitRow + "v"
+								}
+							} else {
+								exitRow = exitRow + "^"
+							}
+						} else {
+							exitRow = exitRow + " "
+						}
 					} else {
-						printString(" ")
+						printString("  ")
+						exitRow = exitRow + " "
 					}
+					exitRow = exitRow + " "
 				}
+				printString("\n" + exitRow)
 			}
 			printString("\n")
 
