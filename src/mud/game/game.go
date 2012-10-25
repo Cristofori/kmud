@@ -220,27 +220,25 @@ func Exec(conn net.Conn, character database.Character) {
 				case "3":
 					for {
 						menu := getToggleExitMenu(room)
-						choice, _ := menu.Exec(conn)
+						choice := ""
 
-						/*
-						 * TODO - Do something like this to make it non-blocking
-						 * menu.Print(conn)
-						 * choice := getUserInput(CleanUserInput, menu.prompt())
-						 */
-
-						toggleExit := func(direction database.ExitDirection) {
-							enable := !room.HasExit(direction)
-							room.SetExitEnabled(direction, enable)
-							engine.UpdateRoom(room)
+						for {
+							menu.Print(conn)
+							choice = getUserInput(CleanUserInput, menu.Prompt)
+							if menu.HasAction(choice) || choice == "" {
+								break
+							}
 						}
 
 						if choice == "" {
 							break
-						} else {
-							direction := database.StringToDirection(choice)
-							if direction != database.DirectionNone {
-								toggleExit(direction)
-							}
+						}
+
+						direction := database.StringToDirection(choice)
+						if direction != database.DirectionNone {
+							enable := !room.HasExit(direction)
+							room.SetExitEnabled(direction, enable)
+							engine.UpdateRoom(room)
 						}
 					}
 
