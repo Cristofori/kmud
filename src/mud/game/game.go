@@ -288,19 +288,6 @@ func Exec(conn net.Conn, character database.Character) {
 	eventChannel := engine.Register()
 	defer engine.Unregister(eventChannel)
 
-	argify := func(data string) (string, []string) {
-		fields := strings.Fields(data)
-
-		if len(fields) == 0 {
-			return "", []string{}
-		}
-
-		arg1 := fields[0]
-		args := fields[1:]
-
-		return arg1, args
-	}
-
 	// Main loop
 	for {
 		select {
@@ -309,9 +296,9 @@ func Exec(conn net.Conn, character database.Character) {
 				return
 			}
 			if strings.HasPrefix(input, "/") {
-				processCommand(argify(input[1:]))
+				processCommand(utils.Argify(input[1:]))
 			} else {
-				processAction(argify(input))
+				processAction(utils.Argify(input))
 			}
 			sync <- true
 		case event := <-*eventChannel:
