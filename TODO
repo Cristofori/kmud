@@ -1,0 +1,13 @@
+* View other characters in room
+* Prevent simultaneous logins of same user
+* NE, NW, SE, SW exit types
+* Parse and save map file
+
+#-#-#>#<#-#   # #
+      v ^  \ / X
+      #>#   # # #
+
+* Admin menu for managing users
+* UTF-8 map printing
+* Colorized output
+* NPCs
