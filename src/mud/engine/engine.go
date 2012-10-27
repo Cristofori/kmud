@@ -291,11 +291,24 @@ func CreateUser(username string) (database.User, error) {
 	user, err := database.CreateUser(_session, username)
 
 	if err == nil {
-		user.SetOnline(true)
 		_model.Users[user.Id] = user
 	}
 
 	return user, err
+}
+
+func CreateCharacter(user *database.User, charname string) (database.Character, error) {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	character, err := database.CreateCharacter(_session, user, charname)
+
+	if err == nil {
+		_model.Users[user.Id] = *user
+		_model.Characters[character.Id] = character
+	}
+
+	return character, err
 }
 
 // vim: nocindent

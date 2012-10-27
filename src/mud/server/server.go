@@ -51,7 +51,10 @@ func newUser(session *mgo.Session, conn net.Conn) database.User {
 		user, err := engine.CreateUser(line)
 
 		if err == nil {
-			return user
+			err = engine.Login(user)
+			if err == nil {
+				return user
+			}
 		}
 
 		utils.WriteLine(conn, err.Error())
@@ -70,7 +73,7 @@ func newCharacter(session *mgo.Session, conn net.Conn, user *database.User) data
 			return database.Character{}
 		}
 
-		character, err := database.CreateCharacter(session, user, line)
+		character, err := engine.CreateCharacter(user, line)
 
 		if err == nil {
 			return character
