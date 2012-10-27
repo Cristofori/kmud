@@ -23,6 +23,7 @@ func newEngineError(message string) error {
 }
 
 type globalModel struct {
+	Users      map[bson.ObjectId]database.User
 	Characters map[bson.ObjectId]database.Character
 	Rooms      map[bson.ObjectId]database.Room
 }
@@ -38,14 +39,15 @@ func StartUp(session *mgo.Session) error {
 	_session = session
 	_model = globalModel{}
 
+	_model.Users = map[bson.ObjectId]database.User{}
 	_model.Characters = map[bson.ObjectId]database.Character{}
 	_model.Rooms = map[bson.ObjectId]database.Room{}
 
-	rooms, err := database.GetAllRooms(session)
+	users, err := database.GetAllUsers(session)
 	utils.HandleError(err)
 
-	for _, room := range rooms {
-		_model.Rooms[room.Id] = room
+	for _, user := range users {
+		_model.Users[user.Id] = user
 	}
 
 	characters, err := database.GetAllCharacters(session)
@@ -53,6 +55,13 @@ func StartUp(session *mgo.Session) error {
 
 	for _, character := range characters {
 		_model.Characters[character.Id] = character
+	}
+
+	rooms, err := database.GetAllRooms(session)
+	utils.HandleError(err)
+
+	for _, room := range rooms {
+		_model.Rooms[room.Id] = room
 	}
 
 	// Start the event loop
@@ -144,6 +153,19 @@ func MoveCharacter(character database.Character, direction database.ExitDirectio
 	}
 
 	return character, room, err
+}
+
+func GetUserByName(username string) (database.User, error) {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	for _, user := range _model.Users {
+		if user.Name == username {
+			return user, nil
+		}
+	}
+
+	return database.User{}, newEngineError("User not found")
 }
 
 func GetCharacterRoom(character database.Character) database.Room {
@@ -238,6 +260,28 @@ func CharactersIn(room database.Room, except database.Character) *list.List {
 	}
 
 	return charList
+}
+
+func Login(user database.User) error {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	if user.Online() {
+		return newEngineError("That user is already online")
+	}
+
+	user.SetOnline(true)
+	_model.Users[user.Id] = user
+
+	return nil
+}
+
+func Logout(user database.User) {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	user.SetOnline(false)
+	_model.Users[user.Id] = user
 }
 
 // vim: nocindent

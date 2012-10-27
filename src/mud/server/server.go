@@ -20,14 +20,18 @@ func login(session *mgo.Session, conn net.Conn) database.User {
 			return database.User{}
 		}
 
-		// TODO: Prevent multiple login with same user
-
-		user, err := database.GetUserByName(session, line)
+		user, err := engine.GetUserByName(line)
 
 		if err != nil {
-			utils.WriteLine(conn, "User not found")
+			utils.WriteLine(conn, err.Error())
 		} else {
-			return user
+			err := engine.Login(user)
+
+			if err == nil {
+				return user
+			} else {
+				utils.WriteLine(conn, err.Error())
+			}
 		}
 	}
 
@@ -177,6 +181,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			case "":
 				fallthrough
 			case "l":
+				engine.Logout(user)
 				user = database.User{}
 			case "a":
 				adminMenu := adminMenu(session)

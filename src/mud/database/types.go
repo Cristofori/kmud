@@ -18,6 +18,7 @@ type User struct {
 	Id           bson.ObjectId `bson:"_id,omitempty"`
 	Name         string
 	CharacterIds []bson.ObjectId `bson:"characterids,omitempty"`
+	online       bool
 }
 
 func NewUser(name string) User {
@@ -223,6 +224,14 @@ func (self *Character) Online() bool {
 
 func (self *User) PrettyName() string {
 	return utils.FormatName(self.Name)
+}
+
+func (self *User) SetOnline(online bool) {
+	self.online = online
+}
+
+func (self *User) Online() bool {
+	return self.online
 }
 
 func (self *Coordinate) Next(direction ExitDirection) Coordinate {

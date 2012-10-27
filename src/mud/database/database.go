@@ -85,16 +85,22 @@ func findObjects(session *mgo.Session, collection collectionName, objects interf
 	return iter.All(objects)
 }
 
-func GetAllRooms(session *mgo.Session) ([]Room, error) {
-	var rooms []Room
-	err := findObjects(session, cRooms, &rooms)
-	return rooms, err
+func GetAllUsers(session *mgo.Session) ([]User, error) {
+	var users []User
+	err := findObjects(session, cUsers, &users)
+	return users, err
 }
 
 func GetAllCharacters(session *mgo.Session) ([]Character, error) {
 	var characters []Character
 	err := findObjects(session, cCharacters, &characters)
 	return characters, err
+}
+
+func GetAllRooms(session *mgo.Session) ([]Room, error) {
+	var rooms []Room
+	err := findObjects(session, cRooms, &rooms)
+	return rooms, err
 }
 
 func findRoom(session *mgo.Session, query interface{}) (Room, error) {
