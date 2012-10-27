@@ -339,6 +339,21 @@ func GetCharacters(user database.User) []database.Character {
 	return characters
 }
 
+func GetOnlineCharacters() []database.Character {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	var characters []database.Character
+
+	for _, char := range _model.Characters {
+		if char.Online() {
+			characters = append(characters, char)
+		}
+	}
+
+	return characters
+}
+
 func DeleteCharacter(user *database.User, charId bson.ObjectId) error {
 	_mutex.Lock()
 	defer _mutex.Unlock()

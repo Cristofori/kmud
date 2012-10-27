@@ -311,6 +311,18 @@ func Exec(conn net.Conn, character database.Character) {
 				engine.BroadcastMessage(character, strings.Join(args, " "))
 			}
 
+		case "who":
+			chars := engine.GetOnlineCharacters()
+
+			printLine("")
+			printLine("Online Players")
+			printLine("--------------")
+
+			for _, char := range chars {
+				printLine(char.PrettyName())
+			}
+			printLine("")
+
 		default:
 			printLine("Unrecognized command")
 		}
