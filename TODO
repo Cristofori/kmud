@@ -1,4 +1,5 @@
 * View other characters in room
+* Login/logout events
 * Prevent simultaneous logins of same user
 * NE, NW, SE, SW exit types
 * Parse and save map file
