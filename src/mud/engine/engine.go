@@ -232,7 +232,7 @@ func CharactersIn(room database.Room, except database.Character) *list.List {
 	charList := list.New()
 
 	for _, char := range _model.Characters {
-		if char.RoomId == room.Id && char.Id != except.Id {
+		if char.RoomId == room.Id && char.Id != except.Id && char.Online() {
 			charList.PushBack(char)
 		}
 	}

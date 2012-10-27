@@ -217,7 +217,7 @@ func (self *Character) SetOnline(online bool) {
 	self.online = online
 }
 
-func (self *Character) GetOnline() bool {
+func (self *Character) Online() bool {
 	return self.online
 }
 

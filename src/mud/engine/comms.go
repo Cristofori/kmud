@@ -20,6 +20,8 @@ func Register(character database.Character) *chan Event {
 	_listeners[&listener] = character
 
 	character.SetOnline(true)
+	_model.Characters[character.Id] = character
+
 	queueEvent(LoginEvent{character})
 
 	return &listener
@@ -31,6 +33,7 @@ func Unregister(listener *chan Event) {
 
 	character := _listeners[listener]
 	character.SetOnline(false)
+	_model.Characters[character.Id] = character
 
 	queueEvent(LogoutEvent{character})
 	delete(_listeners, listener)
