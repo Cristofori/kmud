@@ -311,6 +311,13 @@ func CreateCharacter(user *database.User, charname string) (database.Character, 
 	return character, err
 }
 
+func GetCharacter(id bson.ObjectId) database.Character {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	return _model.Characters[id]
+}
+
 func GetCharacters(user database.User) []database.Character {
 	_mutex.Lock()
 	defer _mutex.Unlock()
@@ -322,6 +329,20 @@ func GetCharacters(user database.User) []database.Character {
 	}
 
 	return characters
+}
+
+func DeleteCharacter(user *database.User, charId bson.ObjectId) error {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	err := database.DeleteCharacter(_session, user, charId)
+
+	if err != nil {
+		delete(_model.Characters, charId)
+		_model.Users[user.Id] = *user
+	}
+
+	return err
 }
 
 // vim: nocindent

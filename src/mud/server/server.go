@@ -201,7 +201,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				_, err := strconv.Atoi(deleteChoice)
 
 				if err == nil {
-					err = database.DeleteCharacter(session, &user, deleteCharId)
+					err = engine.DeleteCharacter(&user, deleteCharId)
 
 					if err != nil {
 						utils.WriteLine(conn, fmt.Sprintf("Error deleting character: %s", err))
@@ -212,7 +212,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				_, err := strconv.Atoi(choice)
 
 				if err == nil {
-					character, _ = database.GetCharacter(session, charId)
+					character = engine.GetCharacter(charId)
 				}
 			}
 		} else {
