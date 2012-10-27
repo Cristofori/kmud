@@ -281,66 +281,28 @@ func Exec(conn net.Conn, character database.Character) {
 		case "map":
 			width := 20 // Should be even
 
-			startX := room.Location.X - (width / 2)
-			startY := room.Location.Y - (width / 2)
+			builder := newMapBuilder(width, width)
+
+			startX := room.Location.X - (width / 2) + 1
+			startY := room.Location.Y - (width / 2) + 1
 			endX := startX + width
 			endY := startY + width
 
 			z := room.Location.Z
 
 			for y := startY; y < endY; y += 1 {
-				exitRow := ""
-				printString("\n")
 				for x := startX; x < endX; x += 1 {
 					loc := database.Coordinate{x, y, z}
+					currentRoom, found := engine.GetRoomByLocation(loc)
 
-					currentRoom, currentFound := engine.GetRoomByLocation(loc)
-					eastRoom, eastFound := engine.GetRoomByLocation(loc.Next(database.DirectionEast))
-					southRoom, southFound := engine.GetRoomByLocation(loc.Next(database.DirectionSouth))
-
-					if currentFound {
-						if currentRoom == room {
-							printString("O")
-						} else {
-							printString("#")
-						}
-
-						if eastFound {
-							if currentRoom.HasExit(database.DirectionEast) {
-								if eastRoom.HasExit(database.DirectionWest) {
-									printString("-")
-								} else {
-									printString(">")
-								}
-							} else if eastRoom.HasExit(database.DirectionWest) {
-								printString("<")
-							}
-						} else {
-							printString(" ")
-						}
-
-						if southFound {
-							if currentRoom.HasExit(database.DirectionSouth) {
-								if southRoom.HasExit(database.DirectionNorth) {
-									exitRow = exitRow + "|"
-								} else {
-									exitRow = exitRow + "v"
-								}
-							} else {
-								exitRow = exitRow + "^"
-							}
-						} else {
-							exitRow = exitRow + " "
-						}
-					} else {
-						printString("  ")
-						exitRow = exitRow + " "
+					if found {
+						// Translate to 0-based coordinates
+						builder.AddRoom(currentRoom, (x-startX)*2, (y-startY)*2)
 					}
-					exitRow = exitRow + " "
 				}
-				printString("\n" + exitRow)
 			}
-			printString("\n")
+
+			printString(builder.ToString())
 
 		case "message":
 			if len(args) == 0 {
@@ -393,6 +355,114 @@ func Exec(conn net.Conn, character database.Character) {
 		} else {
 			processAction(utils.Argify(input))
 		}
+	}
+}
+
+type mapBuilder struct {
+	width  int
+	height int
+	data   [][]mapTile
+}
+
+type mapTile struct {
+	char rune
+}
+
+func newMapBuilder(width int, height int) mapBuilder {
+	var builder mapBuilder
+
+	// Double the size to account for extra space to draw exits
+	width *= 2
+	height *= 2
+
+	builder.data = make([][]mapTile, height)
+
+	for y := 0; y < height; y += 1 {
+		builder.data[y] = make([]mapTile, width)
+	}
+
+	builder.width = width
+	builder.height = height
+
+	for y := 0; y < height; y += 1 {
+		for x := 0; x < width; x += 1 {
+			builder.data[y][x].char = ' '
+		}
+	}
+
+	return builder
+}
+
+func (self *mapBuilder) AddRoom(room database.Room, x int, y int) {
+	addIfExists := func(dir database.ExitDirection, x int, y int) {
+		if x < 0 || y < 0 {
+			return
+		}
+
+		if room.HasExit(dir) {
+			self.data[y][x].AddExit(dir)
+		}
+	}
+
+	centerX := (self.width / 2) - 2
+	centerY := (self.height / 2) - 2
+
+	if x == centerX && y == centerY {
+		self.data[y][x].char = 'O'
+	} else {
+		self.data[y][x].char = '#'
+	}
+
+	addIfExists(database.DirectionNorth, x, y-1)
+	addIfExists(database.DirectionNorthEast, x+1, y-1)
+	addIfExists(database.DirectionEast, x+1, y)
+	addIfExists(database.DirectionSouthEast, x+1, y+1)
+	addIfExists(database.DirectionSouth, x, y+1)
+	addIfExists(database.DirectionSouthWest, x-1, y+1)
+	addIfExists(database.DirectionWest, x-1, y)
+	addIfExists(database.DirectionNorthWest, x-1, y-1)
+}
+
+func (self *mapBuilder) ToString() string {
+	str := ""
+	for y := 0; y < self.height; y += 1 {
+		for x := 0; x < self.width; x += 1 {
+			str = str + string(self.data[y][x].char)
+		}
+		str = str + "\n"
+	}
+	return str
+}
+
+func (self *mapTile) AddExit(dir database.ExitDirection) {
+
+	combineChars := func(r1 rune, r2 rune, r3 rune) {
+		if self.char == r1 {
+			self.char = r2
+		} else {
+			self.char = r3
+		}
+	}
+
+	switch dir {
+	case database.DirectionNorth:
+		combineChars('v', '|', '^')
+	case database.DirectionNorthEast:
+		combineChars('\\', 'X', '/')
+	case database.DirectionEast:
+		combineChars('<', '-', '>')
+	case database.DirectionSouthEast:
+		combineChars('/', 'X', '\\')
+	case database.DirectionSouth:
+		combineChars('^', '|', 'v')
+	case database.DirectionSouthWest:
+		combineChars('\\', 'X', '/')
+	case database.DirectionWest:
+		combineChars('>', '-', '<')
+	case database.DirectionNorthWest:
+		combineChars('/', 'X', '\\')
+	default:
+		panic("Unexpected direction given to mapTile::AddExit()")
 	}
 }
 
