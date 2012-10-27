@@ -30,7 +30,6 @@ type globalModel struct {
 var _model globalModel
 var _session *mgo.Session
 
-// TODO Use a read/write mutex
 var _mutex sync.Mutex
 
 var eventQueueChannel chan Event
@@ -224,6 +223,21 @@ func eventLoop() {
 
 		broadcast(event.(Event))
 	}
+}
+
+func CharactersIn(room database.Room, except database.Character) *list.List {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	charList := list.New()
+
+	for _, char := range _model.Characters {
+		if char.RoomId == room.Id && char.Id != except.Id {
+			charList.PushBack(char)
+		}
+	}
+
+	return charList
 }
 
 // vim: nocindent

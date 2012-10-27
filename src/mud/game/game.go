@@ -52,11 +52,12 @@ func Exec(conn net.Conn, character database.Character) {
 	}
 
 	printRoom := func() {
-		printLine(room.ToString(database.ReadMode))
+		charList := engine.CharactersIn(room, character)
+		printLine(room.ToString(database.ReadMode, charList))
 	}
 
 	printRoomEditor := func() {
-		printLine(room.ToString(database.EditMode))
+		printLine(room.ToString(database.EditMode, nil))
 	}
 
 	prompt := func() string {
@@ -136,7 +137,7 @@ func Exec(conn net.Conn, character database.Character) {
 					loc := room.Location.Next(arg)
 					roomToSee, found := engine.GetRoomByLocation(loc)
 					if found {
-						printLine(roomToSee.ToString(database.ReadMode))
+						printLine(roomToSee.ToString(database.ReadMode, engine.CharactersIn(roomToSee, database.Character{})))
 					} else {
 						printLine("Nothing to see")
 					}

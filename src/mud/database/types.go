@@ -1,6 +1,7 @@
 package database
 
 import (
+	"container/list"
 	"fmt"
 	"labix.org/v2/mgo/bson"
 	"mud/utils"
@@ -116,16 +117,30 @@ func directionToExitString(direction ExitDirection) string {
 	panic("Unexpected code path")
 }
 
-func (self *Room) ToString(mode PrintMode) string {
+func (self *Room) ToString(mode PrintMode, chars *list.List) string {
 
 	var str string
 	if mode == ReadMode {
-		str = fmt.Sprintf("\n >>> %v <<< (%v %v %v)\n\n %v \n\n Exits: ",
+		str = fmt.Sprintf("\n >>> %v <<< (%v %v %v)\n\n %v",
 			self.Title,
 			self.Location.X,
 			self.Location.Y,
 			self.Location.Z,
 			self.Description)
+
+		if chars.Len() > 0 {
+			str = str + "\n\n Also here: "
+
+			var names []string
+			for e := chars.Front(); e != nil; e = e.Next() {
+				char := e.Value.(Character)
+				names = append(names, char.PrettyName())
+			}
+			str = str + strings.Join(names, ", ")
+		}
+
+		str = str + "\n\n Exits: "
+
 	} else {
 		str = fmt.Sprintf("\n [1] %v \n\n [2] %v \n\n [3] Exits: ", self.Title, self.Description)
 	}
