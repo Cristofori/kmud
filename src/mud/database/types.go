@@ -45,17 +45,21 @@ func NewCharacter(name string) Character {
 }
 
 type Room struct {
-	Id          bson.ObjectId `bson:"_id"`
-	Title       string
-	Description string
-	Location    Coordinate
-	ExitNorth   bool
-	ExitEast    bool
-	ExitSouth   bool
-	ExitWest    bool
-	ExitUp      bool
-	ExitDown    bool
-	Default     bool
+	Id            bson.ObjectId `bson:"_id"`
+	Title         string
+	Description   string
+	Location      Coordinate
+	ExitNorth     bool
+	ExitNorthEast bool
+	ExitEast      bool
+	ExitSouthEast bool
+	ExitSouth     bool
+	ExitSouthWest bool
+	ExitWest      bool
+	ExitNorthWest bool
+	ExitUp        bool
+	ExitDown      bool
+	Default       bool
 }
 
 func NewRoom() Room {
@@ -67,9 +71,13 @@ func NewRoom() Room {
 		"You are likely to be eaten by a grue."
 
 	room.ExitNorth = false
+	room.ExitNorthEast = false
 	room.ExitEast = false
+	room.ExitSouthEast = false
 	room.ExitSouth = false
+	room.ExitSouthWest = false
 	room.ExitWest = false
+	room.ExitNorthWest = false
 	room.ExitUp = false
 	room.ExitDown = false
 
@@ -83,13 +91,17 @@ func NewRoom() Room {
 type ExitDirection int
 
 const (
-	DirectionNone  ExitDirection = iota
-	DirectionNorth ExitDirection = iota
-	DirectionEast  ExitDirection = iota
-	DirectionSouth ExitDirection = iota
-	DirectionWest  ExitDirection = iota
-	DirectionUp    ExitDirection = iota
-	DirectionDown  ExitDirection = iota
+	DirectionNone      ExitDirection = iota
+	DirectionNorth     ExitDirection = iota
+	DirectionNorthEast ExitDirection = iota
+	DirectionEast      ExitDirection = iota
+	DirectionSouthEast ExitDirection = iota
+	DirectionSouth     ExitDirection = iota
+	DirectionSouthWest ExitDirection = iota
+	DirectionWest      ExitDirection = iota
+	DirectionNorthWest ExitDirection = iota
+	DirectionUp        ExitDirection = iota
+	DirectionDown      ExitDirection = iota
 )
 
 type PrintMode int
@@ -103,12 +115,20 @@ func directionToExitString(direction ExitDirection) string {
 	switch direction {
 	case DirectionNorth:
 		return "[N]orth"
+	case DirectionNorthEast:
+		return "[NE]North East"
 	case DirectionEast:
 		return "[E]ast"
+	case DirectionSouthEast:
+		return "[SE]South East"
 	case DirectionSouth:
 		return "[S]outh"
+	case DirectionSouthWest:
+		return "[SW]South West"
 	case DirectionWest:
 		return "[W]est"
+	case DirectionNorthWest:
+		return "[NW]North West"
 	case DirectionUp:
 		return "[U]p"
 	case DirectionDown:
@@ -157,9 +177,13 @@ func (self *Room) ToString(mode PrintMode, chars *list.List) string {
 	}
 
 	appendIfExists(DirectionNorth)
+	appendIfExists(DirectionNorthEast)
 	appendIfExists(DirectionEast)
+	appendIfExists(DirectionSouthEast)
 	appendIfExists(DirectionSouth)
+	appendIfExists(DirectionSouthWest)
 	appendIfExists(DirectionWest)
+	appendIfExists(DirectionNorthWest)
 	appendIfExists(DirectionUp)
 	appendIfExists(DirectionDown)
 
@@ -178,12 +202,20 @@ func (self *Room) HasExit(dir ExitDirection) bool {
 	switch dir {
 	case DirectionNorth:
 		return self.ExitNorth
+	case DirectionNorthEast:
+		return self.ExitNorthEast
 	case DirectionEast:
 		return self.ExitEast
+	case DirectionSouthEast:
+		return self.ExitSouthEast
 	case DirectionSouth:
 		return self.ExitSouth
+	case DirectionSouthWest:
+		return self.ExitSouthWest
 	case DirectionWest:
 		return self.ExitWest
+	case DirectionNorthWest:
+		return self.ExitNorthWest
 	case DirectionUp:
 		return self.ExitUp
 	case DirectionDown:
@@ -197,12 +229,20 @@ func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
 	switch dir {
 	case DirectionNorth:
 		self.ExitNorth = enabled
+	case DirectionNorthEast:
+		self.ExitNorthEast = enabled
 	case DirectionEast:
 		self.ExitEast = enabled
+	case DirectionSouthEast:
+		self.ExitSouthEast = enabled
 	case DirectionSouth:
 		self.ExitSouth = enabled
+	case DirectionSouthWest:
+		self.ExitSouthWest = enabled
 	case DirectionWest:
 		self.ExitWest = enabled
+	case DirectionNorthWest:
+		self.ExitNorthWest = enabled
 	case DirectionUp:
 		self.ExitUp = enabled
 	case DirectionDown:
@@ -239,11 +279,23 @@ func (self *Coordinate) Next(direction ExitDirection) Coordinate {
 	switch direction {
 	case DirectionNorth:
 		newCoord.Y -= 1
+	case DirectionNorthEast:
+		newCoord.Y -= 1
+		newCoord.X += 1
 	case DirectionEast:
+		newCoord.X += 1
+	case DirectionSouthEast:
+		newCoord.Y += 1
 		newCoord.X += 1
 	case DirectionSouth:
 		newCoord.Y += 1
+	case DirectionSouthWest:
+		newCoord.Y += 1
+		newCoord.X -= 1
 	case DirectionWest:
+		newCoord.X -= 1
+	case DirectionNorthWest:
+		newCoord.Y -= 1
 		newCoord.X -= 1
 	case DirectionUp:
 		newCoord.Z -= 1
@@ -260,18 +312,26 @@ func StringToDirection(str string) ExitDirection {
 		fallthrough
 	case "north":
 		return DirectionNorth
-	case "s":
-		fallthrough
-	case "south":
-		return DirectionSouth
+	case "ne":
+		return DirectionNorthEast
 	case "e":
 		fallthrough
 	case "east":
 		return DirectionEast
+	case "se":
+		return DirectionSouthEast
+	case "s":
+		fallthrough
+	case "south":
+		return DirectionSouth
+	case "sw":
+		return DirectionSouthWest
 	case "w":
 		fallthrough
 	case "west":
 		return DirectionWest
+	case "nw":
+		return DirectionNorthWest
 	case "u":
 		fallthrough
 	case "up":

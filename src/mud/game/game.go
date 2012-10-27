@@ -31,9 +31,13 @@ func getToggleExitMenu(room database.Room) utils.Menu {
 	menu := utils.NewMenu("Edit Exits")
 
 	menu.AddAction("n", "[N]orth: "+onOrOff(database.DirectionNorth))
+	menu.AddAction("ne", "[NE]North East"+onOrOff(database.DirectionNorthEast))
 	menu.AddAction("e", "[E]ast: "+onOrOff(database.DirectionEast))
+	menu.AddAction("se", "[SE]South East"+onOrOff(database.DirectionSouthEast))
 	menu.AddAction("s", "[S]outh: "+onOrOff(database.DirectionSouth))
+	menu.AddAction("sw", "[SW]South West"+onOrOff(database.DirectionSouthWest))
 	menu.AddAction("w", "[W]est: "+onOrOff(database.DirectionWest))
+	menu.AddAction("nw", "[NW]North West"+onOrOff(database.DirectionNorthWest))
 	menu.AddAction("u", "[U]p: "+onOrOff(database.DirectionUp))
 	menu.AddAction("d", "[D]own: "+onOrOff(database.DirectionDown))
 
@@ -288,9 +292,11 @@ func Exec(conn net.Conn, character database.Character) {
 				exitRow := ""
 				printString("\n")
 				for x := startX; x < endX; x += 1 {
-					currentRoom, currentFound := engine.GetRoomByLocation(database.Coordinate{x, y, z})
-					eastRoom, eastFound := engine.GetRoomByLocation(database.Coordinate{x + 1, y, z})
-					southRoom, southFound := engine.GetRoomByLocation(database.Coordinate{x, y + 1, z})
+					loc := database.Coordinate{x, y, z}
+
+					currentRoom, currentFound := engine.GetRoomByLocation(loc)
+					eastRoom, eastFound := engine.GetRoomByLocation(loc.Next(database.DirectionEast))
+					southRoom, southFound := engine.GetRoomByLocation(loc.Next(database.DirectionSouth))
 
 					if currentFound {
 						if currentRoom == room {

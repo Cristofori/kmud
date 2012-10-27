@@ -123,12 +123,20 @@ func MoveCharacter(character database.Character, direction database.ExitDirectio
 		switch direction {
 		case database.DirectionNorth:
 			room.ExitSouth = true
+		case database.DirectionNorthEast:
+			room.ExitSouthWest = true
 		case database.DirectionEast:
 			room.ExitWest = true
+		case database.DirectionSouthEast:
+			room.ExitNorthWest = true
 		case database.DirectionSouth:
 			room.ExitNorth = true
+		case database.DirectionSouthWest:
+			room.ExitNorthEast = true
 		case database.DirectionWest:
 			room.ExitEast = true
+		case database.DirectionNorthWest:
+			room.ExitSouthEast = true
 		case database.DirectionUp:
 			room.ExitDown = true
 		case database.DirectionDown:
