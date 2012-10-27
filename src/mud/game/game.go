@@ -436,14 +436,54 @@ func (self *mapBuilder) AddRoom(room database.Room, x int, y int) {
 }
 
 func (self *mapBuilder) ToString() string {
-	str := ""
+	var rows []string
+
 	for y := 0; y < self.height; y += 1 {
+		row := ""
 		for x := 0; x < self.width; x += 1 {
-			str = str + string(self.data[y][x].char)
+			char := self.data[y][x].char
+			row = row + string(char)
 		}
-		str = str + "\n"
+		rows = append(rows, row)
+	}
+	rows = trim(rows)
+
+	str := ""
+	for _, row := range rows {
+		str = str + row + "\n"
 	}
 	return str
+}
+
+func trim(rows []string) []string {
+	rowEmpty := func(row string) bool {
+		for _, char := range row {
+			if char != ' ' {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Trim from the top
+	for _, row := range rows {
+		if !rowEmpty(row) {
+			break
+		}
+
+		rows = rows[1:]
+	}
+
+	// Trim from the bottom
+	for i := len(rows) - 1; i >= 0; i -= 1 {
+		row := rows[i]
+		if !rowEmpty(row) {
+			break
+		}
+		rows = rows[:len(rows)-1]
+	}
+
+	return rows
 }
 
 func (self *mapTile) AddExit(dir database.ExitDirection) {
