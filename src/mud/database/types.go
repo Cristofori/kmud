@@ -31,6 +31,7 @@ type Character struct {
 	Id     bson.ObjectId `bson:"_id"`
 	Name   string
 	RoomId bson.ObjectId `bson:"roomid"`
+	online bool
 }
 
 func NewCharacter(name string) Character {
@@ -38,6 +39,7 @@ func NewCharacter(name string) Character {
 	character.Id = bson.NewObjectId()
 	character.Name = name
 	character.RoomId = ""
+	character.online = false
 	return character
 }
 
@@ -209,6 +211,14 @@ func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
 
 func (self *Character) PrettyName() string {
 	return utils.FormatName(self.Name)
+}
+
+func (self *Character) SetOnline(online bool) {
+	self.online = online
+}
+
+func (self *Character) GetOnline() bool {
+	return self.online
 }
 
 func (self *User) PrettyName() string {

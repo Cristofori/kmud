@@ -6,19 +6,33 @@ import (
 	"mud/database"
 )
 
-var _listeners map[*chan Event]bool
+var _listeners map[*chan Event]database.Character
 
-func Register() *chan Event {
+func Register(character database.Character) *chan Event {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
 	if _listeners == nil {
-		_listeners = map[*chan Event]bool{}
+		_listeners = map[*chan Event]database.Character{}
 	}
 
 	listener := make(chan Event, 100)
-	_listeners[&listener] = true
+	_listeners[&listener] = character
+
+	character.SetOnline(true)
+	queueEvent(LoginEvent{character})
+
 	return &listener
 }
 
 func Unregister(listener *chan Event) {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	character := _listeners[listener]
+	character.SetOnline(false)
+
+	queueEvent(LogoutEvent{character})
 	delete(_listeners, listener)
 }
 
@@ -35,6 +49,8 @@ const (
 	EnterEventType      EventType = iota
 	LeaveEventType      EventType = iota
 	RoomUpdateEventType EventType = iota
+	LoginEventType      EventType = iota
+	LogoutEventType     EventType = iota
 )
 
 type Event interface {
@@ -58,6 +74,14 @@ type LeaveEvent struct {
 
 type RoomUpdateEvent struct {
 	Room database.Room
+}
+
+type LoginEvent struct {
+	Character database.Character
+}
+
+type LogoutEvent struct {
+	Character database.Character
 }
 
 func (self MessageEvent) Type() EventType {
@@ -90,6 +114,22 @@ func (self RoomUpdateEvent) Type() EventType {
 
 func (self RoomUpdateEvent) ToString() string {
 	return "This room has been modified"
+}
+
+func (self LoginEvent) Type() EventType {
+	return LoginEventType
+}
+
+func (self LoginEvent) ToString() string {
+	return fmt.Sprintf("%s has connected", self.Character.PrettyName())
+}
+
+func (self LogoutEvent) Type() EventType {
+	return LogoutEventType
+}
+
+func (self LogoutEvent) ToString() string {
+	return fmt.Sprintf("%s has disconnected", self.Character.PrettyName())
 }
 
 // vim: nocindent

@@ -86,12 +86,22 @@ func Exec(conn net.Conn, character database.Character) {
 				message = event.ToString()
 				room = roomEvent.Room
 			}
+		case engine.LoginEventType:
+			loginEvent := event.(engine.LoginEvent)
+			if loginEvent.Character.Id != character.Id {
+				message = event.ToString()
+			}
+		case engine.LogoutEventType:
+			message = event.ToString()
+
+		default:
+			panic(fmt.Sprintf("Unhandled event: %v", event))
 		}
 
 		return message
 	}
 
-	eventChannel := engine.Register()
+	eventChannel := engine.Register(character)
 	defer engine.Unregister(eventChannel)
 
 	userInputChannel := make(chan string)
