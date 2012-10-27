@@ -48,7 +48,7 @@ func newUser(session *mgo.Session, conn net.Conn) database.User {
 			return user
 		}
 
-		user, err := database.CreateUser(session, line)
+		user, err := engine.CreateUser(line)
 
 		if err == nil {
 			return user

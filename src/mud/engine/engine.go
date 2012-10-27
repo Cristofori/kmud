@@ -284,4 +284,18 @@ func Logout(user database.User) {
 	_model.Users[user.Id] = user
 }
 
+func CreateUser(username string) (database.User, error) {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	user, err := database.CreateUser(_session, username)
+
+	if err == nil {
+		user.SetOnline(true)
+		_model.Users[user.Id] = user
+	}
+
+	return user, err
+}
+
 // vim: nocindent
