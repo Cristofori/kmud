@@ -17,6 +17,25 @@ const (
 	RawUserInput   userInputMode = iota
 )
 
+type Color string
+
+const (
+	Normal  Color = "\033[0m"
+	Red     Color = "\033[01;31m"
+	Green   Color = "\033[01;32m"
+	Yellow  Color = "\033[01;33m"
+	Blue    Color = "\033[01;34m"
+	Magenta Color = "\033[01;35m"
+	Cyan    Color = "\033[01;36m"
+
+	DarkRed     Color = "\033[22;31m"
+	DarkGreen   Color = "\033[22;32m"
+	DarkYellow  Color = "\033[22;33m"
+	DarkBlue    Color = "\033[22;34m"
+	DarkMagenta Color = "\033[22;35m"
+	DarkCyan    Color = "\033[22;36m"
+)
+
 func getToggleExitMenu(room database.Room) utils.Menu {
 
 	onOrOff := func(direction database.ExitDirection) string {
@@ -53,6 +72,10 @@ func Exec(conn net.Conn, character database.Character) {
 
 	printLine := func(line string) {
 		utils.WriteLine(conn, line)
+	}
+
+	printLineColor := func(color Color, line string) {
+		printLine(string(color) + line + string(Normal))
 	}
 
 	printRoom := func() {
@@ -322,6 +345,20 @@ func Exec(conn net.Conn, character database.Character) {
 				printLine(char.PrettyName())
 			}
 			printLine("")
+
+		case "colors":
+			printLineColor(Red, "Red")
+			printLineColor(DarkRed, "DarkRed")
+			printLineColor(Green, "Green")
+			printLineColor(DarkGreen, "DarkGreen")
+			printLineColor(Blue, "Blue")
+			printLineColor(DarkBlue, "DarkBlue")
+			printLineColor(Yellow, "Yellow")
+			printLineColor(DarkYellow, "DarkYellow")
+			printLineColor(Magenta, "Magenta")
+			printLineColor(DarkMagenta, "DarkMagenta")
+			printLineColor(Cyan, "Cyan")
+			printLineColor(DarkCyan, "DarkCyan")
 
 		default:
 			printLine("Unrecognized command")
