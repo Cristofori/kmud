@@ -311,4 +311,17 @@ func CreateCharacter(user *database.User, charname string) (database.Character, 
 	return character, err
 }
 
+func GetCharacters(user database.User) []database.Character {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	var characters []database.Character
+
+	for _, charId := range user.CharacterIds {
+		characters = append(characters, _model.Characters[charId])
+	}
+
+	return characters
+}
+
 // vim: nocindent

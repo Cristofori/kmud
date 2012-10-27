@@ -102,7 +102,7 @@ func mainMenu() utils.Menu {
 }
 
 func userMenu(session *mgo.Session, user database.User) utils.Menu {
-	chars := database.GetUserCharacters(session, user)
+	chars := engine.GetCharacters(user)
 
 	menu := utils.NewMenu(user.PrettyName())
 	menu.AddAction("l", "[L]ogout")
@@ -122,7 +122,7 @@ func userMenu(session *mgo.Session, user database.User) utils.Menu {
 }
 
 func deleteMenu(session *mgo.Session, user database.User) utils.Menu {
-	chars := database.GetUserCharacters(session, user)
+	chars := engine.GetCharacters(user)
 
 	menu := utils.NewMenu("Delete character")
 

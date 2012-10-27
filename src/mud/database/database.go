@@ -181,7 +181,7 @@ func CreateCharacter(session *mgo.Session, user *User, characterName string) (Ch
 	return character, err
 }
 
-func GetUserCharacters(session *mgo.Session, user User) []Character {
+func GetCharacters(session *mgo.Session, user User) []Character {
 	var characters []Character
 	for _, charId := range user.CharacterIds {
 		character, err := GetCharacter(session, charId)
