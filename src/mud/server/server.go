@@ -216,7 +216,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				}
 			}
 		} else {
-			game.Exec(conn, character)
+			game.Exec(conn, &user, &character)
 			character = database.Character{}
 		}
 	}

@@ -18,6 +18,7 @@ type User struct {
 	Id           bson.ObjectId `bson:"_id,omitempty"`
 	Name         string
 	CharacterIds []bson.ObjectId `bson:"characterids,omitempty"`
+	ColorMode    utils.ColorMode
 	online       bool
 }
 
@@ -25,6 +26,7 @@ func NewUser(name string) User {
 	var user User
 	user.Id = bson.NewObjectId()
 	user.Name = name
+	user.ColorMode = utils.ColorModeNone
 	return user
 }
 
@@ -111,45 +113,60 @@ const (
 	EditMode PrintMode = iota
 )
 
-func directionToExitString(direction ExitDirection) string {
+func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) string {
+
+	letterColor := utils.ColorBlue
+	bracketColor := utils.ColorDarkBlue
+	textColor := utils.ColorWhite
+
+	colorize := func(letters string, text string) string {
+		return fmt.Sprintf("%s%s%s%s",
+			utils.Colorize(colorMode, bracketColor, "["),
+			utils.Colorize(colorMode, letterColor, letters),
+			utils.Colorize(colorMode, bracketColor, "]"),
+			utils.Colorize(colorMode, textColor, text))
+	}
+
 	switch direction {
 	case DirectionNorth:
-		return "[N]orth"
+		return colorize("N", "orth")
 	case DirectionNorthEast:
-		return "[NE]North East"
+		return colorize("NE", "North East")
 	case DirectionEast:
-		return "[E]ast"
+		return colorize("E", "ast")
 	case DirectionSouthEast:
-		return "[SE]South East"
+		return colorize("SE", "South East")
 	case DirectionSouth:
-		return "[S]outh"
+		return colorize("S", "outh")
 	case DirectionSouthWest:
-		return "[SW]South West"
+		return colorize("SW", "South West")
 	case DirectionWest:
-		return "[W]est"
+		return colorize("W", "est")
 	case DirectionNorthWest:
-		return "[NW]North West"
+		return colorize("NW", "North West")
 	case DirectionUp:
-		return "[U]p"
+		return colorize("U", "p")
 	case DirectionDown:
-		return "[D]own"
+		return colorize("D", "own")
 	case DirectionNone:
-		return "None"
+		return utils.Colorize(colorMode, utils.ColorWhite, "None")
 	}
 
 	panic("Unexpected code path")
 }
 
-func (self *Room) ToString(mode PrintMode, chars *list.List) string {
-
+func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars *list.List) string {
 	var str string
+
 	if mode == ReadMode {
-		str = fmt.Sprintf("\n >>> %v <<< (%v %v %v)\n\n %v",
-			utils.Colorize(utils.ColorModeNormal, utils.ColorBlue, self.Title),
+		str = fmt.Sprintf("\n %v %v %v (%v %v %v)\n\n %v",
+			utils.Colorize(colorMode, utils.ColorWhite, ">>>"),
+			utils.Colorize(colorMode, utils.ColorBlue, self.Title),
+			utils.Colorize(colorMode, utils.ColorWhite, "<<<"),
 			self.Location.X,
 			self.Location.Y,
 			self.Location.Z,
-			self.Description)
+			utils.Colorize(colorMode, utils.ColorWhite, self.Description))
 
 		if chars.Len() > 0 {
 			str = str + "\n\n Also here: "
@@ -162,7 +179,7 @@ func (self *Room) ToString(mode PrintMode, chars *list.List) string {
 			str = str + strings.Join(names, ", ")
 		}
 
-		str = str + "\n\n Exits: "
+		str = str + "\n\n " + utils.Colorize(colorMode, utils.ColorBlue, "Exits: ")
 
 	} else {
 		str = fmt.Sprintf("\n [1] %v \n\n [2] %v \n\n [3] Exits: ", self.Title, self.Description)
@@ -172,7 +189,7 @@ func (self *Room) ToString(mode PrintMode, chars *list.List) string {
 
 	appendIfExists := func(direction ExitDirection) {
 		if self.HasExit(direction) {
-			exitList = append(exitList, directionToExitString(direction))
+			exitList = append(exitList, directionToExitString(colorMode, direction))
 		}
 	}
 

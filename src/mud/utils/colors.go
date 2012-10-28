@@ -8,9 +8,9 @@ import (
 type ColorMode int
 
 const (
-	ColorModeNormal   ColorMode = iota
-	ColorModeReversed ColorMode = iota
-	ColorModeNone     ColorMode = iota
+	ColorModeLight ColorMode = iota
+	ColorModeDark  ColorMode = iota
+	ColorModeNone  ColorMode = iota
 )
 
 type Color int
@@ -31,7 +31,8 @@ const (
 	ColorDarkBlue    Color = iota
 	ColorDarkMagenta Color = iota
 	ColorDarkCyan    Color = iota
-	ColorGrey        Color = iota
+	ColorBlack       Color = iota
+	ColorGray        Color = iota
 )
 
 type colorCode string
@@ -51,7 +52,9 @@ const (
 	darkBlue    colorCode = "\033[22;34m"
 	darkMagenta colorCode = "\033[22;35m"
 	darkCyan    colorCode = "\033[22;36m"
-	grey        colorCode = "\033[22;37m"
+	black       colorCode = "\033[22;30m"
+
+	gray colorCode = "\033[22;37m"
 )
 
 func GetColor(mode ColorMode, color Color) string {
@@ -87,12 +90,16 @@ func GetColor(mode ColorMode, color Color) string {
 		code = darkMagenta
 	case ColorDarkCyan:
 		code = darkCyan
-	case ColorGrey:
-		code = grey
+	case ColorBlack:
+		code = black
 	}
 
-	if mode == ColorModeReversed {
-		if strings.Contains(string(code), "01") {
+	if mode == ColorModeDark {
+		if code == white {
+			return string(black)
+		} else if code == black {
+			return string(white)
+		} else if strings.Contains(string(code), "01") {
 			return strings.Replace(string(code), "01", "22", 1)
 		} else {
 			return strings.Replace(string(code), "22", "01", 1)

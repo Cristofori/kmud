@@ -18,7 +18,6 @@ const (
 )
 
 func getToggleExitMenu(room database.Room) utils.Menu {
-
 	onOrOff := func(direction database.ExitDirection) string {
 
 		if room.HasExit(direction) {
@@ -44,28 +43,28 @@ func getToggleExitMenu(room database.Room) utils.Menu {
 	return menu
 }
 
-func Exec(conn net.Conn, character database.Character) {
-	room := engine.GetCharacterRoom(character)
+func Exec(conn net.Conn, user *database.User, character *database.Character) {
+	room := engine.GetCharacterRoom(*character)
 
 	printString := func(data string) {
 		io.WriteString(conn, data)
 	}
 
-	printLine := func(line string) {
-		utils.WriteLine(conn, line)
+	printLineColor := func(color utils.Color, line string) {
+		utils.WriteLine(conn, utils.Colorize(user.ColorMode, color, line))
 	}
 
-	printLineColor := func(color utils.Color, line string) {
-		printLine(utils.Colorize(utils.ColorModeNormal, color, line))
+	printLine := func(line string) {
+		printLineColor(utils.ColorWhite, line)
 	}
 
 	printRoom := func() {
-		charList := engine.CharactersIn(room, character)
-		printLine(room.ToString(database.ReadMode, charList))
+		charList := engine.CharactersIn(room, *character)
+		printLine(room.ToString(database.ReadMode, user.ColorMode, charList))
 	}
 
 	printRoomEditor := func() {
-		printLine(room.ToString(database.EditMode, nil))
+		printLine(room.ToString(database.EditMode, user.ColorMode, nil))
 	}
 
 	prompt := func() string {
@@ -80,7 +79,7 @@ func Exec(conn net.Conn, character database.Character) {
 			message = event.ToString()
 		case engine.EnterEventType:
 			enterEvent := event.(engine.EnterEvent)
-			if enterEvent.RoomId == room.Id && enterEvent.Character != character {
+			if enterEvent.RoomId == room.Id && enterEvent.Character.Id != character.Id {
 				message = event.ToString()
 			}
 		case engine.LeaveEventType:
@@ -109,7 +108,7 @@ func Exec(conn net.Conn, character database.Character) {
 		return message
 	}
 
-	eventChannel := engine.Register(character)
+	eventChannel := engine.Register(*character)
 	defer engine.Unregister(eventChannel)
 
 	userInputChannel := make(chan string)
@@ -155,7 +154,7 @@ func Exec(conn net.Conn, character database.Character) {
 					loc := room.Location.Next(arg)
 					roomToSee, found := engine.GetRoomByLocation(loc)
 					if found {
-						printLine(roomToSee.ToString(database.ReadMode, engine.CharactersIn(roomToSee, database.Character{})))
+						printLine(roomToSee.ToString(database.ReadMode, user.ColorMode, engine.CharactersIn(roomToSee, database.Character{})))
 					} else {
 						printLine("Nothing to see")
 					}
@@ -184,7 +183,7 @@ func Exec(conn net.Conn, character database.Character) {
 				if room.HasExit(direction) {
 					var newRoom database.Room
 					var err error
-					character, newRoom, err = engine.MoveCharacter(character, direction)
+					newRoom, err = engine.MoveCharacter(character, direction)
 					if err == nil {
 						room = newRoom
 						printRoom()
@@ -274,7 +273,7 @@ func Exec(conn net.Conn, character database.Character) {
 				engine.GenerateDefaultMap()
 			}
 
-			room = engine.GetCharacterRoom(character)
+			room = engine.GetCharacterRoom(*character)
 			printRoom()
 
 		case "loc":
@@ -300,7 +299,8 @@ func Exec(conn net.Conn, character database.Character) {
 					currentRoom, found := engine.GetRoomByLocation(loc)
 
 					if found {
-						// Translate to 0-based coordinates
+						// Translate to 0-based coordinates and double the coordinate
+						// space to leave room for the exit lines
 						builder.AddRoom(currentRoom, (x-startX)*2, (y-startY)*2)
 					}
 				}
@@ -312,7 +312,7 @@ func Exec(conn net.Conn, character database.Character) {
 			if len(args) == 0 {
 				printLine("Nothing to say")
 			} else {
-				engine.BroadcastMessage(character, strings.Join(args, " "))
+				engine.BroadcastMessage(*character, strings.Join(args, " "))
 			}
 
 		case "who":
@@ -340,14 +340,49 @@ func Exec(conn net.Conn, character database.Character) {
 			printLineColor(utils.ColorDarkMagenta, "Dark Magenta")
 			printLineColor(utils.ColorCyan, "Cyan")
 			printLineColor(utils.ColorDarkCyan, "Dark Cyan")
+			printLineColor(utils.ColorBlack, "Black")
+			printLineColor(utils.ColorWhite, "White")
+			printLineColor(utils.ColorGray, "Gray")
+
+		case "colormode":
+			if len(args) == 0 {
+				message := "Current color mode is: "
+				switch user.ColorMode {
+				case utils.ColorModeNone:
+					message = message + "None"
+				case utils.ColorModeLight:
+					message = message + "Light"
+				case utils.ColorModeDark:
+					message = message + "Dark"
+				}
+				printLine(message)
+			} else if len(args) == 1 {
+				switch args[0] {
+				case "none":
+					user.ColorMode = utils.ColorModeNone
+					engine.UpdateUser(*user)
+					printLine("Color mode set to: None")
+				case "light":
+					user.ColorMode = utils.ColorModeLight
+					engine.UpdateUser(*user)
+					printLine("Color mode set to: Light")
+				case "dark":
+					user.ColorMode = utils.ColorModeDark
+					engine.UpdateUser(*user)
+					printLine("Color mode set to: Dark")
+				default:
+					printLine("Valid color modes are: None, Light, Dark")
+				}
+			} else {
+				printLine("Valid color modes are: None, Light, Dark")
+			}
 
 		default:
 			printLine("Unrecognized command")
 		}
 	}
 
-	printString(utils.ColorNormal)
-	printLine("Welcome, " + utils.FormatName(character.Name))
+	printLineColor(utils.ColorWhite, "Welcome, "+character.PrettyName())
 	printRoom()
 
 	go func() {
@@ -506,7 +541,6 @@ func trim(rows []string) []string {
 }
 
 func (self *mapTile) AddExit(dir database.ExitDirection) {
-
 	combineChars := func(r1 rune, r2 rune, r3 rune) {
 		if self.char == r1 {
 			self.char = r2

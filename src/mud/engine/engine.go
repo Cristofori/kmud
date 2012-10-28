@@ -71,6 +71,14 @@ func StartUp(session *mgo.Session) error {
 	return err
 }
 
+func UpdateUser(user database.User) error {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	_model.Users[user.Id] = user
+	return database.CommitUser(_session, user)
+}
+
 func UpdateCharacter(character database.Character) error {
 	_mutex.Lock()
 	defer _mutex.Unlock()
@@ -98,17 +106,17 @@ func AddRoom(room database.Room) error {
 	return UpdateRoom(room)
 }
 
-func MoveCharacter(character database.Character, direction database.ExitDirection) (database.Character, database.Room, error) {
+func MoveCharacter(character *database.Character, direction database.ExitDirection) (database.Room, error) {
 	_mutex.Lock()
 	room := _model.Rooms[character.RoomId]
 	_mutex.Unlock()
 
 	if room.Id == "" {
-		return character, room, newEngineError("Character doesn't appear to be in any room")
+		return room, newEngineError("Character doesn't appear to be in any room")
 	}
 
 	if !room.HasExit(direction) {
-		return character, room, newEngineError("Attempted to move through an exit that the room does not contain")
+		return room, newEngineError("Attempted to move through an exit that the room does not contain")
 	}
 
 	oldRoomId := character.RoomId
@@ -151,16 +159,16 @@ func MoveCharacter(character database.Character, direction database.ExitDirectio
 	}
 
 	character.RoomId = room.Id
-	err := UpdateCharacter(character)
+	err := UpdateCharacter(*character)
 
 	utils.HandleError(err)
 
 	if err == nil {
-		queueEvent(EnterEvent{Character: character, RoomId: room.Id})
-		queueEvent(LeaveEvent{Character: character, RoomId: oldRoomId})
+		queueEvent(EnterEvent{Character: *character, RoomId: room.Id})
+		queueEvent(LeaveEvent{Character: *character, RoomId: oldRoomId})
 	}
 
-	return character, room, err
+	return room, err
 }
 
 func GetUserByName(username string) (database.User, error) {
