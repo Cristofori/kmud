@@ -1,3 +1,4 @@
+* Fix display of other characters in the room
 * Unit tests
 * Parse and save map file
 
@@ -7,7 +8,6 @@
 
 * Admin menu for managing users
 * UTF-8 map printing
-* Colorized output
 * NPCs
 * Items/inventory
 * Currency
