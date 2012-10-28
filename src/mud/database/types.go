@@ -145,7 +145,7 @@ func (self *Room) ToString(mode PrintMode, chars *list.List) string {
 	var str string
 	if mode == ReadMode {
 		str = fmt.Sprintf("\n >>> %v <<< (%v %v %v)\n\n %v",
-			self.Title,
+			utils.Colorize(utils.ColorModeNormal, utils.ColorBlue, self.Title),
 			self.Location.X,
 			self.Location.Y,
 			self.Location.Z,

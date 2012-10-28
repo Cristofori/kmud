@@ -17,25 +17,6 @@ const (
 	RawUserInput   userInputMode = iota
 )
 
-type Color string
-
-const (
-	Normal  Color = "\033[0m"
-	Red     Color = "\033[01;31m"
-	Green   Color = "\033[01;32m"
-	Yellow  Color = "\033[01;33m"
-	Blue    Color = "\033[01;34m"
-	Magenta Color = "\033[01;35m"
-	Cyan    Color = "\033[01;36m"
-
-	DarkRed     Color = "\033[22;31m"
-	DarkGreen   Color = "\033[22;32m"
-	DarkYellow  Color = "\033[22;33m"
-	DarkBlue    Color = "\033[22;34m"
-	DarkMagenta Color = "\033[22;35m"
-	DarkCyan    Color = "\033[22;36m"
-)
-
 func getToggleExitMenu(room database.Room) utils.Menu {
 
 	onOrOff := func(direction database.ExitDirection) string {
@@ -74,8 +55,8 @@ func Exec(conn net.Conn, character database.Character) {
 		utils.WriteLine(conn, line)
 	}
 
-	printLineColor := func(color Color, line string) {
-		printLine(string(color) + line + string(Normal))
+	printLineColor := func(color utils.Color, line string) {
+		printLine(utils.Colorize(utils.ColorModeNormal, color, line))
 	}
 
 	printRoom := func() {
@@ -347,24 +328,25 @@ func Exec(conn net.Conn, character database.Character) {
 			printLine("")
 
 		case "colors":
-			printLineColor(Red, "Red")
-			printLineColor(DarkRed, "DarkRed")
-			printLineColor(Green, "Green")
-			printLineColor(DarkGreen, "DarkGreen")
-			printLineColor(Blue, "Blue")
-			printLineColor(DarkBlue, "DarkBlue")
-			printLineColor(Yellow, "Yellow")
-			printLineColor(DarkYellow, "DarkYellow")
-			printLineColor(Magenta, "Magenta")
-			printLineColor(DarkMagenta, "DarkMagenta")
-			printLineColor(Cyan, "Cyan")
-			printLineColor(DarkCyan, "DarkCyan")
+			printLineColor(utils.ColorRed, "Red")
+			printLineColor(utils.ColorDarkRed, "Dark Red")
+			printLineColor(utils.ColorGreen, "Green")
+			printLineColor(utils.ColorDarkGreen, "Dark Green")
+			printLineColor(utils.ColorBlue, "Blue")
+			printLineColor(utils.ColorDarkBlue, "Dark Blue")
+			printLineColor(utils.ColorYellow, "Yellow")
+			printLineColor(utils.ColorDarkYellow, "Dark Yellow")
+			printLineColor(utils.ColorMagenta, "Magenta")
+			printLineColor(utils.ColorDarkMagenta, "Dark Magenta")
+			printLineColor(utils.ColorCyan, "Cyan")
+			printLineColor(utils.ColorDarkCyan, "Dark Cyan")
 
 		default:
 			printLine("Unrecognized command")
 		}
 	}
 
+	printString(utils.ColorNormal)
 	printLine("Welcome, " + utils.FormatName(character.Name))
 	printRoom()
 
