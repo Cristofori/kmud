@@ -225,8 +225,7 @@ func GenerateDefaultMap() {
 }
 
 func BroadcastMessage(from database.Character, message string) {
-	msg := from.PrettyName() + ": " + message
-	queueEvent(MessageEvent{msg})
+	queueEvent(MessageEvent{from, message})
 }
 
 func queueEvent(event Event) {

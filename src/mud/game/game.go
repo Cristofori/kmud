@@ -76,7 +76,9 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 		switch event.Type() {
 		case engine.MessageEventType:
-			message = event.ToString()
+			messageEvent := event.(engine.MessageEvent)
+			message = utils.Colorize(user.ColorMode, utils.ColorBlue, messageEvent.Character.PrettyName()+": ") +
+				utils.Colorize(user.ColorMode, utils.ColorWhite, messageEvent.Message)
 		case engine.EnterEventType:
 			enterEvent := event.(engine.EnterEvent)
 			if enterEvent.RoomId == room.Id && enterEvent.Character.Id != character.Id {

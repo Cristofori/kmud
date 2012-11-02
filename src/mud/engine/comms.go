@@ -62,7 +62,8 @@ type Event interface {
 }
 
 type MessageEvent struct {
-	Message string
+	Character database.Character
+	Message   string
 }
 
 type EnterEvent struct {
@@ -92,7 +93,7 @@ func (self MessageEvent) Type() EventType {
 }
 
 func (self MessageEvent) ToString() string {
-	return self.Message
+	return self.Character.PrettyName() + ":" + self.Message
 }
 
 func (self EnterEvent) Type() EventType {
