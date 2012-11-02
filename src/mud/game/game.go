@@ -207,7 +207,6 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 		case "?":
 			fallthrough
 		case "help":
-		case "dig":
 		case "edit":
 			printRoomEditor()
 
