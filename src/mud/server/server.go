@@ -152,6 +152,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 
 	defer func() {
 		if r := recover(); r != nil {
+			engine.Logout(user)
 			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
 				user.PrettyName(),
 				character.PrettyName(),
