@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -222,7 +222,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	}
 }
 
-func main() {
+func Exec() {
 	runtime.GOMAXPROCS(8)
 
 	fmt.Printf("Connecting to database... ")
