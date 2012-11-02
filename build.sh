@@ -1,1 +1,1 @@
-GOPATH=`pwd` go build mud/server
+GOPATH=`pwd` go build mud

@@ -1,2 +1,2 @@
 set GOPATH=c:\code\mud
-go build mud\server
+go build mud
