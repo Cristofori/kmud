@@ -2,11 +2,11 @@ package server
 
 import (
 	"fmt"
-	"labix.org/v2/mgo"
 	"kmud/database"
 	"kmud/engine"
 	"kmud/game"
 	"kmud/utils"
+	"labix.org/v2/mgo"
 	"net"
 	"runtime"
 	"strconv"
@@ -247,4 +247,3 @@ func Exec() {
 		go handleConnection(session.Copy(), conn)
 	}
 }
-
