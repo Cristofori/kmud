@@ -21,7 +21,7 @@ func readLine(conn net.Conn) (string, error) {
 
 func Simplify(str string) string {
 	simpleStr := strings.TrimSpace(str)
-	simpleStr = strings.ToLower(str)
+	simpleStr = strings.ToLower(simpleStr)
 	return simpleStr
 }
 
