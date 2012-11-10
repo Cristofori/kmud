@@ -114,7 +114,7 @@ func Test_GetUserInput(t *testing.T) {
 }
 
 func Test_HandleError(t *testing.T) {
-    HandleError(nil)
+	HandleError(nil)
 }
 
 // vim:nocindent
