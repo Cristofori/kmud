@@ -160,6 +160,26 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 	return room, err
 }
 
+func GetUser(id bson.ObjectId) database.User {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	return _model.Users[id]
+}
+
+func GetUsers() []database.User {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	var users []database.User
+
+	for _, user := range _model.Users {
+		users = append(users, user)
+	}
+
+	return users
+}
+
 func GetUserByName(username string) (database.User, error) {
 	_mutex.Lock()
 	defer _mutex.Unlock()
@@ -356,9 +376,22 @@ func DeleteCharacter(user *database.User, charId bson.ObjectId) error {
 
 	err := database.DeleteCharacter(_session, user, charId)
 
-	if err != nil {
+	if err == nil {
 		delete(_model.Characters, charId)
 		_model.Users[user.Id] = *user
+	}
+
+	return err
+}
+
+func DeleteUser(userId bson.ObjectId) error {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	err := database.DeleteUser(_session, _model.Users[userId])
+
+	if err == nil {
+		delete(_model.Users, userId)
 	}
 
 	return err

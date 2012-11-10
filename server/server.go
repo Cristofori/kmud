@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-func login(session *mgo.Session, conn net.Conn) database.User {
+func login(conn net.Conn) database.User {
 	for {
 		line := utils.GetUserInput(conn, "Username: ")
 
@@ -38,7 +38,7 @@ func login(session *mgo.Session, conn net.Conn) database.User {
 	return database.User{}
 }
 
-func newUser(session *mgo.Session, conn net.Conn) database.User {
+func newUser(conn net.Conn) database.User {
 	for {
 		line := utils.GetUserInput(conn, "Desired username: ")
 
@@ -63,7 +63,7 @@ func newUser(session *mgo.Session, conn net.Conn) database.User {
 	return database.User{}
 }
 
-func newCharacter(session *mgo.Session, conn net.Conn, user *database.User) database.Character {
+func newCharacter(conn net.Conn, user *database.User) database.Character {
 	// TODO: character slot limit
 	for {
 		line := utils.GetUserInput(conn, "Desired character name: ")
@@ -85,7 +85,7 @@ func newCharacter(session *mgo.Session, conn net.Conn, user *database.User) data
 	return database.Character{}
 }
 
-func quit(session *mgo.Session, conn net.Conn) {
+func quit(conn net.Conn) {
 	utils.WriteLine(conn, "Take luck!")
 	conn.Close()
 }
@@ -100,7 +100,7 @@ func mainMenu() utils.Menu {
 	return menu
 }
 
-func userMenu(session *mgo.Session, user database.User) utils.Menu {
+func userMenu(user database.User) utils.Menu {
 	chars := engine.GetCharacters(user)
 
 	menu := utils.NewMenu(user.PrettyName())
@@ -120,7 +120,7 @@ func userMenu(session *mgo.Session, user database.User) utils.Menu {
 	return menu
 }
 
-func deleteMenu(session *mgo.Session, user database.User) utils.Menu {
+func deleteMenu(user database.User) utils.Menu {
 	chars := engine.GetCharacters(user)
 
 	menu := utils.NewMenu("Delete character")
@@ -136,9 +136,34 @@ func deleteMenu(session *mgo.Session, user database.User) utils.Menu {
 	return menu
 }
 
-func adminMenu(session *mgo.Session) utils.Menu {
+func adminMenu() utils.Menu {
 	menu := utils.NewMenu("Admin")
 	menu.AddAction("r", "[R]ebuild")
+	menu.AddAction("u", "[U]sers")
+	return menu
+}
+
+func userAdminMenu() utils.Menu {
+	menu := utils.NewMenu("User Admin")
+
+	for i, user := range engine.GetUsers() {
+		indexStr := strconv.Itoa(i + 1)
+
+		online := ""
+		if user.Online() {
+			online = "*"
+		}
+
+		actionText := fmt.Sprintf("[%v]%v", indexStr, user.PrettyName()+online)
+		menu.AddActionData(indexStr, actionText, user.Id)
+	}
+
+	return menu
+}
+
+func userSpecificMenu(user database.User) utils.Menu {
+	menu := utils.NewMenu("User: " + user.PrettyName())
+	menu.AddAction("d", "[D]elete")
 	return menu
 }
 
@@ -167,17 +192,17 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 
 			switch choice {
 			case "l":
-				user = login(session, conn)
+				user = login(conn)
 			case "n":
-				user = newUser(session, conn)
+				user = newUser(conn)
 			case "":
 				fallthrough
 			case "q":
-				quit(session, conn)
+				quit(conn)
 				return
 			}
 		} else if character.Name == "" {
-			menu := userMenu(session, user)
+			menu := userMenu(user)
 			choice, charId := menu.Exec(conn)
 
 			switch choice {
@@ -187,15 +212,42 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				engine.Logout(user)
 				user = database.User{}
 			case "a":
-				adminMenu := adminMenu(session)
-				choice, _ := adminMenu.Exec(conn)
-				if choice == "r" {
-					engine.GenerateDefaultMap()
+				adminMenu := adminMenu()
+				for {
+					choice, _ := adminMenu.Exec(conn)
+					if choice == "" {
+						break
+					} else if choice == "r" {
+						engine.GenerateDefaultMap()
+					} else if choice == "u" {
+						for {
+							userAdminMenu := userAdminMenu()
+							choice, userId := userAdminMenu.Exec(conn)
+							if choice == "" {
+								break
+							} else {
+								_, err := strconv.Atoi(choice)
+
+								if err == nil {
+									for {
+										userMenu := userSpecificMenu(engine.GetUser(userId))
+										choice, _ = userMenu.Exec(conn)
+										if choice == "" {
+											break
+										} else if choice == "d" {
+											engine.DeleteUser(userId)
+											break
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			case "n":
-				character = newCharacter(session, conn, &user)
+				character = newCharacter(conn, &user)
 			case "d":
-				deleteMenu := deleteMenu(session, user)
+				deleteMenu := deleteMenu(user)
 				deleteChoice, deleteCharId := deleteMenu.Exec(conn)
 
 				_, err := strconv.Atoi(deleteChoice)
@@ -244,3 +296,5 @@ func Exec() {
 		go handleConnection(session.Copy(), conn)
 	}
 }
+
+// vim: nocindent

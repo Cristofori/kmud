@@ -183,6 +183,15 @@ func GetCharacters(session *mgo.Session, user User) []Character {
 	return characters
 }
 
+func DeleteUser(session *mgo.Session, user User) error {
+	for _, charId := range user.CharacterIds {
+		DeleteCharacter(session, &user, charId)
+	}
+
+	c := getCollection(session, cUsers)
+	return c.RemoveId(user.Id)
+}
+
 func DeleteCharacter(session *mgo.Session, user *User, charId bson.ObjectId) error {
 	// TODO - Figure out how to remove an element from the middle of a slice,
 	//        and then just modify the user object and use CommitUser
