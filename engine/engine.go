@@ -2,6 +2,7 @@ package engine
 
 import (
 	"container/list"
+	"errors"
 	"fmt"
 	"kmud/database"
 	"kmud/utils"
@@ -9,18 +10,6 @@ import (
 	"labix.org/v2/mgo/bson"
 	"sync"
 )
-
-type engineError struct {
-	message string
-}
-
-func (self engineError) Error() string {
-	return self.message
-}
-
-func newEngineError(message string) error {
-	return engineError{message: message}
-}
 
 type globalModel struct {
 	Users      map[bson.ObjectId]database.User
@@ -112,11 +101,11 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 	_mutex.Unlock()
 
 	if room.Id == "" {
-		return room, newEngineError("Character doesn't appear to be in any room")
+		return room, errors.New("Character doesn't appear to be in any room")
 	}
 
 	if !room.HasExit(direction) {
-		return room, newEngineError("Attempted to move through an exit that the room does not contain")
+		return room, errors.New("Attempted to move through an exit that the room does not contain")
 	}
 
 	oldRoomId := character.RoomId
@@ -181,7 +170,7 @@ func GetUserByName(username string) (database.User, error) {
 		}
 	}
 
-	return database.User{}, newEngineError("User not found")
+	return database.User{}, errors.New("User not found")
 }
 
 func GetCharacterRoom(character database.Character) database.Room {
@@ -282,7 +271,7 @@ func Login(user database.User) error {
 	defer _mutex.Unlock()
 
 	if user.Online() {
-		return newEngineError("That user is already online")
+		return errors.New("That user is already online")
 	}
 
 	user.SetOnline(true)

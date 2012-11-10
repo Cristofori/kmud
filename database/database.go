@@ -1,24 +1,11 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 )
-
-type dbError struct {
-	message string
-}
-
-func (self dbError) Error() string {
-	return self.message
-}
-
-func newDbError(message string) dbError {
-	var err dbError
-	err.message = message
-	return err
-}
 
 type collectionName string
 
@@ -71,7 +58,7 @@ func findObject(session *mgo.Session, collection collectionName, query interface
 	}
 
 	if count == 0 {
-		return newDbError(fmt.Sprintf("Query return no results: %v", query))
+		return errors.New(fmt.Sprintf("Query return no results: %v", query))
 	}
 
 	err = q.One(object)
@@ -149,7 +136,7 @@ func CreateCharacter(session *mgo.Session, user *User, characterName string) (Ch
 	character, err := GetCharacterByName(session, characterName)
 
 	if err == nil {
-		return character, newDbError("That character already exists")
+		return character, errors.New("That character already exists")
 	}
 
 	startingRoom, err := StartingRoom(session)
@@ -232,7 +219,7 @@ func StartingRoom(session *mgo.Session) (Room, error) {
 	}
 
 	if count == 0 {
-		return room, newDbError("No default room found")
+		return room, errors.New("No default room found")
 	}
 
 	if count > 1 {
@@ -253,7 +240,7 @@ func CreateUser(session *mgo.Session, name string) (User, error) {
 	user, err := findUser(session, bson.M{fName: name})
 
 	if err == nil {
-		return user, newDbError("That user already exists")
+		return user, errors.New("That user already exists")
 	}
 
 	user = NewUser(name)
