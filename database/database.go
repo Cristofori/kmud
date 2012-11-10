@@ -52,7 +52,7 @@ const (
 
 func printError(err error) {
 	if err != nil {
-		fmt.Printf("Error: %s\n", err)
+		fmt.Println("Error:", err)
 	}
 }
 
@@ -155,7 +155,7 @@ func CreateCharacter(session *mgo.Session, user *User, characterName string) (Ch
 	startingRoom, err := StartingRoom(session)
 
 	if err != nil {
-		fmt.Printf("Error getting starting room: %v\n", err)
+		fmt.Println("Error getting starting room:", err)
 		return character, err
 	}
 
@@ -165,7 +165,7 @@ func CreateCharacter(session *mgo.Session, user *User, characterName string) (Ch
 	err = CommitCharacter(session, character)
 
 	if err != nil {
-		fmt.Printf("Error inserting new character object into database: %v\n", err)
+		fmt.Println("Error inserting new character object into database:", err)
 		return character, err
 	}
 
@@ -174,7 +174,7 @@ func CreateCharacter(session *mgo.Session, user *User, characterName string) (Ch
 		CommitUser(session, *user)
 
 		if err != nil {
-			fmt.Printf("Error updating user with new character data: %v\n", err)
+			fmt.Println("Error updating user with new character data:", err)
 		}
 	}
 
@@ -203,14 +203,12 @@ func DeleteCharacter(session *mgo.Session, user *User, charId bson.ObjectId) err
 	err := c.Update(bson.M{fId: user.Id}, bson.M{PULL: bson.M{fCharacterIds: charId}})
 
 	if err != nil {
-		fmt.Printf("Failed 1: %v %v\n", user.Id, charId)
 		return err
 	}
 
 	modifiedUser, err := GetUser(session, user.Id)
 
 	if err != nil {
-		fmt.Printf("Failed 2\n")
 		return err
 	}
 
@@ -218,10 +216,6 @@ func DeleteCharacter(session *mgo.Session, user *User, charId bson.ObjectId) err
 
 	c = getCollection(session, cCharacters)
 	err = c.Remove(bson.M{fId: charId})
-
-	if err != nil {
-		fmt.Printf("Failed 3\n")
-	}
 
 	return err
 }
@@ -242,7 +236,7 @@ func StartingRoom(session *mgo.Session) (Room, error) {
 	}
 
 	if count > 1 {
-		fmt.Printf("Warning: More than one default room found\n")
+		fmt.Println("Warning: More than one default room found")
 	}
 
 	err = q.One(&room)

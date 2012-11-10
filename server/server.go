@@ -228,7 +228,7 @@ func Exec() {
 
 	utils.HandleError(err)
 
-	fmt.Printf("done.\n")
+	fmt.Println("done.")
 
 	listener, err := net.Listen("tcp", ":8945")
 	utils.HandleError(err)
@@ -240,7 +240,7 @@ func Exec() {
 	for {
 		conn, err := listener.Accept()
 		utils.HandleError(err)
-		fmt.Printf("Client connected: %v\n", conn.RemoteAddr())
+		fmt.Println("Client connected:", conn.RemoteAddr())
 		go handleConnection(session.Copy(), conn)
 	}
 }
