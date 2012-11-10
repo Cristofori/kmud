@@ -1,3 +1,11 @@
 clone into $GOROOT/src
 cd $GOROOT
-go build kmud
+go install kmud
+
+
+Dependencies
+============
+MongoDB: www.mongodb.org 
+
+mgo: http://labix.org/mgo
+go get labix.org/v2/mgo
