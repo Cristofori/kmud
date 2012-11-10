@@ -2,8 +2,9 @@ package utils
 
 import "testing"
 
+//import "fmt"
+
 var wrote string
-var read string
 
 type testWriter struct {
 }
@@ -14,18 +15,35 @@ func (self testWriter) Write(p []byte) (n int, err error) {
 }
 
 type testReader struct {
+	toRead string
 }
 
 func (self testReader) Read(p []byte) (n int, err error) {
-	for i := 0; i < 10; i++ {
-		char := byte('a' + i)
-		p[i] = char
-		read = read + string(char)
+	for i := 0; i < len(self.toRead); i++ {
+		p[i] = self.toRead[i]
 	}
-	p[10] = '\n'
 
-	read = string(p)
-	return 11, nil
+	p[len(self.toRead)] = '\n'
+
+	return len(self.toRead) + 1, nil
+}
+
+type testReadWriter struct {
+	testReader
+	testWriter
+}
+
+func Test_WriteLine(t *testing.T) {
+	var writer testWriter
+
+	line := "This is a line"
+	want := line + "\r\n"
+
+	WriteLine(writer, line)
+
+	if wrote != want {
+		t.Errorf("WriteLine(%q) == %q, want %q", line, wrote, want)
+	}
 }
 
 func Test_Simplify(t *testing.T) {
@@ -48,27 +66,50 @@ func Test_Simplify(t *testing.T) {
 	}
 }
 
-func Test_WriteLine(t *testing.T) {
-	var conn testWriter
+func Test_GetRawUserInput(t *testing.T) {
+	var readWriter testReadWriter
 
-	line := "This is a line"
-	want := line + "\r\n"
+	var tests = []struct {
+		input, output string
+	}{
+		{"Test1", "Test1"},
+		{"TEST2", "TEST2"},
+		{" test3 ", " test3 "},
+		{"\tTeSt4\t", "\tTeSt4\t"},
+		{"x", ""},
+		{"X", ""},
+	}
 
-	WriteLine(conn, line)
-
-	if wrote != want {
-		t.Errorf("WriteLine(%q) == %q, want %q", line, wrote, want)
+	for _, test := range tests {
+		readWriter.toRead = test.input
+		line := GetRawUserInput(readWriter, ">")
+		if line != test.output {
+			t.Errorf("GetRawUserInput(%q) == %q, want %q", test.input, line, test.output)
+		}
 	}
 }
 
-func Test_ReadLine(t *testing.T) {
-	var conn testReader
-	line, _ := readLine(conn)
+func Test_GetUserInput(t *testing.T) {
+	var readWriter testReadWriter
 
-	want := "abcdefghij"
+	var tests = []struct {
+		input, output string
+	}{
+		{"Test1", "test1"},
+		{"TEST2", "test2"},
+		{"\tTeSt3\t", "test3"},
+		{"    teSt4     \n", "test4"},
+		{"   \t \t TEST5 \n \t", "test5"},
+		{"x", ""},
+		{"X", ""},
+	}
 
-	if line != want {
-		t.Errorf("ReadLine(%q) == %q, want %q", line, read, want)
+	for _, test := range tests {
+		readWriter.toRead = test.input
+		line := GetUserInput(readWriter, ">")
+		if line != test.output {
+			t.Errorf("GetUserInput(%q) == %q, want %q", test.input, line, test.output)
+		}
 	}
 }
 

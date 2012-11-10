@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"io"
 	"log"
-	"net"
 	"strings"
 	"unicode"
 )
@@ -13,27 +12,21 @@ func WriteLine(conn io.Writer, line string) (int, error) {
 	return io.WriteString(conn, line+"\r\n")
 }
 
-func readLine(conn io.Reader) (string, error) {
-	reader := bufio.NewReader(conn)
-	bytes, _, err := reader.ReadLine()
-	return string(bytes), err
-}
-
 func Simplify(str string) string {
 	simpleStr := strings.TrimSpace(str)
 	simpleStr = strings.ToLower(simpleStr)
 	return simpleStr
 }
 
-func GetUserInput(conn net.Conn, prompt string) string {
-	input := GetRawUserInput(conn, prompt)
-	return Simplify(input)
-}
+func GetRawUserInput(conn io.ReadWriter, prompt string) string {
+	reader := bufio.NewReader(conn)
 
-func GetRawUserInput(conn net.Conn, prompt string) string {
 	for {
 		io.WriteString(conn, prompt)
-		input, err := readLine(conn)
+
+		bytes, _, err := reader.ReadLine()
+		input := string(bytes)
+
 		PanicIfError(err)
 
 		if input == "x" || input == "X" {
@@ -45,6 +38,11 @@ func GetRawUserInput(conn net.Conn, prompt string) string {
 
 	panic("Unexpected code path")
 	return ""
+}
+
+func GetUserInput(conn io.ReadWriter, prompt string) string {
+	input := GetRawUserInput(conn, prompt)
+	return Simplify(input)
 }
 
 func HandleError(err error) {
