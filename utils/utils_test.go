@@ -2,6 +2,16 @@ package utils
 
 import "testing"
 
+var wrote string
+
+type testWriter struct {
+}
+
+func (self testWriter) Write(p []byte) (n int, err error) {
+	wrote = string(p)
+	return len(p), nil
+}
+
 func Test_Simplify(t *testing.T) {
 	var tests = []struct {
 		s, want string
@@ -19,6 +29,19 @@ func Test_Simplify(t *testing.T) {
 		if got != c.want {
 			t.Errorf("Simplify(%q) == %q, want %q", c.s, got, c.want)
 		}
+	}
+}
+
+func Test_WriteLine(t *testing.T) {
+	var conn testWriter
+
+	line := "This is a line"
+	want := line + "\r\n"
+
+	WriteLine(conn, line)
+
+	if wrote != want {
+		t.Errorf("WriteLine(%q) == %q, want %q", line, wrote, want)
 	}
 }
 

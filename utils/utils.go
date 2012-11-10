@@ -9,8 +9,8 @@ import (
 	"unicode"
 )
 
-func WriteLine(conn net.Conn, line string) (int, error) {
-	return io.WriteString(conn, line+"\n")
+func WriteLine(conn io.Writer, line string) (int, error) {
+	return io.WriteString(conn, line+"\r\n")
 }
 
 func readLine(conn net.Conn) (string, error) {
