@@ -7,6 +7,7 @@ import (
 	"kmud/engine"
 	"kmud/utils"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -284,6 +285,15 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 		case "map":
 			width := 20 // Should be even
+			if len(args) > 0 {
+				var err error
+				width, err = strconv.Atoi(args[0])
+
+				if err != nil {
+					printLineColor(utils.ColorRed, "Invalid number given")
+					return
+				}
+			}
 
 			builder := newMapBuilder(width, width)
 
