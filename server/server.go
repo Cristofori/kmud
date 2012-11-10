@@ -3,10 +3,10 @@ package server
 import (
 	"fmt"
 	"labix.org/v2/mgo"
-	"mud/database"
-	"mud/engine"
-	"mud/game"
-	"mud/utils"
+	"kmud/database"
+	"kmud/engine"
+	"kmud/game"
+	"kmud/utils"
 	"net"
 	"runtime"
 	"strconv"
@@ -248,4 +248,3 @@ func Exec() {
 	}
 }
 
-// vim: nocindent

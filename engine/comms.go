@@ -3,7 +3,7 @@ package engine
 import (
 	"fmt"
 	"labix.org/v2/mgo/bson"
-	"mud/database"
+	"kmud/database"
 )
 
 var _listeners map[*chan Event]database.Character

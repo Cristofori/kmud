@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-	"mud/database"
-	"mud/utils"
+	"kmud/database"
+	"kmud/utils"
 	"sync"
 )
 

@@ -3,9 +3,9 @@ package game
 import (
 	"fmt"
 	"io"
-	"mud/database"
-	"mud/engine"
-	"mud/utils"
+	"kmud/database"
+	"kmud/engine"
+	"kmud/utils"
 	"net"
 	"strings"
 )

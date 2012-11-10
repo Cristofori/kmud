@@ -1,6 +1,6 @@
 package main
 
-import "server"
+import "kmud/server"
 
 func main() {
     server.Exec()
