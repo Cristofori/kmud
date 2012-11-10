@@ -9,6 +9,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type userInputMode int
@@ -407,6 +408,10 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			}
 		}()
 
+		lastTime := time.Now()
+
+		delay := time.Duration(200) * time.Millisecond
+
 		for {
 			mode := <-inputModeChannel
 			prompt := <-promptChannel
@@ -421,7 +426,14 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				panic("Unhandled case in switch statement (userInputMode)")
 			}
 
+			diff := time.Since(lastTime)
+
+			if diff < delay {
+				time.Sleep(delay - diff)
+			}
+
 			userInputChannel <- input
+			lastTime = time.Now()
 		}
 	}()
 
