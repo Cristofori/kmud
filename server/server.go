@@ -8,7 +8,6 @@ import (
 	"kmud/utils"
 	"labix.org/v2/mgo"
 	"net"
-	"runtime"
 	"strconv"
 )
 
@@ -224,8 +223,6 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 }
 
 func Exec() {
-	runtime.GOMAXPROCS(8)
-
 	fmt.Printf("Connecting to database... ")
 	session, err := mgo.Dial("localhost")
 
