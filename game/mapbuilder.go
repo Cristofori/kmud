@@ -2,6 +2,7 @@ package game
 
 import (
 	"kmud/database"
+	"kmud/utils"
 )
 
 type mapBuilder struct {
@@ -11,7 +12,16 @@ type mapBuilder struct {
 }
 
 type mapTile struct {
-	char rune
+	char  rune
+	color utils.Color
+}
+
+func (self *mapTile) toString(cm utils.ColorMode) string {
+	if self.char == ' ' {
+		return string(self.char)
+	}
+
+	return utils.Colorize(cm, self.color, string(self.char))
 }
 
 func newMapBuilder(width int, height int) mapBuilder {
@@ -55,8 +65,10 @@ func (self *mapBuilder) AddRoom(room database.Room, x int, y int) {
 
 	if x == centerX && y == centerY {
 		self.data[y][x].char = 'O'
+		self.data[y][x].color = utils.ColorRed
 	} else {
 		self.data[y][x].char = '#'
+		self.data[y][x].color = utils.ColorWhite
 	}
 
 	addIfExists(database.DirectionNorth, x, y-1)
@@ -69,14 +81,14 @@ func (self *mapBuilder) AddRoom(room database.Room, x int, y int) {
 	addIfExists(database.DirectionNorthWest, x-1, y-1)
 }
 
-func (self *mapBuilder) ToString() string {
+func (self *mapBuilder) toString(cm utils.ColorMode) string {
 	var rows []string
 
 	for y := 0; y < self.height; y += 1 {
 		row := ""
 		for x := 0; x < self.width; x += 1 {
-			char := self.data[y][x].char
-			row = row + string(char)
+			tile := self.data[y][x].toString(cm)
+			row = row + tile
 		}
 		rows = append(rows, row)
 	}
@@ -86,6 +98,7 @@ func (self *mapBuilder) ToString() string {
 	for _, row := range rows {
 		str = str + row + "\n"
 	}
+
 	return str
 }
 
@@ -129,6 +142,8 @@ func (self *mapTile) AddExit(dir database.ExitDirection) {
 		}
 	}
 
+	self.color = utils.ColorBlue
+
 	switch dir {
 	case database.DirectionNorth:
 		combineChars('v', '|', '^')
@@ -150,3 +165,5 @@ func (self *mapTile) AddExit(dir database.ExitDirection) {
 		panic("Unexpected direction given to mapTile::AddExit()")
 	}
 }
+
+// vim: nocindent

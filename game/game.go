@@ -321,7 +321,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				}
 			}
 
-			printString(builder.ToString())
+			printString(builder.toString(user.ColorMode))
 
 		case "message":
 			if len(args) == 0 {
