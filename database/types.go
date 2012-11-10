@@ -169,14 +169,14 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars *lis
 			utils.Colorize(colorMode, utils.ColorWhite, self.Description))
 
 		if chars.Len() > 0 {
-			str = str + "\n\n Also here: "
+			str = str + "\n\n " + utils.Colorize(colorMode, utils.ColorBlue, "Also here: ")
 
 			var names []string
 			for e := chars.Front(); e != nil; e = e.Next() {
 				char := e.Value.(Character)
-				names = append(names, char.PrettyName())
+				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, char.PrettyName()))
 			}
-			str = str + strings.Join(names, ", ")
+			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", "))
 		}
 
 		str = str + "\n\n " + utils.Colorize(colorMode, utils.ColorBlue, "Exits: ")
