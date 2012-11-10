@@ -3,6 +3,7 @@ package utils
 import "testing"
 
 var wrote string
+var read string
 
 type testWriter struct {
 }
@@ -10,6 +11,21 @@ type testWriter struct {
 func (self testWriter) Write(p []byte) (n int, err error) {
 	wrote = string(p)
 	return len(p), nil
+}
+
+type testReader struct {
+}
+
+func (self testReader) Read(p []byte) (n int, err error) {
+	for i := 0; i < 10; i++ {
+		char := byte('a' + i)
+		p[i] = char
+		read = read + string(char)
+	}
+	p[10] = '\n'
+
+	read = string(p)
+	return 11, nil
 }
 
 func Test_Simplify(t *testing.T) {
@@ -42,6 +58,17 @@ func Test_WriteLine(t *testing.T) {
 
 	if wrote != want {
 		t.Errorf("WriteLine(%q) == %q, want %q", line, wrote, want)
+	}
+}
+
+func Test_ReadLine(t *testing.T) {
+	var conn testReader
+	line, _ := readLine(conn)
+
+	want := "abcdefghij"
+
+	if line != want {
+		t.Errorf("ReadLine(%q) == %q, want %q", line, read, want)
 	}
 }
 

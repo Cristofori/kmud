@@ -13,7 +13,7 @@ func WriteLine(conn io.Writer, line string) (int, error) {
 	return io.WriteString(conn, line+"\r\n")
 }
 
-func readLine(conn net.Conn) (string, error) {
+func readLine(conn io.Reader) (string, error) {
 	reader := bufio.NewReader(conn)
 	bytes, _, err := reader.ReadLine()
 	return string(bytes), err
