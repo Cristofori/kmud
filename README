@@ -1,0 +1,3 @@
+clone into $GOROOT/src
+cd $GOROOT
+go build kmud
