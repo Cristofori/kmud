@@ -59,6 +59,10 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 		printLineColor(utils.ColorWhite, line)
 	}
 
+	printError := func(line string) {
+		printLineColor(utils.ColorRed, line)
+	}
+
 	printRoom := func() {
 		charList := engine.CharactersIn(room, *character)
 		printLine(room.ToString(database.ReadMode, user.ColorMode, charList))
@@ -195,10 +199,10 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 					}
 
 				} else {
-					printLine("You can't go that way")
+					printError("You can't go that way")
 				}
 			} else {
-				printLine("You can't do that")
+				printError("You can't do that")
 			}
 		}
 	}
@@ -290,7 +294,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				width, err = strconv.Atoi(args[0])
 
 				if err != nil {
-					printLineColor(utils.ColorRed, "Invalid number given")
+					printError("Invalid number given")
 					return
 				}
 			}
@@ -389,7 +393,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			}
 
 		default:
-			printLine("Unrecognized command")
+			printError("Unrecognized command")
 		}
 	}
 
