@@ -1,12 +1,10 @@
-* Unit tests
+* More unit tests
 * Parse and save map file
 
 #-#-#>#<#-#   # #
       v ^  \ / X
       #>#   # # #
 
-* Admin menu for managing users
-* UTF-8 map printing
 * NPCs
 * Items/inventory
 * Currency
