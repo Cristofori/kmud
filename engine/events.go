@@ -100,8 +100,7 @@ func (self MessageEvent) Type() EventType {
 }
 
 func (self MessageEvent) ToString(receiver database.Character) string {
-	user := GetCharacterUser(receiver)
-	cm := user.ColorMode
+	cm := getColorMode(receiver)
 	return utils.Colorize(cm, utils.ColorBlue, "Message from "+self.Character.PrettyName()+": ") +
 		utils.Colorize(cm, utils.ColorWhite, self.Message)
 }
@@ -115,8 +114,7 @@ func (self SayEvent) ToString(receiver database.Character) string {
 		return ""
 	}
 
-	user := GetCharacterUser(receiver)
-	cm := user.ColorMode
+	cm := getColorMode(receiver)
 
 	who := ""
 	if receiver.Id == self.Character.Id {
@@ -134,7 +132,18 @@ func (self EnterEvent) Type() EventType {
 }
 
 func (self EnterEvent) ToString(receiver database.Character) string {
-	return fmt.Sprintf("%s has entered the room", self.Character.PrettyName())
+	if receiver.RoomId != self.RoomId {
+		return ""
+	}
+
+	if receiver.Id == self.Character.Id {
+		return ""
+	}
+
+	cm := getColorMode(receiver)
+
+	return utils.Colorize(cm, utils.ColorBlue, self.Character.PrettyName()) +
+		utils.Colorize(cm, utils.ColorWhite, " has entered the room")
 }
 
 func (self LeaveEvent) Type() EventType {
@@ -142,7 +151,18 @@ func (self LeaveEvent) Type() EventType {
 }
 
 func (self LeaveEvent) ToString(receiver database.Character) string {
-	return fmt.Sprintf("%s has left the room", self.Character.PrettyName())
+	if receiver.RoomId != self.RoomId {
+		return ""
+	}
+
+	if receiver.Id == self.Character.Id {
+		return ""
+	}
+
+	cm := getColorMode(receiver)
+
+	return utils.Colorize(cm, utils.ColorBlue, self.Character.PrettyName()) +
+		utils.Colorize(cm, utils.ColorWhite, " has left the room")
 }
 
 func (self RoomUpdateEvent) Type() EventType {
@@ -150,7 +170,13 @@ func (self RoomUpdateEvent) Type() EventType {
 }
 
 func (self RoomUpdateEvent) ToString(receiver database.Character) string {
-	return "This room has been modified"
+	if receiver.RoomId != self.Room.Id {
+		return ""
+	}
+
+	cm := getColorMode(receiver)
+
+	return utils.Colorize(cm, utils.ColorWhite, "This room has been modified")
 }
 
 func (self LoginEvent) Type() EventType {
@@ -158,7 +184,14 @@ func (self LoginEvent) Type() EventType {
 }
 
 func (self LoginEvent) ToString(receiver database.Character) string {
-	return fmt.Sprintf("%s has connected", self.Character.PrettyName())
+	if receiver.Id == self.Character.Id {
+		return ""
+	}
+
+	cm := getColorMode(receiver)
+
+	return utils.Colorize(cm, utils.ColorBlue, self.Character.PrettyName()) +
+		utils.Colorize(cm, utils.ColorWhite, " has connected")
 }
 
 func (self LogoutEvent) Type() EventType {
@@ -167,6 +200,11 @@ func (self LogoutEvent) Type() EventType {
 
 func (self LogoutEvent) ToString(receiver database.Character) string {
 	return fmt.Sprintf("%s has disconnected", self.Character.PrettyName())
+}
+
+func getColorMode(char database.Character) utils.ColorMode {
+	user := GetCharacterUser(char)
+	return user.ColorMode
 }
 
 // vim: nocindent

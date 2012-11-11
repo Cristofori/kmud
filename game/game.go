@@ -78,39 +78,14 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 	}
 
 	processEvent := func(event engine.Event) string {
-		message := ""
+		message := event.ToString(*character)
 
 		switch event.Type() {
-		case engine.LogoutEventType:
-			fallthrough
-		case engine.MessageEventType:
-			fallthrough
-		case engine.SayEventType:
-			message = event.ToString(*character)
-		case engine.EnterEventType:
-			enterEvent := event.(engine.EnterEvent)
-			if enterEvent.RoomId == room.Id && enterEvent.Character.Id != character.Id {
-				message = event.ToString(*character)
-			}
-		case engine.LeaveEventType:
-			moveEvent := event.(engine.LeaveEvent)
-			if moveEvent.RoomId == room.Id && moveEvent.Character.Id != character.Id {
-				message = event.ToString(*character)
-			}
 		case engine.RoomUpdateEventType:
 			roomEvent := event.(engine.RoomUpdateEvent)
 			if roomEvent.Room.Id == room.Id {
-				message = event.ToString(*character)
 				room = roomEvent.Room
 			}
-		case engine.LoginEventType:
-			loginEvent := event.(engine.LoginEvent)
-			if loginEvent.Character.Id != character.Id {
-				message = event.ToString(*character)
-			}
-
-		default:
-			panic(fmt.Sprintf("Unhandled event: %v", event))
 		}
 
 		return message
