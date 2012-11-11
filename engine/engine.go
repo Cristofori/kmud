@@ -304,15 +304,15 @@ func eventLoop() {
 	}
 }
 
-func CharactersIn(room database.Room, except database.Character) *list.List {
+func CharactersIn(room database.Room, except database.Character) []database.Character {
 	_mutex.Lock()
 	defer _mutex.Unlock()
 
-	charList := list.New()
+	var charList []database.Character
 
 	for _, char := range _model.Characters {
 		if char.RoomId == room.Id && char.Id != except.Id && char.Online() {
-			charList.PushBack(char)
+			charList = append(charList, char)
 		}
 	}
 

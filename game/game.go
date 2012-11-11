@@ -372,8 +372,8 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			printLineColor(utils.ColorGray, "Gray")
 
 		case "colormode":
-            fallthrough
-        case "cm":
+			fallthrough
+		case "cm":
 			if len(args) == 0 {
 				message := "Current color mode is: "
 				switch user.ColorMode {

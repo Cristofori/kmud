@@ -1,7 +1,6 @@
 package database
 
 import (
-	"container/list"
 	"fmt"
 	"kmud/utils"
 	"labix.org/v2/mgo/bson"
@@ -155,7 +154,7 @@ func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) s
 	panic("Unexpected code path")
 }
 
-func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars *list.List) string {
+func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Character) string {
 	var str string
 
 	if mode == ReadMode {
@@ -168,12 +167,11 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars *lis
 			self.Location.Z,
 			utils.Colorize(colorMode, utils.ColorWhite, self.Description))
 
-		if chars.Len() > 0 {
+		if len(chars) > 0 {
 			str = str + "\n\n " + utils.Colorize(colorMode, utils.ColorBlue, "Also here: ")
 
 			var names []string
-			for e := chars.Front(); e != nil; e = e.Next() {
-				char := e.Value.(Character)
+			for _, char := range chars {
 				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, char.PrettyName()))
 			}
 			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", "))
