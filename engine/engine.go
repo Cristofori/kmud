@@ -160,6 +160,19 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 	return room, err
 }
 
+func DeleteRoom(room database.Room) error {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	err := database.DeleteRoom(_session, room)
+
+	if err == nil {
+		delete(_model.Rooms, room.Id)
+	}
+
+	return err
+}
+
 func GetUser(id bson.ObjectId) database.User {
 	_mutex.Lock()
 	defer _mutex.Unlock()

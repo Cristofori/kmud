@@ -183,6 +183,11 @@ func GetCharacters(session *mgo.Session, user User) []Character {
 	return characters
 }
 
+func DeleteRoom(session *mgo.Session, room Room) error {
+	c := getCollection(session, cRooms)
+	return c.RemoveId(room.Id)
+}
+
 func DeleteUser(session *mgo.Session, user User) error {
 	for _, charId := range user.CharacterIds {
 		DeleteCharacter(session, &user, charId)

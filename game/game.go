@@ -393,6 +393,29 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				printLine("Valid color modes are: None, Light, Dark")
 			}
 
+		case "delete":
+			fallthrough
+		case "del":
+			if len(args) == 1 {
+				direction := database.StringToDirection(args[0])
+
+				if direction == database.DirectionNone {
+					printError("Not a valid direction")
+				} else {
+					loc := room.Location.Next(direction)
+					roomToDelete, found := engine.GetRoomByLocation(loc)
+					if found {
+						engine.DeleteRoom(roomToDelete)
+						room.SetExitEnabled(direction, false)
+						engine.UpdateRoom(room)
+					} else {
+						printError("No room in that direction")
+					}
+				}
+			} else {
+				printError("Usage: /delete <direction>")
+			}
+
 		default:
 			printError("Unrecognized command")
 		}
