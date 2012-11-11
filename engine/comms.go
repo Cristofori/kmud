@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"kmud/database"
+	"kmud/utils"
 	"labix.org/v2/mgo/bson"
 )
 
@@ -49,6 +50,7 @@ type EventType int
 
 const (
 	MessageEventType    EventType = iota
+	SayEventType        EventType = iota
 	EnterEventType      EventType = iota
 	LeaveEventType      EventType = iota
 	RoomUpdateEventType EventType = iota
@@ -58,10 +60,15 @@ const (
 
 type Event interface {
 	Type() EventType
-	ToString() string
+	ToString(receiver database.Character) string
 }
 
 type MessageEvent struct {
+	Character database.Character
+	Message   string
+}
+
+type SayEvent struct {
 	Character database.Character
 	Message   string
 }
@@ -92,15 +99,41 @@ func (self MessageEvent) Type() EventType {
 	return MessageEventType
 }
 
-func (self MessageEvent) ToString() string {
-	return self.Character.PrettyName() + ":" + self.Message
+func (self MessageEvent) ToString(receiver database.Character) string {
+	user := GetCharacterUser(receiver)
+	cm := user.ColorMode
+	return utils.Colorize(cm, utils.ColorBlue, "Message from "+self.Character.PrettyName()+": ") +
+		utils.Colorize(cm, utils.ColorWhite, self.Message)
+}
+
+func (self SayEvent) Type() EventType {
+	return SayEventType
+}
+
+func (self SayEvent) ToString(receiver database.Character) string {
+	if receiver.RoomId != self.Character.RoomId {
+		return ""
+	}
+
+	user := GetCharacterUser(receiver)
+	cm := user.ColorMode
+
+	who := ""
+	if receiver.Id == self.Character.Id {
+		who = "You say"
+	} else {
+		who = self.Character.PrettyName() + " says"
+	}
+
+	return utils.Colorize(cm, utils.ColorBlue, who+", ") +
+		utils.Colorize(cm, utils.ColorWhite, "\""+self.Message+"\"")
 }
 
 func (self EnterEvent) Type() EventType {
 	return EnterEventType
 }
 
-func (self EnterEvent) ToString() string {
+func (self EnterEvent) ToString(receiver database.Character) string {
 	return fmt.Sprintf("%s has entered the room", self.Character.PrettyName())
 }
 
@@ -108,7 +141,7 @@ func (self LeaveEvent) Type() EventType {
 	return LeaveEventType
 }
 
-func (self LeaveEvent) ToString() string {
+func (self LeaveEvent) ToString(receiver database.Character) string {
 	return fmt.Sprintf("%s has left the room", self.Character.PrettyName())
 }
 
@@ -116,7 +149,7 @@ func (self RoomUpdateEvent) Type() EventType {
 	return RoomUpdateEventType
 }
 
-func (self RoomUpdateEvent) ToString() string {
+func (self RoomUpdateEvent) ToString(receiver database.Character) string {
 	return "This room has been modified"
 }
 
@@ -124,7 +157,7 @@ func (self LoginEvent) Type() EventType {
 	return LoginEventType
 }
 
-func (self LoginEvent) ToString() string {
+func (self LoginEvent) ToString(receiver database.Character) string {
 	return fmt.Sprintf("%s has connected", self.Character.PrettyName())
 }
 
@@ -132,7 +165,7 @@ func (self LogoutEvent) Type() EventType {
 	return LogoutEventType
 }
 
-func (self LogoutEvent) ToString() string {
+func (self LogoutEvent) ToString(receiver database.Character) string {
 	return fmt.Sprintf("%s has disconnected", self.Character.PrettyName())
 }
 

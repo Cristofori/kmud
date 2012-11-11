@@ -81,33 +81,33 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 		message := ""
 
 		switch event.Type() {
+		case engine.LogoutEventType:
+			fallthrough
 		case engine.MessageEventType:
-			messageEvent := event.(engine.MessageEvent)
-			message = utils.Colorize(user.ColorMode, utils.ColorBlue, messageEvent.Character.PrettyName()+": ") +
-				utils.Colorize(user.ColorMode, utils.ColorWhite, messageEvent.Message)
+			fallthrough
+		case engine.SayEventType:
+			message = event.ToString(*character)
 		case engine.EnterEventType:
 			enterEvent := event.(engine.EnterEvent)
 			if enterEvent.RoomId == room.Id && enterEvent.Character.Id != character.Id {
-				message = event.ToString()
+				message = event.ToString(*character)
 			}
 		case engine.LeaveEventType:
 			moveEvent := event.(engine.LeaveEvent)
 			if moveEvent.RoomId == room.Id && moveEvent.Character.Id != character.Id {
-				message = event.ToString()
+				message = event.ToString(*character)
 			}
 		case engine.RoomUpdateEventType:
 			roomEvent := event.(engine.RoomUpdateEvent)
 			if roomEvent.Room.Id == room.Id {
-				message = event.ToString()
+				message = event.ToString(*character)
 				room = roomEvent.Room
 			}
 		case engine.LoginEventType:
 			loginEvent := event.(engine.LoginEvent)
 			if loginEvent.Character.Id != character.Id {
-				message = event.ToString()
+				message = event.ToString(*character)
 			}
-		case engine.LogoutEventType:
-			message = event.ToString()
 
 		default:
 			panic(fmt.Sprintf("Unhandled event: %v", event))
@@ -325,10 +325,21 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			printString(builder.toString(user.ColorMode))
 
 		case "message":
+			fallthrough
+		case "msg":
 			if len(args) == 0 {
-				printLine("Nothing to say")
+				printError("Nothing to say")
 			} else {
 				engine.BroadcastMessage(*character, strings.Join(args, " "))
+			}
+
+		case "say":
+			fallthrough
+		case "s":
+			if len(args) == 0 {
+				printError("Nothing to say")
+			} else {
+				engine.Say(*character, strings.Join(args, " "))
 			}
 
 		case "who":

@@ -213,6 +213,22 @@ func GetCharacterRoom(character database.Character) database.Room {
 	return _model.Rooms[character.RoomId]
 }
 
+func GetCharacterUser(character database.Character) database.User {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	for _, user := range _model.Users {
+		for _, charId := range user.CharacterIds {
+			if charId == character.Id {
+				return user
+			}
+		}
+	}
+
+	return database.User{}
+
+}
+
 func GetRoomByLocation(coordinate database.Coordinate) (database.Room, bool) {
 	_mutex.Lock()
 	defer _mutex.Unlock()
@@ -248,6 +264,10 @@ func GenerateDefaultMap() {
 
 func BroadcastMessage(from database.Character, message string) {
 	queueEvent(MessageEvent{from, message})
+}
+
+func Say(from database.Character, message string) {
+	queueEvent(SayEvent{from, message})
 }
 
 func queueEvent(event Event) {
