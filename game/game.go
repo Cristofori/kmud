@@ -116,7 +116,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 		return message
 	}
 
-	eventChannel := engine.Register(*character)
+	eventChannel := engine.Register(character)
 	defer engine.Unregister(eventChannel)
 
 	userInputChannel := make(chan string)

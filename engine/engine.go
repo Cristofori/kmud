@@ -115,7 +115,10 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 
 	if !found {
 		fmt.Printf("No room found at location %v, creating a new one (%s)\n", newLocation, character.PrettyName())
+
+		_mutex.Lock()
 		room = database.NewRoom()
+		_mutex.Unlock()
 
 		switch direction {
 		case database.DirectionNorth:

@@ -7,23 +7,23 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
-var _listeners map[*chan Event]database.Character
+var _listeners map[*chan Event]*database.Character
 
-func Register(character database.Character) *chan Event {
+func Register(character *database.Character) *chan Event {
 	_mutex.Lock()
 	defer _mutex.Unlock()
 
 	if _listeners == nil {
-		_listeners = map[*chan Event]database.Character{}
+		_listeners = map[*chan Event]*database.Character{}
 	}
 
 	listener := make(chan Event, 100)
 	_listeners[&listener] = character
 
 	character.SetOnline(true)
-	_model.Characters[character.Id] = character
+	_model.Characters[character.Id] = *character
 
-	queueEvent(LoginEvent{character})
+	queueEvent(LoginEvent{*character})
 
 	return &listener
 }
@@ -34,9 +34,9 @@ func Unregister(listener *chan Event) {
 
 	character := _listeners[listener]
 	character.SetOnline(false)
-	_model.Characters[character.Id] = character
+	_model.Characters[character.Id] = *character
 
-	queueEvent(LogoutEvent{character})
+	queueEvent(LogoutEvent{*character})
 	delete(_listeners, listener)
 }
 
