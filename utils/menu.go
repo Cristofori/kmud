@@ -47,10 +47,10 @@ func (self *Menu) HasAction(key string) bool {
 	return action.key != ""
 }
 
-func (self *Menu) Exec(conn net.Conn) (string, bson.ObjectId) {
+func (self *Menu) Exec(conn net.Conn, cm ColorMode) (string, bson.ObjectId) {
 	for {
-		self.Print(conn)
-		input := GetUserInput(conn, self.Prompt)
+		self.Print(conn, cm)
+		input := GetUserInput(conn, Colorize(cm, ColorWhite, self.Prompt))
 
 		if input == "" {
 			return "", ""
@@ -66,12 +66,13 @@ func (self *Menu) Exec(conn net.Conn) (string, bson.ObjectId) {
 	return "", ""
 }
 
-func (self *Menu) Print(conn net.Conn) {
-	border := "-=-=-"
-	WriteLine(conn, fmt.Sprintf("%s %s %s", border, self.Title, border))
+func (self *Menu) Print(conn net.Conn, cm ColorMode) {
+	border := Colorize(cm, ColorWhite, "-=-=-")
+	title := Colorize(cm, ColorBlue, self.Title)
+	WriteLine(conn, fmt.Sprintf("%s %s %s", border, title, border))
 
 	for _, action := range self.Actions {
-		WriteLine(conn, fmt.Sprintf("  %s", action.text))
+		WriteLine(conn, "  "+Colorize(cm, ColorWhite, action.text))
 	}
 }
 

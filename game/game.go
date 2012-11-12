@@ -223,7 +223,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 						choice := ""
 
 						for {
-							menu.Print(conn)
+							menu.Print(conn, user.ColorMode)
 							choice = getUserInput(CleanUserInput, menu.Prompt)
 							if menu.HasAction(choice) || choice == "" {
 								break
@@ -423,7 +423,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 		for {
 			mode := <-inputModeChannel
-			prompt := <-promptChannel
+			prompt := utils.Colorize(user.ColorMode, utils.ColorWhite, <-promptChannel)
 			input := ""
 
 			switch mode {
