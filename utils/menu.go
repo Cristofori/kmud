@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"labix.org/v2/mgo/bson"
 	"net"
+	"regexp"
 )
 
 type action struct {
@@ -72,7 +73,19 @@ func (self *Menu) Print(conn net.Conn, cm ColorMode) {
 	WriteLine(conn, fmt.Sprintf("%s %s %s", border, title, border))
 
 	for _, action := range self.Actions {
-		WriteLine(conn, "  "+Colorize(cm, ColorWhite, action.text))
+		regex := regexp.MustCompile("^\\[([^\\]]*)\\](.*)")
+		matches := regex.FindStringSubmatch(action.text)
+
+		actionText := action.text
+
+		if len(matches) == 3 {
+			actionText = Colorize(cm, ColorDarkBlue, "[") +
+				Colorize(cm, ColorBlue, matches[1]) +
+				Colorize(cm, ColorDarkBlue, "]") +
+				Colorize(cm, ColorWhite, matches[2])
+		}
+
+		WriteLine(conn, "  "+actionText)
 	}
 }
 

@@ -41,7 +41,7 @@ func Unregister(listener *chan Event) {
 }
 
 func broadcast(event Event) {
-	for listener, _ := range _listeners {
+	for listener := range _listeners {
 		*listener <- event
 	}
 }
