@@ -165,12 +165,61 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 
 func DeleteRoom(room database.Room) error {
 	_mutex.Lock()
-	defer _mutex.Unlock()
 
 	err := database.DeleteRoom(_session, room)
 
 	if err == nil {
 		delete(_model.Rooms, room.Id)
+
+		// Disconnect all exits leading to this room
+		loc := room.Location
+
+		updateRoom := func(dir database.ExitDirection) {
+			next := loc.Next(dir)
+			room, found := GetRoomByLocation(next)
+
+			if found {
+				var exitToDisable database.ExitDirection
+				switch dir {
+				case database.DirectionNorth:
+					exitToDisable = database.DirectionSouth
+				case database.DirectionNorthEast:
+					exitToDisable = database.DirectionSouthWest
+				case database.DirectionEast:
+					exitToDisable = database.DirectionWest
+				case database.DirectionSouthEast:
+					exitToDisable = database.DirectionNorthWest
+				case database.DirectionSouth:
+					exitToDisable = database.DirectionNorth
+				case database.DirectionSouthWest:
+					exitToDisable = database.DirectionNorthEast
+				case database.DirectionWest:
+					exitToDisable = database.DirectionEast
+				case database.DirectionNorthWest:
+					exitToDisable = database.DirectionSouthEast
+				case database.DirectionUp:
+					exitToDisable = database.DirectionDown
+				case database.DirectionDown:
+					exitToDisable = database.DirectionUp
+				}
+				room.SetExitEnabled(exitToDisable, false)
+				UpdateRoom(room)
+			}
+		}
+
+		_mutex.Unlock()
+		updateRoom(database.DirectionNorth)
+		updateRoom(database.DirectionNorthEast)
+		updateRoom(database.DirectionEast)
+		updateRoom(database.DirectionSouthEast)
+		updateRoom(database.DirectionSouth)
+		updateRoom(database.DirectionSouthWest)
+		updateRoom(database.DirectionWest)
+		updateRoom(database.DirectionNorthWest)
+		updateRoom(database.DirectionUp)
+		updateRoom(database.DirectionDown)
+	} else {
+		_mutex.Unlock()
 	}
 
 	return err

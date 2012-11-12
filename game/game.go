@@ -394,8 +394,6 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 					roomToDelete, found := engine.GetRoomByLocation(loc)
 					if found {
 						engine.DeleteRoom(roomToDelete)
-						room.SetExitEnabled(direction, false)
-						engine.UpdateRoom(room)
 					} else {
 						printError("No room in that direction")
 					}
