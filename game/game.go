@@ -301,7 +301,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 		case "message":
 			fallthrough
-		case "msg":
+		case "m":
 			if len(args) == 0 {
 				printError("Nothing to say")
 			} else {
@@ -361,7 +361,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				}
 				printLine(message)
 			} else if len(args) == 1 {
-				switch args[0] {
+				switch strings.ToLower(args[0]) {
 				case "none":
 					user.ColorMode = utils.ColorModeNone
 					engine.UpdateUser(*user)
@@ -450,7 +450,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 	// Main loop
 	for {
-		input := getUserInput(CleanUserInput, prompt())
+		input := getUserInput(RawUserInput, prompt())
 		if input == "" {
 			return
 		}

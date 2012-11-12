@@ -74,7 +74,7 @@ func Argify(data string) (string, []string) {
 		return "", []string{}
 	}
 
-	arg1 := fields[0]
+	arg1 := Simplify(fields[0])
 	args := fields[1:]
 
 	return arg1, args
