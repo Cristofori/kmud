@@ -139,19 +139,19 @@ func (self *mapTile) addExit(dir database.ExitDirection) {
 
 	switch dir {
 	case database.DirectionNorth:
-		combineChars('v', '|', '^')
+		combineChars('|', '|', '|')
 	case database.DirectionNorthEast:
 		combineChars('\\', 'X', '/')
 	case database.DirectionEast:
-		combineChars('<', '-', '>')
+		combineChars('-', '-', '-')
 	case database.DirectionSouthEast:
 		combineChars('/', 'X', '\\')
 	case database.DirectionSouth:
-		combineChars('^', '|', 'v')
+		combineChars('|', '|', '|')
 	case database.DirectionSouthWest:
 		combineChars('\\', 'X', '/')
 	case database.DirectionWest:
-		combineChars('>', '-', '<')
+		combineChars('-', '-', '-')
 	case database.DirectionNorthWest:
 		combineChars('/', 'X', '\\')
 	default:
