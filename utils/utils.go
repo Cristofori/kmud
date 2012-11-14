@@ -80,7 +80,7 @@ func Argify(data string) (string, []string) {
 	return arg1, args
 }
 
-func Trim(str string) string {
+func TrimEmptyRows(str string) string {
 
 	rows := strings.Split(str, "\n")
 

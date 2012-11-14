@@ -101,6 +101,11 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 	inputModeChannel := make(chan userInputMode)
 	panicChannel := make(chan interface{})
 
+	/**
+	 * Allows us to retrieve user input in a way that doesn't block the
+	 * event loop by using channels and a separate Go routine to grab
+	 * either the next user input or the next event.
+	 */
 	getUserInput := func(inputMode userInputMode, prompt string) string {
 		inputModeChannel <- inputMode
 		promptChannel <- prompt
@@ -348,7 +353,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			}
 
 			if name == "" {
-				printLine(utils.Trim(builder.toString(user.ColorMode)))
+				printLine(utils.TrimEmptyRows(builder.toString(user.ColorMode)))
 			} else {
 				filename := name + ".map"
 				file, err := os.Create(filename)
