@@ -8,7 +8,8 @@ import (
 type mapBuilder struct {
 	width    int
 	height   int
-	data     [][]mapTile
+	depth    int
+	data     [][][]mapTile
 	userRoom database.Room
 }
 
@@ -25,25 +26,31 @@ func (self *mapTile) toString(cm utils.ColorMode) string {
 	return utils.Colorize(cm, self.color, string(self.char))
 }
 
-func newMapBuilder(width int, height int) mapBuilder {
+func newMapBuilder(width int, height int, depth int) mapBuilder {
 	var builder mapBuilder
 
-	// Double the size to account for extra space to draw exits
+	// Double the X/Y axis to account for extra space to draw exits
 	width *= 2
 	height *= 2
 
-	builder.data = make([][]mapTile, height)
+	builder.data = make([][][]mapTile, depth)
 
-	for y := 0; y < height; y += 1 {
-		builder.data[y] = make([]mapTile, width)
+	for z := 0; z < depth; z++ {
+		builder.data[z] = make([][]mapTile, height)
+		for y := 0; y < height; y++ {
+			builder.data[z][y] = make([]mapTile, width)
+		}
 	}
 
 	builder.width = width
 	builder.height = height
+	builder.depth = depth
 
-	for y := 0; y < height; y += 1 {
-		for x := 0; x < width; x += 1 {
-			builder.data[y][x].char = ' '
+	for z := 0; z < depth; z++ {
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				builder.data[z][y][x].char = ' '
+			}
 		}
 	}
 
@@ -54,23 +61,32 @@ func (self *mapBuilder) setUserRoom(room database.Room) {
 	self.userRoom = room
 }
 
-func (self *mapBuilder) addRoom(room database.Room, x int, y int) {
+func (self *mapBuilder) addRoom(room database.Room, x int, y int, z int) {
 	addIfExists := func(dir database.ExitDirection, x int, y int) {
 		if x < 0 || y < 0 {
 			return
 		}
 
 		if room.HasExit(dir) {
-			self.data[y][x].addExit(dir)
+			self.data[z][y][x].addExit(dir)
 		}
 	}
 
 	if self.userRoom.Id == room.Id {
-		self.data[y][x].char = 'O'
-		self.data[y][x].color = utils.ColorRed
+		self.data[z][y][x].char = 'O'
+		self.data[z][y][x].color = utils.ColorRed
 	} else {
-		self.data[y][x].char = '#'
-		self.data[y][x].color = utils.ColorWhite
+		self.data[z][y][x].color = utils.ColorMagenta
+		if room.HasExit(database.DirectionUp) && room.HasExit(database.DirectionDown) {
+			self.data[z][y][x].char = '+'
+		} else if room.HasExit(database.DirectionUp) {
+			self.data[z][y][x].char = 'U'
+		} else if room.HasExit(database.DirectionDown) {
+			self.data[z][y][x].char = 'D'
+		} else {
+			self.data[z][y][x].char = '#'
+			self.data[z][y][x].color = utils.ColorWhite
+		}
 	}
 
 	addIfExists(database.DirectionNorth, x, y-1)
@@ -84,55 +100,30 @@ func (self *mapBuilder) addRoom(room database.Room, x int, y int) {
 }
 
 func (self *mapBuilder) toString(cm utils.ColorMode) string {
-	var rows []string
-
-	for y := 0; y < self.height; y += 1 {
-		row := ""
-		for x := 0; x < self.width; x += 1 {
-			tile := self.data[y][x].toString(cm)
-			row = row + tile
-		}
-		rows = append(rows, row)
-	}
-	rows = trim(rows)
-
 	str := ""
-	for _, row := range rows {
-		str = str + row + "\n"
+
+	for z := 0; z < self.depth; z++ {
+		var rows []string
+		for y := 0; y < self.height; y++ {
+			row := ""
+			for x := 0; x < self.width; x++ {
+				tile := self.data[z][y][x].toString(cm)
+				row = row + tile
+			}
+			rows = append(rows, row)
+		}
+
+		if self.depth > 1 {
+			divider := "================================================================================\n"
+			rows = append(rows, divider)
+		}
+
+		for _, row := range rows {
+			str = str + row + "\n"
+		}
 	}
 
 	return str
-}
-
-func trim(rows []string) []string {
-	rowEmpty := func(row string) bool {
-		for _, char := range row {
-			if char != ' ' {
-				return false
-			}
-		}
-		return true
-	}
-
-	// Trim from the top
-	for _, row := range rows {
-		if !rowEmpty(row) {
-			break
-		}
-
-		rows = rows[1:]
-	}
-
-	// Trim from the bottom
-	for i := len(rows) - 1; i >= 0; i -= 1 {
-		row := rows[i]
-		if !rowEmpty(row) {
-			break
-		}
-		rows = rows[:len(rows)-1]
-	}
-
-	return rows
 }
 
 func (self *mapTile) addExit(dir database.ExitDirection) {

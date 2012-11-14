@@ -273,8 +273,10 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 			startX := 0
 			startY := 0
+			startZ := 0
 			endX := 0
 			endY := 0
+			endZ := 0
 
 			showUserRoom := false
 
@@ -296,8 +298,10 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 				startX = room.Location.X - radius
 				startY = room.Location.Y - radius
+				startZ = room.Location.Z
 				endX = startX + (radius * 2)
 				endY = startY + (radius * 2)
+				endZ = room.Location.Z
 			} else if len(args) >= 2 {
 				if args[0] == "save" {
 					name = strings.Join(args[1:], "_")
@@ -305,8 +309,10 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 					startX = topLeft.X
 					startY = topLeft.Y
+					startZ = topLeft.Z
 					endX = bottomRight.X
 					endY = bottomRight.Y
+					endZ = bottomRight.Z
 				} else {
 					mapUsage()
 					return
@@ -318,30 +324,31 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 			width := endX - startX + 1
 			height := endY - startY + 1
+			depth := endZ - startZ + 1
 
-			builder := newMapBuilder(width, height)
+			builder := newMapBuilder(width, height, depth)
 
 			if showUserRoom {
 				builder.setUserRoom(room)
 			}
 
-			z := room.Location.Z
+			for z := startZ; z <= endZ; z += 1 {
+				for y := startY; y <= endY; y += 1 {
+					for x := startX; x <= endX; x += 1 {
+						loc := database.Coordinate{x, y, z}
+						currentRoom, found := engine.GetRoomByLocation(loc)
 
-			for y := startY; y <= endY; y += 1 {
-				for x := startX; x <= endX; x += 1 {
-					loc := database.Coordinate{x, y, z}
-					currentRoom, found := engine.GetRoomByLocation(loc)
-
-					if found {
-						// Translate to 0-based coordinates and double the coordinate
-						// space to leave room for the exit lines
-						builder.addRoom(currentRoom, (x-startX)*2, (y-startY)*2)
+						if found {
+							// Translate to 0-based coordinates and double the coordinate
+							// space to leave room for the exit lines
+							builder.addRoom(currentRoom, (x-startX)*2, (y-startY)*2, z-startZ)
+						}
 					}
 				}
 			}
 
 			if name == "" {
-				printString(builder.toString(user.ColorMode))
+				printLine(utils.Trim(builder.toString(user.ColorMode)))
 			} else {
 				filename := name + ".map"
 				file, err := os.Create(filename)

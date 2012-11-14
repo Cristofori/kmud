@@ -482,6 +482,10 @@ func DeleteUser(userId bson.ObjectId) error {
 	return err
 }
 
+/**
+ * Returns cordinates that indiate the highest and lowest points of
+ * the map in 3 dimensions
+ */
 func MapCorners() (database.Coordinate, database.Coordinate) {
 	_mutex.Lock()
 	defer _mutex.Unlock()
@@ -490,18 +494,26 @@ func MapCorners() (database.Coordinate, database.Coordinate) {
 	var bottom int
 	var left int
 	var right int
+	var high int
+	var low int
 
 	for _, room := range _model.Rooms {
 		top = room.Location.Y
 		bottom = room.Location.Y
 		left = room.Location.X
 		right = room.Location.X
+		high = room.Location.Z
+		low = room.Location.Z
 		break
 	}
 
 	for _, room := range _model.Rooms {
-		if room.Location.Z != 0 {
-			continue
+		if room.Location.Z < high {
+			high = room.Location.Z
+		}
+
+		if room.Location.Z > low {
+			low = room.Location.Z
 		}
 
 		if room.Location.Y < top {
@@ -521,8 +533,8 @@ func MapCorners() (database.Coordinate, database.Coordinate) {
 		}
 	}
 
-	return database.Coordinate{X: left, Y: top, Z: 0},
-		database.Coordinate{X: right, Y: bottom, Z: 0}
+	return database.Coordinate{X: left, Y: top, Z: high},
+		database.Coordinate{X: right, Y: bottom, Z: low}
 }
 
 // vim: nocindent

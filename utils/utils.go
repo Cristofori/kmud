@@ -80,4 +80,38 @@ func Argify(data string) (string, []string) {
 	return arg1, args
 }
 
+func Trim(str string) string {
+
+	rows := strings.Split(str, "\n")
+
+	rowEmpty := func(row string) bool {
+		for _, char := range row {
+			if char != ' ' {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Trim from the top
+	for _, row := range rows {
+		if !rowEmpty(row) {
+			break
+		}
+
+		rows = rows[1:]
+	}
+
+	// Trim from the bottom
+	for i := len(rows) - 1; i >= 0; i -= 1 {
+		row := rows[i]
+		if !rowEmpty(row) {
+			break
+		}
+		rows = rows[:len(rows)-1]
+	}
+
+	return strings.Join(rows, "\n")
+}
+
 // vim: nocindent
