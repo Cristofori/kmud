@@ -110,10 +110,15 @@ func GetColor(mode ColorMode, color Color) string {
 }
 
 // Wraps the given text in the given color, followed by a color reset
-func Colorize(mode ColorMode, color Color, text string) string {
-	colorStr := GetColor(mode, color)
+func Colorize(cm ColorMode, color Color, text string) string {
+	colorStr := GetColor(cm, color)
 
-	return fmt.Sprintf("%s%s%s", colorStr, text, ColorNormal)
+	after := ColorNormal
+	if cm == ColorModeNone {
+		after = ""
+	}
+
+	return fmt.Sprintf("%s%s%s", colorStr, text, after)
 }
 
 // vim: nocindent
