@@ -7,6 +7,7 @@ import (
 	"kmud/engine"
 	"kmud/utils"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -264,40 +265,102 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			printLine(fmt.Sprintf("%v", room.Location))
 
 		case "map":
-			width := 20 // Should be even
-			if len(args) > 0 {
-				var err error
-				width, err = strconv.Atoi(args[0])
-
-				if err != nil {
-					printError("Invalid number given")
-					return
-				}
+			mapUsage := func() {
+				printError("Usage: /map [<radius>|save <map name>]")
 			}
 
-			builder := newMapBuilder(width, width)
+			name := ""
 
-			startX := room.Location.X - (width / 2) + 1
-			startY := room.Location.Y - (width / 2) + 1
-			endX := startX + width
-			endY := startY + width
+			startX := 0
+			startY := 0
+			endX := 0
+			endY := 0
+
+			showUserRoom := false
+
+			if len(args) < 2 {
+				radius := 0
+				if len(args) == 0 {
+					radius = 10
+				} else if len(args) == 1 {
+					var err error
+					radius, err = strconv.Atoi(args[0])
+
+					if err != nil || radius < 1 {
+						mapUsage()
+						return
+					}
+				}
+
+				showUserRoom = true
+
+				startX = room.Location.X - radius
+				startY = room.Location.Y - radius
+				endX = startX + (radius * 2)
+				endY = startY + (radius * 2)
+			} else if len(args) >= 2 {
+				if args[0] == "save" {
+					name = strings.Join(args[1:], "_")
+					topLeft, bottomRight := engine.MapCorners()
+
+					startX = topLeft.X
+					startY = topLeft.Y
+					endX = bottomRight.X
+					endY = bottomRight.Y
+				} else {
+					mapUsage()
+					return
+				}
+			} else {
+				mapUsage()
+				return
+			}
+
+			width := endX - startX + 1
+			height := endY - startY + 1
+
+			builder := newMapBuilder(width, height)
+
+			if showUserRoom {
+				builder.setUserRoom(room)
+			}
 
 			z := room.Location.Z
 
-			for y := startY; y < endY; y += 1 {
-				for x := startX; x < endX; x += 1 {
+			for y := startY; y <= endY; y += 1 {
+				for x := startX; x <= endX; x += 1 {
 					loc := database.Coordinate{x, y, z}
 					currentRoom, found := engine.GetRoomByLocation(loc)
 
 					if found {
 						// Translate to 0-based coordinates and double the coordinate
 						// space to leave room for the exit lines
-						builder.AddRoom(currentRoom, (x-startX)*2, (y-startY)*2)
+						builder.addRoom(currentRoom, (x-startX)*2, (y-startY)*2)
 					}
 				}
 			}
 
-			printString(builder.toString(user.ColorMode))
+			if name == "" {
+				printString(builder.toString(user.ColorMode))
+			} else {
+				filename := name + ".map"
+				file, err := os.Create(filename)
+
+				if err != nil {
+					printError(err.Error())
+					return
+				}
+				defer file.Close()
+
+				mapData := builder.toString(utils.ColorModeNone)
+				_, err = file.WriteString(mapData)
+
+				if err == nil {
+					printLine("Map saved as: " + utils.Colorize(user.ColorMode, utils.ColorBlue, filename))
+				} else {
+					printError(err.Error())
+				}
+			}
 
 		case "message":
 			fallthrough
@@ -403,7 +466,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			}
 
 		default:
-			printError("Unrecognized command")
+			printError("Unrecognized command: \"" + command + "\"")
 		}
 	}
 

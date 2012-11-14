@@ -6,9 +6,10 @@ import (
 )
 
 type mapBuilder struct {
-	width  int
-	height int
-	data   [][]mapTile
+	width    int
+	height   int
+	data     [][]mapTile
+	userRoom database.Room
 }
 
 type mapTile struct {
@@ -49,21 +50,22 @@ func newMapBuilder(width int, height int) mapBuilder {
 	return builder
 }
 
-func (self *mapBuilder) AddRoom(room database.Room, x int, y int) {
+func (self *mapBuilder) setUserRoom(room database.Room) {
+	self.userRoom = room
+}
+
+func (self *mapBuilder) addRoom(room database.Room, x int, y int) {
 	addIfExists := func(dir database.ExitDirection, x int, y int) {
 		if x < 0 || y < 0 {
 			return
 		}
 
 		if room.HasExit(dir) {
-			self.data[y][x].AddExit(dir)
+			self.data[y][x].addExit(dir)
 		}
 	}
 
-	centerX := (self.width / 2) - 2
-	centerY := (self.height / 2) - 2
-
-	if x == centerX && y == centerY {
+	if self.userRoom.Id == room.Id {
 		self.data[y][x].char = 'O'
 		self.data[y][x].color = utils.ColorRed
 	} else {
@@ -133,7 +135,7 @@ func trim(rows []string) []string {
 	return rows
 }
 
-func (self *mapTile) AddExit(dir database.ExitDirection) {
+func (self *mapTile) addExit(dir database.ExitDirection) {
 	combineChars := func(r1 rune, r2 rune, r3 rune) {
 		if self.char == r1 {
 			self.char = r2
@@ -162,7 +164,7 @@ func (self *mapTile) AddExit(dir database.ExitDirection) {
 	case database.DirectionNorthWest:
 		combineChars('/', 'X', '\\')
 	default:
-		panic("Unexpected direction given to mapTile::AddExit()")
+		panic("Unexpected direction given to mapTile::addExit()")
 	}
 }
 

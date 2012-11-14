@@ -482,4 +482,47 @@ func DeleteUser(userId bson.ObjectId) error {
 	return err
 }
 
+func MapCorners() (database.Coordinate, database.Coordinate) {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	var top int
+	var bottom int
+	var left int
+	var right int
+
+	for _, room := range _model.Rooms {
+		top = room.Location.Y
+		bottom = room.Location.Y
+		left = room.Location.X
+		right = room.Location.X
+		break
+	}
+
+	for _, room := range _model.Rooms {
+		if room.Location.Z != 0 {
+			continue
+		}
+
+		if room.Location.Y < top {
+			top = room.Location.Y
+		}
+
+		if room.Location.Y > bottom {
+			bottom = room.Location.Y
+		}
+
+		if room.Location.X < left {
+			left = room.Location.X
+		}
+
+		if room.Location.X > right {
+			right = room.Location.X
+		}
+	}
+
+	return database.Coordinate{X: left, Y: top, Z: 0},
+		database.Coordinate{X: right, Y: bottom, Z: 0}
+}
+
 // vim: nocindent
