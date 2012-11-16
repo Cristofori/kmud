@@ -20,14 +20,16 @@ const (
 	RawUserInput   userInputMode = iota
 )
 
-func getToggleExitMenu(room database.Room) utils.Menu {
+func getToggleExitMenu(cm utils.ColorMode, room database.Room) utils.Menu {
 	onOrOff := func(direction database.ExitDirection) string {
 
+		text := "Off"
+
 		if room.HasExit(direction) {
-			return "On"
+			text = "On"
 		}
 
-		return "Off"
+		return utils.Colorize(cm, utils.ColorBlue, text)
 	}
 
 	menu := utils.NewMenu("Edit Exits")
@@ -225,7 +227,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 				case "3":
 					for {
-						menu := getToggleExitMenu(room)
+						menu := getToggleExitMenu(user.ColorMode, room)
 						choice := ""
 
 						for {

@@ -80,9 +80,9 @@ func (self *mapBuilder) addRoom(room database.Room, x int, y int, z int) {
 		if room.HasExit(database.DirectionUp) && room.HasExit(database.DirectionDown) {
 			self.data[z][y][x].char = '+'
 		} else if room.HasExit(database.DirectionUp) {
-			self.data[z][y][x].char = 'U'
+			self.data[z][y][x].char = '^'
 		} else if room.HasExit(database.DirectionDown) {
-			self.data[z][y][x].char = 'D'
+			self.data[z][y][x].char = 'v'
 		} else {
 			self.data[z][y][x].char = '#'
 			self.data[z][y][x].color = utils.ColorWhite
