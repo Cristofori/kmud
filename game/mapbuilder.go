@@ -113,6 +113,8 @@ func (self *mapBuilder) toString(cm utils.ColorMode) string {
 			rows = append(rows, row)
 		}
 
+		rows = utils.TrimLowerRows(rows)
+
 		if self.depth > 1 {
 			divider := "================================================================================\n"
 			rows = append(rows, divider)

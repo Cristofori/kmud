@@ -80,20 +80,16 @@ func Argify(data string) (string, []string) {
 	return arg1, args
 }
 
-func TrimEmptyRows(str string) string {
-
-	rows := strings.Split(str, "\n")
-
-	rowEmpty := func(row string) bool {
-		for _, char := range row {
-			if char != ' ' {
-				return false
-			}
+func rowEmpty(row string) bool {
+	for _, char := range row {
+		if char != ' ' {
+			return false
 		}
-		return true
 	}
+	return true
+}
 
-	// Trim from the top
+func TrimUpperRows(rows []string) []string {
 	for _, row := range rows {
 		if !rowEmpty(row) {
 			break
@@ -102,7 +98,10 @@ func TrimEmptyRows(str string) string {
 		rows = rows[1:]
 	}
 
-	// Trim from the bottom
+	return rows
+}
+
+func TrimLowerRows(rows []string) []string {
 	for i := len(rows) - 1; i >= 0; i -= 1 {
 		row := rows[i]
 		if !rowEmpty(row) {
@@ -111,7 +110,12 @@ func TrimEmptyRows(str string) string {
 		rows = rows[:len(rows)-1]
 	}
 
-	return strings.Join(rows, "\n")
+	return rows
+}
+
+func TrimEmptyRows(str string) string {
+	rows := strings.Split(str, "\n")
+	return strings.Join(TrimLowerRows(TrimUpperRows(rows)), "\n")
 }
 
 // vim: nocindent
