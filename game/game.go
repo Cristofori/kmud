@@ -320,6 +320,9 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 					endX = bottomRight.X
 					endY = bottomRight.Y
 					endZ = bottomRight.Z
+				} else if args[0] == "load" {
+					readMap(strings.Join(args[1:], "_") + ".map")
+					return
 				} else {
 					mapUsage()
 					return
@@ -375,6 +378,9 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 					printError(err.Error())
 				}
 			}
+
+		case "maps":
+			printLine(strings.Join(maps(), "\n"))
 
 		case "message":
 			fallthrough
