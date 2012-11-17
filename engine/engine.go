@@ -269,6 +269,19 @@ func GetUsers() []database.User {
 	return users
 }
 
+func GetZones() []database.Zone {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	var zones []database.Zone
+
+	for _, zone := range _model.Zones {
+		zones = append(zones, zone)
+	}
+
+	return zones
+}
+
 func GetUserByName(username string) (database.User, error) {
 	_mutex.Lock()
 	defer _mutex.Unlock()

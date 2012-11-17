@@ -348,7 +348,14 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				} else {
 					printLine("Current zone: " + utils.Colorize(user.ColorMode, utils.ColorBlue, zone.Name))
 				}
+			} else if len(args) == 1 {
+				if args[0] == "list" {
+					zones := engine.GetZones()
 
+					for _, zone := range zones {
+						printLine(zone.Name)
+					}
+				}
 			} else if len(args) == 2 {
 				if args[0] == "rename" {
 					_, found := engine.GetZoneByName(args[0])
