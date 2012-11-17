@@ -172,14 +172,12 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 			if direction != database.DirectionNone {
 				if room.HasExit(direction) {
-					var newRoom database.Room
-					var err error
-					newRoom, err = engine.MoveCharacter(character, direction)
+					newRoom, err := engine.MoveCharacter(character, direction)
 					if err == nil {
 						room = newRoom
 						printRoom()
 					} else {
-						printLine(err.Error())
+						printError(err.Error())
 					}
 
 				} else {
@@ -398,6 +396,48 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				printError("Nothing to say")
 			} else {
 				engine.Say(*character, strings.Join(args, " "))
+			}
+
+		case "teleport":
+			fallthrough
+		case "tel":
+			telUsage := func() {
+				printError("Usage: /teleport <X> <Y> <Z>")
+			}
+
+			if len(args) != 3 {
+				telUsage()
+				return
+			}
+
+			x, err := strconv.Atoi(args[0])
+
+			if err != nil {
+				telUsage()
+				return
+			}
+
+			y, err := strconv.Atoi(args[1])
+
+			if err != nil {
+				telUsage()
+				return
+			}
+
+			z, err := strconv.Atoi(args[2])
+
+			if err != nil {
+				telUsage()
+				return
+			}
+
+			newRoom, err := engine.MoveCharacterToLocation(character, database.Coordinate{X: x, Y: y, Z: z})
+
+			if err == nil {
+				room = newRoom
+				printRoom()
+			} else {
+				printError(err.Error())
 			}
 
 		case "who":

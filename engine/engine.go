@@ -95,6 +95,28 @@ func AddRoom(room database.Room) error {
 	return UpdateRoom(room)
 }
 
+func MoveCharacterToLocation(character *database.Character, location database.Coordinate) (database.Room, error) {
+	oldRoomId := character.RoomId
+	newRoom, found := GetRoomByLocation(location)
+
+	if !found {
+		return newRoom, errors.New("Invalid location")
+	}
+
+	character.RoomId = newRoom.Id
+
+	err := UpdateCharacter(*character)
+
+	utils.HandleError(err)
+
+	if err == nil {
+		queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
+		queueEvent(LeaveEvent{Character: *character, RoomId: oldRoomId})
+	}
+
+	return newRoom, err
+}
+
 func MoveCharacter(character *database.Character, direction database.ExitDirection) (database.Room, error) {
 	_mutex.Lock()
 	room := _model.Rooms[character.RoomId]
@@ -107,8 +129,6 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 	if !room.HasExit(direction) {
 		return room, errors.New("Attempted to move through an exit that the room does not contain")
 	}
-
-	oldRoomId := character.RoomId
 
 	newLocation := room.Location.Next(direction)
 	room, found := GetRoomByLocation(newLocation)
@@ -146,21 +166,15 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 		}
 
 		room.Location = newLocation
+
+		_mutex.Lock()
 		err := AddRoom(room)
+		_mutex.Unlock()
+
 		utils.HandleError(err)
 	}
 
-	character.RoomId = room.Id
-	err := UpdateCharacter(*character)
-
-	utils.HandleError(err)
-
-	if err == nil {
-		queueEvent(EnterEvent{Character: *character, RoomId: room.Id})
-		queueEvent(LeaveEvent{Character: *character, RoomId: oldRoomId})
-	}
-
-	return room, err
+	return MoveCharacterToLocation(character, room.Location)
 }
 
 func DeleteRoom(room database.Room) error {
