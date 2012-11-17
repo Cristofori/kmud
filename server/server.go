@@ -247,16 +247,22 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			case "n":
 				character = newCharacter(conn, &user)
 			case "d":
-				deleteMenu := deleteMenu(user)
-				deleteChoice, deleteCharId := deleteMenu.Exec(conn, user.ColorMode)
+				for {
+					deleteMenu := deleteMenu(user)
+					deleteChoice, deleteCharId := deleteMenu.Exec(conn, user.ColorMode)
 
-				_, err := strconv.Atoi(deleteChoice)
+					if deleteChoice == "" || deleteChoice == "c" {
+						break
+					}
 
-				if err == nil {
-					err = engine.DeleteCharacter(&user, deleteCharId)
+					_, err := strconv.Atoi(deleteChoice)
 
-					if err != nil {
-						utils.WriteLine(conn, fmt.Sprintf("Error deleting character: %s", err))
+					if err == nil {
+						err = engine.DeleteCharacter(&user, deleteCharId)
+
+						if err != nil {
+							utils.WriteLine(conn, fmt.Sprintf("Error deleting character: %s", err))
+						}
 					}
 				}
 
