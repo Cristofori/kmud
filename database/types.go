@@ -45,8 +45,14 @@ func NewCharacter(name string) Character {
 	return character
 }
 
+type Zone struct {
+	Id   bson.ObjectId `bson:"_id"`
+	Name string
+}
+
 type Room struct {
 	Id            bson.ObjectId `bson:"_id"`
+	ZoneId        bson.ObjectId `bxon:"zoneid"`
 	Title         string
 	Description   string
 	Location      Coordinate

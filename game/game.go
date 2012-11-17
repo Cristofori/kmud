@@ -7,7 +7,6 @@ import (
 	"kmud/engine"
 	"kmud/utils"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -271,10 +270,8 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 		case "map":
 			mapUsage := func() {
-				printError("Usage: /map [<radius>|save <map name>]")
+				printError("Usage: /map [<radius>|all|load <name>]")
 			}
-
-			name := ""
 
 			startX := 0
 			startY := 0
@@ -283,33 +280,21 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			endY := 0
 			endZ := 0
 
-			showUserRoom := false
+			if len(args) == 0 {
+				args = append(args, "10")
+			}
 
-			if len(args) < 2 {
-				radius := 0
-				if len(args) == 0 {
-					radius = 10
-				} else if len(args) == 1 {
-					var err error
-					radius, err = strconv.Atoi(args[0])
+			if len(args) == 1 {
+				radius, err := strconv.Atoi(args[0])
 
-					if err != nil || radius < 1 {
-						mapUsage()
-						return
-					}
-				}
-
-				showUserRoom = true
-
-				startX = room.Location.X - radius
-				startY = room.Location.Y - radius
-				startZ = room.Location.Z
-				endX = startX + (radius * 2)
-				endY = startY + (radius * 2)
-				endZ = room.Location.Z
-			} else if len(args) >= 2 {
-				if args[0] == "save" {
-					name = strings.Join(args[1:], "_")
+				if err == nil && radius > 0 {
+					startX = room.Location.X - radius
+					startY = room.Location.Y - radius
+					startZ = room.Location.Z
+					endX = startX + (radius * 2)
+					endY = startY + (radius * 2)
+					endZ = room.Location.Z
+				} else if args[0] == "all" {
 					topLeft, bottomRight := engine.MapCorners()
 
 					startX = topLeft.X
@@ -318,9 +303,6 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 					endX = bottomRight.X
 					endY = bottomRight.Y
 					endZ = bottomRight.Z
-				} else if args[0] == "load" {
-					readMap(strings.Join(args[1:], "_") + ".map")
-					return
 				} else {
 					mapUsage()
 					return
@@ -335,10 +317,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			depth := endZ - startZ + 1
 
 			builder := newMapBuilder(width, height, depth)
-
-			if showUserRoom {
-				builder.setUserRoom(room)
-			}
+			builder.setUserRoom(room)
 
 			for z := startZ; z <= endZ; z += 1 {
 				for y := startY; y <= endY; y += 1 {
@@ -355,27 +334,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				}
 			}
 
-			if name == "" {
-				printLine(utils.TrimEmptyRows(builder.toString(user.ColorMode)))
-			} else {
-				filename := name + ".map"
-				file, err := os.Create(filename)
-
-				if err != nil {
-					printError(err.Error())
-					return
-				}
-				defer file.Close()
-
-				mapData := builder.toString(utils.ColorModeNone)
-				_, err = file.WriteString(mapData)
-
-				if err == nil {
-					printLine("Map saved as: " + utils.Colorize(user.ColorMode, utils.ColorBlue, filename))
-				} else {
-					printError(err.Error())
-				}
-			}
+			printLine(utils.TrimEmptyRows(builder.toString(user.ColorMode)))
 
 		case "maps":
 			printLine(strings.Join(maps(), "\n"))
