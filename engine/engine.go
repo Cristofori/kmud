@@ -15,6 +15,7 @@ type globalModel struct {
 	Users      map[bson.ObjectId]database.User
 	Characters map[bson.ObjectId]database.Character
 	Rooms      map[bson.ObjectId]database.Room
+	Zones      map[bson.ObjectId]database.Zone
 }
 
 var _model globalModel
@@ -31,6 +32,7 @@ func StartUp(session *mgo.Session) error {
 	_model.Users = map[bson.ObjectId]database.User{}
 	_model.Characters = map[bson.ObjectId]database.Character{}
 	_model.Rooms = map[bson.ObjectId]database.Room{}
+	_model.Zones = map[bson.ObjectId]database.Zone{}
 
 	users, err := database.GetAllUsers(session)
 	utils.HandleError(err)
@@ -51,6 +53,13 @@ func StartUp(session *mgo.Session) error {
 
 	for _, room := range rooms {
 		_model.Rooms[room.Id] = room
+	}
+
+	zones, err := database.GetAllZones(session)
+	utils.HandleError(err)
+
+	for _, zone := range zones {
+		_model.Zones[zone.Id] = zone
 	}
 
 	// Start the event loop
@@ -87,12 +96,13 @@ func UpdateRoom(room database.Room) error {
 	return database.CommitRoom(_session, room)
 }
 
-func AddRoom(room database.Room) error {
+func UpdateZone(zone database.Zone) error {
 	_mutex.Lock()
-	_model.Rooms[room.Id] = room
-	_mutex.Unlock()
+	defer _mutex.Unlock()
 
-	return UpdateRoom(room)
+	_model.Zones[zone.Id] = zone
+
+	return database.CommitZone(_session, zone)
 }
 
 func MoveCharacterToLocation(character *database.Character, location database.Coordinate) (database.Room, error) {
@@ -168,7 +178,7 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 		room.Location = newLocation
 
 		_mutex.Lock()
-		err := AddRoom(room)
+		err := UpdateRoom(room)
 		_mutex.Unlock()
 
 		utils.HandleError(err)
@@ -325,7 +335,7 @@ func GenerateDefaultMap() {
 	room.Location = database.Coordinate{0, 0, 0}
 	room.Default = true
 
-	AddRoom(room)
+	UpdateRoom(room)
 }
 
 func BroadcastMessage(from database.Character, message string) {
@@ -549,6 +559,46 @@ func MapCorners() (database.Coordinate, database.Coordinate) {
 
 	return database.Coordinate{X: left, Y: top, Z: high},
 		database.Coordinate{X: right, Y: bottom, Z: low}
+}
+
+func GetZone(zoneId bson.ObjectId) database.Zone {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	if zoneId == "" {
+		return database.Zone{}
+	}
+
+	return _model.Zones[zoneId]
+}
+
+func GetZoneByName(name string) (database.Zone, bool) {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	for _, zone := range _model.Zones {
+		if zone.Name == name {
+			return zone, true
+		}
+	}
+
+	return database.Zone{}, false
+}
+
+func MoveRoomsToZone(fromZoneId bson.ObjectId, toZoneId bson.ObjectId) {
+	_mutex.Lock()
+
+	for _, room := range _model.Rooms {
+		if room.ZoneId == fromZoneId {
+			room.ZoneId = toZoneId
+
+			_mutex.Unlock()
+			UpdateRoom(room)
+			_mutex.Lock()
+		}
+	}
+
+	_mutex.Unlock()
 }
 
 // vim: nocindent

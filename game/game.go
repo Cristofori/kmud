@@ -339,6 +339,38 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 		case "maps":
 			printLine(strings.Join(maps(), "\n"))
 
+		case "zone":
+			if len(args) == 0 {
+				zone := engine.GetZone(room.ZoneId)
+
+				if zone.Id == "" {
+					printLine("Currently in the null zone")
+				} else {
+					printLine("Current zone: " + utils.Colorize(user.ColorMode, utils.ColorBlue, zone.Name))
+				}
+
+			} else if len(args) == 2 {
+				if args[0] == "rename" {
+					_, found := engine.GetZoneByName(args[0])
+
+					if found {
+						printError("A zone with that name already exists")
+					}
+
+					var zone database.Zone
+
+					if room.ZoneId == "" {
+						zone = database.NewZone(args[1])
+						engine.UpdateZone(zone)
+						engine.MoveRoomsToZone("", zone.Id)
+					} else {
+						zone = engine.GetZone(room.ZoneId)
+						zone.Name = args[1]
+						engine.UpdateZone(zone)
+					}
+				}
+			}
+
 		case "message":
 			fallthrough
 		case "m":

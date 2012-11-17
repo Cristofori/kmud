@@ -18,6 +18,7 @@ const (
 	cUsers      = collectionName("users")
 	cCharacters = collectionName("characters")
 	cRooms      = collectionName("rooms")
+	cZones      = collectionName("zones")
 )
 
 // Field names
@@ -88,6 +89,12 @@ func GetAllRooms(session *mgo.Session) ([]Room, error) {
 	var rooms []Room
 	err := findObjects(session, cRooms, &rooms)
 	return rooms, err
+}
+
+func GetAllZones(session *mgo.Session) ([]Zone, error) {
+	var zones []Zone
+	err := findObjects(session, cZones, &zones)
+	return zones, err
 }
 
 func findRoom(session *mgo.Session, query interface{}) (Room, error) {
@@ -262,25 +269,26 @@ func CreateUser(session *mgo.Session, name string) (User, error) {
 	return user, err
 }
 
-func CommitUser(session *mgo.Session, user User) error {
-	c := getCollection(session, cUsers)
-	_, err := c.UpsertId(user.Id, user)
+func commitObject(session *mgo.Session, c *mgo.Collection, id bson.ObjectId, object interface{}) error {
+	_, err := c.UpsertId(id, object)
 	printError(err)
 	return err
+}
+
+func CommitUser(session *mgo.Session, user User) error {
+	return commitObject(session, getCollection(session, cUsers), user.Id, user)
 }
 
 func CommitRoom(session *mgo.Session, room Room) error {
-	c := getCollection(session, cRooms)
-	_, err := c.UpsertId(room.Id, room)
-	printError(err)
-	return err
+	return commitObject(session, getCollection(session, cRooms), room.Id, room)
 }
 
 func CommitCharacter(session *mgo.Session, character Character) error {
-	c := getCollection(session, cCharacters)
-	_, err := c.UpsertId(character.Id, character)
-	printError(err)
-	return err
+	return commitObject(session, getCollection(session, cCharacters), character.Id, character)
+}
+
+func CommitZone(session *mgo.Session, zone Zone) error {
+	return commitObject(session, getCollection(session, cZones), zone.Id, zone)
 }
 
 // vim: nocindent

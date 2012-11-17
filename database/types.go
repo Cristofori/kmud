@@ -50,6 +50,13 @@ type Zone struct {
 	Name string
 }
 
+func NewZone(name string) Zone {
+	var zone Zone
+	zone.Id = bson.NewObjectId()
+	zone.Name = name
+	return zone
+}
+
 type Room struct {
 	Id            bson.ObjectId `bson:"_id"`
 	ZoneId        bson.ObjectId `bxon:"zoneid"`
