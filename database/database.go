@@ -204,25 +204,29 @@ func DeleteUser(session *mgo.Session, user User) error {
 	return c.RemoveId(user.Id)
 }
 
+func removeId(idToRemove bson.ObjectId, ids []bson.ObjectId) []bson.ObjectId {
+	length := 0
+	result := ids
+
+	for _, id := range ids {
+		if id != idToRemove {
+			result[length] = id
+			length++
+		}
+	}
+
+	return result[:length]
+}
+
 func DeleteCharacter(session *mgo.Session, user *User, charId bson.ObjectId) error {
-	// TODO - Figure out how to remove an element from the middle of a slice,
-	//        and then just modify the user object and use CommitUser
-	c := getCollection(session, cUsers)
-	err := c.Update(bson.M{fId: user.Id}, bson.M{PULL: bson.M{fCharacterIds: charId}})
+	user.CharacterIds = removeId(charId, user.CharacterIds)
+	err := CommitUser(session, *user)
 
 	if err != nil {
 		return err
 	}
 
-	modifiedUser, err := GetUser(session, user.Id)
-
-	if err != nil {
-		return err
-	}
-
-	user.CharacterIds = modifiedUser.CharacterIds
-
-	c = getCollection(session, cCharacters)
+	c := getCollection(session, cCharacters)
 	err = c.Remove(bson.M{fId: charId})
 
 	return err
