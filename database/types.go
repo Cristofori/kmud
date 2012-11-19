@@ -76,7 +76,7 @@ type Room struct {
 	Default       bool
 }
 
-func NewRoom() Room {
+func NewRoom(zoneId bson.ObjectId) Room {
 	var room Room
 	room.Id = bson.NewObjectId()
 	room.Title = "The Void"
@@ -98,6 +98,8 @@ func NewRoom() Room {
 	room.Location = Coordinate{0, 0, 0}
 
 	room.Default = false
+
+	room.ZoneId = zoneId
 
 	return room
 }

@@ -127,6 +127,22 @@ func MoveCharacterToLocation(character *database.Character, location database.Co
 	return newRoom, err
 }
 
+func MoveCharacterToRoom(character *database.Character, newRoom database.Room) error {
+	oldRoomId := character.RoomId
+	character.RoomId = newRoom.Id
+
+	err := UpdateCharacter(*character)
+
+	utils.HandleError(err)
+
+	if err == nil {
+		queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
+		queueEvent(LeaveEvent{Character: *character, RoomId: oldRoomId})
+	}
+
+	return err
+}
+
 func MoveCharacter(character *database.Character, direction database.ExitDirection) (database.Room, error) {
 	_mutex.Lock()
 	room := _model.Rooms[character.RoomId]
@@ -147,7 +163,7 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 		fmt.Printf("No room found at location %v, creating a new one (%s)\n", newLocation, character.PrettyName())
 
 		_mutex.Lock()
-		room = database.NewRoom()
+		room = database.NewRoom(room.ZoneId)
 		_mutex.Unlock()
 
 		switch direction {
@@ -344,7 +360,7 @@ func GenerateDefaultMap() {
 	}
 	_mutex.Unlock()
 
-	room := database.NewRoom()
+	room := database.NewRoom("")
 	room.Location = database.Coordinate{0, 0, 0}
 	room.Default = true
 

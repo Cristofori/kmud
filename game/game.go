@@ -362,6 +362,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 					if found {
 						printError("A zone with that name already exists")
+						return
 					}
 
 					var zone database.Zone
@@ -374,6 +375,39 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 						zone = engine.GetZone(room.ZoneId)
 						zone.Name = args[1]
 						engine.UpdateZone(zone)
+					}
+				} else if args[0] == "new" {
+					_, found := engine.GetZoneByName(args[0])
+
+					if found {
+						printError("A zone with that name already exists")
+						return
+					}
+
+					newZone := database.NewZone(args[1])
+					err := engine.UpdateZone(newZone)
+
+					if err == nil {
+						newRoom := database.NewRoom(newZone.Id)
+
+						err = engine.UpdateRoom(newRoom)
+
+						if err == nil {
+							err := engine.MoveCharacterToRoom(character, room)
+
+							if err == nil {
+								room = newRoom
+								printRoom()
+							} else {
+								printError(err.Error())
+							}
+
+						} else {
+							printError(err.Error())
+						}
+
+					} else {
+						printError(err.Error())
 					}
 				}
 			}
