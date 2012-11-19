@@ -14,11 +14,10 @@ type Coordinate struct {
 }
 
 type User struct {
-	Id           bson.ObjectId `bson:"_id,omitempty"`
-	Name         string
-	CharacterIds []bson.ObjectId `bson:"characterids,omitempty"`
-	ColorMode    utils.ColorMode
-	online       bool
+	Id        bson.ObjectId `bson:"_id,omitempty"`
+	Name      string
+	ColorMode utils.ColorMode
+	online    bool
 }
 
 func NewUser(name string) User {
@@ -31,16 +30,18 @@ func NewUser(name string) User {
 
 type Character struct {
 	Id     bson.ObjectId `bson:"_id"`
-	Name   string
 	RoomId bson.ObjectId `bson:"roomid"`
+	UserId bson.ObjectId `bson:"userid"`
+	Name   string
 	online bool
 }
 
-func NewCharacter(name string) Character {
+func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) Character {
 	var character Character
 	character.Id = bson.NewObjectId()
+	character.UserId = userId
 	character.Name = name
-	character.RoomId = ""
+	character.RoomId = roomId
 	character.online = false
 	return character
 }
@@ -59,7 +60,7 @@ func NewZone(name string) Zone {
 
 type Room struct {
 	Id            bson.ObjectId `bson:"_id"`
-	ZoneId        bson.ObjectId `bxon:"zoneid"`
+	ZoneId        bson.ObjectId `bson:"zoneid,omitempty"`
 	Title         string
 	Description   string
 	Location      Coordinate

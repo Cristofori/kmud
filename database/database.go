@@ -139,97 +139,19 @@ func GetRoomByLocation(session *mgo.Session, location Coordinate) (Room, error) 
 	return findRoom(session, bson.M{fLocation: location})
 }
 
-func CreateCharacter(session *mgo.Session, user *User, characterName string) (Character, error) {
-	character, err := GetCharacterByName(session, characterName)
-
-	if err == nil {
-		return character, errors.New("That character already exists")
-	}
-
-	startingRoom, err := StartingRoom(session)
-
-	if err != nil {
-		fmt.Println("Error getting starting room:", err)
-		return character, err
-	}
-
-	character = NewCharacter(characterName)
-	character.RoomId = startingRoom.Id
-
-	err = CommitCharacter(session, character)
-
-	if err != nil {
-		fmt.Println("Error inserting new character object into database:", err)
-		return character, err
-	}
-
-	if err == nil {
-		user.CharacterIds = append(user.CharacterIds, character.Id)
-		CommitUser(session, *user)
-
-		if err != nil {
-			fmt.Println("Error updating user with new character data:", err)
-		}
-	}
-
-	return character, err
-}
-
-func GetCharacters(session *mgo.Session, user User) []Character {
-	var characters []Character
-	for _, charId := range user.CharacterIds {
-		character, err := GetCharacter(session, charId)
-
-		if err != nil {
-			fmt.Printf("Failed to find character with id %s, belonging to user %s: %s\n", charId, user.Name, err)
-		} else {
-			characters = append(characters, character)
-		}
-	}
-
-	return characters
-}
-
-func DeleteRoom(session *mgo.Session, room Room) error {
+func DeleteRoom(session *mgo.Session, id bson.ObjectId) error {
 	c := getCollection(session, cRooms)
-	return c.RemoveId(room.Id)
+	return c.RemoveId(id)
 }
 
-func DeleteUser(session *mgo.Session, user User) error {
-	for _, charId := range user.CharacterIds {
-		DeleteCharacter(session, &user, charId)
-	}
-
+func DeleteUser(session *mgo.Session, id bson.ObjectId) error {
 	c := getCollection(session, cUsers)
-	return c.RemoveId(user.Id)
+	return c.RemoveId(id)
 }
 
-func removeId(idToRemove bson.ObjectId, ids []bson.ObjectId) []bson.ObjectId {
-	length := 0
-	result := ids
-
-	for _, id := range ids {
-		if id != idToRemove {
-			result[length] = id
-			length++
-		}
-	}
-
-	return result[:length]
-}
-
-func DeleteCharacter(session *mgo.Session, user *User, charId bson.ObjectId) error {
-	user.CharacterIds = removeId(charId, user.CharacterIds)
-	err := CommitUser(session, *user)
-
-	if err != nil {
-		return err
-	}
-
+func DeleteCharacter(session *mgo.Session, id bson.ObjectId) error {
 	c := getCollection(session, cCharacters)
-	err = c.Remove(bson.M{fId: charId})
-
-	return err
+	return c.Remove(bson.M{fId: id})
 }
 
 func StartingRoom(session *mgo.Session) (Room, error) {

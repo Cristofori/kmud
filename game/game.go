@@ -48,8 +48,8 @@ func getToggleExitMenu(cm utils.ColorMode, room database.Room) utils.Menu {
 }
 
 func Exec(conn net.Conn, user *database.User, character *database.Character) {
-	room := engine.GetRoom(character.RoomId)
-	zone := engine.GetZone(room.ZoneId)
+	room := engine.M.GetRoom(character.RoomId)
+	zone := engine.M.GetZone(room.ZoneId)
 
 	printString := func(data string) {
 		io.WriteString(conn, data)
@@ -68,7 +68,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 	}
 
 	printRoom := func() {
-		charList := engine.CharactersIn(room, *character)
+		charList := engine.M.CharactersIn(room, *character)
 		printLine(room.ToString(database.ReadMode, user.ColorMode, charList))
 	}
 
@@ -143,9 +143,9 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 					printLine("Nothing to see")
 				} else {
 					loc := room.Location.Next(arg)
-					roomToSee, found := engine.GetRoomByLocation(loc, zone.Id)
+					roomToSee, found := engine.M.GetRoomByLocation(loc, zone.Id)
 					if found {
-						printLine(roomToSee.ToString(database.ReadMode, user.ColorMode, engine.CharactersIn(roomToSee, database.Character{})))
+						printLine(roomToSee.ToString(database.ReadMode, user.ColorMode, engine.M.CharactersIn(roomToSee, database.Character{})))
 					} else {
 						printLine("Nothing to see")
 					}
@@ -210,7 +210,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 					if input != "" {
 						room.Title = input
-						engine.UpdateRoom(room)
+						engine.M.UpdateRoom(room)
 					}
 					printRoomEditor()
 
@@ -219,7 +219,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 					if input != "" {
 						room.Description = input
-						engine.UpdateRoom(room)
+						engine.M.UpdateRoom(room)
 					}
 					printRoomEditor()
 
@@ -244,7 +244,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 						if direction != database.DirectionNone {
 							enable := !room.HasExit(direction)
 							room.SetExitEnabled(direction, enable)
-							engine.UpdateRoom(room)
+							engine.M.UpdateRoom(room)
 						}
 					}
 
@@ -254,15 +254,6 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 					printLine("Invalid selection")
 				}
 			}
-
-		case "rebuild":
-			input := getUserInput(CleanUserInput, "Are you sure (delete all rooms and starts from scratch)? ")
-			if input[0] == 'y' || input == "yes" {
-				engine.GenerateDefaultMap()
-			}
-
-			room = engine.GetCharacterRoom(*character)
-			printRoom()
 
 		case "loc":
 			fallthrough
@@ -324,7 +315,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				for y := startY; y <= endY; y += 1 {
 					for x := startX; x <= endX; x += 1 {
 						loc := database.Coordinate{x, y, z}
-						currentRoom, found := engine.GetRoomByLocation(loc, zone.Id)
+						currentRoom, found := engine.M.GetRoomByLocation(loc, zone.Id)
 
 						if found {
 							// Translate to 0-based coordinates and double the coordinate
@@ -349,13 +340,13 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				}
 			} else if len(args) == 1 {
 				if args[0] == "list" {
-					for _, zone := range engine.GetZones() {
+					for _, zone := range engine.M.GetZones() {
 						printLine(zone.Name)
 					}
 				}
 			} else if len(args) == 2 {
 				if args[0] == "rename" {
-					_, found := engine.GetZoneByName(args[0])
+					_, found := engine.M.GetZoneByName(args[0])
 
 					if found {
 						printError("A zone with that name already exists")
@@ -364,14 +355,14 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 
 					if zone.Id == "" {
 						zone = database.NewZone(args[1])
-						engine.UpdateZone(zone)
+						engine.M.UpdateZone(zone)
 						engine.MoveRoomsToZone("", zone.Id)
 					} else {
 						zone.Name = args[1]
-						engine.UpdateZone(zone)
+						engine.M.UpdateZone(zone)
 					}
 				} else if args[0] == "new" {
-					_, found := engine.GetZoneByName(args[0])
+					_, found := engine.M.GetZoneByName(args[0])
 
 					if found {
 						printError("A zone with that name already exists")
@@ -379,31 +370,17 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 					}
 
 					newZone := database.NewZone(args[1])
-					err := engine.UpdateZone(newZone)
+					engine.M.UpdateZone(newZone)
 
-					if err == nil {
-						zone = newZone
-						newRoom := database.NewRoom(newZone.Id)
+					zone = newZone
+					newRoom := database.NewRoom(newZone.Id)
 
-						err = engine.UpdateRoom(newRoom)
+					engine.M.UpdateRoom(newRoom)
 
-						if err == nil {
-							err := engine.MoveCharacterToRoom(character, newRoom)
+					engine.MoveCharacterToRoom(character, newRoom)
 
-							if err == nil {
-								room = newRoom
-								printRoom()
-							} else {
-								printError(err.Error())
-							}
-
-						} else {
-							printError(err.Error())
-						}
-
-					} else {
-						printError(err.Error())
-					}
+					room = newRoom
+					printRoom()
 				}
 			}
 
@@ -468,7 +445,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			}
 
 		case "who":
-			chars := engine.GetOnlineCharacters()
+			chars := engine.M.GetOnlineCharacters()
 
 			printLine("")
 			printLine("Online Players")
@@ -514,15 +491,15 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				switch strings.ToLower(args[0]) {
 				case "none":
 					user.ColorMode = utils.ColorModeNone
-					engine.UpdateUser(*user)
+					engine.M.UpdateUser(*user)
 					printLine("Color mode set to: None")
 				case "light":
 					user.ColorMode = utils.ColorModeLight
-					engine.UpdateUser(*user)
+					engine.M.UpdateUser(*user)
 					printLine("Color mode set to: Light")
 				case "dark":
 					user.ColorMode = utils.ColorModeDark
-					engine.UpdateUser(*user)
+					engine.M.UpdateUser(*user)
 					printLine("Color mode set to: Dark")
 				default:
 					printLine("Valid color modes are: None, Light, Dark")
@@ -541,7 +518,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 					printError("Not a valid direction")
 				} else {
 					loc := room.Location.Next(direction)
-					roomToDelete, found := engine.GetRoomByLocation(loc, zone.Id)
+					roomToDelete, found := engine.M.GetRoomByLocation(loc, zone.Id)
 					if found {
 						engine.DeleteRoom(roomToDelete)
 					} else {

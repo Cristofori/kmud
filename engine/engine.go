@@ -12,54 +12,297 @@ import (
 )
 
 type globalModel struct {
-	Users      map[bson.ObjectId]database.User
-	Characters map[bson.ObjectId]database.Character
-	Rooms      map[bson.ObjectId]database.Room
-	Zones      map[bson.ObjectId]database.Zone
+	users      map[bson.ObjectId]database.User
+	characters map[bson.ObjectId]database.Character
+	rooms      map[bson.ObjectId]database.Room
+	zones      map[bson.ObjectId]database.Zone
+
+	mutex   sync.Mutex
+	session *mgo.Session
 }
 
-var _model globalModel
-var _session *mgo.Session
+func (self *globalModel) UpdateUser(user database.User) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
 
-var _mutex sync.Mutex
+	self.users[user.Id] = user
 
+	utils.HandleError(database.CommitUser(self.session, user))
+}
+
+func (self *globalModel) GetCharacter(id bson.ObjectId) database.Character {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	return self.characters[id]
+}
+
+func (self *globalModel) GetCharacterByName(name string) (database.Character, bool) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	for _, character := range self.characters {
+		if character.Name == name {
+			return character, true
+		}
+	}
+
+	return database.Character{}, false
+}
+
+func (self *globalModel) GetUserCharacters(userId bson.ObjectId) []database.Character {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	var characters []database.Character
+
+	for _, character := range self.characters {
+		if character.UserId == userId {
+			characters = append(characters, character)
+		}
+	}
+
+	return characters
+}
+
+func (self *globalModel) CharactersIn(room database.Room, except database.Character) []database.Character {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	var charList []database.Character
+
+	for _, char := range self.characters {
+		if char.RoomId == room.Id && char.Id != except.Id && char.Online() {
+			charList = append(charList, char)
+		}
+	}
+
+	return charList
+}
+
+func (self *globalModel) GetOnlineCharacters() []database.Character {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	var characters []database.Character
+
+	for _, char := range self.characters {
+		if char.Online() {
+			characters = append(characters, char)
+		}
+	}
+
+	return characters
+}
+
+func (self *globalModel) UpdateCharacter(character database.Character) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	self.characters[character.Id] = character
+
+	utils.HandleError(database.CommitCharacter(self.session, character))
+}
+
+func (self *globalModel) DeleteCharacter(id bson.ObjectId) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	delete(self.characters, id)
+
+	utils.HandleError(database.DeleteCharacter(self.session, id))
+}
+
+func (self *globalModel) UpdateRoom(room database.Room) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	self.rooms[room.Id] = room
+	queueEvent(RoomUpdateEvent{room})
+
+	utils.HandleError(database.CommitRoom(self.session, room))
+}
+
+func (self *globalModel) UpdateZone(zone database.Zone) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	self.zones[zone.Id] = zone
+
+	utils.HandleError(database.CommitZone(self.session, zone))
+}
+
+func (self *globalModel) GetRoom(id bson.ObjectId) database.Room {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	return self.rooms[id]
+}
+
+func (self *globalModel) GetRooms() []database.Room {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	var rooms []database.Room
+
+	for _, room := range self.rooms {
+		rooms = append(rooms, room)
+	}
+
+	return rooms
+}
+
+func (self *globalModel) GetRoomByLocation(coordinate database.Coordinate, zoneId bson.ObjectId) (database.Room, bool) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	ret := database.Room{}
+	found := false
+
+	for _, room := range self.rooms {
+		if room.Location == coordinate && room.ZoneId == zoneId {
+			found = true
+			ret = room
+			break
+		}
+	}
+
+	return ret, found
+}
+
+func (self *globalModel) GetZone(zoneId bson.ObjectId) database.Zone {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	return self.zones[zoneId]
+}
+
+func (self *globalModel) GetZones() []database.Zone {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	var zones []database.Zone
+
+	for _, zone := range self.zones {
+		zones = append(zones, zone)
+	}
+
+	return zones
+}
+
+func (self *globalModel) GetZoneByName(name string) (database.Zone, bool) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	for _, zone := range self.zones {
+		if zone.Name == name {
+			return zone, true
+		}
+	}
+
+	return database.Zone{}, false
+}
+
+func (self *globalModel) deleteRoom(id bson.ObjectId) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	delete(self.rooms, id)
+
+	utils.HandleError(database.DeleteRoom(self.session, id))
+}
+
+func (self *globalModel) GetUser(id bson.ObjectId) database.User {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	return self.users[id]
+}
+
+func (self *globalModel) GetUsers() []database.User {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	var users []database.User
+
+	for _, user := range self.users {
+		users = append(users, user)
+	}
+
+	return users
+}
+
+func (self *globalModel) GetUserByName(username string) (database.User, bool) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	for _, user := range self.users {
+		if user.Name == username {
+			return user, true
+		}
+	}
+
+	return database.User{}, false
+}
+
+func (self *globalModel) DeleteUser(id bson.ObjectId) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	for _, character := range self.characters {
+		if character.UserId == id {
+			delete(self.characters, character.Id)
+			utils.HandleError(database.DeleteCharacter(self.session, character.Id))
+		}
+	}
+
+	delete(self.users, id)
+
+	utils.HandleError(database.DeleteUser(self.session, id))
+}
+
+var M globalModel
 var eventQueueChannel chan Event
 
-func StartUp(session *mgo.Session) error {
-	_session = session
-	_model = globalModel{}
+/**
+ * Initializes the global model object and starts up the main event loop
+ */
+func Init(session *mgo.Session) error {
+	M = globalModel{}
 
-	_model.Users = map[bson.ObjectId]database.User{}
-	_model.Characters = map[bson.ObjectId]database.Character{}
-	_model.Rooms = map[bson.ObjectId]database.Room{}
-	_model.Zones = map[bson.ObjectId]database.Zone{}
+	M.session = session
+
+	M.users = map[bson.ObjectId]database.User{}
+	M.characters = map[bson.ObjectId]database.Character{}
+	M.rooms = map[bson.ObjectId]database.Room{}
+	M.zones = map[bson.ObjectId]database.Zone{}
 
 	users, err := database.GetAllUsers(session)
 	utils.HandleError(err)
 
 	for _, user := range users {
-		_model.Users[user.Id] = user
+		M.users[user.Id] = user
 	}
 
 	characters, err := database.GetAllCharacters(session)
 	utils.HandleError(err)
 
 	for _, character := range characters {
-		_model.Characters[character.Id] = character
+		M.characters[character.Id] = character
 	}
 
 	rooms, err := database.GetAllRooms(session)
 	utils.HandleError(err)
 
 	for _, room := range rooms {
-		_model.Rooms[room.Id] = room
+		M.rooms[room.Id] = room
 	}
 
 	zones, err := database.GetAllZones(session)
 	utils.HandleError(err)
 
 	for _, zone := range zones {
-		_model.Zones[zone.Id] = zone
+		M.zones[zone.Id] = zone
 	}
 
 	// Start the event loop
@@ -69,50 +312,10 @@ func StartUp(session *mgo.Session) error {
 	return err
 }
 
-func UpdateUser(user database.User) error {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	_model.Users[user.Id] = user
-	return database.CommitUser(_session, user)
-}
-
-func UpdateCharacter(character database.Character) error {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	_model.Characters[character.Id] = character
-	return database.CommitCharacter(_session, character)
-}
-
-func UpdateRoom(room database.Room) error {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	_model.Rooms[room.Id] = room
-
-	queueEvent(RoomUpdateEvent{room})
-
-	return database.CommitRoom(_session, room)
-}
-
-func UpdateZone(zone database.Zone) error {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	_model.Zones[zone.Id] = zone
-
-	return database.CommitZone(_session, zone)
-}
-
 func MoveCharacterToLocation(character *database.Character, location database.Coordinate) (database.Room, error) {
-	oldRoomId := character.RoomId
+	oldRoom := M.GetRoom(character.RoomId)
 
-	_mutex.Lock()
-	oldRoom := _model.Rooms[oldRoomId]
-	_mutex.Unlock()
-
-	newRoom, found := GetRoomByLocation(location, oldRoom.ZoneId)
+	newRoom, found := M.GetRoomByLocation(location, oldRoom.ZoneId)
 
 	if !found {
 		return newRoom, errors.New("Invalid location")
@@ -120,38 +323,26 @@ func MoveCharacterToLocation(character *database.Character, location database.Co
 
 	character.RoomId = newRoom.Id
 
-	err := UpdateCharacter(*character)
+	M.UpdateCharacter(*character)
 
-	utils.HandleError(err)
+	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
+	queueEvent(LeaveEvent{Character: *character, RoomId: oldRoom.Id})
 
-	if err == nil {
-		queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
-		queueEvent(LeaveEvent{Character: *character, RoomId: oldRoomId})
-	}
-
-	return newRoom, err
+	return newRoom, nil
 }
 
-func MoveCharacterToRoom(character *database.Character, newRoom database.Room) error {
+func MoveCharacterToRoom(character *database.Character, newRoom database.Room) {
 	oldRoomId := character.RoomId
 	character.RoomId = newRoom.Id
 
-	err := UpdateCharacter(*character)
+	M.UpdateCharacter(*character)
 
-	utils.HandleError(err)
-
-	if err == nil {
-		queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
-		queueEvent(LeaveEvent{Character: *character, RoomId: oldRoomId})
-	}
-
-	return err
+	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
+	queueEvent(LeaveEvent{Character: *character, RoomId: oldRoomId})
 }
 
 func MoveCharacter(character *database.Character, direction database.ExitDirection) (database.Room, error) {
-	_mutex.Lock()
-	room := _model.Rooms[character.RoomId]
-	_mutex.Unlock()
+	room := M.GetRoom(character.RoomId)
 
 	if room.Id == "" {
 		return room, errors.New("Character doesn't appear to be in any room")
@@ -162,14 +353,12 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 	}
 
 	newLocation := room.Location.Next(direction)
-	room, found := GetRoomByLocation(newLocation, room.ZoneId)
+	room, found := M.GetRoomByLocation(newLocation, room.ZoneId)
 
 	if !found {
 		fmt.Printf("No room found at location %v, creating a new one (%s)\n", newLocation, character.PrettyName())
 
-		_mutex.Lock()
 		room = database.NewRoom(room.ZoneId)
-		_mutex.Unlock()
 
 		switch direction {
 		case database.DirectionNorth:
@@ -197,179 +386,62 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 		}
 
 		room.Location = newLocation
-
-		_mutex.Lock()
-		err := UpdateRoom(room)
-		_mutex.Unlock()
-
-		utils.HandleError(err)
+		M.UpdateRoom(room)
 	}
 
 	return MoveCharacterToLocation(character, room.Location)
 }
 
-func DeleteRoom(room database.Room) error {
-	_mutex.Lock()
+func DeleteRoom(room database.Room) {
+	M.deleteRoom(room.Id)
 
-	err := database.DeleteRoom(_session, room)
+	// Disconnect all exits leading to this room
+	loc := room.Location
 
-	if err == nil {
-		delete(_model.Rooms, room.Id)
+	updateRoom := func(dir database.ExitDirection) {
+		next := loc.Next(dir)
+		room, found := M.GetRoomByLocation(next, room.ZoneId)
 
-		// Disconnect all exits leading to this room
-		loc := room.Location
-
-		updateRoom := func(dir database.ExitDirection) {
-			next := loc.Next(dir)
-			room, found := GetRoomByLocation(next, room.ZoneId)
-
-			if found {
-				var exitToDisable database.ExitDirection
-				switch dir {
-				case database.DirectionNorth:
-					exitToDisable = database.DirectionSouth
-				case database.DirectionNorthEast:
-					exitToDisable = database.DirectionSouthWest
-				case database.DirectionEast:
-					exitToDisable = database.DirectionWest
-				case database.DirectionSouthEast:
-					exitToDisable = database.DirectionNorthWest
-				case database.DirectionSouth:
-					exitToDisable = database.DirectionNorth
-				case database.DirectionSouthWest:
-					exitToDisable = database.DirectionNorthEast
-				case database.DirectionWest:
-					exitToDisable = database.DirectionEast
-				case database.DirectionNorthWest:
-					exitToDisable = database.DirectionSouthEast
-				case database.DirectionUp:
-					exitToDisable = database.DirectionDown
-				case database.DirectionDown:
-					exitToDisable = database.DirectionUp
-				}
-				room.SetExitEnabled(exitToDisable, false)
-				UpdateRoom(room)
+		if found {
+			var exitToDisable database.ExitDirection
+			switch dir {
+			case database.DirectionNorth:
+				exitToDisable = database.DirectionSouth
+			case database.DirectionNorthEast:
+				exitToDisable = database.DirectionSouthWest
+			case database.DirectionEast:
+				exitToDisable = database.DirectionWest
+			case database.DirectionSouthEast:
+				exitToDisable = database.DirectionNorthWest
+			case database.DirectionSouth:
+				exitToDisable = database.DirectionNorth
+			case database.DirectionSouthWest:
+				exitToDisable = database.DirectionNorthEast
+			case database.DirectionWest:
+				exitToDisable = database.DirectionEast
+			case database.DirectionNorthWest:
+				exitToDisable = database.DirectionSouthEast
+			case database.DirectionUp:
+				exitToDisable = database.DirectionDown
+			case database.DirectionDown:
+				exitToDisable = database.DirectionUp
 			}
-		}
 
-		_mutex.Unlock()
-		updateRoom(database.DirectionNorth)
-		updateRoom(database.DirectionNorthEast)
-		updateRoom(database.DirectionEast)
-		updateRoom(database.DirectionSouthEast)
-		updateRoom(database.DirectionSouth)
-		updateRoom(database.DirectionSouthWest)
-		updateRoom(database.DirectionWest)
-		updateRoom(database.DirectionNorthWest)
-		updateRoom(database.DirectionUp)
-		updateRoom(database.DirectionDown)
-	} else {
-		_mutex.Unlock()
-	}
-
-	return err
-}
-
-func GetUser(id bson.ObjectId) database.User {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	return _model.Users[id]
-}
-
-func GetUsers() []database.User {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	var users []database.User
-
-	for _, user := range _model.Users {
-		users = append(users, user)
-	}
-
-	return users
-}
-
-func GetZones() []database.Zone {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	var zones []database.Zone
-
-	for _, zone := range _model.Zones {
-		zones = append(zones, zone)
-	}
-
-	return zones
-}
-
-func GetUserByName(username string) (database.User, error) {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	for _, user := range _model.Users {
-		if user.Name == username {
-			return user, nil
+			room.SetExitEnabled(exitToDisable, false)
+			M.UpdateRoom(room)
 		}
 	}
 
-	return database.User{}, errors.New("User not found")
-}
-
-func GetCharacterRoom(character database.Character) database.Room {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	return _model.Rooms[character.RoomId]
-}
-
-func GetCharacterUser(character database.Character) database.User {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	for _, user := range _model.Users {
-		for _, charId := range user.CharacterIds {
-			if charId == character.Id {
-				return user
-			}
-		}
-	}
-
-	return database.User{}
-
-}
-
-func GetRoomByLocation(coordinate database.Coordinate, zoneId bson.ObjectId) (database.Room, bool) {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	ret := database.Room{}
-	found := false
-
-	for _, room := range _model.Rooms {
-		if room.Location == coordinate && room.ZoneId == zoneId {
-			found = true
-			ret = room
-			break
-		}
-	}
-
-	return ret, found
-}
-
-func GenerateDefaultMap() {
-	_mutex.Lock()
-	{
-		_model.Rooms = map[bson.ObjectId]database.Room{}
-		database.DeleteAllRooms(_session)
-	}
-	_mutex.Unlock()
-
-	room := database.NewRoom("")
-	room.Location = database.Coordinate{0, 0, 0}
-	room.Default = true
-
-	UpdateRoom(room)
+	updateRoom(database.DirectionNorth)
+	updateRoom(database.DirectionNorthEast)
+	updateRoom(database.DirectionEast)
+	updateRoom(database.DirectionSouthEast)
+	updateRoom(database.DirectionSouth)
+	updateRoom(database.DirectionSouthWest)
+	updateRoom(database.DirectionWest)
+	updateRoom(database.DirectionNorthWest)
+	updateRoom(database.DirectionUp)
+	updateRoom(database.DirectionDown)
 }
 
 func BroadcastMessage(from database.Character, message string) {
@@ -381,7 +453,7 @@ func Say(from database.Character, message string) {
 }
 
 func queueEvent(event Event) {
-	eventQueueChannel <- event
+	eventQueueChannel <- event // TODO: Function not likely thread-safe
 }
 
 func eventLoop() {
@@ -414,130 +486,20 @@ func eventLoop() {
 	}
 }
 
-func CharactersIn(room database.Room, except database.Character) []database.Character {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	var charList []database.Character
-
-	for _, char := range _model.Characters {
-		if char.RoomId == room.Id && char.Id != except.Id && char.Online() {
-			charList = append(charList, char)
-		}
-	}
-
-	return charList
-}
-
 func Login(user database.User) error {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
 	if user.Online() {
 		return errors.New("That user is already online")
 	}
 
 	user.SetOnline(true)
-	_model.Users[user.Id] = user
+	M.UpdateUser(user) // TODO: Avoid unnecessary database call
 
 	return nil
 }
 
 func Logout(user database.User) {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
 	user.SetOnline(false)
-	_model.Users[user.Id] = user
-}
-
-func CreateUser(username string) (database.User, error) {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	user, err := database.CreateUser(_session, username)
-
-	if err == nil {
-		_model.Users[user.Id] = user
-	}
-
-	return user, err
-}
-
-func CreateCharacter(user *database.User, charname string) (database.Character, error) {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	character, err := database.CreateCharacter(_session, user, charname)
-
-	if err == nil {
-		_model.Users[user.Id] = *user
-		_model.Characters[character.Id] = character
-	}
-
-	return character, err
-}
-
-func GetCharacter(id bson.ObjectId) database.Character {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	return _model.Characters[id]
-}
-
-func GetCharacters(user database.User) []database.Character {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	var characters []database.Character
-
-	for _, charId := range user.CharacterIds {
-		characters = append(characters, _model.Characters[charId])
-	}
-
-	return characters
-}
-
-func GetOnlineCharacters() []database.Character {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	var characters []database.Character
-
-	for _, char := range _model.Characters {
-		if char.Online() {
-			characters = append(characters, char)
-		}
-	}
-
-	return characters
-}
-
-func DeleteCharacter(user *database.User, charId bson.ObjectId) error {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	err := database.DeleteCharacter(_session, user, charId)
-
-	if err == nil {
-		delete(_model.Characters, charId)
-		_model.Users[user.Id] = *user
-	}
-
-	return err
-}
-
-func DeleteUser(userId bson.ObjectId) error {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	err := database.DeleteUser(_session, _model.Users[userId])
-
-	if err == nil {
-		delete(_model.Users, userId)
-	}
-
-	return err
+	M.UpdateUser(user) // TODO: Avoid unnecessary database call
 }
 
 /**
@@ -545,9 +507,6 @@ func DeleteUser(userId bson.ObjectId) error {
  * the map in 3 dimensions
  */
 func ZoneCorners(zoneId bson.ObjectId) (database.Coordinate, database.Coordinate) {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
 	var top int
 	var bottom int
 	var left int
@@ -555,7 +514,9 @@ func ZoneCorners(zoneId bson.ObjectId) (database.Coordinate, database.Coordinate
 	var high int
 	var low int
 
-	for _, room := range _model.Rooms {
+	rooms := M.GetRooms()
+
+	for _, room := range rooms {
 		if room.ZoneId == zoneId {
 			top = room.Location.Y
 			bottom = room.Location.Y
@@ -567,7 +528,7 @@ func ZoneCorners(zoneId bson.ObjectId) (database.Coordinate, database.Coordinate
 		}
 	}
 
-	for _, room := range _model.Rooms {
+	for _, room := range rooms {
 		if room.ZoneId != zoneId {
 			continue
 		}
@@ -601,45 +562,14 @@ func ZoneCorners(zoneId bson.ObjectId) (database.Coordinate, database.Coordinate
 		database.Coordinate{X: right, Y: bottom, Z: low}
 }
 
-func GetZone(zoneId bson.ObjectId) database.Zone {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-	return _model.Zones[zoneId]
-}
-
-func GetRoom(roomId bson.ObjectId) database.Room {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-	return _model.Rooms[roomId]
-}
-
-func GetZoneByName(name string) (database.Zone, bool) {
-	_mutex.Lock()
-	defer _mutex.Unlock()
-
-	for _, zone := range _model.Zones {
-		if zone.Name == name {
-			return zone, true
-		}
-	}
-
-	return database.Zone{}, false
-}
-
 func MoveRoomsToZone(fromZoneId bson.ObjectId, toZoneId bson.ObjectId) {
-	_mutex.Lock()
-
-	for _, room := range _model.Rooms {
+	for _, room := range M.GetRooms() {
 		if room.ZoneId == fromZoneId {
 			room.ZoneId = toZoneId
 
-			_mutex.Unlock()
-			UpdateRoom(room)
-			_mutex.Lock()
+			M.UpdateRoom(room)
 		}
 	}
-
-	_mutex.Unlock()
 }
 
 // vim: nocindent
