@@ -15,6 +15,4 @@
 * Whisper/tell
 * Locks
 * Permissions
-* Namespaced maps
-** Take zone into account when moving/teleporting etc
-** Change rooms map to be keyd by zone id?
+* Movement across zone boundaries
