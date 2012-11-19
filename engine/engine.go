@@ -107,7 +107,12 @@ func UpdateZone(zone database.Zone) error {
 
 func MoveCharacterToLocation(character *database.Character, location database.Coordinate) (database.Room, error) {
 	oldRoomId := character.RoomId
-	newRoom, found := GetRoomByLocation(location)
+
+	_mutex.Lock()
+	oldRoom := _model.Rooms[oldRoomId]
+	_mutex.Unlock()
+
+	newRoom, found := GetRoomByLocation(location, oldRoom.ZoneId)
 
 	if !found {
 		return newRoom, errors.New("Invalid location")
@@ -157,7 +162,7 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 	}
 
 	newLocation := room.Location.Next(direction)
-	room, found := GetRoomByLocation(newLocation)
+	room, found := GetRoomByLocation(newLocation, room.ZoneId)
 
 	if !found {
 		fmt.Printf("No room found at location %v, creating a new one (%s)\n", newLocation, character.PrettyName())
@@ -216,7 +221,7 @@ func DeleteRoom(room database.Room) error {
 
 		updateRoom := func(dir database.ExitDirection) {
 			next := loc.Next(dir)
-			room, found := GetRoomByLocation(next)
+			room, found := GetRoomByLocation(next, room.ZoneId)
 
 			if found {
 				var exitToDisable database.ExitDirection
@@ -334,7 +339,7 @@ func GetCharacterUser(character database.Character) database.User {
 
 }
 
-func GetRoomByLocation(coordinate database.Coordinate) (database.Room, bool) {
+func GetRoomByLocation(coordinate database.Coordinate, zoneId bson.ObjectId) (database.Room, bool) {
 	_mutex.Lock()
 	defer _mutex.Unlock()
 
@@ -342,7 +347,7 @@ func GetRoomByLocation(coordinate database.Coordinate) (database.Room, bool) {
 	found := false
 
 	for _, room := range _model.Rooms {
-		if room.Location == coordinate {
+		if room.Location == coordinate && room.ZoneId == zoneId {
 			found = true
 			ret = room
 			break
@@ -539,7 +544,7 @@ func DeleteUser(userId bson.ObjectId) error {
  * Returns cordinates that indiate the highest and lowest points of
  * the map in 3 dimensions
  */
-func MapCorners() (database.Coordinate, database.Coordinate) {
+func ZoneCorners(zoneId bson.ObjectId) (database.Coordinate, database.Coordinate) {
 	_mutex.Lock()
 	defer _mutex.Unlock()
 
@@ -551,16 +556,22 @@ func MapCorners() (database.Coordinate, database.Coordinate) {
 	var low int
 
 	for _, room := range _model.Rooms {
-		top = room.Location.Y
-		bottom = room.Location.Y
-		left = room.Location.X
-		right = room.Location.X
-		high = room.Location.Z
-		low = room.Location.Z
-		break
+		if room.ZoneId == zoneId {
+			top = room.Location.Y
+			bottom = room.Location.Y
+			left = room.Location.X
+			right = room.Location.X
+			high = room.Location.Z
+			low = room.Location.Z
+			break
+		}
 	}
 
 	for _, room := range _model.Rooms {
+		if room.ZoneId != zoneId {
+			continue
+		}
+
 		if room.Location.Z < high {
 			high = room.Location.Z
 		}
@@ -593,12 +604,13 @@ func MapCorners() (database.Coordinate, database.Coordinate) {
 func GetZone(zoneId bson.ObjectId) database.Zone {
 	_mutex.Lock()
 	defer _mutex.Unlock()
-
-	if zoneId == "" {
-		return database.Zone{}
-	}
-
 	return _model.Zones[zoneId]
+}
+
+func GetRoom(roomId bson.ObjectId) database.Room {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+	return _model.Rooms[roomId]
 }
 
 func GetZoneByName(name string) (database.Zone, bool) {
