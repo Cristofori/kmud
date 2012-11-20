@@ -3,8 +3,8 @@ package server
 import (
 	"fmt"
 	"kmud/database"
-	"kmud/engine"
 	"kmud/game"
+	"kmud/model"
 	"kmud/utils"
 	"labix.org/v2/mgo"
 	"net"
@@ -19,12 +19,12 @@ func login(conn net.Conn) database.User {
 			return database.User{}
 		}
 
-		user, found := engine.M.GetUserByName(line)
+		user, found := model.M.GetUserByName(line)
 
 		if !found {
 			utils.WriteLine(conn, "User not found")
 		} else {
-			err := engine.Login(user)
+			err := model.Login(user)
 
 			if err == nil {
 				return user
@@ -47,15 +47,15 @@ func newUser(conn net.Conn) database.User {
 			return user
 		}
 
-		user, found := engine.M.GetUserByName(name)
+		user, found := model.M.GetUserByName(name)
 
 		if found {
 			utils.WriteLine(conn, "Name unavailable")
 		} else {
 			user = database.NewUser(name)
-			engine.M.UpdateUser(user)
+			model.M.UpdateUser(user)
 
-			err := engine.Login(user)
+			err := model.Login(user)
 
 			if err == nil {
 				return user
@@ -78,15 +78,15 @@ func newCharacter(conn net.Conn, user *database.User) database.Character {
 			return database.Character{}
 		}
 
-		character, found := engine.M.GetCharacterByName(name)
+		character, found := model.M.GetCharacterByName(name)
 
 		if found {
 			utils.WriteLine(conn, "A character with that name already exists")
 		} else {
-			room := engine.M.GetRooms()[0] // TODO
+			room := model.M.GetRooms()[0] // TODO
 
 			character = database.NewCharacter(name, user.Id, room.Id)
-			engine.M.UpdateCharacter(character)
+			model.M.UpdateCharacter(character)
 			return character
 		}
 	}
@@ -111,7 +111,7 @@ func mainMenu() utils.Menu {
 }
 
 func userMenu(user database.User) utils.Menu {
-	chars := engine.M.GetUserCharacters(user.Id)
+	chars := model.M.GetUserCharacters(user.Id)
 
 	menu := utils.NewMenu(user.PrettyName())
 	menu.AddAction("l", "[L]ogout")
@@ -131,7 +131,7 @@ func userMenu(user database.User) utils.Menu {
 }
 
 func deleteMenu(user database.User) utils.Menu {
-	chars := engine.M.GetUserCharacters(user.Id)
+	chars := model.M.GetUserCharacters(user.Id)
 
 	menu := utils.NewMenu("Delete character")
 
@@ -155,7 +155,7 @@ func adminMenu() utils.Menu {
 func userAdminMenu() utils.Menu {
 	menu := utils.NewMenu("User Admin")
 
-	for i, user := range engine.M.GetUsers() {
+	for i, user := range model.M.GetUsers() {
 		indexStr := strconv.Itoa(i + 1)
 
 		online := ""
@@ -185,7 +185,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			engine.Logout(user)
+			model.Logout(user)
 			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
 				user.PrettyName(),
 				character.PrettyName(),
@@ -218,7 +218,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			case "":
 				fallthrough
 			case "l":
-				engine.Logout(user)
+				model.Logout(user)
 				user = database.User{}
 			case "a":
 				adminMenu := adminMenu()
@@ -237,12 +237,12 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 
 								if err == nil {
 									for {
-										userMenu := userSpecificMenu(engine.M.GetUser(userId))
+										userMenu := userSpecificMenu(model.M.GetUser(userId))
 										choice, _ = userMenu.Exec(conn, user.ColorMode)
 										if choice == "" {
 											break
 										} else if choice == "d" {
-											engine.M.DeleteUser(userId)
+											model.M.DeleteUser(userId)
 											break
 										}
 									}
@@ -265,7 +265,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 					_, err := strconv.Atoi(deleteChoice)
 
 					if err == nil {
-						engine.M.DeleteCharacter(deleteCharId)
+						model.M.DeleteCharacter(deleteCharId)
 					}
 				}
 
@@ -273,7 +273,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				_, err := strconv.Atoi(choice)
 
 				if err == nil {
-					character = engine.M.GetCharacter(charId)
+					character = model.M.GetCharacter(charId)
 				}
 			}
 		} else {
@@ -294,13 +294,13 @@ func Exec() {
 	listener, err := net.Listen("tcp", ":8945")
 	utils.HandleError(err)
 
-	err = engine.Init(session.Copy())
+	err = model.Init(session.Copy())
 
 	// If there are no rooms at all create one
-	rooms := engine.M.GetRooms()
+	rooms := model.M.GetRooms()
 	if len(rooms) == 0 {
 		room := database.NewRoom("")
-		engine.M.UpdateRoom(room)
+		model.M.UpdateRoom(room)
 	}
 
 	fmt.Println("Server listening on port 8945")
