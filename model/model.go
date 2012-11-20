@@ -21,6 +21,9 @@ type globalModel struct {
 	session *mgo.Session
 }
 
+// UpdateUser updates the user in the model with user's Id, replacing it with
+// the one that's given. If the given user doesn't exist in the model it will
+// be added to. Also takes care of updating the database.
 func (self *globalModel) UpdateUser(user database.User) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -30,6 +33,7 @@ func (self *globalModel) UpdateUser(user database.User) {
 	utils.HandleError(database.CommitUser(self.session, user))
 }
 
+// GetCharacter returns the Character object associated the given Id
 func (self *globalModel) GetCharacter(id bson.ObjectId) database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -37,6 +41,8 @@ func (self *globalModel) GetCharacter(id bson.ObjectId) database.Character {
 	return self.characters[id]
 }
 
+// GetCharacaterByName searches for a character with the given name. Returns a
+// character object along with whether or not it was found in the model
 func (self *globalModel) GetCharacterByName(name string) (database.Character, bool) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -50,6 +56,8 @@ func (self *globalModel) GetCharacterByName(name string) (database.Character, bo
 	return database.Character{}, false
 }
 
+// GetUserCharacters returns all of the Character objects associated with the
+// given user id
 func (self *globalModel) GetUserCharacters(userId bson.ObjectId) []database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -65,6 +73,8 @@ func (self *globalModel) GetUserCharacters(userId bson.ObjectId) []database.Char
 	return characters
 }
 
+// CharactersIn returns a list of characters that are in the given room,
+// excluding the character passed in as the "except" parameter
 func (self *globalModel) CharactersIn(room database.Room, except database.Character) []database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -80,6 +90,7 @@ func (self *globalModel) CharactersIn(room database.Room, except database.Charac
 	return charList
 }
 
+// GetOnlineCharacters returns a list of all of the characters who are online
 func (self *globalModel) GetOnlineCharacters() []database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -95,6 +106,9 @@ func (self *globalModel) GetOnlineCharacters() []database.Character {
 	return characters
 }
 
+// UpdateCharacter updates the character in the model with character's Id,
+// replacing it with the one that's given. If the given character doesn't exist
+// in the model it will be added to. Also takes care of updating the database.
 func (self *globalModel) UpdateCharacter(character database.Character) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -104,6 +118,8 @@ func (self *globalModel) UpdateCharacter(character database.Character) {
 	utils.HandleError(database.CommitCharacter(self.session, character))
 }
 
+// DeleteCharacter removes the character associated with the given id from the
+// model and from the database
 func (self *globalModel) DeleteCharacter(id bson.ObjectId) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -113,6 +129,9 @@ func (self *globalModel) DeleteCharacter(id bson.ObjectId) {
 	utils.HandleError(database.DeleteCharacter(self.session, id))
 }
 
+// UpdateRoom updates the room in the model with room's Id, replacing it with
+// the one that's given. If the given room doesn't exist in the model it will
+// be added to. Also takes care of updating the database.
 func (self *globalModel) UpdateRoom(room database.Room) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -123,6 +142,9 @@ func (self *globalModel) UpdateRoom(room database.Room) {
 	utils.HandleError(database.CommitRoom(self.session, room))
 }
 
+// UpdateZone updates the zone in the model with zone's Id, replacing it with
+// the one that's given. If the given zone doesn't exist in the model it will
+// be added to. Also takes care of updating the database.
 func (self *globalModel) UpdateZone(zone database.Zone) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -132,6 +154,7 @@ func (self *globalModel) UpdateZone(zone database.Zone) {
 	utils.HandleError(database.CommitZone(self.session, zone))
 }
 
+// GetRoom returns the room object associated with the given id
 func (self *globalModel) GetRoom(id bson.ObjectId) database.Room {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -139,6 +162,7 @@ func (self *globalModel) GetRoom(id bson.ObjectId) database.Room {
 	return self.rooms[id]
 }
 
+// GetRooms returns a list of all of the rooms in the entire model
 func (self *globalModel) GetRooms() []database.Room {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -152,6 +176,8 @@ func (self *globalModel) GetRooms() []database.Room {
 	return rooms
 }
 
+// GetRoomByLocation searches for the room associated with the given coordinate
+// in the given zone.  Returns a room object and whether or not it was found. 
 func (self *globalModel) GetRoomByLocation(coordinate database.Coordinate, zoneId bson.ObjectId) (database.Room, bool) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -170,6 +196,7 @@ func (self *globalModel) GetRoomByLocation(coordinate database.Coordinate, zoneI
 	return ret, found
 }
 
+// GetZone returns the zone object associated with the given id
 func (self *globalModel) GetZone(zoneId bson.ObjectId) database.Zone {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -177,6 +204,7 @@ func (self *globalModel) GetZone(zoneId bson.ObjectId) database.Zone {
 	return self.zones[zoneId]
 }
 
+// GetZones returns all of the zones in the model
 func (self *globalModel) GetZones() []database.Zone {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -190,6 +218,8 @@ func (self *globalModel) GetZones() []database.Zone {
 	return zones
 }
 
+// GetZoneByName name searches for a zone with the given name, returns a zone
+// object and whether or not it was found
 func (self *globalModel) GetZoneByName(name string) (database.Zone, bool) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -212,6 +242,7 @@ func (self *globalModel) deleteRoom(id bson.ObjectId) {
 	utils.HandleError(database.DeleteRoom(self.session, id))
 }
 
+// GetUser returns the User object associated with the given id
 func (self *globalModel) GetUser(id bson.ObjectId) database.User {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -219,6 +250,7 @@ func (self *globalModel) GetUser(id bson.ObjectId) database.User {
 	return self.users[id]
 }
 
+// GetUsers returns all of the User objects in the model
 func (self *globalModel) GetUsers() []database.User {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -232,6 +264,8 @@ func (self *globalModel) GetUsers() []database.User {
 	return users
 }
 
+// GetUserByName searches for the User object with the given name. Returns the
+// User and whether or not a match was found.
 func (self *globalModel) GetUserByName(username string) (database.User, bool) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -245,6 +279,7 @@ func (self *globalModel) GetUserByName(username string) (database.User, bool) {
 	return database.User{}, false
 }
 
+// Removes the User assocaited with the given id from the model. Removes it from the database as well
 func (self *globalModel) DeleteUser(id bson.ObjectId) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -261,7 +296,10 @@ func (self *globalModel) DeleteUser(id bson.ObjectId) {
 	utils.HandleError(database.DeleteUser(self.session, id))
 }
 
+// M is the global model object. All functions are thread-safe and all changes
+// made to the model are automatically saved to the database.
 var M globalModel
+
 var eventQueueChannel chan Event
 
 /**
