@@ -491,7 +491,7 @@ func Say(from database.Character, message string) {
 }
 
 func queueEvent(event Event) {
-	eventQueueChannel <- event // TODO: Function not likely thread-safe
+	eventQueueChannel <- event
 }
 
 func eventLoop() {
