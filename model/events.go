@@ -54,8 +54,9 @@ func broadcast(event Event) {
 type EventType int
 
 const (
-	MessageEventType    EventType = iota
+	BroadcastEventType  EventType = iota
 	SayEventType        EventType = iota
+	TellEventType       EventType = iota
 	EnterEventType      EventType = iota
 	LeaveEventType      EventType = iota
 	RoomUpdateEventType EventType = iota
@@ -68,7 +69,7 @@ type Event interface {
 	ToString(receiver database.Character) string
 }
 
-type MessageEvent struct {
+type BroadcastEvent struct {
 	Character database.Character
 	Message   string
 }
@@ -76,6 +77,12 @@ type MessageEvent struct {
 type SayEvent struct {
 	Character database.Character
 	Message   string
+}
+
+type TellEvent struct {
+	From    database.Character
+	To      database.Character
+	Message string
 }
 
 type EnterEvent struct {
@@ -100,13 +107,13 @@ type LogoutEvent struct {
 	Character database.Character
 }
 
-func (self MessageEvent) Type() EventType {
-	return MessageEventType
+func (self BroadcastEvent) Type() EventType {
+	return BroadcastEventType
 }
 
-func (self MessageEvent) ToString(receiver database.Character) string {
+func (self BroadcastEvent) ToString(receiver database.Character) string {
 	cm := getColorMode(receiver)
-	return utils.Colorize(cm, utils.ColorBlue, "Message from "+self.Character.PrettyName()+": ") +
+	return utils.Colorize(cm, utils.ColorCyan, "Broadcast from "+self.Character.PrettyName()+": ") +
 		utils.Colorize(cm, utils.ColorWhite, self.Message)
 }
 
@@ -130,6 +137,21 @@ func (self SayEvent) ToString(receiver database.Character) string {
 
 	return utils.Colorize(cm, utils.ColorBlue, who+", ") +
 		utils.Colorize(cm, utils.ColorWhite, "\""+self.Message+"\"")
+}
+
+func (self TellEvent) Type() EventType {
+	return TellEventType
+}
+
+func (self TellEvent) ToString(receiver database.Character) string {
+	if receiver.Id != self.To.Id {
+		return ""
+	}
+
+	cm := getColorMode(receiver)
+
+	return utils.Colorize(cm, utils.ColorMagenta, fmt.Sprintf("Message from %s: ", self.From.PrettyName())) +
+		utils.Colorize(cm, utils.ColorWhite, self.Message)
 }
 
 func (self EnterEvent) Type() EventType {

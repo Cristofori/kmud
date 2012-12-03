@@ -63,8 +63,8 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 		printLineColor(utils.ColorWhite, line)
 	}
 
-	printError := func(line string) {
-		printLineColor(utils.ColorRed, line)
+	printError := func(err string) {
+		printLineColor(utils.ColorRed, err)
 	}
 
 	printRoom := func() {
@@ -384,9 +384,9 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				}
 			}
 
-		case "message":
+		case "broadcast":
 			fallthrough
-		case "m":
+		case "b":
 			if len(args) == 0 {
 				printError("Nothing to say")
 			} else {
@@ -401,6 +401,32 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			} else {
 				model.Say(*character, strings.Join(args, " "))
 			}
+
+		case "whisper":
+			fallthrough
+		case "tell":
+			fallthrough
+		case "w":
+			if len(args) < 2 {
+				printError("Usage: /whisper <player> <message>")
+				return
+			}
+
+			name := string(args[0])
+			targetChar, found := model.M.GetCharacterByName(name)
+
+			if !found {
+				printError(fmt.Sprintf("Player '%s' not found", name))
+				return
+			}
+
+			if !targetChar.Online() {
+				printError(fmt.Sprintf("Player '%s' is not online", targetChar.PrettyName()))
+				return
+			}
+
+			message := strings.Join(args[1:], " ")
+			model.Tell(*character, targetChar, message)
 
 		case "teleport":
 			fallthrough

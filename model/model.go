@@ -47,6 +47,8 @@ func (self *globalModel) GetCharacterByName(name string) (database.Character, bo
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
+	name = utils.Simplify(name)
+
 	for _, character := range self.characters {
 		if character.Name == name {
 			return character, true
@@ -483,7 +485,11 @@ func DeleteRoom(room database.Room) {
 }
 
 func BroadcastMessage(from database.Character, message string) {
-	queueEvent(MessageEvent{from, message})
+	queueEvent(BroadcastEvent{from, message})
+}
+
+func Tell(from database.Character, to database.Character, message string) {
+	queueEvent(TellEvent{from, to, message})
 }
 
 func Say(from database.Character, message string) {
