@@ -496,6 +496,10 @@ func Say(from database.Character, message string) {
 	queueEvent(SayEvent{from, message})
 }
 
+func Emote(from database.Character, message string) {
+	queueEvent(EmoteEvent{from, message})
+}
+
 func queueEvent(event Event) {
 	eventQueueChannel <- event
 }

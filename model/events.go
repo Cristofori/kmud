@@ -56,6 +56,7 @@ type EventType int
 const (
 	BroadcastEventType  EventType = iota
 	SayEventType        EventType = iota
+	EmoteEventType      EventType = iota
 	TellEventType       EventType = iota
 	EnterEventType      EventType = iota
 	LeaveEventType      EventType = iota
@@ -77,6 +78,11 @@ type BroadcastEvent struct {
 type SayEvent struct {
 	Character database.Character
 	Message   string
+}
+
+type EmoteEvent struct {
+	Character database.Character
+	Emote     string
 }
 
 type TellEvent struct {
@@ -137,6 +143,20 @@ func (self SayEvent) ToString(receiver database.Character) string {
 
 	return utils.Colorize(cm, utils.ColorBlue, who+", ") +
 		utils.Colorize(cm, utils.ColorWhite, "\""+self.Message+"\"")
+}
+
+func (self EmoteEvent) Type() EventType {
+	return EmoteEventType
+}
+
+func (self EmoteEvent) ToString(receiver database.Character) string {
+	if receiver.RoomId != self.Character.RoomId {
+		return ""
+	}
+
+	cm := getColorMode(receiver)
+
+	return utils.Colorize(cm, utils.ColorYellow, self.Character.PrettyName()+" "+self.Emote)
 }
 
 func (self TellEvent) Type() EventType {

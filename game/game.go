@@ -402,6 +402,9 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				model.Say(*character, strings.Join(args, " "))
 			}
 
+		case "me":
+			model.Emote(*character, strings.Join(args, " "))
+
 		case "whisper":
 			fallthrough
 		case "tell":
