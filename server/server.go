@@ -50,7 +50,7 @@ func newUser(conn net.Conn) database.User {
 		user, found := model.M.GetUserByName(name)
 
 		if found {
-			utils.WriteLine(conn, "That name unavailable")
+			utils.WriteLine(conn, "That name is unavailable")
 		} else if err := utils.ValidateName(name); err != nil {
 			utils.WriteLine(conn, err.Error())
 		} else {
