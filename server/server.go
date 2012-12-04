@@ -50,7 +50,9 @@ func newUser(conn net.Conn) database.User {
 		user, found := model.M.GetUserByName(name)
 
 		if found {
-			utils.WriteLine(conn, "Name unavailable")
+			utils.WriteLine(conn, "That name unavailable")
+		} else if err := utils.ValidateName(name); err != nil {
+			utils.WriteLine(conn, err.Error())
 		} else {
 			user = database.NewUser(name)
 			model.M.UpdateUser(user)
@@ -71,6 +73,7 @@ func newUser(conn net.Conn) database.User {
 
 func newCharacter(conn net.Conn, user *database.User) database.Character {
 	// TODO: character slot limit
+	const SizeLimit = 12
 	for {
 		name := utils.GetUserInput(conn, "Desired character name: ")
 
@@ -81,7 +84,9 @@ func newCharacter(conn net.Conn, user *database.User) database.Character {
 		character, found := model.M.GetCharacterByName(name)
 
 		if found {
-			utils.WriteLine(conn, "A character with that name already exists")
+			utils.WriteLine(conn, "That name is unavailable")
+		} else if err := utils.ValidateName(name); err != nil {
+			utils.WriteLine(conn, err.Error())
 		} else {
 			room := model.M.GetRooms()[0] // TODO
 

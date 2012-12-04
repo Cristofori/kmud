@@ -2,8 +2,11 @@ package utils
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"io"
 	"log"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -116,6 +119,23 @@ func TrimLowerRows(rows []string) []string {
 func TrimEmptyRows(str string) string {
 	rows := strings.Split(str, "\n")
 	return strings.Join(TrimLowerRows(TrimUpperRows(rows)), "\n")
+}
+
+func ValidateName(name string) error {
+	const MinSize = 3
+	const MaxSize = 12
+
+	if len(name) < MinSize || len(name) > MaxSize {
+		return errors.New(fmt.Sprintf("Names must be between %v and %v letters long", MinSize, MaxSize))
+	}
+
+	regex := regexp.MustCompile("^[a-zA-Z]*$")
+
+	if !regex.MatchString(name) {
+		return errors.New("Names may only contain letters (A-Z)")
+	}
+
+	return nil
 }
 
 // vim: nocindent

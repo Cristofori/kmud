@@ -114,7 +114,35 @@ func Test_GetUserInput(t *testing.T) {
 }
 
 func Test_HandleError(t *testing.T) {
+	// TODO try using recover
 	HandleError(nil)
+}
+
+func Test_ValidateName(t *testing.T) {
+	var tests = []struct {
+		input  string
+		output bool
+	}{
+		{"t", false},
+		{"te", false},
+		{"tes", true},
+		{"te1", false},
+		{"test", true},
+		{"testing", true},
+		{"*(!(@#*$", false},
+		{"Abc1abc", false},
+		{"123456789012", false},
+		{"aslsidjfljll", true},
+		{"1slsidjfljll", false},
+		{"aslsidjfljl3", false},
+	}
+
+	for _, test := range tests {
+		result := (ValidateName(test.input) == nil)
+		if result != test.output {
+			t.Errorf("ValidateName(%q) == %q, want %q", test.input, result, test.output)
+		}
+	}
 }
 
 // vim:nocindent
