@@ -55,16 +55,16 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 		io.WriteString(conn, data)
 	}
 
-	printLineColor := func(color utils.Color, line string) {
-		utils.WriteLine(conn, utils.Colorize(user.ColorMode, color, line))
+	printLineColor := func(color utils.Color, line string, a...interface{}) {
+		utils.WriteLine(conn, utils.Colorize(user.ColorMode, color, fmt.Sprintf(line, a...)))
 	}
 
-	printLine := func(line string) {
-		printLineColor(utils.ColorWhite, line)
+	printLine := func(line string, a...interface{}) {
+		printLineColor(utils.ColorWhite, line, a...)
 	}
 
-	printError := func(err string) {
-		printLineColor(utils.ColorRed, err)
+	printError := func(err string, a...interface{}) {
+		printLineColor(utils.ColorRed, err, a...)
 	}
 
 	printRoom := func() {
@@ -258,7 +258,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 		case "loc":
 			fallthrough
 		case "location":
-			printLine(fmt.Sprintf("%v", room.Location))
+			printLine("%v", room.Location)
 
 		case "map":
 			mapUsage := func() {
@@ -419,12 +419,12 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			targetChar, found := model.M.GetCharacterByName(name)
 
 			if !found {
-				printError(fmt.Sprintf("Player '%s' not found", name))
+				printError("Player '%s' not found", name)
 				return
 			}
 
 			if !targetChar.Online() {
-				printError(fmt.Sprintf("Player '%s' is not online", targetChar.PrettyName()))
+				printError("Player '%s' is not online", targetChar.PrettyName())
 				return
 			}
 
