@@ -5,6 +5,7 @@ import (
 	"labix.org/v2/mgo/bson"
 	"net"
 	"regexp"
+	"strconv"
 )
 
 type action struct {
@@ -30,8 +31,9 @@ func (self *Menu) AddAction(key string, text string) {
 	self.Actions = append(self.Actions, action{key: key, text: text})
 }
 
-func (self *Menu) AddActionData(key string, text string, data bson.ObjectId) {
-	self.Actions = append(self.Actions, action{key: key, text: text, data: data})
+func (self *Menu) AddActionData(key int, text string, data bson.ObjectId) {
+	keyStr := strconv.Itoa(key)
+	self.Actions = append(self.Actions, action{key: keyStr, text: text, data: data})
 }
 
 func (self *Menu) getAction(key string) action {

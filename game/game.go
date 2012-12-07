@@ -21,13 +21,10 @@ const (
 
 func getToggleExitMenu(cm utils.ColorMode, room database.Room) utils.Menu {
 	onOrOff := func(direction database.ExitDirection) string {
-
 		text := "Off"
-
 		if room.HasExit(direction) {
 			text = "On"
 		}
-
 		return utils.Colorize(cm, utils.ColorBlue, text)
 	}
 
@@ -47,6 +44,20 @@ func getToggleExitMenu(cm utils.ColorMode, room database.Room) utils.Menu {
 	return menu
 }
 
+func getNpcMenu(cm utils.ColorMode, room database.Room) utils.Menu {
+	npcs := model.M.NpcsIn(room.Id)
+
+	menu := utils.NewMenu("NPCs")
+
+	for i, npc := range npcs {
+		index := i + 1
+		actionText := fmt.Sprintf("[%v]%v", index, npc.PrettyName())
+		menu.AddActionData(index, actionText, npc.Id)
+	}
+
+	return menu
+}
+
 func Exec(conn net.Conn, user *database.User, character *database.Character) {
 	room := model.M.GetRoom(character.RoomId)
 	zone := model.M.GetZone(room.ZoneId)
@@ -55,20 +66,20 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 		io.WriteString(conn, data)
 	}
 
-	printLineColor := func(color utils.Color, line string, a...interface{}) {
+	printLineColor := func(color utils.Color, line string, a ...interface{}) {
 		utils.WriteLine(conn, utils.Colorize(user.ColorMode, color, fmt.Sprintf(line, a...)))
 	}
 
-	printLine := func(line string, a...interface{}) {
+	printLine := func(line string, a ...interface{}) {
 		printLineColor(utils.ColorWhite, line, a...)
 	}
 
-	printError := func(err string, a...interface{}) {
+	printError := func(err string, a ...interface{}) {
 		printLineColor(utils.ColorRed, err, a...)
 	}
 
 	printRoom := func() {
-		charList := model.M.CharactersIn(room, *character)
+		charList := model.M.CharactersIn(room.Id, character.Id)
 		printLine(room.ToString(database.ReadMode, user.ColorMode, charList))
 	}
 
@@ -145,7 +156,7 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 					loc := room.Location.Next(arg)
 					roomToSee, found := model.M.GetRoomByLocation(loc, zone.Id)
 					if found {
-						printLine(roomToSee.ToString(database.ReadMode, user.ColorMode, model.M.CharactersIn(roomToSee, database.Character{})))
+						printLine(roomToSee.ToString(database.ReadMode, user.ColorMode, model.M.CharactersIn(roomToSee.Id, "")))
 					} else {
 						printLine("Nothing to see")
 					}
@@ -557,6 +568,19 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			} else {
 				printError("Usage: /delete <direction>")
 			}
+
+		case "npc":
+			menu := getNpcMenu(user.ColorMode, room)
+
+			for {
+				choice, _ := menu.Exec(conn, user.ColorMode)
+
+				if choice == "" {
+					break
+				}
+			}
+
+			printRoom()
 
 		default:
 			printError("Unrecognized command: \"" + command + "\"")

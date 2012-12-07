@@ -293,6 +293,10 @@ func (self *Character) Online() bool {
 	return self.online
 }
 
+func (self *Character) IsNpc() bool {
+	return self.UserId == ""
+}
+
 func (self *User) PrettyName() string {
 	return utils.FormatName(self.Name)
 }

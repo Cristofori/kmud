@@ -127,9 +127,9 @@ func userMenu(user database.User) utils.Menu {
 	}
 
 	for i, char := range chars {
-		indexStr := strconv.Itoa(i + 1)
-		actionText := fmt.Sprintf("[%v]%v", indexStr, char.PrettyName())
-		menu.AddActionData(indexStr, actionText, char.Id)
+		index := i + 1
+		actionText := fmt.Sprintf("[%v]%v", index, char.PrettyName())
+		menu.AddActionData(index, actionText, char.Id)
 	}
 
 	return menu
@@ -143,9 +143,9 @@ func deleteMenu(user database.User) utils.Menu {
 	menu.AddAction("c", "[C]ancel")
 
 	for i, char := range chars {
-		indexStr := strconv.Itoa(i + 1)
-		actionText := fmt.Sprintf("[%v]%v", indexStr, char.PrettyName())
-		menu.AddActionData(indexStr, actionText, char.Id)
+		index := i + 1
+		actionText := fmt.Sprintf("[%v]%v", index, char.PrettyName())
+		menu.AddActionData(index, actionText, char.Id)
 	}
 
 	return menu
@@ -161,15 +161,15 @@ func userAdminMenu() utils.Menu {
 	menu := utils.NewMenu("User Admin")
 
 	for i, user := range model.M.GetUsers() {
-		indexStr := strconv.Itoa(i + 1)
+		index := i + 1
 
 		online := ""
 		if user.Online() {
 			online = "*"
 		}
 
-		actionText := fmt.Sprintf("[%v]%v", indexStr, user.PrettyName()+online)
-		menu.AddActionData(indexStr, actionText, user.Id)
+		actionText := fmt.Sprintf("[%v]%v", index, user.PrettyName()+online)
+		menu.AddActionData(index, actionText, user.Id)
 	}
 
 	return menu
