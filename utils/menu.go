@@ -2,8 +2,8 @@ package utils
 
 import (
 	"fmt"
+	"io"
 	"labix.org/v2/mgo/bson"
-	"net"
 	"regexp"
 	"strconv"
 )
@@ -50,7 +50,7 @@ func (self *Menu) HasAction(key string) bool {
 	return action.key != ""
 }
 
-func (self *Menu) Exec(conn net.Conn, cm ColorMode) (string, bson.ObjectId) {
+func (self *Menu) Exec(conn io.ReadWriter, cm ColorMode) (string, bson.ObjectId) {
 	for {
 		self.Print(conn, cm)
 		input := GetUserInput(conn, Colorize(cm, ColorWhite, self.Prompt))
@@ -69,7 +69,7 @@ func (self *Menu) Exec(conn net.Conn, cm ColorMode) (string, bson.ObjectId) {
 	return "", ""
 }
 
-func (self *Menu) Print(conn net.Conn, cm ColorMode) {
+func (self *Menu) Print(conn io.Writer, cm ColorMode) {
 	border := Colorize(cm, ColorWhite, "-=-=-")
 	title := Colorize(cm, ColorBlue, self.Title)
 	WriteLine(conn, fmt.Sprintf("%s %s %s", border, title, border))
