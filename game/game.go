@@ -44,10 +44,12 @@ func getToggleExitMenu(cm utils.ColorMode, room database.Room) utils.Menu {
 	return menu
 }
 
-func getNpcMenu(cm utils.ColorMode, room database.Room) utils.Menu {
+func getNpcMenu(room database.Room) utils.Menu {
 	npcs := model.M.NpcsIn(room.Id)
 
 	menu := utils.NewMenu("NPCs")
+
+	menu.AddAction("n", "[N]ew")
 
 	for i, npc := range npcs {
 		index := i + 1
@@ -138,6 +140,20 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			}
 		}
 		panic("Unexpected code path")
+	}
+
+	// Same behavior as menu.Exec(), except that it uses getUserInput
+	// which doesn't block the event loop while waiting for input
+	execMenu := func(menu utils.Menu) string {
+		choice := ""
+		for {
+			menu.Print(conn, user.ColorMode)
+			choice = getUserInput(CleanUserInput, menu.Prompt)
+			if menu.HasAction(choice) || choice == "" {
+				break
+			}
+		}
+		return choice
 	}
 
 	processAction := func(action string, args []string) {
@@ -237,15 +253,8 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 				case "3":
 					for {
 						menu := getToggleExitMenu(user.ColorMode, room)
-						choice := ""
 
-						for {
-							menu.Print(conn, user.ColorMode)
-							choice = getUserInput(CleanUserInput, menu.Prompt)
-							if menu.HasAction(choice) || choice == "" {
-								break
-							}
-						}
+						choice := execMenu(menu)
 
 						if choice == "" {
 							break
@@ -570,20 +579,44 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			}
 
 		case "npc":
-			menu := getNpcMenu(user.ColorMode, room)
+			menu := getNpcMenu(room)
+			choice := execMenu(menu)
 
-			for {
-				choice, _ := menu.Exec(conn, user.ColorMode)
+			if choice == "" {
+				goto done
+			}
 
-				if choice == "" {
-					break
+			if choice == "n" {
+				name := ""
+				description := ""
+
+				for {
+					name = getUserInput(CleanUserInput, "Desired NPC name: ")
+					_, found := model.M.GetCharacterByName(name)
+
+					if name == "" {
+						goto done
+					} else if found {
+						printError("That name is unavailable")
+					} else if err := utils.ValidateName(name); err != nil {
+						printError(err.Error())
+					} else {
+						break
+					}
+				}
+
+				description = getUserInput(RawUserInput, "NPC description: ")
+
+				if description == "" {
+					goto done
 				}
 			}
 
+		done:
 			printRoom()
 
 		default:
-			printError("Unrecognized command: \"" + command + "\"")
+			printError("Unrecognized command: %s", command)
 		}
 	}
 
