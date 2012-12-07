@@ -6,7 +6,6 @@ import (
 	"kmud/database"
 	"kmud/model"
 	"kmud/utils"
-	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -60,7 +59,7 @@ func getNpcMenu(room database.Room) utils.Menu {
 	return menu
 }
 
-func Exec(conn net.Conn, user *database.User, character *database.Character) {
+func Exec(conn io.ReadWriter, user *database.User, character *database.Character) {
 	room := model.M.GetRoom(character.RoomId)
 	zone := model.M.GetZone(room.ZoneId)
 
@@ -191,7 +190,6 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 			fallthrough
 		case "exit":
 			printLine("Take luck!")
-			conn.Close()
 			panic("User quit")
 
 		default:
@@ -623,6 +621,9 @@ func Exec(conn net.Conn, user *database.User, character *database.Character) {
 	printLineColor(utils.ColorWhite, "Welcome, "+character.PrettyName())
 	printRoom()
 
+	// Main routine in charge of actually reading input from the connection object,
+	// also has built in throttling to limit how fast we are allowed to process
+	// commands from the user. 
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
