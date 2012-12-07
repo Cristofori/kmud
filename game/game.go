@@ -178,6 +178,9 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 				}
 			}
 
+        case "ls":
+            printLine("Where do you think you are?!")
+
 		case "i":
 			printLine("You aren't carrying anything")
 
