@@ -8,21 +8,21 @@ import (
 	"sync"
 )
 
-var _listeners map[*chan Event]*database.Character
+var _listeners map[chan Event]*database.Character
 
 var _mutex sync.Mutex
 
-func Register(character *database.Character) *chan Event {
+func Register(character *database.Character) chan Event {
 	_mutex.Lock()
 	if _listeners == nil {
-		_listeners = map[*chan Event]*database.Character{}
+		_listeners = map[chan Event]*database.Character{}
 	}
 	_mutex.Unlock()
 
 	listener := make(chan Event, 100)
 
 	_mutex.Lock()
-	_listeners[&listener] = character
+	_listeners[listener] = character
 	_mutex.Unlock()
 
 	character.SetOnline(true)
@@ -30,13 +30,15 @@ func Register(character *database.Character) *chan Event {
 
 	queueEvent(LoginEvent{*character})
 
-	return &listener
+	return listener
 }
 
-func Unregister(listener *chan Event) {
+func Unregister(listener chan Event) {
 	_mutex.Lock()
 	character := _listeners[listener]
 	_mutex.Unlock()
+
+	fmt.Printf("Unregistering: %v\n", character.PrettyName())
 
 	character.SetOnline(false)
 	M.UpdateCharacter(*character) // TODO: Avoid unnecessary database call
@@ -47,7 +49,7 @@ func Unregister(listener *chan Event) {
 
 func broadcast(event Event) {
 	for listener := range _listeners {
-		*listener <- event
+		listener <- event
 	}
 }
 

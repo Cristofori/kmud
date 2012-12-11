@@ -128,7 +128,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 			select {
 			case input := <-userInputChannel:
 				return input
-			case event := <-*eventChannel:
+			case event := <-eventChannel:
 				message := processEvent(event)
 				if message != "" {
 					printLine("\n" + message)
@@ -178,8 +178,8 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 				}
 			}
 
-        case "ls":
-            printLine("Where do you think you are?!")
+		case "ls":
+			printLine("Where do you think you are?!")
 
 		case "i":
 			printLine("You aren't carrying anything")
