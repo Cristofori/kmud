@@ -364,6 +364,8 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 					for _, zone := range model.M.GetZones() {
 						printLine(zone.Name)
 					}
+				} else {
+					printError("Usage: /zone [list|rename <name>|new <name>]")
 				}
 			} else if len(args) == 2 {
 				if args[0] == "rename" {
