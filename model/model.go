@@ -413,7 +413,8 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 	newRoom, found := M.GetRoomByLocation(newLocation, room.ZoneId)
 
 	if !found {
-		fmt.Printf("No room found at location %v, creating a new one (%s)\n", newLocation, character.PrettyName())
+		zone := M.GetZone(room.ZoneId)
+		fmt.Printf("No room found at location %v%v, creating a new one (%s)\n", zone.Name, newLocation, character.PrettyName())
 
 		room = database.NewRoom(room.ZoneId)
 
