@@ -458,36 +458,59 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 			fallthrough
 		case "tel":
 			telUsage := func() {
-				printError("Usage: /teleport <X> <Y> <Z>")
+				printError("Usage: /teleport [<zone>|<X> <Y> <Z>]")
 			}
 
-			if len(args) != 3 {
+			x := 0
+			y := 0
+			z := 0
+
+			zoneId := room.ZoneId
+
+			if len(args) == 1 {
+				zone, found := model.M.GetZoneByName(args[0])
+
+				if !found {
+					printError("Zone not found")
+					return
+				}
+
+				zoneRooms := model.M.GetRoomsInZone(zone.Id)
+
+				if len(zoneRooms) > 0 {
+					r := zoneRooms[0]
+					x = r.Location.X
+					y = r.Location.Y
+					z = r.Location.Z
+				}
+			} else if len(args) == 3 {
+				var err error
+				x, err = strconv.Atoi(args[0])
+
+				if err != nil {
+					telUsage()
+					return
+				}
+
+				y, err = strconv.Atoi(args[1])
+
+				if err != nil {
+					telUsage()
+					return
+				}
+
+				z, err = strconv.Atoi(args[2])
+
+				if err != nil {
+					telUsage()
+					return
+				}
+			} else {
 				telUsage()
 				return
 			}
 
-			x, err := strconv.Atoi(args[0])
-
-			if err != nil {
-				telUsage()
-				return
-			}
-
-			y, err := strconv.Atoi(args[1])
-
-			if err != nil {
-				telUsage()
-				return
-			}
-
-			z, err := strconv.Atoi(args[2])
-
-			if err != nil {
-				telUsage()
-				return
-			}
-
-			newRoom, err := model.MoveCharacterToLocation(character, database.Coordinate{X: x, Y: y, Z: z})
+			newRoom, err := model.MoveCharacterToLocation(character, zoneId, database.Coordinate{X: x, Y: y, Z: z})
 
 			if err == nil {
 				room = newRoom

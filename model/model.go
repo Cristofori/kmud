@@ -195,6 +195,20 @@ func (self *globalModel) GetRooms() []database.Room {
 	return rooms
 }
 
+func (self *globalModel) GetRoomsInZone(zoneId bson.ObjectId) []database.Room {
+	allRooms := self.GetRooms()
+
+	var rooms []database.Room
+
+	for _, room := range allRooms {
+		if room.ZoneId == zoneId {
+			rooms = append(rooms, room)
+		}
+	}
+
+	return rooms
+}
+
 // GetRoomByLocation searches for the room associated with the given coordinate
 // in the given zone.  Returns a room object and whether or not it was found. 
 func (self *globalModel) GetRoomByLocation(coordinate database.Coordinate, zoneId bson.ObjectId) (database.Room, bool) {
@@ -369,10 +383,9 @@ func Init(session *mgo.Session) error {
 	return err
 }
 
-func MoveCharacterToLocation(character *database.Character, location database.Coordinate) (database.Room, error) {
-	oldRoom := M.GetRoom(character.RoomId)
+func MoveCharacterToLocation(character *database.Character, zoneId bson.ObjectId, location database.Coordinate) (database.Room, error) {
 
-	newRoom, found := M.GetRoomByLocation(location, oldRoom.ZoneId)
+	newRoom, found := M.GetRoomByLocation(location, zoneId)
 
 	if !found {
 		return newRoom, errors.New("Invalid location")
@@ -380,6 +393,7 @@ func MoveCharacterToLocation(character *database.Character, location database.Co
 
 	character.RoomId = newRoom.Id
 
+	oldRoom := M.GetRoom(character.RoomId)
 	M.UpdateCharacter(*character)
 
 	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
@@ -449,7 +463,7 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 		room = newRoom
 	}
 
-	return MoveCharacterToLocation(character, room.Location)
+	return MoveCharacterToLocation(character, room.ZoneId, room.Location)
 }
 
 func DeleteRoom(room database.Room) {
