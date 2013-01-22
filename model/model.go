@@ -391,9 +391,9 @@ func MoveCharacterToLocation(character *database.Character, zoneId bson.ObjectId
 		return newRoom, errors.New("Invalid location")
 	}
 
-	character.RoomId = newRoom.Id
-
 	oldRoom := M.GetRoom(character.RoomId)
+
+	character.RoomId = newRoom.Id
 	M.UpdateCharacter(*character)
 
 	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
