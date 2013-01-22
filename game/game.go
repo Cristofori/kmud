@@ -643,11 +643,11 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 				}
 
 				/*
-								description = getUserInput(RawUserInput, "NPC description: ")
+									description = getUserInput(RawUserInput, "NPC description: ")
 
-								if description == "" {
-				                    goto done
-								}
+									if description == "" {
+					                    goto done
+									}
 				*/
 
 				npc := database.NewNpc(name, currentRoom.Id)
