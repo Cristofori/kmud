@@ -178,7 +178,7 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Ch
 	var str string
 
 	if mode == ReadMode {
-		str = fmt.Sprintf("\n %v %v %v (%v %v %v)\n\n %v\n",
+		str = fmt.Sprintf("\n %v %v %v (%v %v %v)\n\n %v\n\n",
 			utils.Colorize(colorMode, utils.ColorWhite, ">>>"),
 			utils.Colorize(colorMode, utils.ColorBlue, self.Title),
 			utils.Colorize(colorMode, utils.ColorWhite, "<<<"),
@@ -187,27 +187,33 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Ch
 			self.Location.Z,
 			utils.Colorize(colorMode, utils.ColorWhite, self.Description))
 
+		extraNewLine := ""
+
 		if len(chars) > 0 {
-			str = str + "\n " + utils.Colorize(colorMode, utils.ColorBlue, "Also here: ")
+			str = str + " " + utils.Colorize(colorMode, utils.ColorBlue, "Also here: ")
 
 			var names []string
 			for _, char := range chars {
 				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, char.PrettyName()))
 			}
-			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", "))
+			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\n"
+
+			extraNewLine = "\n"
 		}
 
 		if len(npcs) > 0 {
-			str = str + "\n " + utils.Colorize(colorMode, utils.ColorBlue, "NPCs: ")
+			str = str + " " + utils.Colorize(colorMode, utils.ColorBlue, "NPCs: ")
 
 			var names []string
 			for _, npc := range npcs {
 				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, npc.PrettyName()))
 			}
-			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", "))
+			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\n"
+
+			extraNewLine = "\n"
 		}
 
-		str = str + "\n\n " + utils.Colorize(colorMode, utils.ColorBlue, "Exits: ")
+		str = str + extraNewLine + " " + utils.Colorize(colorMode, utils.ColorBlue, "Exits: ")
 
 	} else {
 		str = fmt.Sprintf(" [1] %v \n\n [2] %v \n\n [3] Exits: ", self.Title, self.Description)
