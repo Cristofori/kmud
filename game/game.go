@@ -667,6 +667,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 
 				switch choice {
 				case "d":
+					model.M.DeleteCharacter(npcId)
 				case "r":
 					name := getName()
 					if name == "" {
