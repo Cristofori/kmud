@@ -174,7 +174,7 @@ func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) s
 	panic("Unexpected code path")
 }
 
-func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Character) string {
+func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Character, npcs []Character) string {
 	var str string
 
 	if mode == ReadMode {
@@ -193,6 +193,16 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Ch
 			var names []string
 			for _, char := range chars {
 				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, char.PrettyName()))
+			}
+			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", "))
+		}
+
+		if len(npcs) > 0 {
+			str = str + "\n\n " + utils.Colorize(colorMode, utils.ColorBlue, "NPCs: ")
+
+			var names []string
+			for _, npc := range npcs {
+				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, npc.PrettyName()))
 			}
 			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", "))
 		}

@@ -81,11 +81,12 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 
 	printRoom := func() {
 		charList := model.M.CharactersIn(currentRoom.Id, character.Id)
-		printLine(currentRoom.ToString(database.ReadMode, user.ColorMode, charList))
+		npcList := model.M.NpcsIn(currentRoom.Id)
+		printLine(currentRoom.ToString(database.ReadMode, user.ColorMode, charList, npcList))
 	}
 
 	printRoomEditor := func() {
-		printLine(currentRoom.ToString(database.EditMode, user.ColorMode, nil))
+		printLine(currentRoom.ToString(database.EditMode, user.ColorMode, nil, nil))
 	}
 
 	prompt := func() string {
@@ -171,7 +172,8 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 					loc := currentRoom.Location.Next(arg)
 					roomToSee, found := model.M.GetRoomByLocation(loc, currentZone.Id)
 					if found {
-						printLine(roomToSee.ToString(database.ReadMode, user.ColorMode, model.M.CharactersIn(roomToSee.Id, "")))
+						printLine(roomToSee.ToString(database.ReadMode, user.ColorMode,
+							model.M.CharactersIn(roomToSee.Id, ""), model.M.NpcsIn(roomToSee.Id)))
 					} else {
 						printLine("Nothing to see")
 					}
