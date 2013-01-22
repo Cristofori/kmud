@@ -6,6 +6,7 @@ import (
 	"kmud/database"
 	"kmud/model"
 	"kmud/utils"
+	"labix.org/v2/mgo/bson"
 	"strconv"
 	"strings"
 	"time"
@@ -18,7 +19,7 @@ const (
 	RawUserInput   userInputMode = iota
 )
 
-func getToggleExitMenu(cm utils.ColorMode, room database.Room) utils.Menu {
+func toggleExitMenu(cm utils.ColorMode, room database.Room) utils.Menu {
 	onOrOff := func(direction database.ExitDirection) string {
 		text := "Off"
 		if room.HasExit(direction) {
@@ -43,7 +44,7 @@ func getToggleExitMenu(cm utils.ColorMode, room database.Room) utils.Menu {
 	return menu
 }
 
-func getNpcMenu(room database.Room) utils.Menu {
+func npcMenu(room database.Room) utils.Menu {
 	npcs := model.M.NpcsIn(room.Id)
 
 	menu := utils.NewMenu("NPCs")
@@ -56,6 +57,14 @@ func getNpcMenu(room database.Room) utils.Menu {
 		menu.AddActionData(index, actionText, npc.Id)
 	}
 
+	return menu
+}
+
+func specificNpcMenu(npcId bson.ObjectId) utils.Menu {
+	npc := model.M.GetCharacter(npcId)
+	menu := utils.NewMenu(npc.PrettyName())
+	menu.AddAction("r", "[R]ename")
+	menu.AddAction("d", "[D]elete")
 	return menu
 }
 
@@ -144,16 +153,19 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 
 	// Same behavior as menu.Exec(), except that it uses getUserInput
 	// which doesn't block the event loop while waiting for input
-	execMenu := func(menu utils.Menu) string {
+	execMenu := func(menu utils.Menu) (string, bson.ObjectId) {
 		choice := ""
+		var data bson.ObjectId
+
 		for {
 			menu.Print(conn, user.ColorMode)
-			choice = getUserInput(CleanUserInput, menu.Prompt)
+			choice = getUserInput(CleanUserInput, menu.GetPrompt())
 			if menu.HasAction(choice) || choice == "" {
+				data = menu.GetData(choice)
 				break
 			}
 		}
-		return choice
+		return choice, data
 	}
 
 	processAction := func(action string, args []string) {
@@ -255,9 +267,9 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 
 				case "3":
 					for {
-						menu := getToggleExitMenu(user.ColorMode, currentRoom)
+						menu := toggleExitMenu(user.ColorMode, currentRoom)
 
-						choice := execMenu(menu)
+						choice, _ := execMenu(menu)
 
 						if choice == "" {
 							break
@@ -616,8 +628,8 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 			}
 
 		case "npc":
-			menu := getNpcMenu(currentRoom)
-			choice := execMenu(menu)
+			menu := npcMenu(currentRoom)
+			choice, npcId := execMenu(menu)
 
 			if choice == "" {
 				goto done
@@ -640,18 +652,21 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 					} else {
 						break
 					}
+
+					/*
+					                    description = getUserInput(RawUserInput, "NPC description: ")
+
+										if description == "" {
+					                        goto done
+										}
+					*/
 				}
-
-				/*
-									description = getUserInput(RawUserInput, "NPC description: ")
-
-									if description == "" {
-					                    goto done
-									}
-				*/
 
 				npc := database.NewNpc(name, currentRoom.Id)
 				model.M.UpdateCharacter(npc)
+			} else if npcId != "" {
+				specificMenu := specificNpcMenu(npcId)
+				execMenu(specificMenu)
 			}
 
 		done:

@@ -8,41 +8,55 @@ import (
 	"strconv"
 )
 
-type action struct {
+type menuAction struct {
 	key  string
 	text string
 	data bson.ObjectId
 }
 
 type Menu struct {
-	Actions []action
-	Title   string
-	Prompt  string
+	actions []menuAction
+	title   string
+	prompt  string
 }
 
 func NewMenu(text string) Menu {
 	var menu Menu
-	menu.Title = text
-	menu.Prompt = "> "
+	menu.title = text
+	menu.prompt = "> "
 	return menu
 }
 
 func (self *Menu) AddAction(key string, text string) {
-	self.Actions = append(self.Actions, action{key: key, text: text})
+	self.actions = append(self.actions, menuAction{key: key, text: text})
 }
 
 func (self *Menu) AddActionData(key int, text string, data bson.ObjectId) {
 	keyStr := strconv.Itoa(key)
-	self.Actions = append(self.Actions, action{key: keyStr, text: text, data: data})
+	self.actions = append(self.actions, menuAction{key: keyStr, text: text, data: data})
 }
 
-func (self *Menu) getAction(key string) action {
-	for _, action := range self.Actions {
+func (self *Menu) GetData(choice string) bson.ObjectId {
+	for _, action := range self.actions {
+		if action.key == choice {
+			return action.data
+		}
+	}
+
+	return ""
+}
+
+func (self *Menu) GetPrompt() string {
+	return self.prompt
+}
+
+func (self *Menu) getAction(key string) menuAction {
+	for _, action := range self.actions {
 		if action.key == key {
 			return action
 		}
 	}
-	return action{}
+	return menuAction{}
 }
 
 func (self *Menu) HasAction(key string) bool {
@@ -53,7 +67,7 @@ func (self *Menu) HasAction(key string) bool {
 func (self *Menu) Exec(conn io.ReadWriter, cm ColorMode) (string, bson.ObjectId) {
 	for {
 		self.Print(conn, cm)
-		input := GetUserInput(conn, Colorize(cm, ColorWhite, self.Prompt))
+		input := GetUserInput(conn, Colorize(cm, ColorWhite, self.prompt))
 
 		if input == "" {
 			return "", ""
@@ -71,10 +85,10 @@ func (self *Menu) Exec(conn io.ReadWriter, cm ColorMode) (string, bson.ObjectId)
 
 func (self *Menu) Print(conn io.Writer, cm ColorMode) {
 	border := Colorize(cm, ColorWhite, "-=-=-")
-	title := Colorize(cm, ColorBlue, self.Title)
+	title := Colorize(cm, ColorBlue, self.title)
 	WriteLine(conn, fmt.Sprintf("%s %s %s", border, title, border))
 
-	for _, action := range self.Actions {
+	for _, action := range self.actions {
 		regex := regexp.MustCompile("^\\[([^\\]]*)\\](.*)")
 		matches := regex.FindStringSubmatch(action.text)
 
