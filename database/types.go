@@ -311,6 +311,14 @@ func (self *Character) IsNpc() bool {
 	return self.UserId == ""
 }
 
+func (self *Character) SetName(name string) {
+	self.Name = name
+}
+
+func (self *Character) GetName() string {
+	return self.Name
+}
+
 func (self *User) PrettyName() string {
 	return utils.FormatName(self.Name)
 }

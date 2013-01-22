@@ -50,7 +50,7 @@ func (self *globalModel) GetCharacterByName(name string) (database.Character, bo
 	name = utils.Simplify(name)
 
 	for _, character := range self.characters {
-		if character.Name == name {
+		if character.GetName() == name {
 			return character, true
 		}
 	}

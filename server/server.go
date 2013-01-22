@@ -215,7 +215,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				quit(conn)
 				return
 			}
-		} else if character.Name == "" {
+		} else if character.GetName() == "" {
 			menu := userMenu(user)
 			choice, charId := menu.Exec(conn, user.ColorMode)
 

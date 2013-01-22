@@ -631,20 +631,14 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 			menu := npcMenu(currentRoom)
 			choice, npcId := execMenu(menu)
 
-			if choice == "" {
-				goto done
-			}
-
-			if choice == "n" {
+			getName := func() string {
 				name := ""
-				// description := ""
-
 				for {
 					name = getUserInput(CleanUserInput, "Desired NPC name: ")
 					_, found := model.M.GetCharacterByName(name)
 
 					if name == "" {
-						goto done
+						return ""
 					} else if found {
 						printError("That name is unavailable")
 					} else if err := utils.ValidateName(name); err != nil {
@@ -652,21 +646,36 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 					} else {
 						break
 					}
-
-					/*
-					                    description = getUserInput(RawUserInput, "NPC description: ")
-
-										if description == "" {
-					                        goto done
-										}
-					*/
 				}
+				return name
+			}
 
+			if choice == "" {
+				goto done
+			}
+
+			if choice == "n" {
+				name := getName()
+				if name == "" {
+					goto done
+				}
 				npc := database.NewNpc(name, currentRoom.Id)
 				model.M.UpdateCharacter(npc)
 			} else if npcId != "" {
 				specificMenu := specificNpcMenu(npcId)
-				execMenu(specificMenu)
+				choice, _ := execMenu(specificMenu)
+
+				switch choice {
+				case "d":
+				case "r":
+					name := getName()
+					if name == "" {
+						break
+					}
+					npc := model.M.GetCharacter(npcId)
+					npc.SetName(name)
+					model.M.UpdateCharacter(npc)
+				}
 			}
 
 		done:
