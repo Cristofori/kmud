@@ -23,7 +23,7 @@ type globalModel struct {
 
 // UpdateUser updates the user in the model with user's Id, replacing it with
 // the one that's given. If the given user doesn't exist in the model it will
-// be added to. Also takes care of updating the database.
+// be created. Also takes care of updating the database.
 func (self *globalModel) UpdateUser(user database.User) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -127,7 +127,7 @@ func (self *globalModel) GetOnlineCharacters() []database.Character {
 
 // UpdateCharacter updates the character in the model with character's Id,
 // replacing it with the one that's given. If the given character doesn't exist
-// in the model it will be added to. Also takes care of updating the database.
+// in the model it will be created. Also takes care of updating the database.
 func (self *globalModel) UpdateCharacter(character database.Character) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -150,7 +150,7 @@ func (self *globalModel) DeleteCharacter(id bson.ObjectId) {
 
 // UpdateRoom updates the room in the model with room's Id, replacing it with
 // the one that's given. If the given room doesn't exist in the model it will
-// be added to. Also takes care of updating the database.
+// be created. Also takes care of updating the database.
 func (self *globalModel) UpdateRoom(room database.Room) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -163,7 +163,7 @@ func (self *globalModel) UpdateRoom(room database.Room) {
 
 // UpdateZone updates the zone in the model with zone's Id, replacing it with
 // the one that's given. If the given zone doesn't exist in the model it will
-// be added to. Also takes care of updating the database.
+// be created. Also takes care of updating the database.
 func (self *globalModel) UpdateZone(zone database.Zone) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
