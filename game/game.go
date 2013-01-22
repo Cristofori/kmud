@@ -291,6 +291,32 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				}
 			}
 
+			// Quick room/exit creation
+		case "/n":
+			currentRoom.SetExitEnabled(database.DirectionNorth, true)
+			model.M.UpdateRoom(currentRoom)
+			processAction("n", []string{})
+		case "/e":
+			currentRoom.SetExitEnabled(database.DirectionEast, true)
+			model.M.UpdateRoom(currentRoom)
+			processAction("e", []string{})
+		case "/s":
+			currentRoom.SetExitEnabled(database.DirectionSouth, true)
+			model.M.UpdateRoom(currentRoom)
+			processAction("s", []string{})
+		case "/w":
+			currentRoom.SetExitEnabled(database.DirectionWest, true)
+			model.M.UpdateRoom(currentRoom)
+			processAction("w", []string{})
+		case "/u":
+			currentRoom.SetExitEnabled(database.DirectionUp, true)
+			model.M.UpdateRoom(currentRoom)
+			processAction("u", []string{})
+		case "/d":
+			currentRoom.SetExitEnabled(database.DirectionDown, true)
+			model.M.UpdateRoom(currentRoom)
+			processAction("d", []string{})
+
 		case "loc":
 			fallthrough
 		case "location":
