@@ -623,7 +623,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 
 			if choice == "n" {
 				name := ""
-				description := ""
+				// description := ""
 
 				for {
 					name = getUserInput(CleanUserInput, "Desired NPC name: ")
@@ -640,11 +640,16 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 					}
 				}
 
-				description = getUserInput(RawUserInput, "NPC description: ")
+				/*
+								description = getUserInput(RawUserInput, "NPC description: ")
 
-				if description == "" {
-					goto done
-				}
+								if description == "" {
+				                    goto done
+								}
+				*/
+
+				npc := database.NewNpc(name, currentRoom.Id)
+				model.M.UpdateCharacter(npc)
 			}
 
 		done:

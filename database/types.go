@@ -31,7 +31,7 @@ func NewUser(name string) User {
 type Character struct {
 	Id     bson.ObjectId `bson:"_id"`
 	RoomId bson.ObjectId `bson:"roomid"`
-	UserId bson.ObjectId `bson:"userid"`
+	UserId bson.ObjectId `bson:"userid,omitempty"`
 	Name   string
 	online bool
 }
@@ -44,6 +44,10 @@ func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) Chara
 	character.RoomId = roomId
 	character.online = false
 	return character
+}
+
+func NewNpc(name string, roomId bson.ObjectId) Character {
+	return NewCharacter(name, "", roomId)
 }
 
 type Zone struct {
