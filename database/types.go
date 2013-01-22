@@ -33,6 +33,7 @@ type Character struct {
 	RoomId bson.ObjectId `bson:"roomid"`
 	UserId bson.ObjectId `bson:"userid,omitempty"`
 	Name   string
+	Cash   int
 	online bool
 }
 
@@ -42,6 +43,7 @@ func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) Chara
 	character.UserId = userId
 	character.Name = name
 	character.RoomId = roomId
+	character.Cash = 0
 	character.online = false
 	return character
 }

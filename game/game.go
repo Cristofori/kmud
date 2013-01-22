@@ -68,8 +68,8 @@ func specificNpcMenu(npcId bson.ObjectId) utils.Menu {
 	return menu
 }
 
-func Exec(conn io.ReadWriter, user *database.User, character *database.Character) {
-	currentRoom := model.M.GetRoom(character.RoomId)
+func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.Character) {
+	currentRoom := model.M.GetRoom(currentChar.RoomId)
 	currentZone := model.M.GetZone(currentRoom.ZoneId)
 
 	printString := func(data string) {
@@ -77,7 +77,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 	}
 
 	printLineColor := func(color utils.Color, line string, a ...interface{}) {
-		utils.WriteLine(conn, utils.Colorize(user.ColorMode, color, fmt.Sprintf(line, a...)))
+		utils.WriteLine(conn, utils.Colorize(currentUser.ColorMode, color, fmt.Sprintf(line, a...)))
 	}
 
 	printLine := func(line string, a ...interface{}) {
@@ -89,13 +89,13 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 	}
 
 	printRoom := func() {
-		charList := model.M.CharactersIn(currentRoom.Id, character.Id)
+		charList := model.M.CharactersIn(currentRoom.Id, currentChar.Id)
 		npcList := model.M.NpcsIn(currentRoom.Id)
-		printLine(currentRoom.ToString(database.ReadMode, user.ColorMode, charList, npcList))
+		printLine(currentRoom.ToString(database.ReadMode, currentUser.ColorMode, charList, npcList))
 	}
 
 	printRoomEditor := func() {
-		printLine(currentRoom.ToString(database.EditMode, user.ColorMode, nil, nil))
+		printLine(currentRoom.ToString(database.EditMode, currentUser.ColorMode, nil, nil))
 	}
 
 	prompt := func() string {
@@ -103,7 +103,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 	}
 
 	processEvent := func(event model.Event) string {
-		message := event.ToString(*character)
+		message := event.ToString(*currentChar)
 
 		switch event.Type() {
 		case model.RoomUpdateEventType:
@@ -116,7 +116,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 		return message
 	}
 
-	eventChannel := model.Register(character)
+	eventChannel := model.Register(currentChar)
 	defer model.Unregister(eventChannel)
 
 	userInputChannel := make(chan string)
@@ -158,7 +158,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 		var data bson.ObjectId
 
 		for {
-			menu.Print(conn, user.ColorMode)
+			menu.Print(conn, currentUser.ColorMode)
 			choice = getUserInput(CleanUserInput, menu.GetPrompt())
 			if menu.HasAction(choice) || choice == "" {
 				data = menu.GetData(choice)
@@ -184,7 +184,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 					loc := currentRoom.Location.Next(arg)
 					roomToSee, found := model.M.GetRoomByLocation(loc, currentZone.Id)
 					if found {
-						printLine(roomToSee.ToString(database.ReadMode, user.ColorMode,
+						printLine(roomToSee.ToString(database.ReadMode, currentUser.ColorMode,
 							model.M.CharactersIn(roomToSee.Id, ""), model.M.NpcsIn(roomToSee.Id)))
 					} else {
 						printLine("Nothing to see")
@@ -197,6 +197,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 
 		case "i":
 			printLine("You aren't carrying anything")
+			printLine("Cash: %v", currentChar.Cash)
 
 		case "":
 			fallthrough
@@ -214,7 +215,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 
 			if direction != database.DirectionNone {
 				if currentRoom.HasExit(direction) {
-					newRoom, err := model.MoveCharacter(character, direction)
+					newRoom, err := model.MoveCharacter(currentChar, direction)
 					if err == nil {
 						currentRoom = newRoom
 						printRoom()
@@ -267,7 +268,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 
 				case "3":
 					for {
-						menu := toggleExitMenu(user.ColorMode, currentRoom)
+						menu := toggleExitMenu(currentUser.ColorMode, currentRoom)
 
 						choice, _ := execMenu(menu)
 
@@ -361,7 +362,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 				}
 			}
 
-			printLine(utils.TrimEmptyRows(builder.toString(user.ColorMode)))
+			printLine(utils.TrimEmptyRows(builder.toString(currentUser.ColorMode)))
 
 		case "maps":
 			printLine(strings.Join(maps(), "\n"))
@@ -371,7 +372,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 				if currentZone.Id == "" {
 					printLine("Currently in the null zone")
 				} else {
-					printLine("Current zone: " + utils.Colorize(user.ColorMode, utils.ColorBlue, currentZone.Name))
+					printLine("Current zone: " + utils.Colorize(currentUser.ColorMode, utils.ColorBlue, currentZone.Name))
 				}
 			} else if len(args) == 1 {
 				if args[0] == "list" {
@@ -414,7 +415,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 					newRoom := database.NewRoom(newZone.Id)
 					model.M.UpdateRoom(newRoom)
 
-					model.MoveCharacterToRoom(character, newRoom)
+					model.MoveCharacterToRoom(currentChar, newRoom)
 
 					currentZone = newZone
 					currentRoom = newRoom
@@ -429,7 +430,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 			if len(args) == 0 {
 				printError("Nothing to say")
 			} else {
-				model.BroadcastMessage(*character, strings.Join(args, " "))
+				model.BroadcastMessage(*currentChar, strings.Join(args, " "))
 			}
 
 		case "say":
@@ -438,11 +439,11 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 			if len(args) == 0 {
 				printError("Nothing to say")
 			} else {
-				model.Say(*character, strings.Join(args, " "))
+				model.Say(*currentChar, strings.Join(args, " "))
 			}
 
 		case "me":
-			model.Emote(*character, strings.Join(args, " "))
+			model.Emote(*currentChar, strings.Join(args, " "))
 
 		case "whisper":
 			fallthrough
@@ -468,7 +469,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 			}
 
 			message := strings.Join(args[1:], " ")
-			model.Tell(*character, targetChar, message)
+			model.Tell(*currentChar, targetChar, message)
 
 		case "teleport":
 			fallthrough
@@ -532,7 +533,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 				return
 			}
 
-			newRoom, err := model.MoveCharacterToLocation(character, newZone.Id, database.Coordinate{X: x, Y: y, Z: z})
+			newRoom, err := model.MoveCharacterToLocation(currentChar, newZone.Id, database.Coordinate{X: x, Y: y, Z: z})
 
 			if err == nil {
 				currentRoom = newRoom
@@ -576,7 +577,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 		case "cm":
 			if len(args) == 0 {
 				message := "Current color mode is: "
-				switch user.ColorMode {
+				switch currentUser.ColorMode {
 				case utils.ColorModeNone:
 					message = message + "None"
 				case utils.ColorModeLight:
@@ -588,16 +589,16 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 			} else if len(args) == 1 {
 				switch strings.ToLower(args[0]) {
 				case "none":
-					user.ColorMode = utils.ColorModeNone
-					model.M.UpdateUser(*user)
+					currentUser.ColorMode = utils.ColorModeNone
+					model.M.UpdateUser(*currentUser)
 					printLine("Color mode set to: None")
 				case "light":
-					user.ColorMode = utils.ColorModeLight
-					model.M.UpdateUser(*user)
+					currentUser.ColorMode = utils.ColorModeLight
+					model.M.UpdateUser(*currentUser)
 					printLine("Color mode set to: Light")
 				case "dark":
-					user.ColorMode = utils.ColorModeDark
-					model.M.UpdateUser(*user)
+					currentUser.ColorMode = utils.ColorModeDark
+					model.M.UpdateUser(*currentUser)
 					printLine("Color mode set to: Dark")
 				default:
 					printLine("Valid color modes are: None, Light, Dark")
@@ -682,12 +683,38 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 		done:
 			printRoom()
 
+		case "cash":
+			cashUsage := func() {
+				printError("Usage: /cash give <amount>")
+			}
+
+			if len(args) != 2 {
+				cashUsage()
+				return
+			}
+
+			if args[0] == "give" {
+				amount, err := strconv.Atoi(args[1])
+
+				if err != nil {
+					cashUsage()
+					return
+				}
+
+				currentChar.Cash += amount
+				model.M.UpdateCharacter(*currentChar)
+				printLine("Received: %v monies", amount)
+			} else {
+				cashUsage()
+				return
+			}
+
 		default:
 			printError("Unrecognized command: %s", command)
 		}
 	}
 
-	printLineColor(utils.ColorWhite, "Welcome, "+character.PrettyName())
+	printLineColor(utils.ColorWhite, "Welcome, "+currentChar.PrettyName())
 	printRoom()
 
 	// Main routine in charge of actually reading input from the connection object,
@@ -706,7 +733,7 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 
 		for {
 			mode := <-inputModeChannel
-			prompt := utils.Colorize(user.ColorMode, utils.ColorWhite, <-promptChannel)
+			prompt := utils.Colorize(currentUser.ColorMode, utils.ColorWhite, <-promptChannel)
 			input := ""
 
 			switch mode {
