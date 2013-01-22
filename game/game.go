@@ -361,6 +361,8 @@ func Exec(conn io.ReadWriter, user *database.User, character *database.Character
 				}
 			} else if len(args) == 1 {
 				if args[0] == "list" {
+					printLineColor(utils.ColorBlue, "Zones")
+					printLineColor(utils.ColorBlue, "-----")
 					for _, zone := range model.M.GetZones() {
 						printLine(zone.Name)
 					}
