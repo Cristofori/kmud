@@ -13,8 +13,17 @@ type Coordinate struct {
 	Z int
 }
 
+// All database types should meet this interface
+type Identifiable interface {
+	GetId() bson.ObjectId
+}
+
+type DbObject struct {
+	Id bson.ObjectId `bson:"_id"`
+}
+
 type User struct {
-	Id        bson.ObjectId `bson:"_id,omitempty"`
+	DbObject  `bson:",inline"`
 	Name      string
 	ColorMode utils.ColorMode
 	online    bool
@@ -29,12 +38,13 @@ func NewUser(name string) User {
 }
 
 type Character struct {
-	Id     bson.ObjectId `bson:"_id"`
-	RoomId bson.ObjectId `bson:"roomid"`
-	UserId bson.ObjectId `bson:"userid,omitempty"`
-	Name   string
-	Cash   int
-	online bool
+	DbObject  `bson:",inline"`
+	RoomId    bson.ObjectId `bson:"roomid"`
+	UserId    bson.ObjectId `bson:"userid,omitempty"`
+	Name      string
+	Cash      int
+	Inventory []bson.ObjectId
+	online    bool
 }
 
 func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) Character {
@@ -53,8 +63,8 @@ func NewNpc(name string, roomId bson.ObjectId) Character {
 }
 
 type Zone struct {
-	Id   bson.ObjectId `bson:"_id"`
-	Name string
+	DbObject `bson:",inline"`
+	Name     string
 }
 
 func NewZone(name string) Zone {
@@ -65,7 +75,7 @@ func NewZone(name string) Zone {
 }
 
 type Room struct {
-	Id            bson.ObjectId `bson:"_id"`
+	DbObject      `bson:",inline"`
 	ZoneId        bson.ObjectId `bson:"zoneid,omitempty"`
 	Title         string
 	Description   string
@@ -174,6 +184,10 @@ func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) s
 	}
 
 	panic("Unexpected code path")
+}
+
+func (self DbObject) GetId() bson.ObjectId {
+	return self.Id
 }
 
 func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Character, npcs []Character) string {

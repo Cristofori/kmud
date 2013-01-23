@@ -195,26 +195,27 @@ func CreateUser(session *mgo.Session, name string) (User, error) {
 	return user, err
 }
 
-func commitObject(session *mgo.Session, c *mgo.Collection, id bson.ObjectId, object interface{}) error {
-	_, err := c.UpsertId(id, object)
+func commitObject(session *mgo.Session, c *mgo.Collection, object Identifiable) error {
+	_, err := c.UpsertId(object.GetId(), object)
 	printError(err)
 	return err
 }
 
 func CommitUser(session *mgo.Session, user User) error {
-	return commitObject(session, getCollection(session, cUsers), user.Id, user)
+	return commitObject(session, getCollection(session, cUsers), user)
 }
 
 func CommitRoom(session *mgo.Session, room Room) error {
-	return commitObject(session, getCollection(session, cRooms), room.Id, room)
+	return commitObject(session, getCollection(session, cRooms), room)
 }
 
 func CommitCharacter(session *mgo.Session, character Character) error {
-	return commitObject(session, getCollection(session, cCharacters), character.Id, character)
+	return commitObject(session, getCollection(session, cCharacters), character)
 }
 
 func CommitZone(session *mgo.Session, zone Zone) error {
-	return commitObject(session, getCollection(session, cZones), zone.Id, zone)
+	return commitObject(session, getCollection(session, cZones), zone)
+}
 }
 
 // vim: nocindent
