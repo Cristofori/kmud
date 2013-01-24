@@ -752,6 +752,9 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				return
 			}
 
+		case "roomid":
+			printLine("Room ID: %v", currentRoom.GetId())
+
 		default:
 			printError("Unrecognized command: %s", command)
 		}
