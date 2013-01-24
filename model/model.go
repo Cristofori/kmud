@@ -359,6 +359,17 @@ func (self *globalModel) GetItems(itemIds []bson.ObjectId) []database.Item {
 	return items
 }
 
+// DeleteItem removes the item associated with the given id from the
+// model and from the database
+func (self *globalModel) DeleteItem(id bson.ObjectId) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	delete(self.items, id)
+
+	utils.HandleError(database.DeleteItem(self.session, id))
+}
+
 // M is the global model object. All functions are thread-safe and all changes
 // made to the model are automatically saved to the database.
 var M globalModel

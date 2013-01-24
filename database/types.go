@@ -352,6 +352,16 @@ func (self *Room) AddItem(item Item) {
 	self.Items = append(self.Items, item.GetId())
 }
 
+func (self *Room) RemoveItem(item Item) {
+	for i, myItemId := range self.Items {
+		if myItemId == item.GetId() {
+            // TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
+			self.Items = append(self.Items[:i], self.Items[i+1:]...)
+			return
+		}
+	}
+}
+
 func (self *Character) SetOnline(online bool) {
 	self.online = online
 }

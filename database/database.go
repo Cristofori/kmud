@@ -161,6 +161,11 @@ func DeleteCharacter(session *mgo.Session, id bson.ObjectId) error {
 	return c.Remove(bson.M{fId: id})
 }
 
+func DeleteItem(session *mgo.Session, id bson.ObjectId) error {
+	c := getCollection(session, cItems)
+	return c.Remove(bson.M{fId: id})
+}
+
 func StartingRoom(session *mgo.Session) (Room, error) {
 	c := getCollection(session, cRooms)
 	q := c.Find(bson.M{fDefault: true})

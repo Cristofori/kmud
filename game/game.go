@@ -723,6 +723,31 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			currentRoom.AddItem(item)
 			model.M.UpdateRoom(currentRoom)
 
+		case "destroy":
+			destroyUsage := func() {
+				printError("Usage: /destroy <item name>")
+			}
+
+			if len(args) != 1 {
+				destroyUsage()
+				return
+			}
+
+			itemsInRoom := model.M.GetItems(currentRoom.Items)
+
+			for _, item := range itemsInRoom {
+				if item.PrettyName() == args[0] {
+					currentRoom.RemoveItem(item)
+					model.M.UpdateRoom(currentRoom)
+					model.M.DeleteItem(item.Id)
+
+					printLine("Item destroyed")
+					return
+				}
+			}
+
+			printError("Item not found")
+
 		case "cash":
 			cashUsage := func() {
 				printError("Usage: /cash give <amount>")
