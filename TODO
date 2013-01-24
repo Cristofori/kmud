@@ -1,11 +1,11 @@
 * More unit tests
-* NPCs
-* Items/inventory
+* NPC conversations
+* Inventory (picking up, dropping, destroying)
 * Currency
 * Custom room views
 * Custom room exits/actions
 * Passwords
-* Input speed limit (at input possibilities)
+* Input speed limit (at all input possibilities)
 * Locks
 * Permissions
 * Movement across zone boundaries
