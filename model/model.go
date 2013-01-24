@@ -16,6 +16,7 @@ type globalModel struct {
 	characters map[bson.ObjectId]database.Character
 	rooms      map[bson.ObjectId]database.Room
 	zones      map[bson.ObjectId]database.Zone
+	items      map[bson.ObjectId]database.Item
 
 	mutex   sync.Mutex
 	session *mgo.Session
@@ -29,7 +30,6 @@ func (self *globalModel) UpdateUser(user database.User) {
 	defer self.mutex.Unlock()
 
 	self.users[user.Id] = user
-
 	utils.HandleError(database.CommitUser(self.session, user))
 }
 
@@ -329,6 +329,36 @@ func (self *globalModel) DeleteUser(id bson.ObjectId) {
 	utils.HandleError(database.DeleteUser(self.session, id))
 }
 
+// UpdateItem updates the item in the model with the given id, replacing it with
+// the one that's given. If the given item doesn't exist in the model it will
+// be created. Also takes care of updating the database.
+func (self *globalModel) UpdateItem(object database.Item) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	self.items[object.Id] = object
+	utils.HandleError(database.CommitItem(self.session, object))
+}
+
+// GetItem returns the Item object associated the given id
+func (self *globalModel) GetItem(id bson.ObjectId) database.Item {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	return self.items[id]
+}
+
+// GetItems returns the Items object associated the given ids
+func (self *globalModel) GetItems(itemIds []bson.ObjectId) []database.Item {
+	var items []database.Item
+
+	for _, itemId := range itemIds {
+		items = append(items, self.GetItem(itemId))
+	}
+
+	return items
+}
+
 // M is the global model object. All functions are thread-safe and all changes
 // made to the model are automatically saved to the database.
 var M globalModel
@@ -347,6 +377,7 @@ func Init(session *mgo.Session) error {
 	M.characters = map[bson.ObjectId]database.Character{}
 	M.rooms = map[bson.ObjectId]database.Room{}
 	M.zones = map[bson.ObjectId]database.Zone{}
+	M.items = map[bson.ObjectId]database.Item{}
 
 	users, err := database.GetAllUsers(session)
 	utils.HandleError(err)
@@ -374,6 +405,13 @@ func Init(session *mgo.Session) error {
 
 	for _, zone := range zones {
 		M.zones[zone.Id] = zone
+	}
+
+	items, err := database.GetAllItems(session)
+	utils.HandleError(err)
+
+	for _, item := range items {
+		M.items[item.Id] = item
 	}
 
 	// Start the event loop

@@ -19,6 +19,7 @@ const (
 	cCharacters = collectionName("characters")
 	cRooms      = collectionName("rooms")
 	cZones      = collectionName("zones")
+	cItems      = collectionName("items")
 )
 
 // Field names
@@ -31,7 +32,7 @@ const (
 	fDefault      = "default"
 )
 
-// DB commands
+// MongDB operations
 const (
 	SET  = "$set"
 	PUSH = "$push"
@@ -95,6 +96,12 @@ func GetAllZones(session *mgo.Session) ([]Zone, error) {
 	var zones []Zone
 	err := findObjects(session, cZones, &zones)
 	return zones, err
+}
+
+func GetAllItems(session *mgo.Session) ([]Item, error) {
+	var items []Item
+	err := findObjects(session, cItems, &items)
+	return items, err
 }
 
 func findRoom(session *mgo.Session, query interface{}) (Room, error) {
@@ -216,6 +223,9 @@ func CommitCharacter(session *mgo.Session, character Character) error {
 func CommitZone(session *mgo.Session, zone Zone) error {
 	return commitObject(session, getCollection(session, cZones), zone)
 }
+
+func CommitItem(session *mgo.Session, item Item) error {
+	return commitObject(session, getCollection(session, cItems), item)
 }
 
 // vim: nocindent

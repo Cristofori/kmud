@@ -91,11 +91,12 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 	printRoom := func() {
 		charList := model.M.CharactersIn(currentRoom.Id, currentChar.Id)
 		npcList := model.M.NpcsIn(currentRoom.Id)
-		printLine(currentRoom.ToString(database.ReadMode, currentUser.ColorMode, charList, npcList))
+		printLine(currentRoom.ToString(database.ReadMode, currentUser.ColorMode,
+			charList, npcList, model.M.GetItems(currentRoom.Items)))
 	}
 
 	printRoomEditor := func() {
-		printLine(currentRoom.ToString(database.EditMode, currentUser.ColorMode, nil, nil))
+		printLine(currentRoom.ToString(database.EditMode, currentUser.ColorMode, nil, nil, nil))
 	}
 
 	prompt := func() string {
@@ -185,7 +186,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					roomToSee, found := model.M.GetRoomByLocation(loc, currentZone.Id)
 					if found {
 						printLine(roomToSee.ToString(database.ReadMode, currentUser.ColorMode,
-							model.M.CharactersIn(roomToSee.Id, ""), model.M.NpcsIn(roomToSee.Id)))
+							model.M.CharactersIn(roomToSee.Id, ""), model.M.NpcsIn(roomToSee.Id), nil))
 					} else {
 						printLine("Nothing to see")
 					}
@@ -708,6 +709,22 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 
 		done:
 			printRoom()
+
+		case "create":
+			createUsage := func() {
+				printError("Usage: /create <item name>")
+			}
+
+			if len(args) != 1 {
+				createUsage()
+				return
+			}
+
+			item := database.NewItem(args[0])
+			model.M.UpdateItem(item)
+
+			currentRoom.AddItem(item)
+			model.M.UpdateRoom(currentRoom)
 
 		case "cash":
 			cashUsage := func() {

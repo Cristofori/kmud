@@ -18,13 +18,17 @@ type Identifiable interface {
 	GetId() bson.ObjectId
 }
 
+type Nameable interface {
+	PrettyName() string
+}
+
 type DbObject struct {
-	Id bson.ObjectId `bson:"_id"`
+	Id   bson.ObjectId `bson:"_id"`
+	Name string        `bson:",omitempty"`
 }
 
 type User struct {
 	DbObject  `bson:",inline"`
-	Name      string
 	ColorMode utils.ColorMode
 	online    bool
 }
@@ -41,7 +45,6 @@ type Character struct {
 	DbObject  `bson:",inline"`
 	RoomId    bson.ObjectId `bson:"roomid"`
 	UserId    bson.ObjectId `bson:"userid,omitempty"`
-	Name      string
 	Cash      int
 	Inventory []bson.ObjectId
 	online    bool
@@ -64,7 +67,6 @@ func NewNpc(name string, roomId bson.ObjectId) Character {
 
 type Zone struct {
 	DbObject `bson:",inline"`
-	Name     string
 }
 
 func NewZone(name string) Zone {
@@ -79,6 +81,7 @@ type Room struct {
 	ZoneId        bson.ObjectId `bson:"zoneid,omitempty"`
 	Title         string
 	Description   string
+	Items         []bson.ObjectId
 	Location      Coordinate
 	ExitNorth     bool
 	ExitNorthEast bool
@@ -119,6 +122,18 @@ func NewRoom(zoneId bson.ObjectId) Room {
 	room.ZoneId = zoneId
 
 	return room
+}
+
+type Item struct {
+	DbObject `bson:",inline"`
+}
+
+func NewItem(name string) Item {
+	var item Item
+	item.Id = bson.NewObjectId()
+	item.Name = name
+
+	return item
 }
 
 type ExitDirection int
@@ -190,7 +205,11 @@ func (self DbObject) GetId() bson.ObjectId {
 	return self.Id
 }
 
-func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Character, npcs []Character) string {
+func (self DbObject) PrettyName() string {
+	return utils.FormatName(self.Name)
+}
+
+func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Character, npcs []Character, items []Item) string {
 	var str string
 
 	if mode == ReadMode {
@@ -223,6 +242,18 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Ch
 			var names []string
 			for _, npc := range npcs {
 				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, npc.PrettyName()))
+			}
+			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\n"
+
+			extraNewLine = "\n"
+		}
+
+		if len(items) > 0 {
+			str = str + " " + utils.Colorize(colorMode, utils.ColorBlue, "Items: ")
+
+			var names []string
+			for _, item := range items {
+				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, item.PrettyName()))
 			}
 			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\n"
 
@@ -317,8 +348,8 @@ func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
 	}
 }
 
-func (self *Character) PrettyName() string {
-	return utils.FormatName(self.Name)
+func (self *Room) AddItem(item Item) {
+	self.Items = append(self.Items, item.GetId())
 }
 
 func (self *Character) SetOnline(online bool) {
@@ -339,10 +370,6 @@ func (self *Character) SetName(name string) {
 
 func (self *Character) GetName() string {
 	return self.Name
-}
-
-func (self *User) PrettyName() string {
-	return utils.FormatName(self.Name)
 }
 
 func (self *User) SetOnline(online bool) {
