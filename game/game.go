@@ -391,9 +391,6 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 
 			printLine(utils.TrimEmptyRows(builder.toString(currentUser.ColorMode)))
 
-		case "maps":
-			printLine(strings.Join(maps(), "\n"))
-
 		case "zone":
 			if len(args) == 0 {
 				if currentZone.Id == "" {
