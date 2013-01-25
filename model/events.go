@@ -38,8 +38,6 @@ func Unregister(listener chan Event) {
 	character := _listeners[listener]
 	_mutex.Unlock()
 
-	fmt.Printf("Unregistering: %v\n", character.PrettyName())
-
 	character.SetOnline(false)
 	M.UpdateCharacter(*character) // TODO: Avoid unnecessary database call
 
