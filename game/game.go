@@ -69,7 +69,7 @@ func specificNpcMenu(npcId bson.ObjectId) utils.Menu {
 }
 
 func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.Character) {
-	currentRoom := model.M.GetRoom(currentChar.RoomId)
+	currentRoom := model.M.GetRoom(currentChar.GetRoomId())
 	currentZone := model.M.GetZone(currentRoom.ZoneId)
 
 	printString := func(data string) {

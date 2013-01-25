@@ -46,7 +46,7 @@ func printError(err error) {
 }
 
 func GetCharacterRoom(session *mgo.Session, character Character) (Room, error) {
-	return GetRoom(session, character.RoomId)
+	return GetRoom(session, character.GetRoomId())
 }
 
 func findObject(session *mgo.Session, collection collectionName, query interface{}, object interface{}) error {
@@ -210,6 +210,11 @@ func CreateUser(session *mgo.Session, name string) (User, error) {
 func commitObject(session *mgo.Session, c *mgo.Collection, object Identifiable) error {
 	_, err := c.UpsertId(object.GetId(), object)
 	printError(err)
+	return err
+}
+
+func updateField(session *mgo.Session, c *mgo.Collection, id bson.ObjectId, fieldName string, fieldValue interface{}) error {
+	err := c.Update(id, bson.M{fieldName: fieldValue})
 	return err
 }
 

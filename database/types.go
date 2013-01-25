@@ -23,8 +23,9 @@ type Nameable interface {
 }
 
 type DbObject struct {
-	Id   bson.ObjectId `bson:"_id"`
-	Name string        `bson:",omitempty"`
+	Id     bson.ObjectId `bson:"_id"`
+	Name   string        `bson:",omitempty"`
+	Fields map[ObjectField]interface{}
 }
 
 type User struct {
@@ -41,10 +42,16 @@ func NewUser(name string) User {
 	return user
 }
 
+type ObjectField string
+
+const (
+	RoomId ObjectField = "roomid"
+)
+
 type Character struct {
-	DbObject  `bson:",inline"`
-	RoomId    bson.ObjectId `bson:"roomid"`
-	UserId    bson.ObjectId `bson:"userid,omitempty"`
+	DbObject `bson:",inline"`
+	// RoomId    bson.ObjectId
+	UserId    bson.ObjectId `bson:",omitempty"`
 	Cash      int
 	Inventory []bson.ObjectId
 	online    bool
@@ -52,10 +59,12 @@ type Character struct {
 
 func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) Character {
 	var character Character
+	character.initDbObject()
+
 	character.Id = bson.NewObjectId()
 	character.UserId = userId
 	character.Name = name
-	character.RoomId = roomId
+	character.SetRoom(roomId)
 	character.Cash = 0
 	character.online = false
 	return character
@@ -78,7 +87,7 @@ func NewZone(name string) Zone {
 
 type Room struct {
 	DbObject      `bson:",inline"`
-	ZoneId        bson.ObjectId `bson:"zoneid,omitempty"`
+	ZoneId        bson.ObjectId `bson:",omitempty"`
 	Title         string
 	Description   string
 	Items         []bson.ObjectId
@@ -207,6 +216,14 @@ func (self DbObject) GetId() bson.ObjectId {
 
 func (self DbObject) PrettyName() string {
 	return utils.FormatName(self.Name)
+}
+
+func (self *DbObject) setField(key ObjectField, value interface{}) {
+	self.Fields[key] = value
+}
+
+func (self *DbObject) initDbObject() {
+	self.Fields = map[ObjectField]interface{}{}
 }
 
 func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Character, npcs []Character, items []Item) string {
@@ -355,7 +372,7 @@ func (self *Room) AddItem(item Item) {
 func (self *Room) RemoveItem(item Item) {
 	for i, myItemId := range self.Items {
 		if myItemId == item.GetId() {
-            // TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
+			// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
 			self.Items = append(self.Items[:i], self.Items[i+1:]...)
 			return
 		}
@@ -380,6 +397,14 @@ func (self *Character) SetName(name string) {
 
 func (self *Character) GetName() string {
 	return self.Name
+}
+
+func (self *Character) GetRoomId() bson.ObjectId {
+	return self.Fields[RoomId].(bson.ObjectId)
+}
+
+func (self *Character) SetRoom(id bson.ObjectId) {
+	self.setField(RoomId, id)
 }
 
 func (self *User) SetOnline(online bool) {

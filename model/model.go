@@ -85,7 +85,7 @@ func (self *globalModel) CharactersIn(roomId bson.ObjectId, except bson.ObjectId
 	var charList []database.Character
 
 	for _, char := range self.characters {
-		if char.RoomId == roomId && char.Id != except && char.Online() {
+		if char.GetRoomId() == roomId && char.Id != except && char.Online() {
 			charList = append(charList, char)
 		}
 	}
@@ -101,7 +101,7 @@ func (self *globalModel) NpcsIn(roomId bson.ObjectId) []database.Character {
 	var npcList []database.Character
 
 	for _, char := range self.characters {
-		if char.RoomId == roomId && char.IsNpc() {
+		if char.GetRoomId() == roomId && char.IsNpc() {
 			npcList = append(npcList, char)
 		}
 	}
@@ -440,9 +440,9 @@ func MoveCharacterToLocation(character *database.Character, zoneId bson.ObjectId
 		return newRoom, errors.New("Invalid location")
 	}
 
-	oldRoom := M.GetRoom(character.RoomId)
+	oldRoom := M.GetRoom(character.GetRoomId())
 
-	character.RoomId = newRoom.Id
+	character.SetRoom(newRoom.Id)
 	M.UpdateCharacter(*character)
 
 	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
@@ -452,8 +452,8 @@ func MoveCharacterToLocation(character *database.Character, zoneId bson.ObjectId
 }
 
 func MoveCharacterToRoom(character *database.Character, newRoom database.Room) {
-	oldRoomId := character.RoomId
-	character.RoomId = newRoom.Id
+	oldRoomId := character.GetRoomId()
+	character.SetRoom(newRoom.Id)
 
 	M.UpdateCharacter(*character)
 
@@ -462,7 +462,7 @@ func MoveCharacterToRoom(character *database.Character, newRoom database.Room) {
 }
 
 func MoveCharacter(character *database.Character, direction database.ExitDirection) (database.Room, error) {
-	room := M.GetRoom(character.RoomId)
+	room := M.GetRoom(character.GetRoomId())
 
 	if room.Id == "" {
 		return room, errors.New("Character doesn't appear to be in any room")

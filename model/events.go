@@ -130,7 +130,7 @@ func (self SayEvent) Type() EventType {
 }
 
 func (self SayEvent) ToString(receiver database.Character) string {
-	if receiver.RoomId != self.Character.RoomId {
+	if receiver.GetRoomId() != self.Character.GetRoomId() {
 		return ""
 	}
 
@@ -152,7 +152,7 @@ func (self EmoteEvent) Type() EventType {
 }
 
 func (self EmoteEvent) ToString(receiver database.Character) string {
-	if receiver.RoomId != self.Character.RoomId {
+	if receiver.GetRoomId() != self.Character.GetRoomId() {
 		return ""
 	}
 
@@ -181,7 +181,7 @@ func (self EnterEvent) Type() EventType {
 }
 
 func (self EnterEvent) ToString(receiver database.Character) string {
-	if receiver.RoomId != self.RoomId {
+	if receiver.GetRoomId() != self.RoomId {
 		return ""
 	}
 
@@ -200,7 +200,7 @@ func (self LeaveEvent) Type() EventType {
 }
 
 func (self LeaveEvent) ToString(receiver database.Character) string {
-	if receiver.RoomId != self.RoomId {
+	if receiver.GetRoomId() != self.RoomId {
 		return ""
 	}
 
@@ -219,7 +219,7 @@ func (self RoomUpdateEvent) Type() EventType {
 }
 
 func (self RoomUpdateEvent) ToString(receiver database.Character) string {
-	if receiver.RoomId != self.Room.Id {
+	if receiver.GetRoomId() != self.Room.Id {
 		return ""
 	}
 
