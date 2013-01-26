@@ -67,7 +67,7 @@ func (self *globalModel) GetUserCharacters(userId bson.ObjectId) []database.Char
 	var characters []database.Character
 
 	for _, character := range self.characters {
-		if character.UserId == userId {
+		if character.GetUserId() == userId {
 			characters = append(characters, character)
 		}
 	}
@@ -85,7 +85,7 @@ func (self *globalModel) CharactersIn(roomId bson.ObjectId, except bson.ObjectId
 	var charList []database.Character
 
 	for _, char := range self.characters {
-		if char.GetRoomId() == roomId && char.Id != except && char.Online() {
+		if char.GetRoomId() == roomId && char.Id != except && char.IsOnline() {
 			charList = append(charList, char)
 		}
 	}
@@ -117,7 +117,7 @@ func (self *globalModel) GetOnlineCharacters() []database.Character {
 	var characters []database.Character
 
 	for _, char := range self.characters {
-		if char.Online() {
+		if char.IsOnline() {
 			characters = append(characters, char)
 		}
 	}
@@ -318,7 +318,7 @@ func (self *globalModel) DeleteUser(id bson.ObjectId) {
 	defer self.mutex.Unlock()
 
 	for _, character := range self.characters {
-		if character.UserId == id {
+		if character.GetUserId() == id {
 			delete(self.characters, character.Id)
 			utils.HandleError(database.DeleteCharacter(self.session, character.Id))
 		}

@@ -25,7 +25,7 @@ type Nameable interface {
 type DbObject struct {
 	Id     bson.ObjectId `bson:"_id"`
 	Name   string        `bson:",omitempty"`
-	Fields map[ObjectField]interface{}
+	Fields map[string]interface{}
 }
 
 type User struct {
@@ -43,36 +43,6 @@ func NewUser(name string) User {
 }
 
 type ObjectField string
-
-const (
-	RoomId ObjectField = "roomid"
-)
-
-type Character struct {
-	DbObject `bson:",inline"`
-	// RoomId    bson.ObjectId
-	UserId    bson.ObjectId `bson:",omitempty"`
-	Cash      int
-	Inventory []bson.ObjectId
-	online    bool
-}
-
-func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) Character {
-	var character Character
-	character.initDbObject()
-
-	character.Id = bson.NewObjectId()
-	character.UserId = userId
-	character.Name = name
-	character.SetRoom(roomId)
-	character.Cash = 0
-	character.online = false
-	return character
-}
-
-func NewNpc(name string, roomId bson.ObjectId) Character {
-	return NewCharacter(name, "", roomId)
-}
 
 type Zone struct {
 	DbObject `bson:",inline"`
@@ -218,12 +188,12 @@ func (self DbObject) PrettyName() string {
 	return utils.FormatName(self.Name)
 }
 
-func (self *DbObject) setField(key ObjectField, value interface{}) {
+func (self *DbObject) setField(key string, value interface{}) {
 	self.Fields[key] = value
 }
 
 func (self *DbObject) initDbObject() {
-	self.Fields = map[ObjectField]interface{}{}
+	self.Fields = map[string]interface{}{}
 }
 
 func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Character, npcs []Character, items []Item) string {
@@ -377,34 +347,6 @@ func (self *Room) RemoveItem(item Item) {
 			return
 		}
 	}
-}
-
-func (self *Character) SetOnline(online bool) {
-	self.online = online
-}
-
-func (self *Character) Online() bool {
-	return self.online
-}
-
-func (self *Character) IsNpc() bool {
-	return self.UserId == ""
-}
-
-func (self *Character) SetName(name string) {
-	self.Name = name
-}
-
-func (self *Character) GetName() string {
-	return self.Name
-}
-
-func (self *Character) GetRoomId() bson.ObjectId {
-	return self.Fields[RoomId].(bson.ObjectId)
-}
-
-func (self *Character) SetRoom(id bson.ObjectId) {
-	self.setField(RoomId, id)
 }
 
 func (self *User) SetOnline(online bool) {

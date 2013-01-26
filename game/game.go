@@ -198,7 +198,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 
 		case "i":
 			printLine("You aren't carrying anything")
-			printLine("Cash: %v", currentChar.Cash)
+			printLine("Cash: %v", currentChar.GetCash())
 
 		case "":
 			fallthrough
@@ -487,7 +487,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				return
 			}
 
-			if !targetChar.Online() {
+			if !targetChar.IsOnline() {
 				printError("Player '%s' is not online", targetChar.PrettyName())
 				return
 			}
@@ -766,7 +766,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					return
 				}
 
-				currentChar.Cash += amount
+				currentChar.AddCash(amount)
 				model.M.UpdateCharacter(*currentChar)
 				printLine("Received: %v monies", amount)
 			} else {
