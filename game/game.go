@@ -196,9 +196,79 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 		case "ls":
 			printLine("Where do you think you are?!")
 
+		case "inventory":
+			fallthrough
+		case "inv":
+			fallthrough
 		case "i":
-			printLine("You aren't carrying anything")
+			itemIds := currentChar.GetItemIds()
+
+			if len(itemIds) == 0 {
+				printLine("You aren't carrying anything")
+			} else {
+				var itemNames []string
+				for _, item := range model.M.GetItems(itemIds) {
+					itemNames = append(itemNames, item.PrettyName())
+				}
+				printLine("You are carrying: %s", strings.Join(itemNames, ", "))
+			}
+
 			printLine("Cash: %v", currentChar.GetCash())
+
+		case "take":
+			fallthrough
+		case "t":
+			fallthrough
+		case "get":
+			fallthrough
+		case "g":
+			takeUsage := func() {
+				printError("Usage: take <item name>")
+			}
+
+			if len(args) != 1 {
+				takeUsage()
+				return
+			}
+
+			itemsInRoom := model.M.GetItems(currentRoom.Items)
+			for _, item := range itemsInRoom {
+				if item.PrettyName() == args[0] {
+					currentChar.AddItem(item.GetId())
+					model.M.UpdateCharacter(*currentChar)
+
+					currentRoom.RemoveItem(item)
+					model.M.UpdateRoom(currentRoom)
+					return
+				}
+			}
+
+			printError("Item %s not found", args[0])
+
+		case "drop":
+			dropUsage := func() {
+				printError("Usage: drop <item name>")
+			}
+
+			if len(args) != 1 {
+				dropUsage()
+				return
+			}
+
+			characterItems := model.M.GetItems(currentChar.GetItemIds())
+
+			for _, item := range characterItems {
+				if item.PrettyName() == args[0] {
+					currentChar.RemoveItem(item.GetId())
+					model.M.UpdateCharacter(*currentChar)
+
+					currentRoom.AddItem(item)
+					model.M.UpdateRoom(currentRoom)
+					return
+				}
+			}
+
+			printError("You are not carrying a %s", args[0])
 
 		case "":
 			fallthrough
