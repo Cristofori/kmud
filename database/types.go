@@ -16,16 +16,28 @@ type Coordinate struct {
 // All database types should meet this interface
 type Identifiable interface {
 	GetId() bson.ObjectId
+	GetType() objectType
 }
 
 type Nameable interface {
 	PrettyName() string
 }
 
+type objectType int
+
+const (
+	characterType objectType = iota
+)
+
+const (
+	dbObjectName string = "name"
+)
+
 type DbObject struct {
-	Id     bson.ObjectId `bson:"_id"`
-	Name   string        `bson:",omitempty"`
-	Fields map[string]interface{}
+	Id      bson.ObjectId `bson:"_id"`
+	objType objectType
+	Name    string `bson:",omitempty"`
+	Fields  map[string]interface{}
 }
 
 type User struct {
@@ -180,8 +192,17 @@ func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) s
 	panic("Unexpected code path")
 }
 
+func (self *DbObject) initDbObject(objType objectType) {
+	self.objType = objType
+	self.Fields = map[string]interface{}{}
+}
+
 func (self DbObject) GetId() bson.ObjectId {
 	return self.Id
+}
+
+func (self DbObject) GetType() objectType {
+	return self.objType
 }
 
 func (self DbObject) PrettyName() string {
@@ -190,13 +211,15 @@ func (self DbObject) PrettyName() string {
 
 func (self *DbObject) setField(key string, value interface{}) {
 	self.Fields[key] = value
+	updateObject(*self, "fields."+key, value)
 }
 
-func (self *DbObject) initDbObject() {
-	self.Fields = map[string]interface{}{}
+func (self *DbObject) SetName(name string) {
+	self.Name = name
+	updateObject(*self, dbObjectName, name)
 }
 
-func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []Character, npcs []Character, items []Item) string {
+func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []*Character, npcs []*Character, items []Item) string {
 	var str string
 
 	if mode == ReadMode {

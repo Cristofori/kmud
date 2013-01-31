@@ -13,26 +13,27 @@ const (
 
 type Character struct {
 	DbObject `bson:",inline"`
-	online bool
+	online   bool
 }
 
-func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) Character {
+func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *Character {
 	var character Character
-	character.initDbObject()
+	character.initDbObject(characterType)
 
 	character.Id = bson.NewObjectId()
+	commitObject(session, getCollection(session, cCharacters), character)
+
 	character.SetUser(userId)
-	character.Name = name
+	character.SetName(name)
 	character.SetRoom(roomId)
 	character.SetCash(0)
 
-	// character.setField(characterInventory, []bson.ObjectId{})
-
 	character.online = false
-	return character
+
+	return &character
 }
 
-func NewNpc(name string, roomId bson.ObjectId) Character {
+func NewNpc(name string, roomId bson.ObjectId) *Character {
 	return NewCharacter(name, "", roomId)
 }
 
@@ -46,10 +47,6 @@ func (self *Character) IsOnline() bool {
 
 func (self *Character) IsNpc() bool {
 	return self.GetUserId() == ""
-}
-
-func (self *Character) SetName(name string) {
-	self.Name = name
 }
 
 func (self *Character) GetName() string {

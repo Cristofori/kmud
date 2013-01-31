@@ -71,33 +71,30 @@ func newUser(conn net.Conn) database.User {
 	return database.User{}
 }
 
-func newCharacter(conn net.Conn, user *database.User) database.Character {
+func newCharacter(conn net.Conn, user *database.User) *database.Character {
 	// TODO: character slot limit
 	const SizeLimit = 12
 	for {
 		name := utils.GetUserInput(conn, "Desired character name: ")
 
 		if name == "" {
-			return database.Character{}
+			return nil
 		}
 
-		character, found := model.M.GetCharacterByName(name)
+		_, found := model.M.GetCharacterByName(name)
 
 		if found {
 			utils.WriteLine(conn, "That name is unavailable")
 		} else if err := utils.ValidateName(name); err != nil {
 			utils.WriteLine(conn, err.Error())
 		} else {
-			room := model.M.GetRooms()[0] // TODO
-
-			character = database.NewCharacter(name, user.Id, room.Id)
-			model.M.UpdateCharacter(character)
-			return character
+			room := model.M.GetRooms()[0] // TODO: Better way to pick an initial character location
+			return model.M.CreateCharacter(name, user.Id, room.Id)
 		}
 	}
 
 	panic("Unexpected code path")
-	return database.Character{}
+	return nil
 }
 
 func quit(conn net.Conn) {
@@ -186,7 +183,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer session.Close()
 
 	var user database.User
-	var character database.Character
+	var character *database.Character
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -215,7 +212,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				quit(conn)
 				return
 			}
-		} else if character.GetName() == "" {
+		} else if character == nil {
 			menu := userMenu(user)
 			choice, charId := menu.Exec(conn, user.ColorMode)
 
@@ -282,8 +279,8 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				}
 			}
 		} else {
-			game.Exec(conn, &user, &character)
-			character = database.Character{}
+			game.Exec(conn, &user, character)
+			character = nil
 		}
 	}
 }

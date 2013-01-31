@@ -235,7 +235,6 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			for _, item := range itemsInRoom {
 				if item.PrettyName() == args[0] {
 					currentChar.AddItem(item.GetId())
-					model.M.UpdateCharacter(*currentChar)
 
 					currentRoom.RemoveItem(item)
 					model.M.UpdateRoom(currentRoom)
@@ -260,7 +259,6 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			for _, item := range characterItems {
 				if item.PrettyName() == args[0] {
 					currentChar.RemoveItem(item.GetId())
-					model.M.UpdateCharacter(*currentChar)
 
 					currentRoom.AddItem(item)
 					model.M.UpdateRoom(currentRoom)
@@ -563,7 +561,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			}
 
 			message := strings.Join(args[1:], " ")
-			model.Tell(*currentChar, targetChar, message)
+			model.Tell(currentChar, targetChar, message)
 
 		case "teleport":
 			fallthrough
@@ -754,8 +752,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				if name == "" {
 					goto done
 				}
-				npc := database.NewNpc(name, currentRoom.Id)
-				model.M.UpdateCharacter(npc)
+				database.NewNpc(name, currentRoom.Id)
 			} else if npcId != "" {
 				specificMenu := specificNpcMenu(npcId)
 				choice, _ := execMenu(specificMenu)
@@ -770,7 +767,6 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					}
 					npc := model.M.GetCharacter(npcId)
 					npc.SetName(name)
-					model.M.UpdateCharacter(npc)
 				}
 			}
 
@@ -837,7 +833,6 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				}
 
 				currentChar.AddCash(amount)
-				model.M.UpdateCharacter(*currentChar)
 				printLine("Received: %v monies", amount)
 			} else {
 				cashUsage()

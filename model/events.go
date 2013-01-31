@@ -26,7 +26,6 @@ func Register(character *database.Character) chan Event {
 	_mutex.Unlock()
 
 	character.SetOnline(true)
-	M.UpdateCharacter(*character) // TODO: Avoid unnecessary database call
 
 	queueEvent(LoginEvent{*character})
 
@@ -39,7 +38,6 @@ func Unregister(listener chan Event) {
 	_mutex.Unlock()
 
 	character.SetOnline(false)
-	M.UpdateCharacter(*character) // TODO: Avoid unnecessary database call
 
 	queueEvent(LogoutEvent{*character})
 	delete(_listeners, listener)
@@ -86,8 +84,8 @@ type EmoteEvent struct {
 }
 
 type TellEvent struct {
-	From    database.Character
-	To      database.Character
+	From    *database.Character
+	To      *database.Character
 	Message string
 }
 

@@ -3,15 +3,53 @@ package database
 import (
 	"errors"
 	"fmt"
+	"kmud/utils"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 )
 
-type collectionName string
+type UpdateOperation struct {
+	id         bson.ObjectId
+	collection *mgo.Collection
+	field      string
+	value      interface{}
+}
+
+var session *mgo.Session
+
+var updateChannel chan UpdateOperation
+
+func Init(s *mgo.Session) {
+	session = s
+	updateChannel = make(chan UpdateOperation)
+	go processUpdates()
+}
+
+func updateObject(obj Identifiable, field string, value interface{}) {
+	var c *mgo.Collection = nil
+
+	switch obj.GetType() {
+	case characterType:
+		c = getCollection(session, cCharacters)
+	default:
+		panic("database.updateObject: Unhandled object type")
+	}
+
+	updateChannel <- UpdateOperation{id: obj.GetId(), field: field, collection: c, value: value}
+}
+
+func processUpdates() {
+	for {
+		op := <-updateChannel
+		utils.HandleError(updateField(session, op.collection, op.id, op.field, op.value))
+	}
+}
 
 func getCollection(session *mgo.Session, collection collectionName) *mgo.Collection {
 	return session.DB("mud").C(string(collection))
 }
+
+type collectionName string
 
 // Collection names
 const (
@@ -80,8 +118,8 @@ func GetAllUsers(session *mgo.Session) ([]User, error) {
 	return users, err
 }
 
-func GetAllCharacters(session *mgo.Session) ([]Character, error) {
-	var characters []Character
+func GetAllCharacters(session *mgo.Session) ([]*Character, error) {
+	var characters []*Character
 	err := findObjects(session, cCharacters, &characters)
 
 	// TODO: Find a better way to do this, this sucks
@@ -234,7 +272,7 @@ func commitObject(session *mgo.Session, c *mgo.Collection, object Identifiable) 
 }
 
 func updateField(session *mgo.Session, c *mgo.Collection, id bson.ObjectId, fieldName string, fieldValue interface{}) error {
-	err := c.Update(id, bson.M{fieldName: fieldValue})
+	err := c.UpdateId(id, bson.M{"$set": bson.M{fieldName: fieldValue}})
 	return err
 }
 

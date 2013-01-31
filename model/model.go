@@ -13,7 +13,7 @@ import (
 
 type globalModel struct {
 	users      map[bson.ObjectId]database.User
-	characters map[bson.ObjectId]database.Character
+	characters map[bson.ObjectId]*database.Character
 	rooms      map[bson.ObjectId]database.Room
 	zones      map[bson.ObjectId]database.Zone
 	items      map[bson.ObjectId]database.Item
@@ -34,7 +34,7 @@ func (self *globalModel) UpdateUser(user database.User) {
 }
 
 // GetCharacter returns the Character object associated the given Id
-func (self *globalModel) GetCharacter(id bson.ObjectId) database.Character {
+func (self *globalModel) GetCharacter(id bson.ObjectId) *database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
@@ -43,7 +43,7 @@ func (self *globalModel) GetCharacter(id bson.ObjectId) database.Character {
 
 // GetCharacaterByName searches for a character with the given name. Returns a
 // character object along with whether or not it was found in the model
-func (self *globalModel) GetCharacterByName(name string) (database.Character, bool) {
+func (self *globalModel) GetCharacterByName(name string) (*database.Character, bool) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
@@ -55,16 +55,16 @@ func (self *globalModel) GetCharacterByName(name string) (database.Character, bo
 		}
 	}
 
-	return database.Character{}, false
+	return nil, false
 }
 
 // GetUserCharacters returns all of the Character objects associated with the
 // given user id
-func (self *globalModel) GetUserCharacters(userId bson.ObjectId) []database.Character {
+func (self *globalModel) GetUserCharacters(userId bson.ObjectId) []*database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	var characters []database.Character
+	var characters []*database.Character
 
 	for _, character := range self.characters {
 		if character.GetUserId() == userId {
@@ -78,11 +78,11 @@ func (self *globalModel) GetUserCharacters(userId bson.ObjectId) []database.Char
 // CharactersIn returns a list of characters that are in the given room,
 // excluding the character passed in as the "except" parameter. Returns all
 // character type objects, including players, NPCs and MOBs
-func (self *globalModel) CharactersIn(roomId bson.ObjectId, except bson.ObjectId) []database.Character {
+func (self *globalModel) CharactersIn(roomId bson.ObjectId, except bson.ObjectId) []*database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	var charList []database.Character
+	var charList []*database.Character
 
 	for _, char := range self.characters {
 		if char.GetRoomId() == roomId && char.Id != except && char.IsOnline() {
@@ -94,11 +94,11 @@ func (self *globalModel) CharactersIn(roomId bson.ObjectId, except bson.ObjectId
 }
 
 // NpcsIn returns all of the NPC characters that are in the given room
-func (self *globalModel) NpcsIn(roomId bson.ObjectId) []database.Character {
+func (self *globalModel) NpcsIn(roomId bson.ObjectId) []*database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	var npcList []database.Character
+	var npcList []*database.Character
 
 	for _, char := range self.characters {
 		if char.GetRoomId() == roomId && char.IsNpc() {
@@ -110,11 +110,11 @@ func (self *globalModel) NpcsIn(roomId bson.ObjectId) []database.Character {
 }
 
 // GetOnlineCharacters returns a list of all of the characters who are online
-func (self *globalModel) GetOnlineCharacters() []database.Character {
+func (self *globalModel) GetOnlineCharacters() []*database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	var characters []database.Character
+	var characters []*database.Character
 
 	for _, char := range self.characters {
 		if char.IsOnline() {
@@ -125,16 +125,16 @@ func (self *globalModel) GetOnlineCharacters() []database.Character {
 	return characters
 }
 
-// UpdateCharacter updates the character in the model with character's Id,
-// replacing it with the one that's given. If the given character doesn't exist
-// in the model it will be created. Also takes care of updating the database.
-func (self *globalModel) UpdateCharacter(character database.Character) {
+// CreateCharacter creates a new Character object in the database and adds it to the model.
+// A pointer to the new character object is returned.
+func (self *globalModel) CreateCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
+	character := database.NewCharacter(name, userId, roomId)
 	self.characters[character.Id] = character
 
-	utils.HandleError(database.CommitCharacter(self.session, character))
+	return character
 }
 
 // DeleteCharacter removes the character associated with the given id from the
@@ -380,12 +380,14 @@ var eventQueueChannel chan Event
  * Initializes the global model object and starts up the main event loop
  */
 func Init(session *mgo.Session) error {
+	database.Init(session)
+
 	M = globalModel{}
 
 	M.session = session
 
 	M.users = map[bson.ObjectId]database.User{}
-	M.characters = map[bson.ObjectId]database.Character{}
+	M.characters = map[bson.ObjectId]*database.Character{}
 	M.rooms = map[bson.ObjectId]database.Room{}
 	M.zones = map[bson.ObjectId]database.Zone{}
 	M.items = map[bson.ObjectId]database.Item{}
@@ -443,7 +445,6 @@ func MoveCharacterToLocation(character *database.Character, zoneId bson.ObjectId
 	oldRoom := M.GetRoom(character.GetRoomId())
 
 	character.SetRoom(newRoom.Id)
-	M.UpdateCharacter(*character)
 
 	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
 	queueEvent(LeaveEvent{Character: *character, RoomId: oldRoom.Id})
@@ -454,8 +455,6 @@ func MoveCharacterToLocation(character *database.Character, zoneId bson.ObjectId
 func MoveCharacterToRoom(character *database.Character, newRoom database.Room) {
 	oldRoomId := character.GetRoomId()
 	character.SetRoom(newRoom.Id)
-
-	M.UpdateCharacter(*character)
 
 	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
 	queueEvent(LeaveEvent{Character: *character, RoomId: oldRoomId})
@@ -571,7 +570,7 @@ func BroadcastMessage(from database.Character, message string) {
 	queueEvent(BroadcastEvent{from, message})
 }
 
-func Tell(from database.Character, to database.Character, message string) {
+func Tell(from *database.Character, to *database.Character, message string) {
 	queueEvent(TellEvent{from, to, message})
 }
 
