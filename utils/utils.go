@@ -138,4 +138,8 @@ func ValidateName(name string) error {
 	return nil
 }
 
+func MonitorChannel() {
+	// TODO: See if there's a way to take in a generic channel and see how close it is to being full 
+}
+
 // vim: nocindent
