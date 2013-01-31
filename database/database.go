@@ -83,6 +83,26 @@ func GetAllUsers(session *mgo.Session) ([]User, error) {
 func GetAllCharacters(session *mgo.Session) ([]Character, error) {
 	var characters []Character
 	err := findObjects(session, cCharacters, &characters)
+
+	// TODO: Find a better way to do this, this sucks
+	//       The bson.ObjectId list contained in character inventory gets deserialized
+	//       as a []interface{} instead of as a []bson.ObjectId, this converts it to
+	//       a []bson.ObjectId which makes it much easier to deal with throughout the
+	//       rest of the code.
+	for _, char := range characters {
+		_, ok := char.Fields[characterInventory]
+		if !ok {
+			char.Fields[characterInventory] = []bson.ObjectId{}
+		} else {
+			var inventory []bson.ObjectId
+			// fmt.Printf("Inventory: %v\n", reflect.TypeOf(char.Fields[characterInventory]))
+			for _, item := range char.Fields[characterInventory].([]interface{}) {
+				inventory = append(inventory, item.(bson.ObjectId))
+			}
+			char.Fields[characterInventory] = inventory
+		}
+	}
+
 	return characters, err
 }
 
