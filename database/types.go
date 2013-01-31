@@ -5,6 +5,7 @@ import (
 	"kmud/utils"
 	"labix.org/v2/mgo/bson"
 	"strings"
+	"sync"
 )
 
 type Coordinate struct {
@@ -38,6 +39,7 @@ type DbObject struct {
 	objType objectType
 	Name    string `bson:",omitempty"`
 	Fields  map[string]interface{}
+	mutex   sync.Mutex
 }
 
 type User struct {
@@ -210,6 +212,9 @@ func (self DbObject) PrettyName() string {
 }
 
 func (self *DbObject) setField(key string, value interface{}) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
 	self.Fields[key] = value
 	updateObject(*self, "fields."+key, value)
 }
