@@ -10,7 +10,7 @@ type mapBuilder struct {
 	height   int
 	depth    int
 	data     [][][]mapTile
-	userRoom database.Room
+	userRoom *database.Room
 }
 
 type mapTile struct {
@@ -57,11 +57,11 @@ func newMapBuilder(width int, height int, depth int) mapBuilder {
 	return builder
 }
 
-func (self *mapBuilder) setUserRoom(room database.Room) {
+func (self *mapBuilder) setUserRoom(room *database.Room) {
 	self.userRoom = room
 }
 
-func (self *mapBuilder) addRoom(room database.Room, x int, y int, z int) {
+func (self *mapBuilder) addRoom(room *database.Room, x int, y int, z int) {
 	addIfExists := func(dir database.ExitDirection, x int, y int) {
 		if x < 0 || y < 0 {
 			return

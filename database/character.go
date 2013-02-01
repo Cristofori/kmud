@@ -19,8 +19,6 @@ type Character struct {
 func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *Character {
 	var character Character
 	character.initDbObject(characterType)
-
-	character.Id = bson.NewObjectId()
 	commitObject(session, getCollection(session, cCharacters), character)
 
 	character.SetUser(userId)
@@ -66,7 +64,7 @@ func (self *Character) SetUser(id bson.ObjectId) {
 }
 
 func (self *Character) GetUserId() bson.ObjectId {
-	return self.Fields[characterUserId].(bson.ObjectId)
+	return self.getField(characterUserId).(bson.ObjectId)
 }
 
 func (self *Character) SetCash(amount int) {
@@ -78,19 +76,19 @@ func (self *Character) AddCash(amount int) {
 }
 
 func (self *Character) GetCash() int {
-	return self.Fields[characterCash].(int)
+	return self.getField(characterCash).(int)
 }
 
-func (self *Character) AddItem(id bson.ObjectId) {
+func (self *Character) AddItem(item Item) {
 	itemIds := self.GetItemIds()
-	itemIds = append(itemIds, id)
+	itemIds = append(itemIds, item.GetId())
 	self.setField(characterInventory, itemIds)
 }
 
-func (self *Character) RemoveItem(id bson.ObjectId) {
+func (self *Character) RemoveItem(item Item) {
 	itemIds := self.GetItemIds()
 	for i, itemId := range itemIds {
-		if itemId == id {
+		if itemId == item.GetId() {
 			// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
 			itemIds = append(itemIds[:i], itemIds[i+1:]...)
 			self.setField(characterInventory, itemIds)
@@ -100,13 +98,11 @@ func (self *Character) RemoveItem(id bson.ObjectId) {
 }
 
 func (self *Character) GetItemIds() []bson.ObjectId {
-	ids, found := self.Fields[characterInventory]
-
-	if !found {
-		return []bson.ObjectId{}
+	if self.hasField(characterInventory) {
+		return self.getField(characterInventory).([]bson.ObjectId)
 	}
 
-	return ids.([]bson.ObjectId)
+	return []bson.ObjectId{}
 }
 
 // vim: nocindent

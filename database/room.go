@@ -7,52 +7,53 @@ import (
 	"strings"
 )
 
+const (
+	roomZoneId        string = "zoneid"
+	roomTitle         string = "title"
+	roomDescription   string = "description"
+	roomItems         string = "items"
+	roomLocation      string = "location"
+	roomExitNorth     string = "exitnorth"
+	roomExitNorthEast string = "exitnortheast"
+	roomExitEast      string = "exiteast"
+	roomExitSouthEast string = "exitsoutheast"
+	roomExitSouth     string = "exitsouth"
+	roomExitSouthWest string = "exitsouthwest"
+	roomExitWest      string = "exitwest"
+	roomExitNorthWest string = "exitnorthwest"
+	roomExitUp        string = "exitup"
+	roomExitDown      string = "exitdown"
+)
+
 type Room struct {
-	DbObject      `bson:",inline"`
-	ZoneId        bson.ObjectId `bson:",omitempty"`
-	Title         string
-	Description   string
-	Items         []bson.ObjectId
-	Location      Coordinate
-	ExitNorth     bool
-	ExitNorthEast bool
-	ExitEast      bool
-	ExitSouthEast bool
-	ExitSouth     bool
-	ExitSouthWest bool
-	ExitWest      bool
-	ExitNorthWest bool
-	ExitUp        bool
-	ExitDown      bool
-	Default       bool
+	DbObject `bson:",inline"`
 }
 
-func NewRoom(zoneId bson.ObjectId) Room {
+func NewRoom(zoneId bson.ObjectId) *Room {
 	var room Room
-	room.Id = bson.NewObjectId()
-	room.Title = "The Void"
-	room.Description = "You are floating in the blackness of space. Complete darkness surrounds " +
+	room.initDbObject(roomType)
+	commitObject(session, getCollection(session, cRooms), room)
+
+	room.SetTitle("The Void")
+	room.SetDescription("You are floating in the blackness of space. Complete darkness surrounds " +
 		"you in all directions. There is no escape, there is no hope, just the emptiness. " +
-		"You are likely to be eaten by a grue."
+		"You are likely to be eaten by a grue.")
 
-	room.ExitNorth = false
-	room.ExitNorthEast = false
-	room.ExitEast = false
-	room.ExitSouthEast = false
-	room.ExitSouth = false
-	room.ExitSouthWest = false
-	room.ExitWest = false
-	room.ExitNorthWest = false
-	room.ExitUp = false
-	room.ExitDown = false
+	room.SetExitEnabled(DirectionNorth, false)
+	room.SetExitEnabled(DirectionNorthEast, false)
+	room.SetExitEnabled(DirectionEast, false)
+	room.SetExitEnabled(DirectionSouthEast, false)
+	room.SetExitEnabled(DirectionSouth, false)
+	room.SetExitEnabled(DirectionSouthWest, false)
+	room.SetExitEnabled(DirectionWest, false)
+	room.SetExitEnabled(DirectionNorthWest, false)
+	room.SetExitEnabled(DirectionUp, false)
+	room.SetExitEnabled(DirectionDown, false)
 
-	room.Location = Coordinate{0, 0, 0}
+	room.SetLocation(Coordinate{0, 0, 0})
+	room.SetZoneId(zoneId)
 
-	room.Default = false
-
-	room.ZoneId = zoneId
-
-	return room
+	return &room
 }
 
 func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []*Character, npcs []*Character, items []Item) string {
@@ -61,12 +62,12 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []*C
 	if mode == ReadMode {
 		str = fmt.Sprintf("\n %v %v %v (%v %v %v)\n\n %v\n\n",
 			utils.Colorize(colorMode, utils.ColorWhite, ">>>"),
-			utils.Colorize(colorMode, utils.ColorBlue, self.Title),
+			utils.Colorize(colorMode, utils.ColorBlue, self.GetTitle()),
 			utils.Colorize(colorMode, utils.ColorWhite, "<<<"),
-			self.Location.X,
-			self.Location.Y,
-			self.Location.Z,
-			utils.Colorize(colorMode, utils.ColorWhite, self.Description))
+			self.GetLocation().X,
+			self.GetLocation().Y,
+			self.GetLocation().Z,
+			utils.Colorize(colorMode, utils.ColorWhite, self.GetDescription()))
 
 		extraNewLine := ""
 
@@ -109,7 +110,7 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []*C
 		str = str + extraNewLine + " " + utils.Colorize(colorMode, utils.ColorBlue, "Exits: ")
 
 	} else {
-		str = fmt.Sprintf(" [1] %v \n\n [2] %v \n\n [3] Exits: ", self.Title, self.Description)
+		str = fmt.Sprintf(" [1] %v \n\n [2] %v \n\n [3] Exits: ", self.GetTitle(), self.GetDescription())
 	}
 
 	var exitList []string
@@ -145,25 +146,25 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []*C
 func (self *Room) HasExit(dir ExitDirection) bool {
 	switch dir {
 	case DirectionNorth:
-		return self.ExitNorth
+		return self.getField(roomExitNorth).(bool)
 	case DirectionNorthEast:
-		return self.ExitNorthEast
+		return self.getField(roomExitNorthEast).(bool)
 	case DirectionEast:
-		return self.ExitEast
+		return self.getField(roomExitEast).(bool)
 	case DirectionSouthEast:
-		return self.ExitSouthEast
+		return self.getField(roomExitSouthEast).(bool)
 	case DirectionSouth:
-		return self.ExitSouth
+		return self.getField(roomExitSouth).(bool)
 	case DirectionSouthWest:
-		return self.ExitSouthWest
+		return self.getField(roomExitSouthWest).(bool)
 	case DirectionWest:
-		return self.ExitWest
+		return self.getField(roomExitWest).(bool)
 	case DirectionNorthWest:
-		return self.ExitNorthWest
+		return self.getField(roomExitNorthWest).(bool)
 	case DirectionUp:
-		return self.ExitUp
+		return self.getField(roomExitUp).(bool)
 	case DirectionDown:
-		return self.ExitDown
+		return self.getField(roomExitDown).(bool)
 	}
 
 	panic("Unexpected code path")
@@ -172,40 +173,89 @@ func (self *Room) HasExit(dir ExitDirection) bool {
 func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
 	switch dir {
 	case DirectionNorth:
-		self.ExitNorth = enabled
+		self.setField(roomExitNorth, enabled)
 	case DirectionNorthEast:
-		self.ExitNorthEast = enabled
+		self.setField(roomExitNorthEast, enabled)
 	case DirectionEast:
-		self.ExitEast = enabled
+		self.setField(roomExitEast, enabled)
 	case DirectionSouthEast:
-		self.ExitSouthEast = enabled
+		self.setField(roomExitSouthEast, enabled)
 	case DirectionSouth:
-		self.ExitSouth = enabled
+		self.setField(roomExitSouth, enabled)
 	case DirectionSouthWest:
-		self.ExitSouthWest = enabled
+		self.setField(roomExitSouthWest, enabled)
 	case DirectionWest:
-		self.ExitWest = enabled
+		self.setField(roomExitWest, enabled)
 	case DirectionNorthWest:
-		self.ExitNorthWest = enabled
+		self.setField(roomExitNorthWest, enabled)
 	case DirectionUp:
-		self.ExitUp = enabled
+		self.setField(roomExitUp, enabled)
 	case DirectionDown:
-		self.ExitDown = enabled
+		self.setField(roomExitDown, enabled)
 	}
 }
 
 func (self *Room) AddItem(item Item) {
-	self.Items = append(self.Items, item.GetId())
+	itemIds := self.GetItemIds()
+	itemIds = append(itemIds, item.GetId())
+	self.setField(roomItems, itemIds)
 }
 
 func (self *Room) RemoveItem(item Item) {
-	for i, myItemId := range self.Items {
-		if myItemId == item.GetId() {
+	itemIds := self.GetItemIds()
+	for i, itemId := range itemIds {
+		if itemId == item.GetId() {
 			// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
-			self.Items = append(self.Items[:i], self.Items[i+1:]...)
+			itemIds = append(itemIds[:i], itemIds[i+1:]...)
+			self.setField(roomItems, itemIds)
 			return
 		}
 	}
+}
+
+func (self *Room) SetTitle(title string) {
+	self.setField(roomTitle, title)
+}
+
+func (self *Room) GetTitle() string {
+	return self.getField(roomTitle).(string)
+}
+
+func (self *Room) SetDescription(description string) {
+	self.setField(roomDescription, description)
+}
+
+func (self *Room) GetDescription() string {
+	return self.getField(roomDescription).(string)
+}
+
+func (self *Room) SetLocation(location Coordinate) {
+	self.setField(roomLocation, location)
+}
+
+func (self *Room) GetLocation() Coordinate {
+	return self.getField(roomLocation).(Coordinate)
+}
+
+func (self *Room) SetZoneId(zoneId bson.ObjectId) {
+	self.setField(roomZoneId, zoneId)
+}
+
+func (self *Room) GetZoneId() bson.ObjectId {
+	return self.getField(roomZoneId).(bson.ObjectId)
+}
+
+func (self *Room) GetItemIds() []bson.ObjectId {
+	if self.hasField(roomItems) {
+		return self.getField(roomItems).([]bson.ObjectId)
+	}
+
+	return []bson.ObjectId{}
+}
+
+func (self *Room) NextLocation(direction ExitDirection) Coordinate {
+	loc := self.GetLocation()
+	return loc.Next(direction)
 }
 
 // vim: nocindent

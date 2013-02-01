@@ -31,6 +31,8 @@ func updateObject(obj Identifiable, field string, value interface{}) {
 	switch obj.GetType() {
 	case characterType:
 		c = getCollection(session, cCharacters)
+	case roomType:
+		c = getCollection(session, cRooms)
 	default:
 		panic("database.updateObject: Unhandled object type")
 	}
@@ -41,6 +43,7 @@ func updateObject(obj Identifiable, field string, value interface{}) {
 func processUpdates() {
 	for {
 		op := <-updateChannel
+		// fmt.Println("Processing update:", op.id, op.field, op.value)
 		utils.HandleError(updateField(session, op.collection, op.id, op.field, op.value))
 	}
 }
@@ -118,35 +121,55 @@ func GetAllUsers(session *mgo.Session) ([]User, error) {
 	return users, err
 }
 
+// TODO: Find a better way to do this, this sucks
+//       The bson.ObjectId list contained in character inventory gets deserialized
+//       as a []interface{} instead of as a []bson.ObjectId, this converts it to
+//       a []bson.ObjectId which makes it much easier to deal with throughout the
+//       rest of the code.
+func convertFieldToIdSlice(object *DbObject, field string) {
+	found := object.hasField(field)
+	if !found {
+		object.Fields[field] = []bson.ObjectId{}
+	} else {
+		var idList []bson.ObjectId
+		for _, id := range object.getField(field).([]interface{}) {
+			idList = append(idList, id.(bson.ObjectId))
+		}
+		object.Fields[field] = idList
+	}
+}
+
 func GetAllCharacters(session *mgo.Session) ([]*Character, error) {
 	var characters []*Character
 	err := findObjects(session, cCharacters, &characters)
 
-	// TODO: Find a better way to do this, this sucks
-	//       The bson.ObjectId list contained in character inventory gets deserialized
-	//       as a []interface{} instead of as a []bson.ObjectId, this converts it to
-	//       a []bson.ObjectId which makes it much easier to deal with throughout the
-	//       rest of the code.
 	for _, char := range characters {
-		_, ok := char.Fields[characterInventory]
-		if !ok {
-			char.Fields[characterInventory] = []bson.ObjectId{}
-		} else {
-			var inventory []bson.ObjectId
-			// fmt.Printf("Inventory: %v\n", reflect.TypeOf(char.Fields[characterInventory]))
-			for _, item := range char.Fields[characterInventory].([]interface{}) {
-				inventory = append(inventory, item.(bson.ObjectId))
-			}
-			char.Fields[characterInventory] = inventory
-		}
+		char.objType = characterType
+		convertFieldToIdSlice(&char.DbObject, characterInventory)
 	}
 
 	return characters, err
 }
 
-func GetAllRooms(session *mgo.Session) ([]Room, error) {
-	var rooms []Room
+func GetAllRooms(session *mgo.Session) ([]*Room, error) {
+	var rooms []*Room
 	err := findObjects(session, cRooms, &rooms)
+
+	// TODO: Also sucks
+	for _, room := range rooms {
+		room.objType = roomType
+
+		location := room.getField(roomLocation).(map[string]interface{})
+
+		var coord Coordinate
+		coord.X = location["x"].(int)
+		coord.Y = location["y"].(int)
+		coord.Z = location["z"].(int)
+		room.Fields[roomLocation] = coord
+
+		convertFieldToIdSlice(&room.DbObject, roomItems)
+	}
+
 	return rooms, err
 }
 

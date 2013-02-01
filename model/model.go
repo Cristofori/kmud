@@ -14,7 +14,7 @@ import (
 type globalModel struct {
 	users      map[bson.ObjectId]database.User
 	characters map[bson.ObjectId]*database.Character
-	rooms      map[bson.ObjectId]database.Room
+	rooms      map[bson.ObjectId]*database.Room
 	zones      map[bson.ObjectId]database.Zone
 	items      map[bson.ObjectId]database.Item
 
@@ -148,17 +148,19 @@ func (self *globalModel) DeleteCharacter(id bson.ObjectId) {
 	utils.HandleError(database.DeleteCharacter(self.session, id))
 }
 
-// UpdateRoom updates the room in the model with room's Id, replacing it with
-// the one that's given. If the given room doesn't exist in the model it will
-// be created. Also takes care of updating the database.
-func (self *globalModel) UpdateRoom(room database.Room) {
+// CreateRoom creates a new Room object in the database and adds it to the model.
+// A pointer to the new room object is returned.
+func (self *globalModel) CreateRoom(zoneId bson.ObjectId) *database.Room {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
+	fmt.Println("a")
+	room := database.NewRoom(zoneId)
+	fmt.Println("b")
 	self.rooms[room.Id] = room
-	queueEvent(RoomUpdateEvent{room})
+	fmt.Println("c")
 
-	utils.HandleError(database.CommitRoom(self.session, room))
+	return room
 }
 
 // UpdateZone updates the zone in the model with zone's Id, replacing it with
@@ -174,7 +176,7 @@ func (self *globalModel) UpdateZone(zone database.Zone) {
 }
 
 // GetRoom returns the room object associated with the given id
-func (self *globalModel) GetRoom(id bson.ObjectId) database.Room {
+func (self *globalModel) GetRoom(id bson.ObjectId) *database.Room {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
@@ -182,11 +184,11 @@ func (self *globalModel) GetRoom(id bson.ObjectId) database.Room {
 }
 
 // GetRooms returns a list of all of the rooms in the entire model
-func (self *globalModel) GetRooms() []database.Room {
+func (self *globalModel) GetRooms() []*database.Room {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	var rooms []database.Room
+	var rooms []*database.Room
 
 	for _, room := range self.rooms {
 		rooms = append(rooms, room)
@@ -195,13 +197,13 @@ func (self *globalModel) GetRooms() []database.Room {
 	return rooms
 }
 
-func (self *globalModel) GetRoomsInZone(zoneId bson.ObjectId) []database.Room {
+func (self *globalModel) GetRoomsInZone(zoneId bson.ObjectId) []*database.Room {
 	allRooms := self.GetRooms()
 
-	var rooms []database.Room
+	var rooms []*database.Room
 
 	for _, room := range allRooms {
-		if room.ZoneId == zoneId {
+		if room.GetZoneId() == zoneId {
 			rooms = append(rooms, room)
 		}
 	}
@@ -211,15 +213,15 @@ func (self *globalModel) GetRoomsInZone(zoneId bson.ObjectId) []database.Room {
 
 // GetRoomByLocation searches for the room associated with the given coordinate
 // in the given zone.  Returns a room object and whether or not it was found. 
-func (self *globalModel) GetRoomByLocation(coordinate database.Coordinate, zoneId bson.ObjectId) (database.Room, bool) {
+func (self *globalModel) GetRoomByLocation(coordinate database.Coordinate, zoneId bson.ObjectId) (*database.Room, bool) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	ret := database.Room{}
+	var ret *database.Room = nil
 	found := false
 
 	for _, room := range self.rooms {
-		if room.Location == coordinate && room.ZoneId == zoneId {
+		if room.GetLocation() == coordinate && room.GetZoneId() == zoneId {
 			found = true
 			ret = room
 			break
@@ -388,7 +390,7 @@ func Init(session *mgo.Session) error {
 
 	M.users = map[bson.ObjectId]database.User{}
 	M.characters = map[bson.ObjectId]*database.Character{}
-	M.rooms = map[bson.ObjectId]database.Room{}
+	M.rooms = map[bson.ObjectId]*database.Room{}
 	M.zones = map[bson.ObjectId]database.Zone{}
 	M.items = map[bson.ObjectId]database.Item{}
 
@@ -403,14 +405,14 @@ func Init(session *mgo.Session) error {
 	utils.HandleError(err)
 
 	for _, character := range characters {
-		M.characters[character.Id] = character
+		M.characters[character.GetId()] = character
 	}
 
 	rooms, err := database.GetAllRooms(session)
 	utils.HandleError(err)
 
 	for _, room := range rooms {
-		M.rooms[room.Id] = room
+		M.rooms[room.GetId()] = room
 	}
 
 	zones, err := database.GetAllZones(session)
@@ -434,8 +436,7 @@ func Init(session *mgo.Session) error {
 	return err
 }
 
-func MoveCharacterToLocation(character *database.Character, zoneId bson.ObjectId, location database.Coordinate) (database.Room, error) {
-
+func MoveCharacterToLocation(character *database.Character, zoneId bson.ObjectId, location database.Coordinate) (*database.Room, error) {
 	newRoom, found := M.GetRoomByLocation(location, zoneId)
 
 	if !found {
@@ -452,7 +453,7 @@ func MoveCharacterToLocation(character *database.Character, zoneId bson.ObjectId
 	return newRoom, nil
 }
 
-func MoveCharacterToRoom(character *database.Character, newRoom database.Room) {
+func MoveCharacterToRoom(character *database.Character, newRoom *database.Room) {
 	oldRoomId := character.GetRoomId()
 	character.SetRoom(newRoom.Id)
 
@@ -460,10 +461,10 @@ func MoveCharacterToRoom(character *database.Character, newRoom database.Room) {
 	queueEvent(LeaveEvent{Character: *character, RoomId: oldRoomId})
 }
 
-func MoveCharacter(character *database.Character, direction database.ExitDirection) (database.Room, error) {
+func MoveCharacter(character *database.Character, direction database.ExitDirection) (*database.Room, error) {
 	room := M.GetRoom(character.GetRoomId())
 
-	if room.Id == "" {
+	if room == nil {
 		return room, errors.New("Character doesn't appear to be in any room")
 	}
 
@@ -471,58 +472,61 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 		return room, errors.New("Attempted to move through an exit that the room does not contain")
 	}
 
-	newLocation := room.Location.Next(direction)
-	newRoom, found := M.GetRoomByLocation(newLocation, room.ZoneId)
+	newLocation := room.NextLocation(direction)
+	newRoom, found := M.GetRoomByLocation(newLocation, room.GetZoneId())
 
 	if !found {
-		zone := M.GetZone(room.ZoneId)
+		zone := M.GetZone(room.GetZoneId())
 		fmt.Printf("No room found at location %v%v, creating a new one (%s)\n", zone.Name, newLocation, character.PrettyName())
 
-		room = database.NewRoom(room.ZoneId)
+		fmt.Println(1)
+		room = M.CreateRoom(room.GetZoneId())
+		fmt.Println(2)
+
+		fmt.Println("New room id:", room.GetId())
 
 		switch direction {
 		case database.DirectionNorth:
-			room.ExitSouth = true
+			room.SetExitEnabled(database.DirectionSouth, true)
 		case database.DirectionNorthEast:
-			room.ExitSouthWest = true
+			room.SetExitEnabled(database.DirectionSouthWest, true)
 		case database.DirectionEast:
-			room.ExitWest = true
+			room.SetExitEnabled(database.DirectionWest, true)
 		case database.DirectionSouthEast:
-			room.ExitNorthWest = true
+			room.SetExitEnabled(database.DirectionNorthWest, true)
 		case database.DirectionSouth:
-			room.ExitNorth = true
+			room.SetExitEnabled(database.DirectionNorth, true)
 		case database.DirectionSouthWest:
-			room.ExitNorthEast = true
+			room.SetExitEnabled(database.DirectionNorthEast, true)
 		case database.DirectionWest:
-			room.ExitEast = true
+			room.SetExitEnabled(database.DirectionEast, true)
 		case database.DirectionNorthWest:
-			room.ExitSouthEast = true
+			room.SetExitEnabled(database.DirectionSouthEast, true)
 		case database.DirectionUp:
-			room.ExitDown = true
+			room.SetExitEnabled(database.DirectionDown, true)
 		case database.DirectionDown:
-			room.ExitUp = true
+			room.SetExitEnabled(database.DirectionUp, true)
 		default:
 			panic("Unexpected code path")
 		}
 
-		room.Location = newLocation
-		M.UpdateRoom(room)
+		room.SetLocation(newLocation)
 	} else {
 		room = newRoom
 	}
 
-	return MoveCharacterToLocation(character, room.ZoneId, room.Location)
+	return MoveCharacterToLocation(character, room.GetZoneId(), room.GetLocation())
 }
 
-func DeleteRoom(room database.Room) {
+func DeleteRoom(room *database.Room) {
 	M.deleteRoom(room.Id)
 
 	// Disconnect all exits leading to this room
-	loc := room.Location
+	loc := room.GetLocation()
 
 	updateRoom := func(dir database.ExitDirection) {
 		next := loc.Next(dir)
-		room, found := M.GetRoomByLocation(next, room.ZoneId)
+		room, found := M.GetRoomByLocation(next, room.GetZoneId())
 
 		if found {
 			var exitToDisable database.ExitDirection
@@ -550,7 +554,6 @@ func DeleteRoom(room database.Room) {
 			}
 
 			room.SetExitEnabled(exitToDisable, false)
-			M.UpdateRoom(room)
 		}
 	}
 
@@ -647,44 +650,44 @@ func ZoneCorners(zoneId bson.ObjectId) (database.Coordinate, database.Coordinate
 	rooms := M.GetRooms()
 
 	for _, room := range rooms {
-		if room.ZoneId == zoneId {
-			top = room.Location.Y
-			bottom = room.Location.Y
-			left = room.Location.X
-			right = room.Location.X
-			high = room.Location.Z
-			low = room.Location.Z
+		if room.GetZoneId() == zoneId {
+			top = room.GetLocation().Y
+			bottom = room.GetLocation().Y
+			left = room.GetLocation().X
+			right = room.GetLocation().X
+			high = room.GetLocation().Z
+			low = room.GetLocation().Z
 			break
 		}
 	}
 
 	for _, room := range rooms {
-		if room.ZoneId != zoneId {
+		if room.GetZoneId() != zoneId {
 			continue
 		}
 
-		if room.Location.Z < high {
-			high = room.Location.Z
+		if room.GetLocation().Z < high {
+			high = room.GetLocation().Z
 		}
 
-		if room.Location.Z > low {
-			low = room.Location.Z
+		if room.GetLocation().Z > low {
+			low = room.GetLocation().Z
 		}
 
-		if room.Location.Y < top {
-			top = room.Location.Y
+		if room.GetLocation().Y < top {
+			top = room.GetLocation().Y
 		}
 
-		if room.Location.Y > bottom {
-			bottom = room.Location.Y
+		if room.GetLocation().Y > bottom {
+			bottom = room.GetLocation().Y
 		}
 
-		if room.Location.X < left {
-			left = room.Location.X
+		if room.GetLocation().X < left {
+			left = room.GetLocation().X
 		}
 
-		if room.Location.X > right {
-			right = room.Location.X
+		if room.GetLocation().X > right {
+			right = room.GetLocation().X
 		}
 	}
 
@@ -694,10 +697,8 @@ func ZoneCorners(zoneId bson.ObjectId) (database.Coordinate, database.Coordinate
 
 func MoveRoomsToZone(fromZoneId bson.ObjectId, toZoneId bson.ObjectId) {
 	for _, room := range M.GetRooms() {
-		if room.ZoneId == fromZoneId {
-			room.ZoneId = toZoneId
-
-			M.UpdateRoom(room)
+		if room.GetZoneId() == fromZoneId {
+			room.SetZoneId(toZoneId)
 		}
 	}
 }

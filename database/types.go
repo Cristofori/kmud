@@ -148,6 +148,7 @@ func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) s
 }
 
 func (self *DbObject) initDbObject(objType objectType) {
+	self.Id = bson.NewObjectId()
 	self.objType = objType
 	self.Fields = map[string]interface{}{}
 }
@@ -170,6 +171,15 @@ func (self *DbObject) setField(key string, value interface{}) {
 
 	self.Fields[key] = value
 	updateObject(*self, "fields."+key, value)
+}
+
+func (self *DbObject) getField(key string) interface{} {
+	return self.Fields[key]
+}
+
+func (self *DbObject) hasField(key string) bool {
+	_, found := self.Fields[key]
+	return found
 }
 
 func (self *DbObject) SetName(name string) {

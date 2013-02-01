@@ -19,7 +19,7 @@ const (
 	RawUserInput   userInputMode = iota
 )
 
-func toggleExitMenu(cm utils.ColorMode, room database.Room) utils.Menu {
+func toggleExitMenu(cm utils.ColorMode, room *database.Room) utils.Menu {
 	onOrOff := func(direction database.ExitDirection) string {
 		text := "Off"
 		if room.HasExit(direction) {
@@ -44,7 +44,7 @@ func toggleExitMenu(cm utils.ColorMode, room database.Room) utils.Menu {
 	return menu
 }
 
-func npcMenu(room database.Room) utils.Menu {
+func npcMenu(room *database.Room) utils.Menu {
 	npcs := model.M.NpcsIn(room.Id)
 
 	menu := utils.NewMenu("NPCs")
@@ -70,7 +70,7 @@ func specificNpcMenu(npcId bson.ObjectId) utils.Menu {
 
 func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.Character) {
 	currentRoom := model.M.GetRoom(currentChar.GetRoomId())
-	currentZone := model.M.GetZone(currentRoom.ZoneId)
+	currentZone := model.M.GetZone(currentRoom.GetZoneId())
 
 	printString := func(data string) {
 		io.WriteString(conn, data)
@@ -92,7 +92,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 		charList := model.M.CharactersIn(currentRoom.Id, currentChar.Id)
 		npcList := model.M.NpcsIn(currentRoom.Id)
 		printLine(currentRoom.ToString(database.ReadMode, currentUser.ColorMode,
-			charList, npcList, model.M.GetItems(currentRoom.Items)))
+			charList, npcList, model.M.GetItems(currentRoom.GetItemIds())))
 	}
 
 	printRoomEditor := func() {
@@ -182,7 +182,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				if arg == database.DirectionNone {
 					printLine("Nothing to see")
 				} else {
-					loc := currentRoom.Location.Next(arg)
+					loc := currentRoom.NextLocation(arg)
 					roomToSee, found := model.M.GetRoomByLocation(loc, currentZone.Id)
 					if found {
 						printLine(roomToSee.ToString(database.ReadMode, currentUser.ColorMode,
@@ -231,13 +231,11 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				return
 			}
 
-			itemsInRoom := model.M.GetItems(currentRoom.Items)
+			itemsInRoom := model.M.GetItems(currentRoom.GetItemIds())
 			for _, item := range itemsInRoom {
 				if item.PrettyName() == args[0] {
-					currentChar.AddItem(item.GetId())
-
+					currentChar.AddItem(item)
 					currentRoom.RemoveItem(item)
-					model.M.UpdateRoom(currentRoom)
 					return
 				}
 			}
@@ -258,10 +256,8 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 
 			for _, item := range characterItems {
 				if item.PrettyName() == args[0] {
-					currentChar.RemoveItem(item.GetId())
-
+					currentChar.RemoveItem(item)
 					currentRoom.AddItem(item)
-					model.M.UpdateRoom(currentRoom)
 					return
 				}
 			}
@@ -321,8 +317,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					input = getUserInput(RawUserInput, "Enter new title: ")
 
 					if input != "" {
-						currentRoom.Title = input
-						model.M.UpdateRoom(currentRoom)
+						currentRoom.SetTitle(input)
 					}
 					printRoomEditor()
 
@@ -330,8 +325,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					input = getUserInput(RawUserInput, "Enter new description: ")
 
 					if input != "" {
-						currentRoom.Description = input
-						model.M.UpdateRoom(currentRoom)
+						currentRoom.SetDescription(input)
 					}
 					printRoomEditor()
 
@@ -349,7 +343,6 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 						if direction != database.DirectionNone {
 							enable := !currentRoom.HasExit(direction)
 							currentRoom.SetExitEnabled(direction, enable)
-							model.M.UpdateRoom(currentRoom)
 						}
 					}
 
@@ -363,33 +356,27 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			// Quick room/exit creation
 		case "/n":
 			currentRoom.SetExitEnabled(database.DirectionNorth, true)
-			model.M.UpdateRoom(currentRoom)
 			processAction("n", []string{})
 		case "/e":
 			currentRoom.SetExitEnabled(database.DirectionEast, true)
-			model.M.UpdateRoom(currentRoom)
 			processAction("e", []string{})
 		case "/s":
 			currentRoom.SetExitEnabled(database.DirectionSouth, true)
-			model.M.UpdateRoom(currentRoom)
 			processAction("s", []string{})
 		case "/w":
 			currentRoom.SetExitEnabled(database.DirectionWest, true)
-			model.M.UpdateRoom(currentRoom)
 			processAction("w", []string{})
 		case "/u":
 			currentRoom.SetExitEnabled(database.DirectionUp, true)
-			model.M.UpdateRoom(currentRoom)
 			processAction("u", []string{})
 		case "/d":
 			currentRoom.SetExitEnabled(database.DirectionDown, true)
-			model.M.UpdateRoom(currentRoom)
 			processAction("d", []string{})
 
 		case "loc":
 			fallthrough
 		case "location":
-			printLine("%v", currentRoom.Location)
+			printLine("%v", currentRoom.GetLocation())
 
 		case "map":
 			mapUsage := func() {
@@ -411,12 +398,12 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				radius, err := strconv.Atoi(args[0])
 
 				if err == nil && radius > 0 {
-					startX = currentRoom.Location.X - radius
-					startY = currentRoom.Location.Y - radius
-					startZ = currentRoom.Location.Z
+					startX = currentRoom.GetLocation().X - radius
+					startY = currentRoom.GetLocation().Y - radius
+					startZ = currentRoom.GetLocation().Z
 					endX = startX + (radius * 2)
 					endY = startY + (radius * 2)
-					endZ = currentRoom.Location.Z
+					endZ = currentRoom.GetLocation().Z
 				} else if args[0] == "all" {
 					topLeft, bottomRight := model.ZoneCorners(currentZone.Id)
 
@@ -504,8 +491,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					newZone := database.NewZone(args[1])
 					model.M.UpdateZone(newZone)
 
-					newRoom := database.NewRoom(newZone.Id)
-					model.M.UpdateRoom(newRoom)
+					newRoom := model.M.CreateRoom(newZone.Id)
 
 					model.MoveCharacterToRoom(currentChar, newRoom)
 
@@ -585,7 +571,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					return
 				}
 
-				if newZone.Id == currentRoom.ZoneId {
+				if newZone.Id == currentRoom.GetZoneId() {
 					printLine("You're already in that zone")
 					return
 				}
@@ -594,9 +580,9 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 
 				if len(zoneRooms) > 0 {
 					r := zoneRooms[0]
-					x = r.Location.X
-					y = r.Location.Y
-					z = r.Location.Z
+					x = r.GetLocation().X
+					y = r.GetLocation().Y
+					z = r.GetLocation().Z
 				}
 			} else if len(args) == 3 {
 				var err error
@@ -708,7 +694,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				if direction == database.DirectionNone {
 					printError("Not a valid direction")
 				} else {
-					loc := currentRoom.Location.Next(direction)
+					loc := currentRoom.NextLocation(direction)
 					roomToDelete, found := model.M.GetRoomByLocation(loc, currentZone.Id)
 					if found {
 						model.DeleteRoom(roomToDelete)
@@ -787,7 +773,6 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			model.M.UpdateItem(item)
 
 			currentRoom.AddItem(item)
-			model.M.UpdateRoom(currentRoom)
 
 		case "destroy":
 			destroyUsage := func() {
@@ -799,12 +784,11 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				return
 			}
 
-			itemsInRoom := model.M.GetItems(currentRoom.Items)
+			itemsInRoom := model.M.GetItems(currentRoom.GetItemIds())
 
 			for _, item := range itemsInRoom {
 				if item.PrettyName() == args[0] {
 					currentRoom.RemoveItem(item)
-					model.M.UpdateRoom(currentRoom)
 					model.M.DeleteItem(item.Id)
 
 					printLine("Item destroyed")

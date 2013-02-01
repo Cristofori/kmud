@@ -100,7 +100,7 @@ type LeaveEvent struct {
 }
 
 type RoomUpdateEvent struct {
-	Room database.Room
+	Room *database.Room
 }
 
 type LoginEvent struct {

@@ -7,6 +7,7 @@ import (
 	"kmud/model"
 	"kmud/utils"
 	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 	"net"
 	"strconv"
 )
@@ -301,8 +302,19 @@ func Exec() {
 	// If there are no rooms at all create one
 	rooms := model.M.GetRooms()
 	if len(rooms) == 0 {
-		room := database.NewRoom("")
-		model.M.UpdateRoom(room)
+		zones := model.M.GetZones()
+
+		var zoneId bson.ObjectId
+
+		if len(zones) == 0 {
+			newZone := database.NewZone("Default")
+			model.M.UpdateZone(newZone)
+			zoneId = newZone.Id
+		} else {
+			zoneId = zones[0].Id
+		}
+
+		model.M.CreateRoom(zoneId)
 	}
 
 	fmt.Println("Server listening on port 8945")
