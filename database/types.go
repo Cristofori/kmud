@@ -174,6 +174,9 @@ func (self *DbObject) setField(key string, value interface{}) {
 }
 
 func (self *DbObject) getField(key string) interface{} {
+    self.mutex.Lock()
+    defer self.mutex.Unlock()
+
 	return self.Fields[key]
 }
 
