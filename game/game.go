@@ -473,12 +473,10 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					}
 
 					if currentZone.Id == "" {
-						currentZone = database.NewZone(args[1])
-						model.M.UpdateZone(currentZone)
+						currentZone = model.M.CreateZone(args[1])
 						model.MoveRoomsToZone("", currentZone.Id)
 					} else {
-						currentZone.Name = args[1]
-						model.M.UpdateZone(currentZone)
+						currentZone.SetName(args[1])
 					}
 				} else if args[0] == "new" {
 					_, found := model.M.GetZoneByName(args[0])
@@ -488,9 +486,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 						return
 					}
 
-					newZone := database.NewZone(args[1])
-					model.M.UpdateZone(newZone)
-
+					newZone := model.M.CreateZone(args[1])
 					newRoom := model.M.CreateRoom(newZone.Id)
 
 					model.MoveCharacterToRoom(currentChar, newRoom)

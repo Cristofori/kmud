@@ -307,8 +307,7 @@ func Exec() {
 		var zoneId bson.ObjectId
 
 		if len(zones) == 0 {
-			newZone := database.NewZone("Default")
-			model.M.UpdateZone(newZone)
+			newZone := model.M.CreateZone("Default")
 			zoneId = newZone.Id
 		} else {
 			zoneId = zones[0].Id

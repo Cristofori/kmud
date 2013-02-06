@@ -50,6 +50,8 @@ func getCollectionFromType(t objectType) *mgo.Collection {
 		return getCollection(cRooms)
 	case userType:
 		return getCollection(cUsers)
+	case zoneType:
+		return getCollection(cZones)
 	default:
 		panic("database.updateObject: Unhandled object type")
 	}
@@ -197,8 +199,8 @@ func GetAllRooms() ([]*Room, error) {
 	return rooms, err
 }
 
-func GetAllZones() ([]Zone, error) {
-	var zones []Zone
+func GetAllZones() ([]*Zone, error) {
+	var zones []*Zone
 	err := findObjects(cZones, &zones)
 	return zones, err
 }

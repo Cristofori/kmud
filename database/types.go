@@ -30,6 +30,7 @@ const (
 	characterType objectType = iota
 	roomType      objectType = iota
 	userType      objectType = iota
+	zoneType      objectType = iota
 )
 
 const (
@@ -45,17 +46,6 @@ type DbObject struct {
 }
 
 type ObjectField string
-
-type Zone struct {
-	DbObject `bson:",inline"`
-}
-
-func NewZone(name string) Zone {
-	var zone Zone
-	zone.Id = bson.NewObjectId()
-	zone.Name = name
-	return zone
-}
 
 type Item struct {
 	DbObject `bson:",inline"`

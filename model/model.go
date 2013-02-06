@@ -15,7 +15,7 @@ type globalModel struct {
 	users      map[bson.ObjectId]database.User
 	characters map[bson.ObjectId]*database.Character
 	rooms      map[bson.ObjectId]*database.Room
-	zones      map[bson.ObjectId]database.Zone
+	zones      map[bson.ObjectId]*database.Zone
 	items      map[bson.ObjectId]database.Item
 
 	mutex sync.Mutex
@@ -159,16 +159,14 @@ func (self *globalModel) CreateRoom(zoneId bson.ObjectId) *database.Room {
 	return room
 }
 
-// UpdateZone updates the zone in the model with zone's Id, replacing it with
-// the one that's given. If the given zone doesn't exist in the model it will
-// be created. Also takes care of updating the database.
-func (self *globalModel) UpdateZone(zone database.Zone) {
+func (self *globalModel) CreateZone(name string) *database.Zone {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
+	zone := database.NewZone(name)
 	self.zones[zone.Id] = zone
 
-	utils.HandleError(database.CommitZone(zone))
+	return zone
 }
 
 // GetRoom returns the room object associated with the given id
@@ -228,7 +226,7 @@ func (self *globalModel) GetRoomByLocation(coordinate database.Coordinate, zoneI
 }
 
 // GetZone returns the zone object associated with the given id
-func (self *globalModel) GetZone(zoneId bson.ObjectId) database.Zone {
+func (self *globalModel) GetZone(zoneId bson.ObjectId) *database.Zone {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
@@ -236,11 +234,11 @@ func (self *globalModel) GetZone(zoneId bson.ObjectId) database.Zone {
 }
 
 // GetZones returns all of the zones in the model
-func (self *globalModel) GetZones() []database.Zone {
+func (self *globalModel) GetZones() []*database.Zone {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	var zones []database.Zone
+	var zones []*database.Zone
 
 	for _, zone := range self.zones {
 		zones = append(zones, zone)
@@ -251,7 +249,7 @@ func (self *globalModel) GetZones() []database.Zone {
 
 // GetZoneByName name searches for a zone with the given name, returns a zone
 // object and whether or not it was found
-func (self *globalModel) GetZoneByName(name string) (database.Zone, bool) {
+func (self *globalModel) GetZoneByName(name string) (*database.Zone, bool) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
@@ -261,7 +259,7 @@ func (self *globalModel) GetZoneByName(name string) (database.Zone, bool) {
 		}
 	}
 
-	return database.Zone{}, false
+	return nil, false
 }
 
 func (self *globalModel) deleteRoom(id bson.ObjectId) {
@@ -385,7 +383,7 @@ func Init(session *mgo.Session) error {
 	M.users = map[bson.ObjectId]database.User{}
 	M.characters = map[bson.ObjectId]*database.Character{}
 	M.rooms = map[bson.ObjectId]*database.Room{}
-	M.zones = map[bson.ObjectId]database.Zone{}
+	M.zones = map[bson.ObjectId]*database.Zone{}
 	M.items = map[bson.ObjectId]database.Item{}
 
 	users, err := database.GetAllUsers()
