@@ -154,11 +154,8 @@ func (self *globalModel) CreateRoom(zoneId bson.ObjectId) *database.Room {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	fmt.Println("a")
 	room := database.NewRoom(zoneId)
-	fmt.Println("b")
 	self.rooms[room.Id] = room
-	fmt.Println("c")
 
 	return room
 }
@@ -477,13 +474,9 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 
 	if !found {
 		zone := M.GetZone(room.GetZoneId())
-		fmt.Printf("No room found at location %v%v, creating a new one (%s)\n", zone.Name, newLocation, character.PrettyName())
+		fmt.Printf("No room found at location %v %v, creating a new one (%s)\n", zone.Name, newLocation, character.PrettyName())
 
-		fmt.Println(1)
 		room = M.CreateRoom(room.GetZoneId())
-		fmt.Println(2)
-
-		fmt.Println("New room id:", room.GetId())
 
 		switch direction {
 		case database.DirectionNorth:
