@@ -18,8 +18,7 @@ type globalModel struct {
 	zones      map[bson.ObjectId]database.Zone
 	items      map[bson.ObjectId]database.Item
 
-	mutex   sync.Mutex
-	session *mgo.Session
+	mutex sync.Mutex
 }
 
 // UpdateUser updates the user in the model with user's Id, replacing it with
@@ -30,7 +29,7 @@ func (self *globalModel) UpdateUser(user database.User) {
 	defer self.mutex.Unlock()
 
 	self.users[user.Id] = user
-	utils.HandleError(database.CommitUser(self.session, user))
+	utils.HandleError(database.CommitUser(user))
 }
 
 // GetCharacter returns the Character object associated the given Id
@@ -145,7 +144,7 @@ func (self *globalModel) DeleteCharacter(id bson.ObjectId) {
 
 	delete(self.characters, id)
 
-	utils.HandleError(database.DeleteCharacter(self.session, id))
+	utils.HandleError(database.DeleteCharacter(id))
 }
 
 // CreateRoom creates a new Room object in the database and adds it to the model.
@@ -169,7 +168,7 @@ func (self *globalModel) UpdateZone(zone database.Zone) {
 
 	self.zones[zone.Id] = zone
 
-	utils.HandleError(database.CommitZone(self.session, zone))
+	utils.HandleError(database.CommitZone(zone))
 }
 
 // GetRoom returns the room object associated with the given id
@@ -271,7 +270,7 @@ func (self *globalModel) deleteRoom(id bson.ObjectId) {
 
 	delete(self.rooms, id)
 
-	utils.HandleError(database.DeleteRoom(self.session, id))
+	utils.HandleError(database.DeleteRoom(id))
 }
 
 // GetUser returns the User object associated with the given id
@@ -319,13 +318,13 @@ func (self *globalModel) DeleteUser(id bson.ObjectId) {
 	for _, character := range self.characters {
 		if character.GetUserId() == id {
 			delete(self.characters, character.Id)
-			utils.HandleError(database.DeleteCharacter(self.session, character.Id))
+			utils.HandleError(database.DeleteCharacter(character.Id))
 		}
 	}
 
 	delete(self.users, id)
 
-	utils.HandleError(database.DeleteUser(self.session, id))
+	utils.HandleError(database.DeleteUser(id))
 }
 
 // UpdateItem updates the item in the model with the given id, replacing it with
@@ -336,7 +335,7 @@ func (self *globalModel) UpdateItem(object database.Item) {
 	defer self.mutex.Unlock()
 
 	self.items[object.Id] = object
-	utils.HandleError(database.CommitItem(self.session, object))
+	utils.HandleError(database.CommitItem(object))
 }
 
 // GetItem returns the Item object associated the given id
@@ -366,7 +365,7 @@ func (self *globalModel) DeleteItem(id bson.ObjectId) {
 
 	delete(self.items, id)
 
-	utils.HandleError(database.DeleteItem(self.session, id))
+	utils.HandleError(database.DeleteItem(id))
 }
 
 // M is the global model object. All functions are thread-safe and all changes
@@ -383,43 +382,41 @@ func Init(session *mgo.Session) error {
 
 	M = globalModel{}
 
-	M.session = session
-
 	M.users = map[bson.ObjectId]database.User{}
 	M.characters = map[bson.ObjectId]*database.Character{}
 	M.rooms = map[bson.ObjectId]*database.Room{}
 	M.zones = map[bson.ObjectId]database.Zone{}
 	M.items = map[bson.ObjectId]database.Item{}
 
-	users, err := database.GetAllUsers(session)
+	users, err := database.GetAllUsers()
 	utils.HandleError(err)
 
 	for _, user := range users {
 		M.users[user.Id] = user
 	}
 
-	characters, err := database.GetAllCharacters(session)
+	characters, err := database.GetAllCharacters()
 	utils.HandleError(err)
 
 	for _, character := range characters {
 		M.characters[character.GetId()] = character
 	}
 
-	rooms, err := database.GetAllRooms(session)
+	rooms, err := database.GetAllRooms()
 	utils.HandleError(err)
 
 	for _, room := range rooms {
 		M.rooms[room.GetId()] = room
 	}
 
-	zones, err := database.GetAllZones(session)
+	zones, err := database.GetAllZones()
 	utils.HandleError(err)
 
 	for _, zone := range zones {
 		M.zones[zone.Id] = zone
 	}
 
-	items, err := database.GetAllItems(session)
+	items, err := database.GetAllItems()
 	utils.HandleError(err)
 
 	for _, item := range items {

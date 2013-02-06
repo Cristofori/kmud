@@ -34,22 +34,22 @@ func processUpdates() {
 	for {
 		op := <-updateChannel
 		// fmt.Println("Processing update:", op.id, op.field, op.value)
-		utils.HandleError(updateField(session, op.collection, op.id, op.field, op.value))
+		utils.HandleError(updateField(op.collection, op.id, op.field, op.value))
 	}
 }
 
-func getCollection(session *mgo.Session, collection collectionName) *mgo.Collection {
+func getCollection(collection collectionName) *mgo.Collection {
 	return session.DB("mud").C(string(collection))
 }
 
 func getCollectionFromType(t objectType) *mgo.Collection {
 	switch t {
 	case characterType:
-		return getCollection(session, cCharacters)
+		return getCollection(cCharacters)
 	case roomType:
-		return getCollection(session, cRooms)
+		return getCollection(cRooms)
 	case userType:
-		return getCollection(session, cUsers)
+		return getCollection(cUsers)
 	default:
 		panic("database.updateObject: Unhandled object type")
 	}
@@ -91,12 +91,12 @@ func printError(err error) {
 	}
 }
 
-func GetCharacterRoom(session *mgo.Session, character Character) (Room, error) {
-	return GetRoom(session, character.GetRoomId())
+func GetCharacterRoom(character Character) (Room, error) {
+	return GetRoom(character.GetRoomId())
 }
 
-func findObject(session *mgo.Session, collection collectionName, query interface{}, object interface{}) error {
-	c := getCollection(session, collection)
+func findObject(collection collectionName, query interface{}, object interface{}) error {
+	c := getCollection(collection)
 	q := c.Find(query)
 
 	count, err := q.Count()
@@ -114,15 +114,15 @@ func findObject(session *mgo.Session, collection collectionName, query interface
 	return err
 }
 
-func findObjects(session *mgo.Session, collection collectionName, objects interface{}) error {
-	c := getCollection(session, collection)
+func findObjects(collection collectionName, objects interface{}) error {
+	c := getCollection(collection)
 	iter := c.Find(nil).Iter()
 	return iter.All(objects)
 }
 
-func GetAllUsers(session *mgo.Session) ([]User, error) {
+func GetAllUsers() ([]User, error) {
 	var users []User
-	err := findObjects(session, cUsers, &users)
+	err := findObjects(cUsers, &users)
 
 	for _, user := range users {
 		user.objType = userType
@@ -163,9 +163,9 @@ func convertFieldToIdSlice(object *DbObject, field string) {
 	}
 }
 
-func GetAllCharacters(session *mgo.Session) ([]*Character, error) {
+func GetAllCharacters() ([]*Character, error) {
 	var characters []*Character
-	err := findObjects(session, cCharacters, &characters)
+	err := findObjects(cCharacters, &characters)
 
 	for _, char := range characters {
 		char.objType = characterType
@@ -175,9 +175,9 @@ func GetAllCharacters(session *mgo.Session) ([]*Character, error) {
 	return characters, err
 }
 
-func GetAllRooms(session *mgo.Session) ([]*Room, error) {
+func GetAllRooms() ([]*Room, error) {
 	var rooms []*Room
-	err := findObjects(session, cRooms, &rooms)
+	err := findObjects(cRooms, &rooms)
 
 	for _, room := range rooms {
 		room.objType = roomType
@@ -197,82 +197,82 @@ func GetAllRooms(session *mgo.Session) ([]*Room, error) {
 	return rooms, err
 }
 
-func GetAllZones(session *mgo.Session) ([]Zone, error) {
+func GetAllZones() ([]Zone, error) {
 	var zones []Zone
-	err := findObjects(session, cZones, &zones)
+	err := findObjects(cZones, &zones)
 	return zones, err
 }
 
-func GetAllItems(session *mgo.Session) ([]Item, error) {
+func GetAllItems() ([]Item, error) {
 	var items []Item
-	err := findObjects(session, cItems, &items)
+	err := findObjects(cItems, &items)
 	return items, err
 }
 
-func findRoom(session *mgo.Session, query interface{}) (Room, error) {
+func findRoom(query interface{}) (Room, error) {
 	var room Room
-	err := findObject(session, cRooms, query, &room)
+	err := findObject(cRooms, query, &room)
 	return room, err
 }
 
-func findCharacter(session *mgo.Session, query interface{}) (Character, error) {
+func findCharacter(query interface{}) (Character, error) {
 	var character Character
-	err := findObject(session, cCharacters, query, &character)
+	err := findObject(cCharacters, query, &character)
 	return character, err
 }
 
-func findUser(session *mgo.Session, query interface{}) (User, error) {
+func findUser(query interface{}) (User, error) {
 	var user User
-	err := findObject(session, cUsers, query, &user)
+	err := findObject(cUsers, query, &user)
 	return user, err
 }
 
-func GetUser(session *mgo.Session, id bson.ObjectId) (User, error) {
-	return findUser(session, bson.M{fId: id})
+func GetUser(id bson.ObjectId) (User, error) {
+	return findUser(bson.M{fId: id})
 }
 
-func GetUserByName(session *mgo.Session, name string) (User, error) {
-	return findUser(session, bson.M{fName: name})
+func GetUserByName(name string) (User, error) {
+	return findUser(bson.M{fName: name})
 }
 
-func GetCharacter(session *mgo.Session, id bson.ObjectId) (Character, error) {
-	return findCharacter(session, bson.M{fId: id})
+func GetCharacter(id bson.ObjectId) (Character, error) {
+	return findCharacter(bson.M{fId: id})
 }
 
-func GetCharacterByName(session *mgo.Session, name string) (Character, error) {
-	return findCharacter(session, bson.M{fName: name})
+func GetCharacterByName(name string) (Character, error) {
+	return findCharacter(bson.M{fName: name})
 }
 
-func GetRoom(session *mgo.Session, id bson.ObjectId) (Room, error) {
-	return findRoom(session, bson.M{fId: id})
+func GetRoom(id bson.ObjectId) (Room, error) {
+	return findRoom(bson.M{fId: id})
 }
 
-func GetRoomByLocation(session *mgo.Session, location Coordinate) (Room, error) {
-	return findRoom(session, bson.M{fLocation: location})
+func GetRoomByLocation(location Coordinate) (Room, error) {
+	return findRoom(bson.M{fLocation: location})
 }
 
-func DeleteRoom(session *mgo.Session, id bson.ObjectId) error {
-	c := getCollection(session, cRooms)
+func DeleteRoom(id bson.ObjectId) error {
+	c := getCollection(cRooms)
 	return c.RemoveId(id)
 }
 
-func DeleteUser(session *mgo.Session, id bson.ObjectId) error {
-	c := getCollection(session, cUsers)
+func DeleteUser(id bson.ObjectId) error {
+	c := getCollection(cUsers)
 	return c.RemoveId(id)
 }
 
-func DeleteCharacter(session *mgo.Session, id bson.ObjectId) error {
-	c := getCollection(session, cCharacters)
+func DeleteCharacter(id bson.ObjectId) error {
+	c := getCollection(cCharacters)
 	return c.Remove(bson.M{fId: id})
 }
 
-func DeleteItem(session *mgo.Session, id bson.ObjectId) error {
-	c := getCollection(session, cItems)
+func DeleteItem(id bson.ObjectId) error {
+	c := getCollection(cItems)
 	return c.Remove(bson.M{fId: id})
 }
 
-func StartingRoom(session *mgo.Session) (Room, error) {
-	c := getCollection(session, cRooms)
+func StartingRoom() (Room, error) {
+	c := getCollection(cRooms)
 	q := c.Find(bson.M{fDefault: true})
 
 	count, err := q.Count()
@@ -295,52 +295,52 @@ func StartingRoom(session *mgo.Session) (Room, error) {
 	return room, err
 }
 
-func DeleteAllRooms(session *mgo.Session) {
-	c := getCollection(session, cRooms)
+func DeleteAllRooms() {
+	c := getCollection(cRooms)
 	c.DropCollection()
 }
 
-func CreateUser(session *mgo.Session, name string) (User, error) {
-	user, err := findUser(session, bson.M{fName: name})
+func CreateUser(name string) (User, error) {
+	user, err := findUser(bson.M{fName: name})
 
 	if err == nil {
 		return user, errors.New("That user already exists")
 	}
 
 	user = NewUser(name)
-	err = CommitUser(session, user)
+	err = CommitUser(user)
 	return user, err
 }
 
-func commitObject(session *mgo.Session, c *mgo.Collection, object Identifiable) error {
+func commitObject(c *mgo.Collection, object Identifiable) error {
 	_, err := c.UpsertId(object.GetId(), object)
 	printError(err)
 	return err
 }
 
-func updateField(session *mgo.Session, c *mgo.Collection, id bson.ObjectId, fieldName string, fieldValue interface{}) error {
+func updateField(c *mgo.Collection, id bson.ObjectId, fieldName string, fieldValue interface{}) error {
 	err := c.UpdateId(id, bson.M{"$set": bson.M{fieldName: fieldValue}})
 	return err
 }
 
-func CommitUser(session *mgo.Session, user User) error {
-	return commitObject(session, getCollection(session, cUsers), user)
+func CommitUser(user User) error {
+	return commitObject(getCollection(cUsers), user)
 }
 
-func CommitRoom(session *mgo.Session, room Room) error {
-	return commitObject(session, getCollection(session, cRooms), room)
+func CommitRoom(room Room) error {
+	return commitObject(getCollection(cRooms), room)
 }
 
-func CommitCharacter(session *mgo.Session, character Character) error {
-	return commitObject(session, getCollection(session, cCharacters), character)
+func CommitCharacter(character Character) error {
+	return commitObject(getCollection(cCharacters), character)
 }
 
-func CommitZone(session *mgo.Session, zone Zone) error {
-	return commitObject(session, getCollection(session, cZones), zone)
+func CommitZone(zone Zone) error {
+	return commitObject(getCollection(cZones), zone)
 }
 
-func CommitItem(session *mgo.Session, item Item) error {
-	return commitObject(session, getCollection(session, cItems), item)
+func CommitItem(item Item) error {
+	return commitObject(getCollection(cItems), item)
 }
 
 // vim: nocindent
