@@ -249,7 +249,7 @@ func (self LogoutEvent) ToString(receiver database.Character) string {
 
 func getColorMode(char database.Character) utils.ColorMode {
 	user := M.GetUser(char.GetUserId())
-	return user.ColorMode
+	return user.GetColorMode()
 }
 
 // vim: nocindent

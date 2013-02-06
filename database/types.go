@@ -29,6 +29,7 @@ type objectType int
 const (
 	characterType objectType = iota
 	roomType      objectType = iota
+	userType      objectType = iota
 )
 
 const (

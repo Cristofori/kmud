@@ -77,7 +77,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 	}
 
 	printLineColor := func(color utils.Color, line string, a ...interface{}) {
-		utils.WriteLine(conn, utils.Colorize(currentUser.ColorMode, color, fmt.Sprintf(line, a...)))
+		utils.WriteLine(conn, utils.Colorize(currentUser.GetColorMode(), color, fmt.Sprintf(line, a...)))
 	}
 
 	printLine := func(line string, a ...interface{}) {
@@ -91,12 +91,12 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 	printRoom := func() {
 		charList := model.M.CharactersIn(currentRoom.Id, currentChar.Id)
 		npcList := model.M.NpcsIn(currentRoom.Id)
-		printLine(currentRoom.ToString(database.ReadMode, currentUser.ColorMode,
+		printLine(currentRoom.ToString(database.ReadMode, currentUser.GetColorMode(),
 			charList, npcList, model.M.GetItems(currentRoom.GetItemIds())))
 	}
 
 	printRoomEditor := func() {
-		printLine(currentRoom.ToString(database.EditMode, currentUser.ColorMode, nil, nil, nil))
+		printLine(currentRoom.ToString(database.EditMode, currentUser.GetColorMode(), nil, nil, nil))
 	}
 
 	prompt := func() string {
@@ -159,7 +159,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 		var data bson.ObjectId
 
 		for {
-			menu.Print(conn, currentUser.ColorMode)
+			menu.Print(conn, currentUser.GetColorMode())
 			choice = getUserInput(CleanUserInput, menu.GetPrompt())
 			if menu.HasAction(choice) || choice == "" {
 				data = menu.GetData(choice)
@@ -185,7 +185,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					loc := currentRoom.NextLocation(arg)
 					roomToSee, found := model.M.GetRoomByLocation(loc, currentZone.Id)
 					if found {
-						printLine(roomToSee.ToString(database.ReadMode, currentUser.ColorMode,
+						printLine(roomToSee.ToString(database.ReadMode, currentUser.GetColorMode(),
 							model.M.CharactersIn(roomToSee.Id, ""), model.M.NpcsIn(roomToSee.Id), nil))
 					} else {
 						printLine("Nothing to see")
@@ -331,7 +331,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 
 				case "3":
 					for {
-						menu := toggleExitMenu(currentUser.ColorMode, currentRoom)
+						menu := toggleExitMenu(currentUser.GetColorMode(), currentRoom)
 
 						choice, _ := execMenu(menu)
 
@@ -444,14 +444,14 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				}
 			}
 
-			printLine(utils.TrimEmptyRows(builder.toString(currentUser.ColorMode)))
+			printLine(utils.TrimEmptyRows(builder.toString(currentUser.GetColorMode())))
 
 		case "zone":
 			if len(args) == 0 {
 				if currentZone.Id == "" {
 					printLine("Currently in the null zone")
 				} else {
-					printLine("Current zone: " + utils.Colorize(currentUser.ColorMode, utils.ColorBlue, currentZone.Name))
+					printLine("Current zone: " + utils.Colorize(currentUser.GetColorMode(), utils.ColorBlue, currentZone.Name))
 				}
 			} else if len(args) == 1 {
 				if args[0] == "list" {
@@ -655,7 +655,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 		case "cm":
 			if len(args) == 0 {
 				message := "Current color mode is: "
-				switch currentUser.ColorMode {
+				switch currentUser.GetColorMode() {
 				case utils.ColorModeNone:
 					message = message + "None"
 				case utils.ColorModeLight:
@@ -667,15 +667,15 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			} else if len(args) == 1 {
 				switch strings.ToLower(args[0]) {
 				case "none":
-					currentUser.ColorMode = utils.ColorModeNone
+					currentUser.SetColorMode(utils.ColorModeNone)
 					model.M.UpdateUser(*currentUser)
 					printLine("Color mode set to: None")
 				case "light":
-					currentUser.ColorMode = utils.ColorModeLight
+					currentUser.SetColorMode(utils.ColorModeLight)
 					model.M.UpdateUser(*currentUser)
 					printLine("Color mode set to: Light")
 				case "dark":
-					currentUser.ColorMode = utils.ColorModeDark
+					currentUser.SetColorMode(utils.ColorModeDark)
 					model.M.UpdateUser(*currentUser)
 					printLine("Color mode set to: Dark")
 				default:
@@ -850,7 +850,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 
 		for {
 			mode := <-inputModeChannel
-			prompt := utils.Colorize(currentUser.ColorMode, utils.ColorWhite, <-promptChannel)
+			prompt := utils.Colorize(currentUser.GetColorMode(), utils.ColorWhite, <-promptChannel)
 			input := ""
 
 			switch mode {

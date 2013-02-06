@@ -26,7 +26,7 @@ func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *Char
 	character.SetRoom(roomId)
 	character.SetCash(0)
 
-	character.online = false
+	character.SetOnline(false)
 
 	return &character
 }

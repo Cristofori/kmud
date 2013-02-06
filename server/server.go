@@ -215,7 +215,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			}
 		} else if character == nil {
 			menu := userMenu(user)
-			choice, charId := menu.Exec(conn, user.ColorMode)
+			choice, charId := menu.Exec(conn, user.GetColorMode())
 
 			switch choice {
 			case "":
@@ -226,13 +226,13 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			case "a":
 				adminMenu := adminMenu()
 				for {
-					choice, _ := adminMenu.Exec(conn, user.ColorMode)
+					choice, _ := adminMenu.Exec(conn, user.GetColorMode())
 					if choice == "" {
 						break
 					} else if choice == "u" {
 						for {
 							userAdminMenu := userAdminMenu()
-							choice, userId := userAdminMenu.Exec(conn, user.ColorMode)
+							choice, userId := userAdminMenu.Exec(conn, user.GetColorMode())
 							if choice == "" {
 								break
 							} else {
@@ -241,7 +241,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 								if err == nil {
 									for {
 										userMenu := userSpecificMenu(model.M.GetUser(userId))
-										choice, _ = userMenu.Exec(conn, user.ColorMode)
+										choice, _ = userMenu.Exec(conn, user.GetColorMode())
 										if choice == "" {
 											break
 										} else if choice == "d" {
@@ -259,7 +259,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			case "d":
 				for {
 					deleteMenu := deleteMenu(user)
-					deleteChoice, deleteCharId := deleteMenu.Exec(conn, user.ColorMode)
+					deleteChoice, deleteCharId := deleteMenu.Exec(conn, user.GetColorMode())
 
 					if deleteChoice == "" || deleteChoice == "c" {
 						break

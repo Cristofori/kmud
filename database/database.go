@@ -33,6 +33,8 @@ func updateObject(obj Identifiable, field string, value interface{}) {
 		c = getCollection(session, cCharacters)
 	case roomType:
 		c = getCollection(session, cRooms)
+	case userType:
+		c = getCollection(session, cUsers)
 	default:
 		panic("database.updateObject: Unhandled object type")
 	}
@@ -118,6 +120,25 @@ func findObjects(session *mgo.Session, collection collectionName, objects interf
 func GetAllUsers(session *mgo.Session) ([]User, error) {
 	var users []User
 	err := findObjects(session, cUsers, &users)
+
+	for _, user := range users {
+		user.objType = userType
+
+		// TODO: Also sucks
+		colorMode := user.getField(userColorMode).(int)
+
+		switch utils.ColorMode(colorMode) {
+		case utils.ColorModeLight:
+			user.Fields[userColorMode] = utils.ColorModeLight
+		case utils.ColorModeDark:
+			user.Fields[userColorMode] = utils.ColorModeDark
+		case utils.ColorModeNone:
+			user.Fields[userColorMode] = utils.ColorModeNone
+		default:
+			panic("database.GetAllUsers(): Unhandled case in switch statement")
+		}
+	}
+
 	return users, err
 }
 
@@ -155,10 +176,10 @@ func GetAllRooms(session *mgo.Session) ([]*Room, error) {
 	var rooms []*Room
 	err := findObjects(session, cRooms, &rooms)
 
-	// TODO: Also sucks
 	for _, room := range rooms {
 		room.objType = roomType
 
+		// TODO: Also sucks
 		location := room.getField(roomLocation).(map[string]interface{})
 
 		var coord Coordinate
