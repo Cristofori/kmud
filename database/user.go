@@ -17,7 +17,6 @@ type User struct {
 func NewUser(name string) User {
 	var user User
 	user.initDbObject(userType)
-	commitObject(session, getCollection(session, cUsers), user)
 
 	user.SetName(name)
 	user.SetColorMode(utils.ColorModeNone)

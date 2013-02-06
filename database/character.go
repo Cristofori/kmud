@@ -19,7 +19,6 @@ type Character struct {
 func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *Character {
 	var character Character
 	character.initDbObject(characterType)
-	commitObject(session, getCollection(session, cCharacters), character)
 
 	character.SetUser(userId)
 	character.SetName(name)

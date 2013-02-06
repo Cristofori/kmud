@@ -26,19 +26,7 @@ func Init(s *mgo.Session) {
 }
 
 func updateObject(obj Identifiable, field string, value interface{}) {
-	var c *mgo.Collection = nil
-
-	switch obj.GetType() {
-	case characterType:
-		c = getCollection(session, cCharacters)
-	case roomType:
-		c = getCollection(session, cRooms)
-	case userType:
-		c = getCollection(session, cUsers)
-	default:
-		panic("database.updateObject: Unhandled object type")
-	}
-
+	c := getCollectionFromType(obj.GetType())
 	updateChannel <- UpdateOperation{id: obj.GetId(), field: field, collection: c, value: value}
 }
 
@@ -52,6 +40,21 @@ func processUpdates() {
 
 func getCollection(session *mgo.Session, collection collectionName) *mgo.Collection {
 	return session.DB("mud").C(string(collection))
+}
+
+func getCollectionFromType(t objectType) *mgo.Collection {
+	switch t {
+	case characterType:
+		return getCollection(session, cCharacters)
+	case roomType:
+		return getCollection(session, cRooms)
+	case userType:
+		return getCollection(session, cUsers)
+	default:
+		panic("database.updateObject: Unhandled object type")
+	}
+
+	return nil
 }
 
 type collectionName string

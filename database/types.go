@@ -138,6 +138,8 @@ func (self *DbObject) initDbObject(objType objectType) {
 	self.Id = bson.NewObjectId()
 	self.objType = objType
 	self.Fields = map[string]interface{}{}
+
+	commitObject(session, getCollectionFromType(objType), *self)
 }
 
 func (self DbObject) GetId() bson.ObjectId {

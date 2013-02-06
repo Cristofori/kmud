@@ -32,7 +32,6 @@ type Room struct {
 func NewRoom(zoneId bson.ObjectId) *Room {
 	var room Room
 	room.initDbObject(roomType)
-	commitObject(session, getCollection(session, cRooms), room)
 
 	room.SetTitle("The Void")
 	room.SetDescription("You are floating in the blackness of space. Complete darkness surrounds " +
