@@ -16,7 +16,7 @@ type globalModel struct {
 	characters map[bson.ObjectId]*database.Character
 	rooms      map[bson.ObjectId]*database.Room
 	zones      map[bson.ObjectId]*database.Zone
-	items      map[bson.ObjectId]database.Item
+	items      map[bson.ObjectId]*database.Item
 
 	mutex sync.Mutex
 }
@@ -325,19 +325,18 @@ func (self *globalModel) DeleteUser(id bson.ObjectId) {
 	utils.HandleError(database.DeleteUser(id))
 }
 
-// UpdateItem updates the item in the model with the given id, replacing it with
-// the one that's given. If the given item doesn't exist in the model it will
-// be created. Also takes care of updating the database.
-func (self *globalModel) UpdateItem(object database.Item) {
+func (self *globalModel) CreateItem(name string) *database.Item {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	self.items[object.Id] = object
-	utils.HandleError(database.CommitItem(object))
+	item := database.NewItem(name)
+	self.items[item.GetId()] = item
+
+	return item
 }
 
 // GetItem returns the Item object associated the given id
-func (self *globalModel) GetItem(id bson.ObjectId) database.Item {
+func (self *globalModel) GetItem(id bson.ObjectId) *database.Item {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
@@ -345,8 +344,8 @@ func (self *globalModel) GetItem(id bson.ObjectId) database.Item {
 }
 
 // GetItems returns the Items object associated the given ids
-func (self *globalModel) GetItems(itemIds []bson.ObjectId) []database.Item {
-	var items []database.Item
+func (self *globalModel) GetItems(itemIds []bson.ObjectId) []*database.Item {
+	var items []*database.Item
 
 	for _, itemId := range itemIds {
 		items = append(items, self.GetItem(itemId))
@@ -384,7 +383,7 @@ func Init(session *mgo.Session) error {
 	M.characters = map[bson.ObjectId]*database.Character{}
 	M.rooms = map[bson.ObjectId]*database.Room{}
 	M.zones = map[bson.ObjectId]*database.Zone{}
-	M.items = map[bson.ObjectId]database.Item{}
+	M.items = map[bson.ObjectId]*database.Item{}
 
 	users, err := database.GetAllUsers()
 	utils.HandleError(err)
@@ -418,7 +417,7 @@ func Init(session *mgo.Session) error {
 	utils.HandleError(err)
 
 	for _, item := range items {
-		M.items[item.Id] = item
+		M.items[item.GetId()] = item
 	}
 
 	// Start the event loop

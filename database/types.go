@@ -31,6 +31,7 @@ const (
 	roomType      objectType = iota
 	userType      objectType = iota
 	zoneType      objectType = iota
+	itemType      objectType = iota
 )
 
 const (
@@ -43,20 +44,6 @@ type DbObject struct {
 	Name    string `bson:",omitempty"`
 	Fields  map[string]interface{}
 	mutex   sync.Mutex
-}
-
-type ObjectField string
-
-type Item struct {
-	DbObject `bson:",inline"`
-}
-
-func NewItem(name string) Item {
-	var item Item
-	item.Id = bson.NewObjectId()
-	item.Name = name
-
-	return item
 }
 
 type ExitDirection int
@@ -124,12 +111,13 @@ func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) s
 	panic("Unexpected code path")
 }
 
-func (self *DbObject) initDbObject(objType objectType) {
+func (self *DbObject) initDbObject(name string, objType objectType) {
 	self.Id = bson.NewObjectId()
 	self.objType = objType
 	self.Fields = map[string]interface{}{}
 
 	commitObject(getCollectionFromType(objType), *self)
+	self.SetName(name)
 }
 
 func (self DbObject) GetId() bson.ObjectId {

@@ -18,10 +18,9 @@ type Character struct {
 
 func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *Character {
 	var character Character
-	character.initDbObject(characterType)
+	character.initDbObject(name, characterType)
 
 	character.SetUser(userId)
-	character.SetName(name)
 	character.SetRoom(roomId)
 	character.SetCash(0)
 
@@ -78,13 +77,13 @@ func (self *Character) GetCash() int {
 	return self.getField(characterCash).(int)
 }
 
-func (self *Character) AddItem(item Item) {
+func (self *Character) AddItem(item *Item) {
 	itemIds := self.GetItemIds()
 	itemIds = append(itemIds, item.GetId())
 	self.setField(characterInventory, itemIds)
 }
 
-func (self *Character) RemoveItem(item Item) {
+func (self *Character) RemoveItem(item *Item) {
 	itemIds := self.GetItemIds()
 	for i, itemId := range itemIds {
 		if itemId == item.GetId() {

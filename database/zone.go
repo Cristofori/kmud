@@ -4,11 +4,9 @@ type Zone struct {
 	DbObject `bson:",inline"`
 }
 
-const ()
-
 func NewZone(name string) *Zone {
 	var zone Zone
-	zone.initDbObject(zoneType)
+	zone.initDbObject(name, zoneType)
 
 	return &zone
 }

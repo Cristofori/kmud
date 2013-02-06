@@ -31,7 +31,7 @@ type Room struct {
 
 func NewRoom(zoneId bson.ObjectId) *Room {
 	var room Room
-	room.initDbObject(roomType)
+	room.initDbObject("", roomType)
 
 	room.SetTitle("The Void")
 	room.SetDescription("You are floating in the blackness of space. Complete darkness surrounds " +
@@ -55,7 +55,7 @@ func NewRoom(zoneId bson.ObjectId) *Room {
 	return &room
 }
 
-func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []*Character, npcs []*Character, items []Item) string {
+func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []*Character, npcs []*Character, items []*Item) string {
 	var str string
 
 	if mode == ReadMode {
@@ -194,13 +194,13 @@ func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
 	}
 }
 
-func (self *Room) AddItem(item Item) {
+func (self *Room) AddItem(item *Item) {
 	itemIds := self.GetItemIds()
 	itemIds = append(itemIds, item.GetId())
 	self.setField(roomItems, itemIds)
 }
 
-func (self *Room) RemoveItem(item Item) {
+func (self *Room) RemoveItem(item *Item) {
 	itemIds := self.GetItemIds()
 	for i, itemId := range itemIds {
 		if itemId == item.GetId() {

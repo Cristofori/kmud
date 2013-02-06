@@ -765,9 +765,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				return
 			}
 
-			item := database.NewItem(args[0])
-			model.M.UpdateItem(item)
-
+			item := model.M.CreateItem(args[0])
 			currentRoom.AddItem(item)
 
 		case "destroy":

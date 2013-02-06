@@ -16,11 +16,9 @@ type User struct {
 
 func NewUser(name string) User {
 	var user User
-	user.initDbObject(userType)
+	user.initDbObject(name, userType)
 
-	user.SetName(name)
 	user.SetColorMode(utils.ColorModeNone)
-
 	user.SetOnline(false)
 
 	return user
