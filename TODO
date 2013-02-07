@@ -1,6 +1,5 @@
 * More unit tests
 * NPC conversations
-* Inventory (picking up, dropping, destroying)
 * Currency
 * Custom room views
 * Custom room exits/actions
@@ -11,4 +10,3 @@
 * Movement across zone boundaries
 * Spell checking
 * Improve input usability by processing each character at a time (/r > /tell <foo>)
-* Partial DB object updates, updating wholesale will quickly cause problems due to concurrency issues
