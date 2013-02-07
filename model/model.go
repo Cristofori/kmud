@@ -12,7 +12,7 @@ import (
 )
 
 type globalModel struct {
-	users      map[bson.ObjectId]database.User
+	users      map[bson.ObjectId]*database.User
 	characters map[bson.ObjectId]*database.Character
 	rooms      map[bson.ObjectId]*database.Room
 	zones      map[bson.ObjectId]*database.Zone
@@ -21,15 +21,16 @@ type globalModel struct {
 	mutex sync.Mutex
 }
 
-// UpdateUser updates the user in the model with user's Id, replacing it with
-// the one that's given. If the given user doesn't exist in the model it will
-// be created. Also takes care of updating the database.
-func (self *globalModel) UpdateUser(user database.User) {
+// CreateUser creates a new User object in the database and adds it to the model.
+// A pointer to the new User object is returned.
+func (self *globalModel) CreateUser(name string) *database.User {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
+	user := database.NewUser(name)
 	self.users[user.Id] = user
-	utils.HandleError(database.CommitUser(user))
+
+	return user
 }
 
 // GetCharacter returns the Character object associated the given Id
@@ -272,7 +273,7 @@ func (self *globalModel) deleteRoom(id bson.ObjectId) {
 }
 
 // GetUser returns the User object associated with the given id
-func (self *globalModel) GetUser(id bson.ObjectId) database.User {
+func (self *globalModel) GetUser(id bson.ObjectId) *database.User {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
@@ -280,11 +281,11 @@ func (self *globalModel) GetUser(id bson.ObjectId) database.User {
 }
 
 // GetUsers returns all of the User objects in the model
-func (self *globalModel) GetUsers() []database.User {
+func (self *globalModel) GetUsers() []*database.User {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	var users []database.User
+	var users []*database.User
 
 	for _, user := range self.users {
 		users = append(users, user)
@@ -295,17 +296,17 @@ func (self *globalModel) GetUsers() []database.User {
 
 // GetUserByName searches for the User object with the given name. Returns the
 // User and whether or not a match was found.
-func (self *globalModel) GetUserByName(username string) (database.User, bool) {
+func (self *globalModel) GetUserByName(username string) *database.User {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
 	for _, user := range self.users {
 		if user.Name == username {
-			return user, true
+			return user
 		}
 	}
 
-	return database.User{}, false
+	return nil
 }
 
 // Removes the User assocaited with the given id from the model. Removes it from the database as well
@@ -379,7 +380,7 @@ func Init(session *mgo.Session) error {
 
 	M = globalModel{}
 
-	M.users = map[bson.ObjectId]database.User{}
+	M.users = map[bson.ObjectId]*database.User{}
 	M.characters = map[bson.ObjectId]*database.Character{}
 	M.rooms = map[bson.ObjectId]*database.Room{}
 	M.zones = map[bson.ObjectId]*database.Zone{}
@@ -604,22 +605,6 @@ func eventLoop() {
 
 		broadcast(event.(Event))
 	}
-}
-
-func Login(user database.User) error {
-	if user.Online() {
-		return errors.New("That user is already online")
-	}
-
-	user.SetOnline(true)
-	M.UpdateUser(user) // TODO: Avoid unnecessary database call
-
-	return nil
-}
-
-func Logout(user database.User) {
-	user.SetOnline(false)
-	M.UpdateUser(user) // TODO: Avoid unnecessary database call
 }
 
 /**

@@ -12,64 +12,53 @@ import (
 	"strconv"
 )
 
-func login(conn net.Conn) database.User {
+func login(conn net.Conn) *database.User {
 	for {
 		line := utils.GetUserInput(conn, "Username: ")
 
 		if line == "" {
-			return database.User{}
+			return nil
 		}
 
-		user, found := model.M.GetUserByName(line)
+		user := model.M.GetUserByName(line)
 
-		if !found {
+		if user == nil {
 			utils.WriteLine(conn, "User not found")
+		} else if user.Online() {
+			utils.WriteLine(conn, "That user is already online")
 		} else {
-			err := model.Login(user)
-
-			if err == nil {
-				return user
-			} else {
-				utils.WriteLine(conn, err.Error())
-			}
+			user.SetOnline(true)
+			return user
 		}
 	}
 
 	panic("Unexpected code path")
-	return database.User{}
+	return nil
 }
 
-func newUser(conn net.Conn) database.User {
+func newUser(conn net.Conn) *database.User {
 	for {
 		name := utils.GetUserInput(conn, "Desired username: ")
 
-		var user database.User
 		if name == "" {
-			return user
+			return nil
 		}
 
-		user, found := model.M.GetUserByName(name)
+		user := model.M.GetUserByName(name)
 
-		if found {
+		if user != nil {
 			utils.WriteLine(conn, "That name is unavailable")
 		} else if err := utils.ValidateName(name); err != nil {
 			utils.WriteLine(conn, err.Error())
 		} else {
-			user = database.NewUser(name)
-			model.M.UpdateUser(user)
-
-			err := model.Login(user)
-
-			if err == nil {
-				return user
-			} else {
-				utils.WriteLine(conn, err.Error())
-			}
+			user = model.M.CreateUser(name)
+			user.SetOnline(true)
+			return user
 		}
 	}
 
 	panic("Unexpected code path")
-	return database.User{}
+	return nil
 }
 
 func newCharacter(conn net.Conn, user *database.User) *database.Character {
@@ -113,7 +102,7 @@ func mainMenu() utils.Menu {
 	return menu
 }
 
-func userMenu(user database.User) utils.Menu {
+func userMenu(user *database.User) utils.Menu {
 	chars := model.M.GetUserCharacters(user.Id)
 
 	menu := utils.NewMenu(user.PrettyName())
@@ -133,7 +122,7 @@ func userMenu(user database.User) utils.Menu {
 	return menu
 }
 
-func deleteMenu(user database.User) utils.Menu {
+func deleteMenu(user *database.User) utils.Menu {
 	chars := model.M.GetUserCharacters(user.Id)
 
 	menu := utils.NewMenu("Delete character")
@@ -173,7 +162,7 @@ func userAdminMenu() utils.Menu {
 	return menu
 }
 
-func userSpecificMenu(user database.User) utils.Menu {
+func userSpecificMenu(user *database.User) utils.Menu {
 	menu := utils.NewMenu("User: " + user.PrettyName())
 	menu.AddAction("d", "[D]elete")
 	return menu
@@ -183,12 +172,15 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	defer conn.Close()
 	defer session.Close()
 
-	var user database.User
+	var user *database.User
 	var character *database.Character
 
 	defer func() {
 		if r := recover(); r != nil {
-			model.Logout(user)
+			if user != nil {
+				user.SetOnline(false)
+			}
+
 			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
 				user.PrettyName(),
 				character.PrettyName(),
@@ -198,7 +190,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 	}()
 
 	for {
-		if user.Name == "" {
+		if user == nil {
 			menu := mainMenu()
 			choice, _ := menu.Exec(conn, utils.ColorModeNone)
 
@@ -221,8 +213,8 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 			case "":
 				fallthrough
 			case "l":
-				model.Logout(user)
-				user = database.User{}
+				user.SetOnline(false)
+				user = nil
 			case "a":
 				adminMenu := adminMenu()
 				for {
@@ -255,7 +247,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 					}
 				}
 			case "n":
-				character = newCharacter(conn, &user)
+				character = newCharacter(conn, user)
 			case "d":
 				for {
 					deleteMenu := deleteMenu(user)
@@ -280,7 +272,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 				}
 			}
 		} else {
-			game.Exec(conn, &user, character)
+			game.Exec(conn, user, character)
 			character = nil
 		}
 	}

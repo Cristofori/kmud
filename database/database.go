@@ -124,8 +124,8 @@ func findObjects(collection collectionName, objects interface{}) error {
 	return iter.All(objects)
 }
 
-func GetAllUsers() ([]User, error) {
-	var users []User
+func GetAllUsers() ([]*User, error) {
+	var users []*User
 	err := findObjects(cUsers, &users)
 
 	for _, user := range users {
@@ -302,18 +302,6 @@ func StartingRoom() (Room, error) {
 func DeleteAllRooms() {
 	c := getCollection(cRooms)
 	c.DropCollection()
-}
-
-func CreateUser(name string) (User, error) {
-	user, err := findUser(bson.M{fName: name})
-
-	if err == nil {
-		return user, errors.New("That user already exists")
-	}
-
-	user = NewUser(name)
-	err = CommitUser(user)
-	return user, err
 }
 
 func commitObject(c *mgo.Collection, object Identifiable) error {

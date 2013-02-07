@@ -664,15 +664,12 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				switch strings.ToLower(args[0]) {
 				case "none":
 					currentUser.SetColorMode(utils.ColorModeNone)
-					model.M.UpdateUser(*currentUser)
 					printLine("Color mode set to: None")
 				case "light":
 					currentUser.SetColorMode(utils.ColorModeLight)
-					model.M.UpdateUser(*currentUser)
 					printLine("Color mode set to: Light")
 				case "dark":
 					currentUser.SetColorMode(utils.ColorModeDark)
-					model.M.UpdateUser(*currentUser)
 					printLine("Color mode set to: Dark")
 				default:
 					printLine("Valid color modes are: None, Light, Dark")

@@ -14,14 +14,14 @@ type User struct {
 	online    bool
 }
 
-func NewUser(name string) User {
+func NewUser(name string) *User {
 	var user User
 	user.initDbObject(name, userType)
 
 	user.SetColorMode(utils.ColorModeNone)
 	user.SetOnline(false)
 
-	return user
+	return &user
 }
 
 func (self *User) SetOnline(online bool) {
