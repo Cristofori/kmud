@@ -71,9 +71,9 @@ func newCharacter(conn net.Conn, user *database.User) *database.Character {
 			return nil
 		}
 
-		_, found := model.M.GetCharacterByName(name)
+		char := model.M.GetCharacterByName(name)
 
-		if found {
+		if char != nil {
 			utils.WriteLine(conn, "That name is unavailable")
 		} else if err := utils.ValidateName(name); err != nil {
 			utils.WriteLine(conn, err.Error())

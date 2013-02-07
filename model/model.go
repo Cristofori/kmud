@@ -42,8 +42,8 @@ func (self *globalModel) GetCharacter(id bson.ObjectId) *database.Character {
 }
 
 // GetCharacaterByName searches for a character with the given name. Returns a
-// character object along with whether or not it was found in the model
-func (self *globalModel) GetCharacterByName(name string) (*database.Character, bool) {
+// character object, or nil if it wasn't found.
+func (self *globalModel) GetCharacterByName(name string) *database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
@@ -51,11 +51,11 @@ func (self *globalModel) GetCharacterByName(name string) (*database.Character, b
 
 	for _, character := range self.characters {
 		if character.GetName() == name {
-			return character, true
+			return character
 		}
 	}
 
-	return nil, false
+	return nil
 }
 
 // GetUserCharacters returns all of the Character objects associated with the
@@ -207,23 +207,18 @@ func (self *globalModel) GetRoomsInZone(zoneId bson.ObjectId) []*database.Room {
 }
 
 // GetRoomByLocation searches for the room associated with the given coordinate
-// in the given zone.  Returns a room object and whether or not it was found. 
-func (self *globalModel) GetRoomByLocation(coordinate database.Coordinate, zoneId bson.ObjectId) (*database.Room, bool) {
+// in the given zone. Returns a nil room object if it was not found.
+func (self *globalModel) GetRoomByLocation(coordinate database.Coordinate, zoneId bson.ObjectId) *database.Room {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	var ret *database.Room = nil
-	found := false
-
 	for _, room := range self.rooms {
 		if room.GetLocation() == coordinate && room.GetZoneId() == zoneId {
-			found = true
-			ret = room
-			break
+			return room
 		}
 	}
 
-	return ret, found
+	return nil
 }
 
 // GetZone returns the zone object associated with the given id
@@ -250,17 +245,17 @@ func (self *globalModel) GetZones() []*database.Zone {
 
 // GetZoneByName name searches for a zone with the given name, returns a zone
 // object and whether or not it was found
-func (self *globalModel) GetZoneByName(name string) (*database.Zone, bool) {
+func (self *globalModel) GetZoneByName(name string) *database.Zone {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
 	for _, zone := range self.zones {
 		if zone.Name == name {
-			return zone, true
+			return zone
 		}
 	}
 
-	return nil, false
+	return nil
 }
 
 func (self *globalModel) deleteRoom(id bson.ObjectId) {
@@ -294,8 +289,8 @@ func (self *globalModel) GetUsers() []*database.User {
 	return users
 }
 
-// GetUserByName searches for the User object with the given name. Returns the
-// User and whether or not a match was found.
+// GetUserByName searches for the User object with the given name. Returns a
+// nil User if one was not found.
 func (self *globalModel) GetUserByName(username string) *database.User {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -429,9 +424,9 @@ func Init(session *mgo.Session) error {
 }
 
 func MoveCharacterToLocation(character *database.Character, zoneId bson.ObjectId, location database.Coordinate) (*database.Room, error) {
-	newRoom, found := M.GetRoomByLocation(location, zoneId)
+	newRoom := M.GetRoomByLocation(location, zoneId)
 
-	if !found {
+	if newRoom == nil {
 		return newRoom, errors.New("Invalid location")
 	}
 
@@ -465,9 +460,9 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 	}
 
 	newLocation := room.NextLocation(direction)
-	newRoom, found := M.GetRoomByLocation(newLocation, room.GetZoneId())
+	newRoom := M.GetRoomByLocation(newLocation, room.GetZoneId())
 
-	if !found {
+	if newRoom == nil {
 		zone := M.GetZone(room.GetZoneId())
 		fmt.Printf("No room found at location %v %v, creating a new one (%s)\n", zone.Name, newLocation, character.PrettyName())
 
@@ -514,9 +509,9 @@ func DeleteRoom(room *database.Room) {
 
 	updateRoom := func(dir database.ExitDirection) {
 		next := loc.Next(dir)
-		room, found := M.GetRoomByLocation(next, room.GetZoneId())
+		room := M.GetRoomByLocation(next, room.GetZoneId())
 
-		if found {
+		if room != nil {
 			var exitToDisable database.ExitDirection
 			switch dir {
 			case database.DirectionNorth:

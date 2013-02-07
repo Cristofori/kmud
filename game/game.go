@@ -183,8 +183,8 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					printLine("Nothing to see")
 				} else {
 					loc := currentRoom.NextLocation(arg)
-					roomToSee, found := model.M.GetRoomByLocation(loc, currentZone.Id)
-					if found {
+					roomToSee := model.M.GetRoomByLocation(loc, currentZone.Id)
+					if roomToSee != nil {
 						printLine(roomToSee.ToString(database.ReadMode, currentUser.GetColorMode(),
 							model.M.CharactersIn(roomToSee.Id, ""), model.M.NpcsIn(roomToSee.Id), nil))
 					} else {
@@ -433,12 +433,12 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				for y := startY; y <= endY; y += 1 {
 					for x := startX; x <= endX; x += 1 {
 						loc := database.Coordinate{x, y, z}
-						currentRoom, found := model.M.GetRoomByLocation(loc, currentZone.Id)
+						room := model.M.GetRoomByLocation(loc, currentZone.Id)
 
-						if found {
+						if room != nil {
 							// Translate to 0-based coordinates and double the coordinate
 							// space to leave room for the exit lines
-							builder.addRoom(currentRoom, (x-startX)*2, (y-startY)*2, z-startZ)
+							builder.addRoom(room, (x-startX)*2, (y-startY)*2, z-startZ)
 						}
 					}
 				}
@@ -465,9 +465,9 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				}
 			} else if len(args) == 2 {
 				if args[0] == "rename" {
-					_, found := model.M.GetZoneByName(args[0])
+					zone := model.M.GetZoneByName(args[0])
 
-					if found {
+					if zone != nil {
 						printError("A zone with that name already exists")
 						return
 					}
@@ -479,9 +479,9 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 						currentZone.SetName(args[1])
 					}
 				} else if args[0] == "new" {
-					_, found := model.M.GetZoneByName(args[0])
+					zone := model.M.GetZoneByName(args[0])
 
-					if found {
+					if zone != nil {
 						printError("A zone with that name already exists")
 						return
 					}
@@ -530,9 +530,9 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			}
 
 			name := string(args[0])
-			targetChar, found := model.M.GetCharacterByName(name)
+			targetChar := model.M.GetCharacterByName(name)
 
-			if !found {
+			if targetChar == nil {
 				printError("Player '%s' not found", name)
 				return
 			}
@@ -559,20 +559,19 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			newZone := currentZone
 
 			if len(args) == 1 {
-				var found bool
-				newZone, found = model.M.GetZoneByName(args[0])
+				newZone = model.M.GetZoneByName(args[0])
 
-				if !found {
+				if newZone == nil {
 					printError("Zone not found")
 					return
 				}
 
-				if newZone.Id == currentRoom.GetZoneId() {
+				if newZone.GetId() == currentRoom.GetZoneId() {
 					printLine("You're already in that zone")
 					return
 				}
 
-				zoneRooms := model.M.GetRoomsInZone(newZone.Id)
+				zoneRooms := model.M.GetRoomsInZone(newZone.GetId())
 
 				if len(zoneRooms) > 0 {
 					r := zoneRooms[0]
@@ -688,8 +687,8 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					printError("Not a valid direction")
 				} else {
 					loc := currentRoom.NextLocation(direction)
-					roomToDelete, found := model.M.GetRoomByLocation(loc, currentZone.Id)
-					if found {
+					roomToDelete := model.M.GetRoomByLocation(loc, currentZone.Id)
+					if roomToDelete != nil {
 						model.DeleteRoom(roomToDelete)
 					} else {
 						printError("No room in that direction")
@@ -707,11 +706,11 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				name := ""
 				for {
 					name = getUserInput(CleanUserInput, "Desired NPC name: ")
-					_, found := model.M.GetCharacterByName(name)
+					char := model.M.GetCharacterByName(name)
 
 					if name == "" {
 						return ""
-					} else if found {
+					} else if char != nil {
 						printError("That name is unavailable")
 					} else if err := utils.ValidateName(name); err != nil {
 						printError(err.Error())
