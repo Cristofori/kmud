@@ -177,13 +177,21 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 
 	defer func() {
 		if r := recover(); r != nil {
+			username := ""
+			charname := ""
+
 			if user != nil {
 				user.SetOnline(false)
+				username = user.PrettyName()
+			}
+
+			if character != nil {
+				charname = character.PrettyName()
 			}
 
 			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
-				user.PrettyName(),
-				character.PrettyName(),
+				username,
+				charname,
 				conn.RemoteAddr(),
 				r)
 		}
