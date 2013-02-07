@@ -103,6 +103,10 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 		return "> "
 	}
 
+	erase := func(count int) {
+		utils.Write(conn, strings.Repeat("\b", count))
+	}
+
 	processEvent := func(event model.Event) string {
 		message := event.ToString(*currentChar)
 
@@ -142,7 +146,8 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			case event := <-eventChannel:
 				message := processEvent(event)
 				if message != "" {
-					printLine("\n" + message)
+					erase(len(prompt))
+					printLine(message)
 					printString(prompt)
 				}
 			case quitMessage := <-panicChannel:

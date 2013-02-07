@@ -11,8 +11,12 @@ import (
 	"unicode"
 )
 
+func Write(conn io.Writer, text string) (int, error) {
+	return io.WriteString(conn, text)
+}
+
 func WriteLine(conn io.Writer, line string) (int, error) {
-	return io.WriteString(conn, line+"\r\n")
+	return Write(conn, line+"\r\n")
 }
 
 func Simplify(str string) string {
