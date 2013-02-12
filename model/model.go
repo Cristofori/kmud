@@ -85,7 +85,7 @@ func (self *globalModel) CharactersIn(roomId bson.ObjectId, except bson.ObjectId
 	var charList []*database.Character
 
 	for _, char := range self.characters {
-		if char.GetRoomId() == roomId && char.Id != except && char.IsOnline() {
+		if char.GetRoomId() == roomId && char.GetId() != except && char.IsOnline() {
 			charList = append(charList, char)
 		}
 	}
@@ -132,9 +132,19 @@ func (self *globalModel) CreateCharacter(name string, userId bson.ObjectId, room
 	defer self.mutex.Unlock()
 
 	character := database.NewCharacter(name, userId, roomId)
-	self.characters[character.Id] = character
+	self.characters[character.GetId()] = character
 
 	return character
+}
+
+func (self *globalModel) CreateNpc(name string, roomId bson.ObjectId) *database.Character {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	npc := database.NewNpc(name, roomId)
+	self.characters[npc.GetId()] = npc
+
+	return npc
 }
 
 // DeleteCharacter removes the character associated with the given id from the

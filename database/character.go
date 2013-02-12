@@ -20,7 +20,9 @@ func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *Char
 	var character Character
 	character.initDbObject(name, characterType)
 
-	character.SetUser(userId)
+	if userId != "" {
+		character.SetUser(userId)
+	}
 	character.SetRoom(roomId)
 	character.SetCash(0)
 
@@ -42,7 +44,7 @@ func (self *Character) IsOnline() bool {
 }
 
 func (self *Character) IsNpc() bool {
-	return self.GetUserId() == ""
+	return !self.hasField(characterUserId)
 }
 
 func (self *Character) GetName() string {
@@ -62,6 +64,10 @@ func (self *Character) SetUser(id bson.ObjectId) {
 }
 
 func (self *Character) GetUserId() bson.ObjectId {
+	if self.IsNpc() {
+		return ""
+	}
+
 	return self.getField(characterUserId).(bson.ObjectId)
 }
 

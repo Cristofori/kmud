@@ -735,7 +735,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				if name == "" {
 					goto done
 				}
-				database.NewNpc(name, currentRoom.Id)
+				model.M.CreateNpc(name, currentRoom.Id)
 			} else if npcId != "" {
 				specificMenu := specificNpcMenu(npcId)
 				choice, _ := execMenu(specificMenu)
