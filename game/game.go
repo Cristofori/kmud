@@ -458,14 +458,14 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				if currentZone.Id == "" {
 					printLine("Currently in the null zone")
 				} else {
-					printLine("Current zone: " + utils.Colorize(currentUser.GetColorMode(), utils.ColorBlue, currentZone.Name))
+					printLine("Current zone: " + utils.Colorize(currentUser.GetColorMode(), utils.ColorBlue, currentZone.GetName()))
 				}
 			} else if len(args) == 1 {
 				if args[0] == "list" {
 					printLineColor(utils.ColorBlue, "Zones")
 					printLineColor(utils.ColorBlue, "-----")
 					for _, zone := range model.M.GetZones() {
-						printLine(zone.Name)
+						printLine(zone.GetName())
 					}
 				} else {
 					printError("Usage: /zone [list|rename <name>|new <name>]")

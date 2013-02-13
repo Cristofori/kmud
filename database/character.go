@@ -47,10 +47,6 @@ func (self *Character) IsNpc() bool {
 	return !self.hasField(characterUserId)
 }
 
-func (self *Character) GetName() string {
-	return self.Name
-}
-
 func (self *Character) GetRoomId() bson.ObjectId {
 	return self.Fields[characterRoomId].(bson.ObjectId)
 }

@@ -260,7 +260,7 @@ func (self *globalModel) GetZoneByName(name string) *database.Zone {
 	defer self.mutex.Unlock()
 
 	for _, zone := range self.zones {
-		if zone.Name == name {
+		if zone.GetName() == name {
 			return zone
 		}
 	}
@@ -306,7 +306,7 @@ func (self *globalModel) GetUserByName(username string) *database.User {
 	defer self.mutex.Unlock()
 
 	for _, user := range self.users {
-		if user.Name == username {
+		if user.GetName() == username {
 			return user
 		}
 	}
@@ -474,7 +474,7 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 
 	if newRoom == nil {
 		zone := M.GetZone(room.GetZoneId())
-		fmt.Printf("No room found at location %v %v, creating a new one (%s)\n", zone.Name, newLocation, character.PrettyName())
+		fmt.Printf("No room found at location %v %v, creating a new one (%s)\n", zone.GetName(), newLocation, character.PrettyName())
 
 		room = M.CreateRoom(room.GetZoneId())
 

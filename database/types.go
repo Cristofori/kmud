@@ -41,7 +41,6 @@ const (
 type DbObject struct {
 	Id      bson.ObjectId `bson:"_id"`
 	objType objectType
-	Name    string `bson:",omitempty"`
 	Fields  map[string]interface{}
 	mutex   sync.Mutex
 }
@@ -129,7 +128,7 @@ func (self DbObject) GetType() objectType {
 }
 
 func (self DbObject) PrettyName() string {
-	return utils.FormatName(self.Name)
+	return utils.FormatName(self.GetName())
 }
 
 func (self *DbObject) setField(key string, value interface{}) {
@@ -153,8 +152,11 @@ func (self *DbObject) hasField(key string) bool {
 }
 
 func (self *DbObject) SetName(name string) {
-	self.Name = name
-	updateObject(*self, dbObjectName, name)
+	self.setField(dbObjectName, name)
+}
+
+func (self *DbObject) GetName() string {
+	return self.getField(dbObjectName).(string)
 }
 
 func (self *Coordinate) Next(direction ExitDirection) Coordinate {
