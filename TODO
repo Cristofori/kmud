@@ -10,3 +10,4 @@
 * Movement across zone boundaries
 * Spell checking
 * Improve input usability by processing each character at a time (/r > /tell <foo>)
+* Party/grouping system

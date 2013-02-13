@@ -237,8 +237,9 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			}
 
 			itemsInRoom := model.M.GetItems(currentRoom.GetItemIds())
+			itemName := strings.ToLower(args[0])
 			for _, item := range itemsInRoom {
-				if item.PrettyName() == args[0] {
+				if strings.ToLower(item.PrettyName()) == itemName {
 					currentChar.AddItem(item)
 					currentRoom.RemoveItem(item)
 					return
@@ -259,8 +260,9 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 
 			characterItems := model.M.GetItems(currentChar.GetItemIds())
 
+			itemName := strings.ToLower(args[0])
 			for _, item := range characterItems {
-				if item.PrettyName() == args[0] {
+				if strings.ToLower(item.PrettyName()) == itemName {
 					currentChar.RemoveItem(item)
 					currentRoom.AddItem(item)
 					return
