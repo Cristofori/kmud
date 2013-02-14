@@ -1,14 +1,17 @@
 package database
 
 import (
+	"fmt"
+	"kmud/utils"
 	"labix.org/v2/mgo/bson"
 )
 
 const (
-	characterRoomId    string = "roomid"
-	characterUserId    string = "userid"
-	characterCash      string = "cash"
-	characterInventory string = "inventory"
+	characterRoomId       string = "roomid"
+	characterUserId       string = "userid"
+	characterCash         string = "cash"
+	characterInventory    string = "inventory"
+	characterConversation string = "conversation"
 )
 
 type Character struct {
@@ -103,6 +106,30 @@ func (self *Character) GetItemIds() []bson.ObjectId {
 	}
 
 	return []bson.ObjectId{}
+}
+
+func (self *Character) GetConversation() string {
+	if self.hasField(characterConversation) {
+		return self.getField(characterConversation).(string)
+	}
+
+	return ""
+}
+
+func (self *Character) PrettyConversation(cm utils.ColorMode) string {
+	conv := self.GetConversation()
+
+	if conv == "" {
+		return fmt.Sprintf("%s has nothing to say", self.PrettyName())
+	}
+
+	return fmt.Sprintf("%s%s",
+		utils.Colorize(cm, utils.ColorBlue, self.PrettyName()),
+		utils.Colorize(cm, utils.ColorWhite, ": "+conv))
+}
+
+func (self *Character) SetConversation(conversation string) {
+	self.setField(characterConversation, conversation)
 }
 
 // vim: nocindent

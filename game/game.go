@@ -45,7 +45,7 @@ func toggleExitMenu(cm utils.ColorMode, room *database.Room) utils.Menu {
 }
 
 func npcMenu(room *database.Room) utils.Menu {
-	npcs := model.M.NpcsIn(room.Id)
+	npcs := model.M.NpcsIn(room.GetId())
 
 	menu := utils.NewMenu("NPCs")
 
@@ -65,6 +65,7 @@ func specificNpcMenu(npcId bson.ObjectId) utils.Menu {
 	menu := utils.NewMenu(npc.PrettyName())
 	menu.AddAction("r", "[R]ename")
 	menu.AddAction("d", "[D]elete")
+	menu.AddAction("c", "[C]onversation")
 	return menu
 }
 
@@ -271,6 +272,24 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 
 			printError("You are not carrying a %s", args[0])
 
+		case "talk":
+			if len(args) != 1 {
+				printError("Usage: talk <NPC name>")
+				return
+			}
+
+			npcName := strings.ToLower(args[0])
+
+			npcs := model.M.NpcsIn(currentRoom.GetId())
+			for _, npc := range npcs {
+				if strings.ToLower(npc.PrettyName()) == npcName {
+					printLine(npc.PrettyConversation(currentUser.GetColorMode()))
+					return
+				}
+			}
+
+			printError("NPC not found")
+
 		case "":
 			fallthrough
 		case "logout":
@@ -313,7 +332,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			printRoomEditor()
 
 			for {
-				input := getUserInput(CleanUserInput, "Select a section to edit> ")
+				input := getUserInput(CleanUserInput, "Select a section to edit: ")
 
 				switch input {
 				case "":
@@ -783,6 +802,20 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					}
 					npc := model.M.GetCharacter(npcId)
 					npc.SetName(name)
+				case "c":
+					npc := model.M.GetCharacter(npcId)
+					conversation := npc.GetConversation()
+
+					if conversation == "" {
+						conversation = "<empty>"
+					}
+
+					printLine("Conversation: %s", conversation)
+					newConversation := getUserInput(RawUserInput, "New conversation text: ")
+
+					if newConversation != "" {
+						npc.SetConversation(newConversation)
+					}
 				}
 			}
 
