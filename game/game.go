@@ -365,22 +365,27 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			currentRoom.SetExitEnabled(database.DirectionNorth, true)
 			processAction("n", []string{})
 			currentRoom.SetExitEnabled(database.DirectionSouth, true)
+
 		case "/e":
 			currentRoom.SetExitEnabled(database.DirectionEast, true)
 			processAction("e", []string{})
 			currentRoom.SetExitEnabled(database.DirectionWest, true)
+
 		case "/s":
 			currentRoom.SetExitEnabled(database.DirectionSouth, true)
 			processAction("s", []string{})
 			currentRoom.SetExitEnabled(database.DirectionNorth, true)
+
 		case "/w":
 			currentRoom.SetExitEnabled(database.DirectionWest, true)
 			processAction("w", []string{})
 			currentRoom.SetExitEnabled(database.DirectionEast, true)
+
 		case "/u":
 			currentRoom.SetExitEnabled(database.DirectionUp, true)
 			processAction("u", []string{})
 			currentRoom.SetExitEnabled(database.DirectionDown, true)
+
 		case "/d":
 			currentRoom.SetExitEnabled(database.DirectionDown, true)
 			processAction("d", []string{})
