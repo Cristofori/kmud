@@ -770,6 +770,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 
 			item := model.M.CreateItem(args[0])
 			currentRoom.AddItem(item)
+			printLine("Item created")
 
 		case "destroy":
 			destroyUsage := func() {
@@ -782,9 +783,10 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			}
 
 			itemsInRoom := model.M.GetItems(currentRoom.GetItemIds())
+			name := strings.ToLower(args[0])
 
 			for _, item := range itemsInRoom {
-				if item.PrettyName() == args[0] {
+				if strings.ToLower(item.PrettyName()) == name {
 					currentRoom.RemoveItem(item)
 					model.M.DeleteItem(item.Id)
 
