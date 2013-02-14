@@ -147,6 +147,9 @@ func (self *DbObject) getField(key string) interface{} {
 }
 
 func (self *DbObject) hasField(key string) bool {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
 	_, found := self.Fields[key]
 	return found
 }
