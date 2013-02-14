@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"kmud/utils"
 	"labix.org/v2/mgo/bson"
+	"sort"
 	"strings"
 )
 
@@ -95,11 +96,28 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []*C
 		}
 
 		if len(items) > 0 {
+
+			itemMap := make(map[string]int)
+			var nameList []string
+
+			for _, item := range items {
+				_, found := itemMap[item.PrettyName()]
+				if !found {
+					nameList = append(nameList, item.PrettyName())
+				}
+				itemMap[item.PrettyName()]++
+			}
+
+			sort.Strings(nameList)
+
 			str = str + " " + utils.Colorize(colorMode, utils.ColorBlue, "Items: ")
 
 			var names []string
-			for _, item := range items {
-				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, item.PrettyName()))
+			for _, name := range nameList {
+				if itemMap[name] > 1 {
+					name = fmt.Sprintf("%s x%v", name, itemMap[name])
+				}
+				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, name))
 			}
 			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\n"
 
