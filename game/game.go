@@ -391,6 +391,26 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			processAction("d", []string{})
 			currentRoom.SetExitEnabled(database.DirectionUp, true)
 
+		case "/ne":
+			currentRoom.SetExitEnabled(database.DirectionNorthEast, true)
+			processAction("ne", []string{})
+			currentRoom.SetExitEnabled(database.DirectionSouthWest, true)
+
+		case "/nw":
+			currentRoom.SetExitEnabled(database.DirectionNorthWest, true)
+			processAction("nw", []string{})
+			currentRoom.SetExitEnabled(database.DirectionSouthEast, true)
+
+		case "/se":
+			currentRoom.SetExitEnabled(database.DirectionSouthEast, true)
+			processAction("se", []string{})
+			currentRoom.SetExitEnabled(database.DirectionNorthWest, true)
+
+		case "/sw":
+			currentRoom.SetExitEnabled(database.DirectionSouthWest, true)
+			processAction("sw", []string{})
+			currentRoom.SetExitEnabled(database.DirectionNorthEast, true)
+
 		case "loc":
 			fallthrough
 		case "location":
