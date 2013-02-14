@@ -72,7 +72,7 @@ func (self *mapBuilder) addRoom(room *database.Room, x int, y int, z int) {
 		}
 	}
 
-	if self.userRoom.Id == room.Id {
+	if self.userRoom.GetId() == room.GetId() {
 		self.data[z][y][x].char = 'O'
 		self.data[z][y][x].color = utils.ColorRed
 	} else {

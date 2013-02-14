@@ -133,7 +133,7 @@ func (self SayEvent) ToString(receiver database.Character) string {
 	cm := getColorMode(receiver)
 
 	who := ""
-	if receiver.Id == self.Character.Id {
+	if receiver.GetId() == self.Character.GetId() {
 		who = "You say"
 	} else {
 		who = self.Character.PrettyName() + " says"
@@ -162,7 +162,7 @@ func (self TellEvent) Type() EventType {
 }
 
 func (self TellEvent) ToString(receiver database.Character) string {
-	if receiver.Id != self.To.Id {
+	if receiver.GetId() != self.To.GetId() {
 		return ""
 	}
 
@@ -181,7 +181,7 @@ func (self EnterEvent) ToString(receiver database.Character) string {
 		return ""
 	}
 
-	if receiver.Id == self.Character.Id {
+	if receiver.GetId() == self.Character.GetId() {
 		return ""
 	}
 
@@ -200,7 +200,7 @@ func (self LeaveEvent) ToString(receiver database.Character) string {
 		return ""
 	}
 
-	if receiver.Id == self.Character.Id {
+	if receiver.GetId() == self.Character.GetId() {
 		return ""
 	}
 
@@ -215,7 +215,7 @@ func (self RoomUpdateEvent) Type() EventType {
 }
 
 func (self RoomUpdateEvent) ToString(receiver database.Character) string {
-	if receiver.GetRoomId() != self.Room.Id {
+	if receiver.GetRoomId() != self.Room.GetId() {
 		return ""
 	}
 
@@ -229,7 +229,7 @@ func (self LoginEvent) Type() EventType {
 }
 
 func (self LoginEvent) ToString(receiver database.Character) string {
-	if receiver.Id == self.Character.Id {
+	if receiver.GetId() == self.Character.GetId() {
 		return ""
 	}
 

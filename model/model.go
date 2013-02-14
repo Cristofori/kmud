@@ -28,7 +28,7 @@ func (self *globalModel) CreateUser(name string) *database.User {
 	defer self.mutex.Unlock()
 
 	user := database.NewUser(name)
-	self.users[user.Id] = user
+	self.users[user.GetId()] = user
 
 	return user
 }
@@ -165,7 +165,7 @@ func (self *globalModel) CreateRoom(zoneId bson.ObjectId) *database.Room {
 	defer self.mutex.Unlock()
 
 	room := database.NewRoom(zoneId)
-	self.rooms[room.Id] = room
+	self.rooms[room.GetId()] = room
 
 	return room
 }
@@ -175,7 +175,7 @@ func (self *globalModel) CreateZone(name string) *database.Zone {
 	defer self.mutex.Unlock()
 
 	zone := database.NewZone(name)
-	self.zones[zone.Id] = zone
+	self.zones[zone.GetId()] = zone
 
 	return zone
 }
@@ -321,8 +321,8 @@ func (self *globalModel) DeleteUser(id bson.ObjectId) {
 
 	for _, character := range self.characters {
 		if character.GetUserId() == id {
-			delete(self.characters, character.Id)
-			utils.HandleError(database.DeleteCharacter(character.Id))
+			delete(self.characters, character.GetId())
+			utils.HandleError(database.DeleteCharacter(character.GetId()))
 		}
 	}
 
@@ -395,7 +395,7 @@ func Init(session *mgo.Session) error {
 	utils.HandleError(err)
 
 	for _, user := range users {
-		M.users[user.Id] = user
+		M.users[user.GetId()] = user
 	}
 
 	characters, err := database.GetAllCharacters()
@@ -416,7 +416,7 @@ func Init(session *mgo.Session) error {
 	utils.HandleError(err)
 
 	for _, zone := range zones {
-		M.zones[zone.Id] = zone
+		M.zones[zone.GetId()] = zone
 	}
 
 	items, err := database.GetAllItems()
@@ -442,19 +442,19 @@ func MoveCharacterToLocation(character *database.Character, zoneId bson.ObjectId
 
 	oldRoom := M.GetRoom(character.GetRoomId())
 
-	character.SetRoom(newRoom.Id)
+	character.SetRoom(newRoom.GetId())
 
-	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
-	queueEvent(LeaveEvent{Character: *character, RoomId: oldRoom.Id})
+	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.GetId()})
+	queueEvent(LeaveEvent{Character: *character, RoomId: oldRoom.GetId()})
 
 	return newRoom, nil
 }
 
 func MoveCharacterToRoom(character *database.Character, newRoom *database.Room) {
 	oldRoomId := character.GetRoomId()
-	character.SetRoom(newRoom.Id)
+	character.SetRoom(newRoom.GetId())
 
-	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.Id})
+	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.GetId()})
 	queueEvent(LeaveEvent{Character: *character, RoomId: oldRoomId})
 }
 
@@ -512,7 +512,7 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 }
 
 func DeleteRoom(room *database.Room) {
-	M.deleteRoom(room.Id)
+	M.deleteRoom(room.GetId())
 
 	// Disconnect all exits leading to this room
 	loc := room.GetLocation()

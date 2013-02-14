@@ -79,7 +79,7 @@ func newCharacter(conn net.Conn, user *database.User) *database.Character {
 			utils.WriteLine(conn, err.Error())
 		} else {
 			room := model.M.GetRooms()[0] // TODO: Better way to pick an initial character location
-			return model.M.CreateCharacter(name, user.Id, room.Id)
+			return model.M.CreateCharacter(name, user.GetId(), room.GetId())
 		}
 	}
 
@@ -103,7 +103,7 @@ func mainMenu() utils.Menu {
 }
 
 func userMenu(user *database.User) utils.Menu {
-	chars := model.M.GetUserCharacters(user.Id)
+	chars := model.M.GetUserCharacters(user.GetId())
 
 	menu := utils.NewMenu(user.PrettyName())
 	menu.AddAction("l", "[L]ogout")
@@ -116,14 +116,14 @@ func userMenu(user *database.User) utils.Menu {
 	for i, char := range chars {
 		index := i + 1
 		actionText := fmt.Sprintf("[%v]%v", index, char.PrettyName())
-		menu.AddActionData(index, actionText, char.Id)
+		menu.AddActionData(index, actionText, char.GetId())
 	}
 
 	return menu
 }
 
 func deleteMenu(user *database.User) utils.Menu {
-	chars := model.M.GetUserCharacters(user.Id)
+	chars := model.M.GetUserCharacters(user.GetId())
 
 	menu := utils.NewMenu("Delete character")
 
@@ -132,7 +132,7 @@ func deleteMenu(user *database.User) utils.Menu {
 	for i, char := range chars {
 		index := i + 1
 		actionText := fmt.Sprintf("[%v]%v", index, char.PrettyName())
-		menu.AddActionData(index, actionText, char.Id)
+		menu.AddActionData(index, actionText, char.GetId())
 	}
 
 	return menu
@@ -156,7 +156,7 @@ func userAdminMenu() utils.Menu {
 		}
 
 		actionText := fmt.Sprintf("[%v]%v", index, user.PrettyName()+online)
-		menu.AddActionData(index, actionText, user.Id)
+		menu.AddActionData(index, actionText, user.GetId())
 	}
 
 	return menu
@@ -308,9 +308,9 @@ func Exec() {
 
 		if len(zones) == 0 {
 			newZone := model.M.CreateZone("Default")
-			zoneId = newZone.Id
+			zoneId = newZone.GetId()
 		} else {
-			zoneId = zones[0].Id
+			zoneId = zones[0].GetId()
 		}
 
 		model.M.CreateRoom(zoneId)
