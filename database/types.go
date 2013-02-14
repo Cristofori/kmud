@@ -42,7 +42,7 @@ type DbObject struct {
 	Id      bson.ObjectId `bson:"_id"`
 	objType objectType
 	Fields  map[string]interface{}
-	mutex   sync.Mutex
+	mutex   sync.RWMutex
 }
 
 type ExitDirection int
@@ -140,8 +140,8 @@ func (self *DbObject) setField(key string, value interface{}) {
 }
 
 func (self *DbObject) getField(key string) interface{} {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	return self.Fields[key]
 }
