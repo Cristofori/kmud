@@ -1,13 +1,13 @@
 * More unit tests
 * NPC conversations
-* Currency
+* Currency giving, dropping
 * Custom room views
 * Custom room exits/actions
 * Passwords
 * Input speed limit (at all input possibilities)
-* Locks
+* Locks/doors
 * Permissions
 * Movement across zone boundaries
 * Spell checking
 * Improve input usability by processing each character at a time (/r > /tell <foo>)
-* Party/grouping system
+* Party/grouping
