@@ -150,7 +150,7 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []*C
 	appendIfExists(DirectionDown)
 
 	if len(exitList) == 0 {
-		str = str + "None"
+		str = str + utils.Colorize(colorMode, utils.ColorWhite, "None")
 	} else {
 		str = str + strings.Join(exitList, " ")
 	}
