@@ -158,6 +158,10 @@ func BestMatch(pattern string, searchList []string) int {
 	for i, searchItem := range searchList {
 		searchItem = strings.ToLower(searchItem)
 
+		if searchItem == pattern {
+			return i
+		}
+
 		if strings.HasPrefix(searchItem, pattern) {
 			if index != -1 {
 				return -2
