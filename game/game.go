@@ -100,12 +100,12 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 		printLine(currentRoom.ToString(database.EditMode, currentUser.GetColorMode(), nil, nil, nil))
 	}
 
-	prompt := func() string {
-		return "> "
+	clearLine := func() {
+		utils.ClearLine(conn)
 	}
 
-	erase := func(count int) {
-		utils.Write(conn, strings.Repeat("\b", count))
+	prompt := func() string {
+		return "> "
 	}
 
 	processEvent := func(event model.Event) string {
@@ -147,7 +147,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			case event := <-eventChannel:
 				message := processEvent(event)
 				if message != "" {
-					erase(len(prompt))
+					clearLine()
 					printLine(message)
 					printString(prompt)
 				}

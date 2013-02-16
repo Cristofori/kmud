@@ -19,6 +19,13 @@ func WriteLine(conn io.Writer, line string) (int, error) {
 	return Write(conn, line+"\r\n")
 }
 
+// ClearLine sends the VT100 code for erasing the line followed by a carriage
+// return to move the cursor back to the beginning of the line
+func ClearLine(conn io.Writer) {
+	clearline := "\x1B[2K"
+	Write(conn, clearline+"\r")
+}
+
 func Simplify(str string) string {
 	simpleStr := strings.TrimSpace(str)
 	simpleStr = strings.ToLower(simpleStr)
