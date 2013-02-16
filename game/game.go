@@ -752,9 +752,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 				printLine("Valid color modes are: None, Light, Dark")
 			}
 
-		case "delete":
-			fallthrough
-		case "del":
+		case "destroyroom":
 			if len(args) == 1 {
 				direction := database.StringToDirection(args[0])
 
@@ -765,12 +763,13 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 					roomToDelete := model.M.GetRoomByLocation(loc, currentZone)
 					if roomToDelete != nil {
 						model.DeleteRoom(roomToDelete)
+						printLine("Room destroyed")
 					} else {
 						printError("No room in that direction")
 					}
 				}
 			} else {
-				printError("Usage: /delete <direction>")
+				printError("Usage: /destroyroom <direction>")
 			}
 
 		case "npc":
@@ -854,9 +853,9 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			currentRoom.AddItem(item)
 			printLine("Item created")
 
-		case "destroy":
+		case "destroyitem":
 			destroyUsage := func() {
-				printError("Usage: /destroy <item name>")
+				printError("Usage: /destroyitem <item name>")
 			}
 
 			if len(args) != 1 {
@@ -871,7 +870,6 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 				if strings.ToLower(item.PrettyName()) == name {
 					currentRoom.RemoveItem(item)
 					model.M.DeleteItem(item.GetId())
-
 					printLine("Item destroyed")
 					return
 				}
