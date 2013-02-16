@@ -220,6 +220,25 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 		case "ls":
 			printLine("Where do you think you are?!")
 
+		case "a":
+			fallthrough
+		case "attack":
+			charList := model.M.CharactersIn(currentRoom)
+			index := utils.BestMatch(args[0], database.CharacterNames(charList))
+
+			if index == -1 {
+				printError("Not found")
+			} else if index == -2 {
+				printError("Which one do you mean?")
+			} else {
+				attackee := charList[index]
+				if attackee.GetId() == currentPlayer.GetId() {
+					printError("You can't attack yourself")
+				} else {
+					printLine("Attacking: %s", charList[index].PrettyName())
+				}
+			}
+
 		case "inventory":
 			fallthrough
 		case "inv":
