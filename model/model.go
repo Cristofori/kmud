@@ -18,7 +18,7 @@ type globalModel struct {
 	zones      map[bson.ObjectId]*database.Zone
 	items      map[bson.ObjectId]*database.Item
 
-	mutex sync.Mutex
+	mutex sync.RWMutex
 }
 
 // CreateUser creates a new User object in the database and adds it to the model.
@@ -35,8 +35,8 @@ func (self *globalModel) CreateUser(name string) *database.User {
 
 // GetCharacter returns the Character object associated the given Id
 func (self *globalModel) GetCharacter(id bson.ObjectId) *database.Character {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	return self.characters[id]
 }
@@ -44,8 +44,8 @@ func (self *globalModel) GetCharacter(id bson.ObjectId) *database.Character {
 // GetCharacaterByName searches for a character with the given name. Returns a
 // character object, or nil if it wasn't found.
 func (self *globalModel) GetCharacterByName(name string) *database.Character {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	name = utils.Simplify(name)
 
@@ -61,8 +61,8 @@ func (self *globalModel) GetCharacterByName(name string) *database.Character {
 // GetUserCharacters returns all of the Character objects associated with the
 // given user id
 func (self *globalModel) GetUserCharacters(userId bson.ObjectId) []*database.Character {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	var characters []*database.Character
 
@@ -79,8 +79,8 @@ func (self *globalModel) GetUserCharacters(userId bson.ObjectId) []*database.Cha
 // player), excluding the character passed in as the "except" parameter.
 // Returns all character type objects, including players, NPCs and MOBs
 func (self *globalModel) CharactersIn(roomId bson.ObjectId) []*database.Character {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	var charList []*database.Character
 
@@ -95,8 +95,8 @@ func (self *globalModel) CharactersIn(roomId bson.ObjectId) []*database.Characte
 
 // PlayersIn returns all of the player characters that are in the given room
 func (self *globalModel) PlayersIn(roomId bson.ObjectId, except bson.ObjectId) []*database.Character {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	var playerList []*database.Character
 
@@ -111,8 +111,8 @@ func (self *globalModel) PlayersIn(roomId bson.ObjectId, except bson.ObjectId) [
 
 // NpcsIn returns all of the NPC characters that are in the given room
 func (self *globalModel) NpcsIn(roomId bson.ObjectId) []*database.Character {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	var npcList []*database.Character
 
@@ -127,8 +127,8 @@ func (self *globalModel) NpcsIn(roomId bson.ObjectId) []*database.Character {
 
 // GetOnlineCharacters returns a list of all of the characters who are online
 func (self *globalModel) GetOnlineCharacters() []*database.Character {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	var characters []*database.Character
 
@@ -198,16 +198,16 @@ func (self *globalModel) CreateZone(name string) *database.Zone {
 
 // GetRoom returns the room object associated with the given id
 func (self *globalModel) GetRoom(id bson.ObjectId) *database.Room {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	return self.rooms[id]
 }
 
 // GetRooms returns a list of all of the rooms in the entire model
 func (self *globalModel) GetRooms() []*database.Room {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	var rooms []*database.Room
 
@@ -235,8 +235,8 @@ func (self *globalModel) GetRoomsInZone(zoneId bson.ObjectId) []*database.Room {
 // GetRoomByLocation searches for the room associated with the given coordinate
 // in the given zone. Returns a nil room object if it was not found.
 func (self *globalModel) GetRoomByLocation(coordinate database.Coordinate, zoneId bson.ObjectId) *database.Room {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	for _, room := range self.rooms {
 		if room.GetLocation() == coordinate && room.GetZoneId() == zoneId {
@@ -249,16 +249,16 @@ func (self *globalModel) GetRoomByLocation(coordinate database.Coordinate, zoneI
 
 // GetZone returns the zone object associated with the given id
 func (self *globalModel) GetZone(zoneId bson.ObjectId) *database.Zone {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	return self.zones[zoneId]
 }
 
 // GetZones returns all of the zones in the model
 func (self *globalModel) GetZones() []*database.Zone {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	var zones []*database.Zone
 
@@ -272,8 +272,8 @@ func (self *globalModel) GetZones() []*database.Zone {
 // GetZoneByName name searches for a zone with the given name, returns a zone
 // object and whether or not it was found
 func (self *globalModel) GetZoneByName(name string) *database.Zone {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	for _, zone := range self.zones {
 		if zone.GetName() == name {
@@ -295,16 +295,16 @@ func (self *globalModel) deleteRoom(id bson.ObjectId) {
 
 // GetUser returns the User object associated with the given id
 func (self *globalModel) GetUser(id bson.ObjectId) *database.User {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	return self.users[id]
 }
 
 // GetUsers returns all of the User objects in the model
 func (self *globalModel) GetUsers() []*database.User {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	var users []*database.User
 
@@ -318,8 +318,8 @@ func (self *globalModel) GetUsers() []*database.User {
 // GetUserByName searches for the User object with the given name. Returns a
 // nil User if one was not found.
 func (self *globalModel) GetUserByName(username string) *database.User {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	for _, user := range self.users {
 		if user.GetName() == username {
@@ -359,8 +359,8 @@ func (self *globalModel) CreateItem(name string) *database.Item {
 
 // GetItem returns the Item object associated the given id
 func (self *globalModel) GetItem(id bson.ObjectId) *database.Item {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
 	return self.items[id]
 }
