@@ -278,17 +278,17 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 				return
 			}
 
-			npcName := strings.ToLower(args[0])
+			npcList := model.M.NpcsIn(currentRoom.GetId())
+			index := utils.BestMatch(args[0], database.ToNameList(npcList))
 
-			npcs := model.M.NpcsIn(currentRoom.GetId())
-			for _, npc := range npcs {
-				if strings.ToLower(npc.PrettyName()) == npcName {
-					printLine(npc.PrettyConversation(currentUser.GetColorMode()))
-					return
-				}
+			if index == -1 {
+				printError("Not found")
+			} else if index == -2 {
+				printError("Which one do you mean?")
+			} else {
+				npc := npcList[index]
+				printLine(npc.PrettyConversation(currentUser.GetColorMode()))
 			}
-
-			printError("NPC not found")
 
 		case "":
 			fallthrough
