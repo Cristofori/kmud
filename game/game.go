@@ -69,8 +69,8 @@ func specificNpcMenu(npcId bson.ObjectId) utils.Menu {
 	return menu
 }
 
-func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.Character) {
-	currentRoom := model.M.GetRoom(currentChar.GetRoomId())
+func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *database.Character) {
+	currentRoom := model.M.GetRoom(currentPlayer.GetRoomId())
 	currentZone := model.M.GetZone(currentRoom.GetZoneId())
 
 	printString := func(data string) {
@@ -90,10 +90,10 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 	}
 
 	printRoom := func() {
-		charList := model.M.CharactersIn(currentRoom.GetId(), currentChar.GetId())
+		playerList := model.M.PlayersIn(currentRoom.GetId(), currentPlayer.GetId())
 		npcList := model.M.NpcsIn(currentRoom.GetId())
 		printLine(currentRoom.ToString(database.ReadMode, currentUser.GetColorMode(),
-			charList, npcList, model.M.GetItems(currentRoom.GetItemIds())))
+			playerList, npcList, model.M.GetItems(currentRoom.GetItemIds())))
 	}
 
 	printRoomEditor := func() {
@@ -109,7 +109,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 	}
 
 	processEvent := func(event model.Event) string {
-		message := event.ToString(*currentChar)
+		message := event.ToString(*currentPlayer)
 
 		switch event.Type() {
 		case model.RoomUpdateEventType:
@@ -122,7 +122,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 		return message
 	}
 
-	eventChannel := model.Register(currentChar)
+	eventChannel := model.Register(currentPlayer)
 	defer model.Unregister(eventChannel)
 
 	userInputChannel := make(chan string)
@@ -192,7 +192,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					roomToSee := model.M.GetRoomByLocation(loc, currentZone.GetId())
 					if roomToSee != nil {
 						printLine(roomToSee.ToString(database.ReadMode, currentUser.GetColorMode(),
-							model.M.CharactersIn(roomToSee.GetId(), ""), model.M.NpcsIn(roomToSee.GetId()), nil))
+							model.M.PlayersIn(roomToSee.GetId(), ""), model.M.NpcsIn(roomToSee.GetId()), nil))
 					} else {
 						printLine("Nothing to see")
 					}
@@ -207,7 +207,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 		case "inv":
 			fallthrough
 		case "i":
-			itemIds := currentChar.GetItemIds()
+			itemIds := currentPlayer.GetItemIds()
 
 			if len(itemIds) == 0 {
 				printLine("You aren't carrying anything")
@@ -219,7 +219,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				printLine("You are carrying: %s", strings.Join(itemNames, ", "))
 			}
 
-			printLine("Cash: %v", currentChar.GetCash())
+			printLine("Cash: %v", currentPlayer.GetCash())
 
 		case "take":
 			fallthrough
@@ -241,7 +241,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			itemName := strings.ToLower(args[0])
 			for _, item := range itemsInRoom {
 				if strings.ToLower(item.PrettyName()) == itemName {
-					currentChar.AddItem(item)
+					currentPlayer.AddItem(item)
 					currentRoom.RemoveItem(item)
 					return
 				}
@@ -259,12 +259,12 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				return
 			}
 
-			characterItems := model.M.GetItems(currentChar.GetItemIds())
+			characterItems := model.M.GetItems(currentPlayer.GetItemIds())
 
 			itemName := strings.ToLower(args[0])
 			for _, item := range characterItems {
 				if strings.ToLower(item.PrettyName()) == itemName {
-					currentChar.RemoveItem(item)
+					currentPlayer.RemoveItem(item)
 					currentRoom.AddItem(item)
 					return
 				}
@@ -306,7 +306,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 
 			if direction != database.DirectionNone {
 				if currentRoom.HasExit(direction) {
-					newRoom, err := model.MoveCharacter(currentChar, direction)
+					newRoom, err := model.MoveCharacter(currentPlayer, direction)
 					if err == nil {
 						currentRoom = newRoom
 						printRoom()
@@ -546,7 +546,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					newZone := model.M.CreateZone(args[1])
 					newRoom := model.M.CreateRoom(newZone.GetId())
 
-					model.MoveCharacterToRoom(currentChar, newRoom)
+					model.MoveCharacterToRoom(currentPlayer, newRoom)
 
 					currentZone = newZone
 					currentRoom = newRoom
@@ -561,7 +561,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			if len(args) == 0 {
 				printError("Nothing to say")
 			} else {
-				model.BroadcastMessage(*currentChar, strings.Join(args, " "))
+				model.BroadcastMessage(*currentPlayer, strings.Join(args, " "))
 			}
 
 		case "say":
@@ -570,11 +570,11 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			if len(args) == 0 {
 				printError("Nothing to say")
 			} else {
-				model.Say(*currentChar, strings.Join(args, " "))
+				model.Say(*currentPlayer, strings.Join(args, " "))
 			}
 
 		case "me":
-			model.Emote(*currentChar, strings.Join(args, " "))
+			model.Emote(*currentPlayer, strings.Join(args, " "))
 
 		case "whisper":
 			fallthrough
@@ -600,7 +600,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 			}
 
 			message := strings.Join(args[1:], " ")
-			model.Tell(currentChar, targetChar, message)
+			model.Tell(currentPlayer, targetChar, message)
 
 		case "teleport":
 			fallthrough
@@ -663,7 +663,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 				return
 			}
 
-			newRoom, err := model.MoveCharacterToLocation(currentChar, newZone.GetId(), database.Coordinate{X: x, Y: y, Z: z})
+			newRoom, err := model.MoveCharacterToLocation(currentPlayer, newZone.GetId(), database.Coordinate{X: x, Y: y, Z: z})
 
 			if err == nil {
 				currentRoom = newRoom
@@ -879,7 +879,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 					return
 				}
 
-				currentChar.AddCash(amount)
+				currentPlayer.AddCash(amount)
 				printLine("Received: %v monies", amount)
 			} else {
 				cashUsage()
@@ -894,7 +894,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentChar *database.
 		}
 	}
 
-	printLineColor(utils.ColorWhite, "Welcome, "+currentChar.PrettyName())
+	printLineColor(utils.ColorWhite, "Welcome, "+currentPlayer.PrettyName())
 	printRoom()
 
 	// Main routine in charge of actually reading input from the connection object,

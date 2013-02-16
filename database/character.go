@@ -43,11 +43,15 @@ func (self *Character) SetOnline(online bool) {
 }
 
 func (self *Character) IsOnline() bool {
-	return self.online
+	return self.online || self.IsNpc()
 }
 
 func (self *Character) IsNpc() bool {
 	return !self.hasField(characterUserId)
+}
+
+func (self *Character) IsPlayer() bool {
+	return !self.IsNpc()
 }
 
 func (self *Character) GetRoomId() bson.ObjectId {
@@ -130,6 +134,16 @@ func (self *Character) PrettyConversation(cm utils.ColorMode) string {
 
 func (self *Character) SetConversation(conversation string) {
 	self.setField(characterConversation, conversation)
+}
+
+func ToNameList(characters []*Character) []string {
+	names := make([]string, len(characters))
+
+	for i, char := range characters {
+		names[i] = char.PrettyName()
+	}
+
+	return names
 }
 
 // vim: nocindent

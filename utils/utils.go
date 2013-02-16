@@ -146,4 +146,28 @@ func MonitorChannel() {
 	// TODO: See if there's a way to take in a generic channel and see how close it is to being full 
 }
 
+// BestMatch searches the given list for the given pattern, the index of the
+// longest match that starts with the given pattern is returned. Returns -1 if
+// no match was found, -2 if the result is ambiguous. The search is case
+// insensitive
+func BestMatch(pattern string, searchList []string) int {
+	pattern = strings.ToLower(pattern)
+
+	index := -1
+
+	for i, searchItem := range searchList {
+		searchItem = strings.ToLower(searchItem)
+
+		if strings.HasPrefix(searchItem, pattern) {
+			if index != -1 {
+				return -2
+			}
+
+			index = i
+		}
+	}
+
+	return index
+}
+
 // vim: nocindent

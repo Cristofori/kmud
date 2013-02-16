@@ -56,7 +56,7 @@ func NewRoom(zoneId bson.ObjectId) *Room {
 	return &room
 }
 
-func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []*Character, npcs []*Character, items []*Item) string {
+func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []*Character, npcs []*Character, items []*Item) string {
 	var str string
 
 	if mode == ReadMode {
@@ -71,11 +71,11 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, chars []*C
 
 		extraNewLine := ""
 
-		if len(chars) > 0 {
+		if len(players) > 0 {
 			str = str + " " + utils.Colorize(colorMode, utils.ColorBlue, "Also here: ")
 
 			var names []string
-			for _, char := range chars {
+			for _, char := range players {
 				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, char.PrettyName()))
 			}
 			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\n"

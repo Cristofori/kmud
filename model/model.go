@@ -75,22 +75,38 @@ func (self *globalModel) GetUserCharacters(userId bson.ObjectId) []*database.Cha
 	return characters
 }
 
-// CharactersIn returns a list of characters that are in the given room,
-// excluding the character passed in as the "except" parameter. Returns all
-// character type objects, including players, NPCs and MOBs
-func (self *globalModel) CharactersIn(roomId bson.ObjectId, except bson.ObjectId) []*database.Character {
+// CharactersIn returns a list of characters that are in the given room (NPC or
+// player), excluding the character passed in as the "except" parameter.
+// Returns all character type objects, including players, NPCs and MOBs
+func (self *globalModel) CharactersIn(roomId bson.ObjectId) []*database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
 	var charList []*database.Character
 
 	for _, char := range self.characters {
-		if char.GetRoomId() == roomId && char.GetId() != except && char.IsOnline() {
+		if char.GetRoomId() == roomId && char.IsOnline() {
 			charList = append(charList, char)
 		}
 	}
 
 	return charList
+}
+
+// PlayersIn returns all of the player characters that are in the given room
+func (self *globalModel) PlayersIn(roomId bson.ObjectId, except bson.ObjectId) []*database.Character {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	var playerList []*database.Character
+
+	for _, char := range self.characters {
+		if char.GetRoomId() == roomId && char.IsPlayer() && char.GetId() != except {
+			playerList = append(playerList, char)
+		}
+	}
+
+	return playerList
 }
 
 // NpcsIn returns all of the NPC characters that are in the given room
