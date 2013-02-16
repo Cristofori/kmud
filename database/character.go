@@ -136,7 +136,7 @@ func (self *Character) SetConversation(conversation string) {
 	self.setField(characterConversation, conversation)
 }
 
-func ToNameList(characters []*Character) []string {
+func CharacterNames(characters []*Character) []string {
 	names := make([]string, len(characters))
 
 	for i, char := range characters {

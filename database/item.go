@@ -11,4 +11,14 @@ func NewItem(name string) *Item {
 	return &item
 }
 
+func ItemNames(items []*Item) []string {
+	names := make([]string, len(items))
+
+	for i, item := range items {
+		names[i] = item.PrettyName()
+	}
+
+	return names
+}
+
 // vim: nocindent

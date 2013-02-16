@@ -7,7 +7,6 @@ import (
 	"kmud/model"
 	"kmud/utils"
 	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
 	"net"
 	"strconv"
 )
@@ -79,7 +78,7 @@ func newCharacter(conn net.Conn, user *database.User) *database.Character {
 			utils.WriteLine(conn, err.Error())
 		} else {
 			room := model.M.GetRooms()[0] // TODO: Better way to pick an initial character location
-			return model.M.CreateCharacter(name, user.GetId(), room.GetId())
+			return model.M.CreateCharacter(name, user, room)
 		}
 	}
 
@@ -103,7 +102,7 @@ func mainMenu() utils.Menu {
 }
 
 func userMenu(user *database.User) utils.Menu {
-	chars := model.M.GetUserCharacters(user.GetId())
+	chars := model.M.GetUserCharacters(user)
 
 	menu := utils.NewMenu(user.PrettyName())
 	menu.AddAction("l", "[L]ogout")
@@ -112,6 +111,8 @@ func userMenu(user *database.User) utils.Menu {
 	if len(chars) > 0 {
 		menu.AddAction("d", "[D]elete character")
 	}
+
+	// TODO: Sort character list
 
 	for i, char := range chars {
 		index := i + 1
@@ -123,11 +124,13 @@ func userMenu(user *database.User) utils.Menu {
 }
 
 func deleteMenu(user *database.User) utils.Menu {
-	chars := model.M.GetUserCharacters(user.GetId())
+	chars := model.M.GetUserCharacters(user)
 
 	menu := utils.NewMenu("Delete character")
 
 	menu.AddAction("c", "[C]ancel")
+
+	// TODO: Sort character list
 
 	for i, char := range chars {
 		index := i + 1
@@ -268,6 +271,7 @@ func handleConnection(session *mgo.Session, conn net.Conn) {
 					_, err := strconv.Atoi(deleteChoice)
 
 					if err == nil {
+						// TODO: Delete confirmation
 						model.M.DeleteCharacter(deleteCharId)
 					}
 				}
@@ -304,16 +308,15 @@ func Exec() {
 	if len(rooms) == 0 {
 		zones := model.M.GetZones()
 
-		var zoneId bson.ObjectId
+		var zone *database.Zone
 
 		if len(zones) == 0 {
-			newZone := model.M.CreateZone("Default")
-			zoneId = newZone.GetId()
+			zone = model.M.CreateZone("Default")
 		} else {
-			zoneId = zones[0].GetId()
+			zone = zones[0]
 		}
 
-		model.M.CreateRoom(zoneId)
+		model.M.CreateRoom(zone)
 	}
 
 	fmt.Println("Server listening on port 8945")

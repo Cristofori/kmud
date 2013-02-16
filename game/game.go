@@ -45,7 +45,7 @@ func toggleExitMenu(cm utils.ColorMode, room *database.Room) utils.Menu {
 }
 
 func npcMenu(room *database.Room) utils.Menu {
-	npcs := model.M.NpcsIn(room.GetId())
+	npcs := model.M.NpcsIn(room)
 
 	menu := utils.NewMenu("NPCs")
 
@@ -90,8 +90,8 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 	}
 
 	printRoom := func() {
-		playerList := model.M.PlayersIn(currentRoom.GetId(), currentPlayer.GetId())
-		npcList := model.M.NpcsIn(currentRoom.GetId())
+		playerList := model.M.PlayersIn(currentRoom, currentPlayer)
+		npcList := model.M.NpcsIn(currentRoom)
 		printLine(currentRoom.ToString(database.ReadMode, currentUser.GetColorMode(),
 			playerList, npcList, model.M.GetItems(currentRoom.GetItemIds())))
 	}
@@ -186,13 +186,31 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 				arg := database.StringToDirection(args[0])
 
 				if arg == database.DirectionNone {
-					printLine("Nothing to see")
+					charList := model.M.CharactersIn(currentRoom)
+					index := utils.BestMatch(args[0], database.CharacterNames(charList))
+
+					if index == -2 {
+						printError("Which one do you mean?")
+					} else if index != -1 {
+						printLine("Looking at: %s", charList[index].PrettyName())
+					} else {
+						itemList := model.M.ItemsIn(currentRoom)
+						index = utils.BestMatch(args[0], database.ItemNames(itemList))
+
+						if index == -1 {
+							printLine("Nothing to see")
+						} else if index == -2 {
+							printError("Which one do you mean?")
+						} else {
+							printLine("Looking at: %s", itemList[index].PrettyName())
+						}
+					}
 				} else {
 					loc := currentRoom.NextLocation(arg)
-					roomToSee := model.M.GetRoomByLocation(loc, currentZone.GetId())
+					roomToSee := model.M.GetRoomByLocation(loc, currentZone)
 					if roomToSee != nil {
 						printLine(roomToSee.ToString(database.ReadMode, currentUser.GetColorMode(),
-							model.M.PlayersIn(roomToSee.GetId(), ""), model.M.NpcsIn(roomToSee.GetId()), nil))
+							model.M.PlayersIn(roomToSee, nil), model.M.NpcsIn(roomToSee), nil))
 					} else {
 						printLine("Nothing to see")
 					}
@@ -278,8 +296,8 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 				return
 			}
 
-			npcList := model.M.NpcsIn(currentRoom.GetId())
-			index := utils.BestMatch(args[0], database.ToNameList(npcList))
+			npcList := model.M.NpcsIn(currentRoom)
+			index := utils.BestMatch(args[0], database.CharacterNames(npcList))
 
 			if index == -1 {
 				printError("Not found")
@@ -490,7 +508,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 				for y := startY; y <= endY; y += 1 {
 					for x := startX; x <= endX; x += 1 {
 						loc := database.Coordinate{x, y, z}
-						room := model.M.GetRoomByLocation(loc, currentZone.GetId())
+						room := model.M.GetRoomByLocation(loc, currentZone)
 
 						if room != nil {
 							// Translate to 0-based coordinates and double the coordinate
@@ -544,7 +562,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 					}
 
 					newZone := model.M.CreateZone(args[1])
-					newRoom := model.M.CreateRoom(newZone.GetId())
+					newRoom := model.M.CreateRoom(newZone)
 
 					model.MoveCharacterToRoom(currentPlayer, newRoom)
 
@@ -628,7 +646,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 					return
 				}
 
-				zoneRooms := model.M.GetRoomsInZone(newZone.GetId())
+				zoneRooms := model.M.GetRoomsInZone(newZone)
 
 				if len(zoneRooms) > 0 {
 					r := zoneRooms[0]
@@ -663,7 +681,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 				return
 			}
 
-			newRoom, err := model.MoveCharacterToLocation(currentPlayer, newZone.GetId(), database.Coordinate{X: x, Y: y, Z: z})
+			newRoom, err := model.MoveCharacterToLocation(currentPlayer, newZone, database.Coordinate{X: x, Y: y, Z: z})
 
 			if err == nil {
 				currentRoom = newRoom
@@ -744,7 +762,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 					printError("Not a valid direction")
 				} else {
 					loc := currentRoom.NextLocation(direction)
-					roomToDelete := model.M.GetRoomByLocation(loc, currentZone.GetId())
+					roomToDelete := model.M.GetRoomByLocation(loc, currentZone)
 					if roomToDelete != nil {
 						model.DeleteRoom(roomToDelete)
 					} else {
@@ -787,7 +805,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 				if name == "" {
 					goto done
 				}
-				model.M.CreateNpc(name, currentRoom.GetId())
+				model.M.CreateNpc(name, currentRoom)
 			} else if npcId != "" {
 				specificMenu := specificNpcMenu(npcId)
 				choice, _ := execMenu(specificMenu)
