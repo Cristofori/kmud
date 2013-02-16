@@ -145,4 +145,29 @@ func Test_ValidateName(t *testing.T) {
 	}
 }
 
+func Test_BestMatch(t *testing.T) {
+
+	searchList := []string{"", "Foo", "Bar", "Joe", "Bob", "Abcdef", "Abc", "QrStUv"}
+
+	var tests = []struct {
+		input  string
+		output int
+	}{
+		{"f", 1},
+		{"B", -2},
+		{"alseifjlfji", -1},
+		{"ABC", -2},
+		{"AbCd", 5},
+		{"q", 7},
+		{"jo", 3},
+	}
+
+	for _, test := range tests {
+		result := BestMatch(test.input, searchList)
+		if result != test.output {
+			t.Errorf("BestMatch(%v) == %v, want %v", test.input, result, test.output)
+		}
+	}
+}
+
 // vim:nocindent
