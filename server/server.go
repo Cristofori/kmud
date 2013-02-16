@@ -171,9 +171,8 @@ func userSpecificMenu(user *database.User) utils.Menu {
 	return menu
 }
 
-func handleConnection(session *mgo.Session, conn net.Conn) {
+func handleConnection(conn net.Conn) {
 	defer conn.Close()
-	defer session.Close()
 
 	var user *database.User
 	var character *database.Character
@@ -325,7 +324,7 @@ func Exec() {
 		conn, err := listener.Accept()
 		utils.HandleError(err)
 		fmt.Println("Client connected:", conn.RemoteAddr())
-		go handleConnection(session.Copy(), conn)
+		go handleConnection(conn)
 	}
 }
 
