@@ -118,6 +118,26 @@ func Test_HandleError(t *testing.T) {
 	HandleError(nil)
 }
 
+func Test_FormatName(t *testing.T) {
+	var tests = []struct {
+		input  string
+		output string
+	}{
+		{"", ""},
+		{"joe", "Joe"},
+		{"ASDF", "Asdf"},
+		{"Bob", "Bob"},
+		{"aBcDeFg", "Abcdefg"},
+	}
+
+	for _, test := range tests {
+		result := FormatName(test.input)
+		if result != test.output {
+			t.Errorf("FormatName(%s) == %s, want %s", test.input, result, test.output)
+		}
+	}
+}
+
 func Test_ValidateName(t *testing.T) {
 	var tests = []struct {
 		input  string
@@ -146,7 +166,6 @@ func Test_ValidateName(t *testing.T) {
 }
 
 func Test_BestMatch(t *testing.T) {
-
 	searchList := []string{"", "Foo", "Bar", "Joe", "Bob", "Abcdef", "Abc", "QrStUv"}
 
 	var tests = []struct {
