@@ -1,9 +1,7 @@
 package server
 
 import (
-	"crypto/sha1"
 	"fmt"
-	"io"
 	"kmud/database"
 	"kmud/game"
 	"kmud/model"
@@ -11,6 +9,7 @@ import (
 	"labix.org/v2/mgo"
 	"net"
 	"strconv"
+	"time"
 )
 
 func login(conn net.Conn) *database.User {
@@ -28,7 +27,16 @@ func login(conn net.Conn) *database.User {
 		} else if user.Online() {
 			utils.WriteLine(conn, "That user is already online")
 		} else {
-			utils.GetPassword(conn, "Password: ")
+			for {
+				password := utils.GetPassword(conn, "Password: ")
+				if user.VerifyPassword(password) {
+					break
+				}
+
+				utils.WriteLine(conn, "Invalid password")
+				time.Sleep(1 * time.Second)
+			}
+
 			user.SetOnline(true)
 			return user
 		}
@@ -47,6 +55,7 @@ func newUser(conn net.Conn) *database.User {
 		}
 
 		user := model.M.GetUserByName(name)
+		password := ""
 
 		if user != nil {
 			utils.WriteLine(conn, "That name is unavailable")
@@ -68,14 +77,12 @@ func newUser(conn net.Conn) *database.User {
 					continue
 				}
 
-				h := sha1.New()
-				io.WriteString(h, pass1)
-				fmt.Println("Password:", pass1, "SHA1", h.Sum(nil))
+				password = pass1
 
 				break
 			}
 
-			user = model.M.CreateUser(name)
+			user = model.M.CreateUser(name, password)
 			user.SetOnline(true)
 			return user
 		}

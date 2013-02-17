@@ -22,11 +22,11 @@ type globalModel struct {
 
 // CreateUser creates a new User object in the database and adds it to the model.
 // A pointer to the new User object is returned.
-func (self *globalModel) CreateUser(name string) *database.User {
+func (self *globalModel) CreateUser(name string, password string) *database.User {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	user := database.NewUser(name)
+	user := database.NewUser(name, password)
 	self.users[user.GetId()] = user
 
 	return user
