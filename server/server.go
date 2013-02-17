@@ -1,7 +1,9 @@
 package server
 
 import (
+	"crypto/sha1"
 	"fmt"
+	"io"
 	"kmud/database"
 	"kmud/game"
 	"kmud/model"
@@ -54,7 +56,6 @@ func newUser(conn net.Conn) *database.User {
 			for {
 				pass1 := utils.GetPassword(conn, "Desired password: ")
 
-				fmt.Println("Pass1:", pass1, len(pass1))
 				if len(pass1) < 7 {
 					utils.WriteLine(conn, "Passwords must be at least 7 letters in length")
 					continue
@@ -66,6 +67,10 @@ func newUser(conn net.Conn) *database.User {
 					utils.WriteLine(conn, "Passwords do not match")
 					continue
 				}
+
+				h := sha1.New()
+				io.WriteString(h, pass1)
+				fmt.Println("Password:", pass1, "SHA1", h.Sum(nil))
 
 				break
 			}
