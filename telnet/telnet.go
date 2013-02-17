@@ -43,6 +43,13 @@ const (
 	DO   = iota // Indicates the request that the other party perform, or confirmation that you are expecting the other party to perform, the indicated option.
 	DONT = iota // Indicates the demand that the other party stop performing, or confirmation that you are no longer expecting the other party to perform, the indicated option.
 	IAC  = iota // Interpret as command
+
+	// Non-standard codes:
+	CMP1 = iota // MCCP Compress
+	CMP2 = iota // MCCP Compress2
+	AARD = iota // Aardwolf MUD out of band communication, http://www.aardwolf.com/blog/2008/07/10/telnet-negotiation-control-mud-client-interaction/
+	ATCP = iota // Achaea Telnet Client Protocol, http://www.ironrealms.com/rapture/manual/files/FeatATCP-txt.html
+	GMCP = iota // Generic Mud Communication Protocol
 )
 
 func initLookups() {
@@ -87,6 +94,12 @@ func initLookups() {
 	commandMap[DONT] = '\xfe'
 	commandMap[IAC] = '\xff'
 
+	commandMap[CMP1] = '\x55'
+	commandMap[CMP2] = '\x56'
+	commandMap[AARD] = '\x66'
+	commandMap[ATCP] = '\xc8'
+	commandMap[GMCP] = '\xc9'
+
 	for enum, code := range commandMap {
 		codeMap[code] = enum
 	}
@@ -116,81 +129,99 @@ func Process(bytes []byte) string {
 }
 
 func Code(enum int) byte {
+	initLookups()
 	return commandMap[enum]
 }
 
 func ToString(bytes []byte) string {
+	initLookups()
+
 	str := ""
 	for _, b := range bytes {
-		enum := codeMap[b]
+		enum, found := codeMap[b]
 		result := ""
-		switch enum {
-		case NUL:
-			result = "NUL"
-		case ECHO:
-			result = "ECHO"
-		case SGA:
-			result = "SGA"
-		case ST:
-			result = "ST"
-		case TM:
-			result = "TM"
-		case BEL:
-			result = "BEL"
-		case BS:
-			result = "BS"
-		case HT:
-			result = "HT"
-		case LF:
-			result = "LF"
-		case FF:
-			result = "FF"
-		case CR:
-			result = "CR"
-		case TT:
-			result = "TT"
-		case WS:
-			result = "WS"
-		case TS:
-			result = "TS"
-		case RFC:
-			result = "RFC"
-		case LM:
-			result = "LM"
-		case EV:
-			result = "EV"
-		case SE:
-			result = "SE"
-		case NOP:
-			result = "NOP"
-		case DM:
-			result = "DM"
-		case BRK:
-			result = "BRK"
-		case IP:
-			result = "IP"
-		case AO:
-			result = "AO"
-		case AYT:
-			result = "AYT"
-		case EC:
-			result = "EC"
-		case EL:
-			result = "EL"
-		case GA:
-			result = "GA"
-		case SB:
-			result = "SB"
-		case WILL:
-			result = "WILL"
-		case WONT:
-			result = "WONT"
-		case DO:
-			result = "DO"
-		case DONT:
-			result = "DONT"
-		case IAC:
-			result = "IAC"
+
+		if found {
+			switch enum {
+			case NUL:
+				result = "NUL"
+			case ECHO:
+				result = "ECHO"
+			case SGA:
+				result = "SGA"
+			case ST:
+				result = "ST"
+			case TM:
+				result = "TM"
+			case BEL:
+				result = "BEL"
+			case BS:
+				result = "BS"
+			case HT:
+				result = "HT"
+			case LF:
+				result = "LF"
+			case FF:
+				result = "FF"
+			case CR:
+				result = "CR"
+			case TT:
+				result = "TT"
+			case WS:
+				result = "WS"
+			case TS:
+				result = "TS"
+			case RFC:
+				result = "RFC"
+			case LM:
+				result = "LM"
+			case EV:
+				result = "EV"
+			case SE:
+				result = "SE"
+			case NOP:
+				result = "NOP"
+			case DM:
+				result = "DM"
+			case BRK:
+				result = "BRK"
+			case IP:
+				result = "IP"
+			case AO:
+				result = "AO"
+			case AYT:
+				result = "AYT"
+			case EC:
+				result = "EC"
+			case EL:
+				result = "EL"
+			case GA:
+				result = "GA"
+			case SB:
+				result = "SB"
+			case WILL:
+				result = "WILL"
+			case WONT:
+				result = "WONT"
+			case DO:
+				result = "DO"
+			case DONT:
+				result = "DONT"
+			case IAC:
+				result = "IAC"
+			case CMP1:
+				result = "CMP1"
+			case CMP2:
+				result = "CMP2"
+			case AARD:
+				result = "AARD"
+			case ATCP:
+				result = "ATCP"
+			case GMCP:
+				result = "GMCP"
+			}
+		} else {
+			result = "???"
 		}
 
 		if str != "" {
