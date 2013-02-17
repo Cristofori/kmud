@@ -233,4 +233,31 @@ func StringToDirection(str string) ExitDirection {
 	return DirectionNone
 }
 
+func (self ExitDirection) Opposite() ExitDirection {
+	switch self {
+	case DirectionNorth:
+		return DirectionSouth
+	case DirectionNorthEast:
+		return DirectionSouthWest
+	case DirectionEast:
+		return DirectionWest
+	case DirectionSouthEast:
+		return DirectionNorthWest
+	case DirectionSouth:
+		return DirectionNorth
+	case DirectionSouthWest:
+		return DirectionNorthEast
+	case DirectionWest:
+		return DirectionEast
+	case DirectionNorthWest:
+		return DirectionSouthEast
+	case DirectionUp:
+		return DirectionDown
+	case DirectionDown:
+		return DirectionUp
+	}
+
+	return DirectionNone
+}
+
 // vim: nocindent

@@ -410,6 +410,13 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 						if direction != database.DirectionNone {
 							enable := !currentRoom.HasExit(direction)
 							currentRoom.SetExitEnabled(direction, enable)
+
+							// Disable the corresponding exit in the adjacent room if necessary
+							loc := currentRoom.NextLocation(direction)
+							otherRoom := model.M.GetRoomByLocation(loc, currentZone)
+							if otherRoom != nil {
+								otherRoom.SetExitEnabled(direction.Opposite(), enable)
+							}
 						}
 					}
 
