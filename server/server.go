@@ -13,19 +13,20 @@ import (
 
 func login(conn net.Conn) *database.User {
 	for {
-		line := utils.GetUserInput(conn, "Username: ")
+		username := utils.GetUserInput(conn, "Username: ")
 
-		if line == "" {
+		if username == "" {
 			return nil
 		}
 
-		user := model.M.GetUserByName(line)
+		user := model.M.GetUserByName(username)
 
 		if user == nil {
 			utils.WriteLine(conn, "User not found")
 		} else if user.Online() {
 			utils.WriteLine(conn, "That user is already online")
 		} else {
+			utils.GetPassword(conn, "Password: ")
 			user.SetOnline(true)
 			return user
 		}

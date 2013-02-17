@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"kmud/telnet"
 	"log"
 	"regexp"
 	"strings"
@@ -13,6 +14,10 @@ import (
 
 func Write(conn io.Writer, text string) (int, error) {
 	return io.WriteString(conn, text)
+}
+
+func WriteRaw(conn io.Writer, bytes []byte) {
+	conn.Write(bytes)
 }
 
 func WriteLine(conn io.Writer, line string) (int, error) {
@@ -39,7 +44,7 @@ func GetRawUserInput(conn io.ReadWriter, prompt string) string {
 		io.WriteString(conn, prompt)
 
 		bytes, _, err := reader.ReadLine()
-		input := string(bytes)
+		input := telnet.Process(bytes)
 
 		PanicIfError(err)
 
@@ -52,6 +57,22 @@ func GetRawUserInput(conn io.ReadWriter, prompt string) string {
 
 	panic("Unexpected code path")
 	return ""
+}
+
+func GetPassword(conn io.ReadWriter, prompt string) string {
+	WriteRaw(conn, telnet.WillEcho())
+	defer func() { WriteRaw(conn, telnet.WontEcho()) }()
+
+	reader := bufio.NewReader(conn)
+	io.WriteString(conn, prompt)
+	bytes, _, err := reader.ReadLine()
+
+	input := string(bytes)
+	PanicIfError(err)
+
+	io.WriteString(conn, "\r\n")
+
+	return input
 }
 
 func GetUserInput(conn io.ReadWriter, prompt string) string {
