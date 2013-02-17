@@ -109,7 +109,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 	}
 
 	processEvent := func(event model.Event) string {
-		message := event.ToString(*currentPlayer)
+		message := event.ToString(currentPlayer)
 
 		switch event.Type() {
 		case model.RoomUpdateEventType:
@@ -598,7 +598,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			if len(args) == 0 {
 				printError("Nothing to say")
 			} else {
-				model.BroadcastMessage(*currentPlayer, strings.Join(args, " "))
+				model.BroadcastMessage(currentPlayer, strings.Join(args, " "))
 			}
 
 		case "say":
@@ -607,11 +607,11 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			if len(args) == 0 {
 				printError("Nothing to say")
 			} else {
-				model.Say(*currentPlayer, strings.Join(args, " "))
+				model.Say(currentPlayer, strings.Join(args, " "))
 			}
 
 		case "me":
-			model.Emote(*currentPlayer, strings.Join(args, " "))
+			model.Emote(currentPlayer, strings.Join(args, " "))
 
 		case "whisper":
 			fallthrough

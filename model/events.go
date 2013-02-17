@@ -27,7 +27,7 @@ func Register(character *database.Character) chan Event {
 
 	character.SetOnline(true)
 
-	queueEvent(LoginEvent{*character})
+	queueEvent(LoginEvent{character})
 
 	return listener
 }
@@ -39,7 +39,7 @@ func Unregister(listener chan Event) {
 
 	character.SetOnline(false)
 
-	queueEvent(LogoutEvent{*character})
+	queueEvent(LogoutEvent{character})
 	delete(_listeners, listener)
 }
 
@@ -65,21 +65,21 @@ const (
 
 type Event interface {
 	Type() EventType
-	ToString(receiver database.Character) string
+	ToString(receiver *database.Character) string
 }
 
 type BroadcastEvent struct {
-	Character database.Character
+	Character *database.Character
 	Message   string
 }
 
 type SayEvent struct {
-	Character database.Character
+	Character *database.Character
 	Message   string
 }
 
 type EmoteEvent struct {
-	Character database.Character
+	Character *database.Character
 	Emote     string
 }
 
@@ -90,12 +90,12 @@ type TellEvent struct {
 }
 
 type EnterEvent struct {
-	Character database.Character
+	Character *database.Character
 	RoomId    bson.ObjectId
 }
 
 type LeaveEvent struct {
-	Character database.Character
+	Character *database.Character
 	RoomId    bson.ObjectId
 }
 
@@ -104,18 +104,23 @@ type RoomUpdateEvent struct {
 }
 
 type LoginEvent struct {
-	Character database.Character
+	Character *database.Character
 }
 
 type LogoutEvent struct {
-	Character database.Character
+	Character *database.Character
+}
+
+type AttackStartEvent struct {
+	Attacker *database.Character
+	Defender *database.Character
 }
 
 func (self BroadcastEvent) Type() EventType {
 	return BroadcastEventType
 }
 
-func (self BroadcastEvent) ToString(receiver database.Character) string {
+func (self BroadcastEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
 	return utils.Colorize(cm, utils.ColorCyan, "Broadcast from "+self.Character.PrettyName()+": ") +
 		utils.Colorize(cm, utils.ColorWhite, self.Message)
@@ -125,7 +130,7 @@ func (self SayEvent) Type() EventType {
 	return SayEventType
 }
 
-func (self SayEvent) ToString(receiver database.Character) string {
+func (self SayEvent) ToString(receiver *database.Character) string {
 	if receiver.GetRoomId() != self.Character.GetRoomId() {
 		return ""
 	}
@@ -147,7 +152,7 @@ func (self EmoteEvent) Type() EventType {
 	return EmoteEventType
 }
 
-func (self EmoteEvent) ToString(receiver database.Character) string {
+func (self EmoteEvent) ToString(receiver *database.Character) string {
 	if receiver.GetRoomId() != self.Character.GetRoomId() {
 		return ""
 	}
@@ -161,7 +166,7 @@ func (self TellEvent) Type() EventType {
 	return TellEventType
 }
 
-func (self TellEvent) ToString(receiver database.Character) string {
+func (self TellEvent) ToString(receiver *database.Character) string {
 	if receiver.GetId() != self.To.GetId() {
 		return ""
 	}
@@ -176,7 +181,7 @@ func (self EnterEvent) Type() EventType {
 	return EnterEventType
 }
 
-func (self EnterEvent) ToString(receiver database.Character) string {
+func (self EnterEvent) ToString(receiver *database.Character) string {
 	if receiver.GetRoomId() != self.RoomId {
 		return ""
 	}
@@ -195,7 +200,7 @@ func (self LeaveEvent) Type() EventType {
 	return LeaveEventType
 }
 
-func (self LeaveEvent) ToString(receiver database.Character) string {
+func (self LeaveEvent) ToString(receiver *database.Character) string {
 	if receiver.GetRoomId() != self.RoomId {
 		return ""
 	}
@@ -214,7 +219,7 @@ func (self RoomUpdateEvent) Type() EventType {
 	return RoomUpdateEventType
 }
 
-func (self RoomUpdateEvent) ToString(receiver database.Character) string {
+func (self RoomUpdateEvent) ToString(receiver *database.Character) string {
 	if receiver.GetRoomId() != self.Room.GetId() {
 		return ""
 	}
@@ -228,7 +233,7 @@ func (self LoginEvent) Type() EventType {
 	return LoginEventType
 }
 
-func (self LoginEvent) ToString(receiver database.Character) string {
+func (self LoginEvent) ToString(receiver *database.Character) string {
 	if receiver.GetId() == self.Character.GetId() {
 		return ""
 	}

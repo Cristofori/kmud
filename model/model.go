@@ -464,8 +464,8 @@ func MoveCharacterToLocation(character *database.Character, zone *database.Zone,
 
 	character.SetRoom(newRoom.GetId())
 
-	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.GetId()})
-	queueEvent(LeaveEvent{Character: *character, RoomId: oldRoom.GetId()})
+	queueEvent(EnterEvent{Character: character, RoomId: newRoom.GetId()})
+	queueEvent(LeaveEvent{Character: character, RoomId: oldRoom.GetId()})
 
 	return newRoom, nil
 }
@@ -474,8 +474,8 @@ func MoveCharacterToRoom(character *database.Character, newRoom *database.Room) 
 	oldRoomId := character.GetRoomId()
 	character.SetRoom(newRoom.GetId())
 
-	queueEvent(EnterEvent{Character: *character, RoomId: newRoom.GetId()})
-	queueEvent(LeaveEvent{Character: *character, RoomId: oldRoomId})
+	queueEvent(EnterEvent{Character: character, RoomId: newRoom.GetId()})
+	queueEvent(LeaveEvent{Character: character, RoomId: oldRoomId})
 }
 
 func MoveCharacter(character *database.Character, direction database.ExitDirection) (*database.Room, error) {
@@ -582,7 +582,7 @@ func DeleteRoom(room *database.Room) {
 	updateRoom(database.DirectionDown)
 }
 
-func BroadcastMessage(from database.Character, message string) {
+func BroadcastMessage(from *database.Character, message string) {
 	queueEvent(BroadcastEvent{from, message})
 }
 
@@ -590,11 +590,11 @@ func Tell(from *database.Character, to *database.Character, message string) {
 	queueEvent(TellEvent{from, to, message})
 }
 
-func Say(from database.Character, message string) {
+func Say(from *database.Character, message string) {
 	queueEvent(SayEvent{from, message})
 }
 
-func Emote(from database.Character, message string) {
+func Emote(from *database.Character, message string) {
 	queueEvent(EmoteEvent{from, message})
 }
 
