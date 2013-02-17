@@ -235,11 +235,12 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 				if defender.GetId() == currentPlayer.GetId() {
 					printError("You can't attack yourself")
 				} else {
-					model.StartAttack(currentPlayer, defender)
+					model.StartFight(currentPlayer, defender)
 				}
 			}
 
 		case "stop":
+			model.StopFight(currentPlayer)
 			return
 
 		case "inventory":

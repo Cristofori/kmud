@@ -98,8 +98,9 @@ const (
 	RoomUpdateEventType  EventType = iota
 	LoginEventType       EventType = iota
 	LogoutEventType      EventType = iota
-	AttackStartEventType EventType = iota
-	AttackStopEventType  EventType = iota
+	CombatStartEventType EventType = iota
+	CombatStopEventType  EventType = iota
+	CombatEventType      EventType = iota
 )
 
 type Event interface {
@@ -150,14 +151,20 @@ type LogoutEvent struct {
 	Character *database.Character
 }
 
-type AttackStartEvent struct {
+type CombatStartEvent struct {
 	Attacker *database.Character
 	Defender *database.Character
 }
 
-type AttackStopEvent struct {
+type CombatStopEvent struct {
 	Attacker *database.Character
 	Defender *database.Character
+}
+
+type CombatEvent struct {
+	Attacker *database.Character
+	Defender *database.Character
+	Damage   int
 }
 
 func (self BroadcastEvent) Type() EventType {
@@ -301,33 +308,49 @@ func getColorMode(char *database.Character) utils.ColorMode {
 	return user.GetColorMode()
 }
 
-func (self AttackStartEvent) Type() EventType {
-	return AttackStartEventType
+func (self CombatStartEvent) Type() EventType {
+	return CombatStartEventType
 }
 
-func (self AttackStartEvent) ToString(receiver *database.Character) string {
+func (self CombatStartEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
 
-	if receiver == self.Defender {
-		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("%s is attacking you!", self.Attacker.PrettyName()))
-	} else if receiver == self.Attacker {
+	if receiver == self.Attacker {
 		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("You are attacking %s!", self.Defender.PrettyName()))
+	} else if receiver == self.Defender {
+		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("%s is attacking you!", self.Attacker.PrettyName()))
 	}
 
 	return ""
 }
 
-func (self AttackStopEvent) Type() EventType {
-	return AttackStopEventType
+func (self CombatStopEvent) Type() EventType {
+	return CombatStopEventType
 }
 
-func (self AttackStopEvent) ToString(receiver *database.Character) string {
+func (self CombatStopEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
 
-	if receiver == self.Defender {
-		return utils.Colorize(cm, utils.ColorGreen, fmt.Sprintf("%s has stopped attacking you", self.Attacker.PrettyName()))
-	} else if receiver == self.Attacker {
+	if receiver == self.Attacker {
 		return utils.Colorize(cm, utils.ColorGreen, fmt.Sprintf("You stopped attacking %s", self.Defender.PrettyName()))
+	} else if receiver == self.Defender {
+		return utils.Colorize(cm, utils.ColorGreen, fmt.Sprintf("%s has stopped attacking you", self.Attacker.PrettyName()))
+	}
+
+	return ""
+}
+
+func (self CombatEvent) Type() EventType {
+	return CombatEventType
+}
+
+func (self CombatEvent) ToString(receiver *database.Character) string {
+	cm := getColorMode(receiver)
+
+	if receiver == self.Attacker {
+		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("You hit %s for %v damage", self.Defender.PrettyName(), self.Damage))
+	} else if receiver == self.Defender {
+		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("%s hits you for %v damage", self.Attacker.PrettyName(), self.Damage))
 	}
 
 	return ""

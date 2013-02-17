@@ -447,6 +447,9 @@ func Init(session *mgo.Session) error {
 	eventQueueChannel = make(chan Event, 100)
 	go eventLoop()
 
+	fights = map[*database.Character]*database.Character{}
+	go combatLoop()
+
 	return err
 }
 
@@ -661,14 +664,6 @@ func MoveRoomsToZone(fromZoneId bson.ObjectId, toZoneId bson.ObjectId) {
 			room.SetZoneId(toZoneId)
 		}
 	}
-}
-
-func StartAttack(attacker *database.Character, defender *database.Character) {
-	queueEvent(AttackStartEvent{Attacker: attacker, Defender: defender})
-}
-
-func StopAttack(attacker *database.Character, defender *database.Character) {
-	queueEvent(AttackStopEvent{Attacker: attacker, Defender: defender})
 }
 
 // vim: nocindent
