@@ -96,7 +96,7 @@ func initLookups() {
 
 	commandMap[CMP1] = '\x55'
 	commandMap[CMP2] = '\x56'
-	commandMap[AARD] = '\x66'
+	// commandMap[AARD] = '\x66'
 	commandMap[ATCP] = '\xc8'
 	commandMap[GMCP] = '\xc9'
 
