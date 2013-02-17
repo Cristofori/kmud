@@ -1,7 +1,6 @@
 package model
 
 import (
-	"container/list"
 	"errors"
 	"fmt"
 	"kmud/database"
@@ -395,8 +394,6 @@ func (self *globalModel) DeleteItem(id bson.ObjectId) {
 // made to the model are automatically saved to the database.
 var M globalModel
 
-var eventQueueChannel chan Event
-
 /**
  * Initializes the global model object and starts up the main event loop
  */
@@ -598,40 +595,6 @@ func Emote(from *database.Character, message string) {
 	queueEvent(EmoteEvent{from, message})
 }
 
-func queueEvent(event Event) {
-	eventQueueChannel <- event
-}
-
-func eventLoop() {
-	var m sync.Mutex
-	cond := sync.NewCond(&m)
-
-	eventQueue := list.New()
-
-	go func() {
-		for {
-			event := <-eventQueueChannel
-
-			cond.L.Lock()
-			eventQueue.PushBack(event)
-			cond.L.Unlock()
-			cond.Signal()
-		}
-	}()
-
-	for {
-		cond.L.Lock()
-		for eventQueue.Len() == 0 {
-			cond.Wait()
-		}
-
-		event := eventQueue.Remove(eventQueue.Front())
-		cond.L.Unlock()
-
-		broadcast(event.(Event))
-	}
-}
-
 /**
  * Returns cordinates that indiate the highest and lowest points of
  * the map in 3 dimensions
@@ -698,6 +661,14 @@ func MoveRoomsToZone(fromZoneId bson.ObjectId, toZoneId bson.ObjectId) {
 			room.SetZoneId(toZoneId)
 		}
 	}
+}
+
+func StartAttack(attacker *database.Character, defender *database.Character) {
+	queueEvent(AttackStartEvent{Attacker: attacker, Defender: defender})
+}
+
+func StopAttack(attacker *database.Character, defender *database.Character) {
+	queueEvent(AttackStopEvent{Attacker: attacker, Defender: defender})
 }
 
 // vim: nocindent

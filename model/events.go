@@ -1,6 +1,7 @@
 package model
 
 import (
+	"container/list"
 	"fmt"
 	"kmud/database"
 	"kmud/utils"
@@ -11,6 +12,8 @@ import (
 var _listeners map[chan Event]*database.Character
 
 var _mutex sync.Mutex
+
+var eventQueueChannel chan Event
 
 func Register(character *database.Character) chan Event {
 	_mutex.Lock()
@@ -43,6 +46,40 @@ func Unregister(listener chan Event) {
 	delete(_listeners, listener)
 }
 
+func eventLoop() {
+	var m sync.Mutex
+	cond := sync.NewCond(&m)
+
+	eventQueue := list.New()
+
+	go func() {
+		for {
+			event := <-eventQueueChannel
+
+			cond.L.Lock()
+			eventQueue.PushBack(event)
+			cond.L.Unlock()
+			cond.Signal()
+		}
+	}()
+
+	for {
+		cond.L.Lock()
+		for eventQueue.Len() == 0 {
+			cond.Wait()
+		}
+
+		event := eventQueue.Remove(eventQueue.Front())
+		cond.L.Unlock()
+
+		broadcast(event.(Event))
+	}
+}
+
+func queueEvent(event Event) {
+	eventQueueChannel <- event
+}
+
 func broadcast(event Event) {
 	for listener := range _listeners {
 		listener <- event
@@ -52,15 +89,17 @@ func broadcast(event Event) {
 type EventType int
 
 const (
-	BroadcastEventType  EventType = iota
-	SayEventType        EventType = iota
-	EmoteEventType      EventType = iota
-	TellEventType       EventType = iota
-	EnterEventType      EventType = iota
-	LeaveEventType      EventType = iota
-	RoomUpdateEventType EventType = iota
-	LoginEventType      EventType = iota
-	LogoutEventType     EventType = iota
+	BroadcastEventType   EventType = iota
+	SayEventType         EventType = iota
+	EmoteEventType       EventType = iota
+	TellEventType        EventType = iota
+	EnterEventType       EventType = iota
+	LeaveEventType       EventType = iota
+	RoomUpdateEventType  EventType = iota
+	LoginEventType       EventType = iota
+	LogoutEventType      EventType = iota
+	AttackStartEventType EventType = iota
+	AttackStopEventType  EventType = iota
 )
 
 type Event interface {
@@ -112,6 +151,11 @@ type LogoutEvent struct {
 }
 
 type AttackStartEvent struct {
+	Attacker *database.Character
+	Defender *database.Character
+}
+
+type AttackStopEvent struct {
 	Attacker *database.Character
 	Defender *database.Character
 }
@@ -248,13 +292,45 @@ func (self LogoutEvent) Type() EventType {
 	return LogoutEventType
 }
 
-func (self LogoutEvent) ToString(receiver database.Character) string {
+func (self LogoutEvent) ToString(receiver *database.Character) string {
 	return fmt.Sprintf("%s has disconnected", self.Character.PrettyName())
 }
 
-func getColorMode(char database.Character) utils.ColorMode {
+func getColorMode(char *database.Character) utils.ColorMode {
 	user := M.GetUser(char.GetUserId())
 	return user.GetColorMode()
+}
+
+func (self AttackStartEvent) Type() EventType {
+	return AttackStartEventType
+}
+
+func (self AttackStartEvent) ToString(receiver *database.Character) string {
+	cm := getColorMode(receiver)
+
+	if receiver == self.Defender {
+		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("%s is attacking you!", self.Attacker.PrettyName()))
+	} else if receiver == self.Attacker {
+		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("You are attacking %s!", self.Defender.PrettyName()))
+	}
+
+	return ""
+}
+
+func (self AttackStopEvent) Type() EventType {
+	return AttackStopEventType
+}
+
+func (self AttackStopEvent) ToString(receiver *database.Character) string {
+	cm := getColorMode(receiver)
+
+	if receiver == self.Defender {
+		return utils.Colorize(cm, utils.ColorGreen, fmt.Sprintf("%s has stopped attacking you", self.Attacker.PrettyName()))
+	} else if receiver == self.Attacker {
+		return utils.Colorize(cm, utils.ColorGreen, fmt.Sprintf("You stopped attacking %s", self.Defender.PrettyName()))
+	}
+
+	return ""
 }
 
 // vim: nocindent

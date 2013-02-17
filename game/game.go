@@ -231,13 +231,16 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			} else if index == -2 {
 				printError("Which one do you mean?")
 			} else {
-				attackee := charList[index]
-				if attackee.GetId() == currentPlayer.GetId() {
+				defender := charList[index]
+				if defender.GetId() == currentPlayer.GetId() {
 					printError("You can't attack yourself")
 				} else {
-					printLine("Attacking: %s", charList[index].PrettyName())
+					model.StartAttack(currentPlayer, defender)
 				}
 			}
+
+		case "stop":
+			return
 
 		case "inventory":
 			fallthrough
