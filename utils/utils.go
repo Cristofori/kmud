@@ -67,7 +67,7 @@ func GetPassword(conn io.ReadWriter, prompt string) string {
 	io.WriteString(conn, prompt)
 	bytes, _, err := reader.ReadLine()
 
-	input := string(bytes)
+	input := telnet.Process(bytes)
 	PanicIfError(err)
 
 	io.WriteString(conn, "\r\n")

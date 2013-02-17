@@ -51,6 +51,25 @@ func newUser(conn net.Conn) *database.User {
 		} else if err := utils.ValidateName(name); err != nil {
 			utils.WriteLine(conn, err.Error())
 		} else {
+			for {
+				pass1 := utils.GetPassword(conn, "Desired password: ")
+
+				fmt.Println("Pass1:", pass1, len(pass1))
+				if len(pass1) < 7 {
+					utils.WriteLine(conn, "Passwords must be at least 7 letters in length")
+					continue
+				}
+
+				pass2 := utils.GetPassword(conn, "Reenter password: ")
+
+				if pass1 != pass2 {
+					utils.WriteLine(conn, "Passwords do not match")
+					continue
+				}
+
+				break
+			}
+
 			user = model.M.CreateUser(name)
 			user.SetOnline(true)
 			return user
@@ -61,7 +80,7 @@ func newUser(conn net.Conn) *database.User {
 	return nil
 }
 
-func newCharacter(conn net.Conn, user *database.User) *database.Character {
+func newPlayer(conn net.Conn, user *database.User) *database.Character {
 	// TODO: character slot limit
 	const SizeLimit = 12
 	for {
@@ -176,7 +195,7 @@ func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
 	var user *database.User
-	var character *database.Character
+	var player *database.Character
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -188,8 +207,8 @@ func handleConnection(conn net.Conn) {
 				username = user.PrettyName()
 			}
 
-			if character != nil {
-				charname = character.PrettyName()
+			if player != nil {
+				charname = player.PrettyName()
 			}
 
 			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
@@ -216,7 +235,7 @@ func handleConnection(conn net.Conn) {
 				quit(conn)
 				return
 			}
-		} else if character == nil {
+		} else if player == nil {
 			menu := userMenu(user)
 			choice, charId := menu.Exec(conn, user.GetColorMode())
 
@@ -258,7 +277,7 @@ func handleConnection(conn net.Conn) {
 					}
 				}
 			case "n":
-				character = newCharacter(conn, user)
+				player = newPlayer(conn, user)
 			case "d":
 				for {
 					deleteMenu := deleteMenu(user)
@@ -280,12 +299,12 @@ func handleConnection(conn net.Conn) {
 				_, err := strconv.Atoi(choice)
 
 				if err == nil {
-					character = model.M.GetCharacter(charId)
+					player = model.M.GetCharacter(charId)
 				}
 			}
 		} else {
-			game.Exec(conn, user, character)
-			character = nil
+			game.Exec(conn, user, player)
+			player = nil
 		}
 	}
 }
