@@ -27,11 +27,20 @@ func login(conn net.Conn) *database.User {
 		} else if user.Online() {
 			utils.WriteLine(conn, "That user is already online")
 		} else {
+			attempts := 1
 			for {
 				password := utils.GetPassword(conn, "Password: ")
 				if user.VerifyPassword(password) {
 					break
 				}
+
+				if attempts >= 3 {
+					utils.WriteLine(conn, "Too many failed login attempts")
+					conn.Close()
+					panic("Booted user due to too many failed logins (" + user.PrettyName() + ")")
+				}
+
+				attempts++
 
 				utils.WriteLine(conn, "Invalid password")
 				time.Sleep(1 * time.Second)
