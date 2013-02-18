@@ -2,6 +2,8 @@ package utils
 
 import (
 	"bufio"
+	"bytes"
+	"compress/zlib"
 	"errors"
 	"fmt"
 	"io"
@@ -13,11 +15,11 @@ import (
 )
 
 func Write(conn io.Writer, text string) (int, error) {
-	return io.WriteString(conn, text)
+	return WriteRaw(conn, []byte(text))
 }
 
-func WriteRaw(conn io.Writer, bytes []byte) {
-	conn.Write(bytes)
+func WriteRaw(conn io.Writer, bytes []byte) (int, error) {
+	return conn.Write(bytes)
 }
 
 func WriteLine(conn io.Writer, line string) (int, error) {
@@ -41,7 +43,7 @@ func GetRawUserInput(conn io.ReadWriter, prompt string) string {
 	reader := bufio.NewReader(conn)
 
 	for {
-		io.WriteString(conn, prompt)
+		Write(conn, prompt)
 
 		bytes, _, err := reader.ReadLine()
 		input := telnet.Process(bytes)
@@ -64,13 +66,13 @@ func GetPassword(conn io.ReadWriter, prompt string) string {
 	defer func() { WriteRaw(conn, telnet.WontEcho()) }()
 
 	reader := bufio.NewReader(conn)
-	io.WriteString(conn, prompt)
+	Write(conn, prompt)
 	bytes, _, err := reader.ReadLine()
 
 	input := telnet.Process(bytes)
 	PanicIfError(err)
 
-	io.WriteString(conn, "\r\n")
+	Write(conn, "\r\n")
 
 	return input
 }
@@ -200,6 +202,14 @@ func BestMatch(pattern string, searchList []string) int {
 	}
 
 	return index
+}
+
+func compress(data []byte) []byte {
+	var b bytes.Buffer
+	w := zlib.NewWriter(&b)
+	w.Write(data)
+	w.Close()
+	return b.Bytes()
 }
 
 // vim: nocindent
