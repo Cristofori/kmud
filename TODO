@@ -10,3 +10,5 @@
 * Spell checking
 * Improve input usability by processing each character at a time (/r > /tell <foo>)
 * Party/grouping
+* Monsters/spawning
+* Hitpoints and combat
