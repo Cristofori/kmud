@@ -96,7 +96,7 @@ func initLookups() {
 
 	commandMap[CMP1] = '\x55'
 	commandMap[CMP2] = '\x56'
-	// commandMap[AARD] = '\x66'
+	commandMap[AARD] = '\x66'
 	commandMap[ATCP] = '\xc8'
 	commandMap[GMCP] = '\xc9'
 
@@ -112,13 +112,27 @@ func Process(bytes []byte) string {
 	str := ""
 	var bytesProcessed []byte
 
+	inIAC := false
+
+	processByte := func(b byte) {
+		bytesProcessed = append(bytesProcessed, b)
+	}
+
 	for _, b := range bytes {
-		_, found := codeMap[b]
-		if !found {
-			str = str + string(b)
-		} else {
-			bytesProcessed = append(bytesProcessed, b)
+		if b == commandMap[IAC] {
+			inIAC = true
+			processByte(b)
+			continue
 		}
+
+		if inIAC {
+			if b != commandMap[WILL] && b != commandMap[WONT] && b != commandMap[DO] && b != commandMap[DONT] {
+				inIAC = false
+			}
+			processByte(b)
+		}
+
+		str = str + string(b)
 	}
 
 	if len(bytesProcessed) > 0 {
