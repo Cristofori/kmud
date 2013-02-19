@@ -204,13 +204,17 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 					}
 				}
 			} else {
-				loc := currentRoom.NextLocation(arg)
-				roomToSee := model.M.GetRoomByLocation(loc, currentZone)
-				if roomToSee != nil {
-					printLine(roomToSee.ToString(database.ReadMode, currentUser.GetColorMode(),
-						model.M.PlayersIn(roomToSee, nil), model.M.NpcsIn(roomToSee), nil))
+				if currentRoom.HasExit(arg) {
+					loc := currentRoom.NextLocation(arg)
+					roomToSee := model.M.GetRoomByLocation(loc, currentZone)
+					if roomToSee != nil {
+						printLine(roomToSee.ToString(database.ReadMode, currentUser.GetColorMode(),
+							model.M.PlayersIn(roomToSee, nil), model.M.NpcsIn(roomToSee), nil))
+					} else {
+						printLine("Nothing to see")
+					}
 				} else {
-					printLine("Nothing to see")
+					printError("You can't look in that direction")
 				}
 			}
 		}

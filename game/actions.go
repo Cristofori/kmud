@@ -28,11 +28,11 @@ func callAction(action string, args []string) bool {
 }
 
 func makeList(argList ...string) []string {
-    list := make([]string, len(argList))
-    for i, arg := range argList {
-        list[i] = arg
-    }
-    return list
+	list := make([]string, len(argList))
+	for i, arg := range argList {
+		list[i] = arg
+	}
+	return list
 }
 
 // vim: nocindent
