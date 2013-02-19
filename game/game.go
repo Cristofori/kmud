@@ -175,48 +175,53 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 		return choice, data
 	}
 
-	processAction := func(action string, args []string) {
-		switch action {
-		case "l":
-			fallthrough
-		case "look":
-			if len(args) == 0 {
-				printRoom()
-			} else if len(args) == 1 {
-				arg := database.StringToDirection(args[0])
+	registerAction("?", func([]string) { printLine("HELP!") })
 
-				if arg == database.DirectionNone {
-					charList := model.M.CharactersIn(currentRoom)
-					index := utils.BestMatch(args[0], database.CharacterNames(charList))
+	registerActions(makeList("l", "look"), func(args []string) {
+		if len(args) == 0 {
+			printRoom()
+		} else if len(args) == 1 {
+			arg := database.StringToDirection(args[0])
 
-					if index == -2 {
-						printError("Which one do you mean?")
-					} else if index != -1 {
-						printLine("Looking at: %s", charList[index].PrettyName())
-					} else {
-						itemList := model.M.ItemsIn(currentRoom)
-						index = utils.BestMatch(args[0], database.ItemNames(itemList))
+			if arg == database.DirectionNone {
+				charList := model.M.CharactersIn(currentRoom)
+				index := utils.BestMatch(args[0], database.CharacterNames(charList))
 
-						if index == -1 {
-							printLine("Nothing to see")
-						} else if index == -2 {
-							printError("Which one do you mean?")
-						} else {
-							printLine("Looking at: %s", itemList[index].PrettyName())
-						}
-					}
+				if index == -2 {
+					printError("Which one do you mean?")
+				} else if index != -1 {
+					printLine("Looking at: %s", charList[index].PrettyName())
 				} else {
-					loc := currentRoom.NextLocation(arg)
-					roomToSee := model.M.GetRoomByLocation(loc, currentZone)
-					if roomToSee != nil {
-						printLine(roomToSee.ToString(database.ReadMode, currentUser.GetColorMode(),
-							model.M.PlayersIn(roomToSee, nil), model.M.NpcsIn(roomToSee), nil))
-					} else {
+					itemList := model.M.ItemsIn(currentRoom)
+					index = utils.BestMatch(args[0], database.ItemNames(itemList))
+
+					if index == -1 {
 						printLine("Nothing to see")
+					} else if index == -2 {
+						printError("Which one do you mean?")
+					} else {
+						printLine("Looking at: %s", itemList[index].PrettyName())
 					}
 				}
+			} else {
+				loc := currentRoom.NextLocation(arg)
+				roomToSee := model.M.GetRoomByLocation(loc, currentZone)
+				if roomToSee != nil {
+					printLine(roomToSee.ToString(database.ReadMode, currentUser.GetColorMode(),
+						model.M.PlayersIn(roomToSee, nil), model.M.NpcsIn(roomToSee), nil))
+				} else {
+					printLine("Nothing to see")
+				}
 			}
+		}
+	})
 
+	processAction := func(action string, args []string) {
+		if callAction(action, args) {
+			return
+		}
+
+		switch action {
 		case "ls":
 			printLine("Where do you think you are?!")
 
@@ -366,8 +371,6 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 
 	processCommand := func(command string, args []string) {
 		switch command {
-		case "?":
-			fallthrough
 		case "help":
 		case "edit":
 			printRoomEditor()
