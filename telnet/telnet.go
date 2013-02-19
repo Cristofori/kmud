@@ -130,6 +130,7 @@ func Process(bytes []byte) string {
 				inIAC = false
 			}
 			processByte(b)
+			continue
 		}
 
 		str = str + string(b)
