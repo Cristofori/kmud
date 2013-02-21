@@ -1,4 +1,4 @@
-package game
+package session
 
 var actionMap map[string]func([]string)
 

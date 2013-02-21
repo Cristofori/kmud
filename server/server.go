@@ -3,8 +3,8 @@ package server
 import (
 	"fmt"
 	"kmud/database"
-	"kmud/game"
 	"kmud/model"
+	"kmud/session"
 	"kmud/utils"
 	"labix.org/v2/mgo"
 	"net"
@@ -324,7 +324,7 @@ func handleConnection(conn net.Conn) {
 				}
 			}
 		} else {
-			session := game.NewSession(conn, user, player)
+			session := session.NewSession(conn, user, player)
 			session.Exec()
 			player = nil
 		}
