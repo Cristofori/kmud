@@ -324,7 +324,8 @@ func handleConnection(conn net.Conn) {
 				}
 			}
 		} else {
-			game.Exec(conn, user, player)
+			session := game.NewSession(conn, user, player)
+			session.Exec()
 			player = nil
 		}
 	}

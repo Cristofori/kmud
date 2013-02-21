@@ -12,6 +12,20 @@ import (
 	"time"
 )
 
+type Session struct {
+	conn   io.ReadWriter
+	user   *database.User
+	player *database.Character
+}
+
+func NewSession(conn io.ReadWriter, user *database.User, player *database.Character) Session {
+	var loop Session
+	loop.conn = conn
+	loop.user = user
+	loop.player = player
+	return loop
+}
+
 type userInputMode int
 
 const (
@@ -69,16 +83,16 @@ func specificNpcMenu(npcId bson.ObjectId) utils.Menu {
 	return menu
 }
 
-func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *database.Character) {
-	currentRoom := model.M.GetRoom(currentPlayer.GetRoomId())
+func (session *Session) Exec() {
+	currentRoom := model.M.GetRoom(session.player.GetRoomId())
 	currentZone := model.M.GetZone(currentRoom.GetZoneId())
 
 	printString := func(data string) {
-		io.WriteString(conn, data)
+		io.WriteString(session.conn, data)
 	}
 
 	printLineColor := func(color utils.Color, line string, a ...interface{}) {
-		utils.WriteLine(conn, utils.Colorize(currentUser.GetColorMode(), color, fmt.Sprintf(line, a...)))
+		utils.WriteLine(session.conn, utils.Colorize(session.user.GetColorMode(), color, fmt.Sprintf(line, a...)))
 	}
 
 	printLine := func(line string, a ...interface{}) {
@@ -90,18 +104,18 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 	}
 
 	printRoom := func() {
-		playerList := model.M.PlayersIn(currentRoom, currentPlayer)
+		playerList := model.M.PlayersIn(currentRoom, session.player)
 		npcList := model.M.NpcsIn(currentRoom)
-		printLine(currentRoom.ToString(database.ReadMode, currentUser.GetColorMode(),
+		printLine(currentRoom.ToString(database.ReadMode, session.user.GetColorMode(),
 			playerList, npcList, model.M.GetItems(currentRoom.GetItemIds())))
 	}
 
 	printRoomEditor := func() {
-		printLine(currentRoom.ToString(database.EditMode, currentUser.GetColorMode(), nil, nil, nil))
+		printLine(currentRoom.ToString(database.EditMode, session.user.GetColorMode(), nil, nil, nil))
 	}
 
 	clearLine := func() {
-		utils.ClearLine(conn)
+		utils.ClearLine(session.conn)
 	}
 
 	prompt := func() string {
@@ -109,7 +123,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 	}
 
 	processEvent := func(event model.Event) string {
-		message := event.ToString(currentPlayer)
+		message := event.ToString(session.player)
 
 		switch event.Type() {
 		case model.RoomUpdateEventType:
@@ -122,7 +136,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 		return message
 	}
 
-	eventChannel := model.Register(currentPlayer)
+	eventChannel := model.Register(session.player)
 	defer model.Unregister(eventChannel)
 
 	userInputChannel := make(chan string)
@@ -165,7 +179,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 		var data bson.ObjectId
 
 		for {
-			menu.Print(conn, currentUser.GetColorMode())
+			menu.Print(session.conn, session.user.GetColorMode())
 			choice = getUserInput(CleanUserInput, menu.GetPrompt())
 			if menu.HasAction(choice) || choice == "" {
 				data = menu.GetData(choice)
@@ -177,7 +191,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 
 	registerAction("?", func([]string) { printLine("HELP!") })
 	registerAction("ls", func([]string) { printLine("Where do you think you are?!") })
-	registerAction("stop", func(args []string) { model.StopFight(currentPlayer) })
+	registerAction("stop", func(args []string) { model.StopFight(session.player) })
 
 	registerActions(makeList("l", "look"), func(args []string) {
 		if len(args) == 0 {
@@ -210,7 +224,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 					loc := currentRoom.NextLocation(arg)
 					roomToSee := model.M.GetRoomByLocation(loc, currentZone)
 					if roomToSee != nil {
-						printLine(roomToSee.ToString(database.ReadMode, currentUser.GetColorMode(),
+						printLine(roomToSee.ToString(database.ReadMode, session.user.GetColorMode(),
 							model.M.PlayersIn(roomToSee, nil), model.M.NpcsIn(roomToSee), nil))
 					} else {
 						printLine("Nothing to see")
@@ -232,16 +246,16 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			printError("Which one do you mean?")
 		} else {
 			defender := charList[index]
-			if defender.GetId() == currentPlayer.GetId() {
+			if defender.GetId() == session.player.GetId() {
 				printError("You can't attack yourself")
 			} else {
-				model.StartFight(currentPlayer, defender)
+				model.StartFight(session.player, defender)
 			}
 		}
 	})
 
 	registerActions(makeList("inventory", "inv", "i"), func(args []string) {
-		itemIds := currentPlayer.GetItemIds()
+		itemIds := session.player.GetItemIds()
 
 		if len(itemIds) == 0 {
 			printLine("You aren't carrying anything")
@@ -253,7 +267,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			printLine("You are carrying: %s", strings.Join(itemNames, ", "))
 		}
 
-		printLine("Cash: %v", currentPlayer.GetCash())
+		printLine("Cash: %v", session.player.GetCash())
 	})
 
 	registerActions(makeList("take", "t", "get", "g"), func(args []string) {
@@ -270,7 +284,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 		itemName := strings.ToLower(args[0])
 		for _, item := range itemsInRoom {
 			if strings.ToLower(item.PrettyName()) == itemName {
-				currentPlayer.AddItem(item)
+				session.player.AddItem(item)
 				currentRoom.RemoveItem(item)
 				return
 			}
@@ -289,12 +303,12 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			return
 		}
 
-		characterItems := model.M.GetItems(currentPlayer.GetItemIds())
+		characterItems := model.M.GetItems(session.player.GetItemIds())
 
 		itemName := strings.ToLower(args[0])
 		for _, item := range characterItems {
 			if strings.ToLower(item.PrettyName()) == itemName {
-				currentPlayer.RemoveItem(item)
+				session.player.RemoveItem(item)
 				currentRoom.AddItem(item)
 				return
 			}
@@ -318,7 +332,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			printError("Which one do you mean?")
 		} else {
 			npc := npcList[index]
-			printLine(npc.PrettyConversation(currentUser.GetColorMode()))
+			printLine(npc.PrettyConversation(session.user.GetColorMode()))
 		}
 	})
 
@@ -338,7 +352,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 
 			if direction != database.DirectionNone {
 				if currentRoom.HasExit(direction) {
-					newRoom, err := model.MoveCharacter(currentPlayer, direction)
+					newRoom, err := model.MoveCharacter(session.player, direction)
 					if err == nil {
 						currentRoom = newRoom
 						printRoom()
@@ -387,7 +401,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 
 				case "3":
 					for {
-						menu := toggleExitMenu(currentUser.GetColorMode(), currentRoom)
+						menu := toggleExitMenu(session.user.GetColorMode(), currentRoom)
 
 						choice, _ := execMenu(menu)
 
@@ -538,14 +552,14 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 				}
 			}
 
-			printLine(utils.TrimEmptyRows(builder.toString(currentUser.GetColorMode())))
+			printLine(utils.TrimEmptyRows(builder.toString(session.user.GetColorMode())))
 
 		case "zone":
 			if len(args) == 0 {
 				if currentZone.GetId() == "" {
 					printLine("Currently in the null zone")
 				} else {
-					printLine("Current zone: " + utils.Colorize(currentUser.GetColorMode(), utils.ColorBlue, currentZone.GetName()))
+					printLine("Current zone: " + utils.Colorize(session.user.GetColorMode(), utils.ColorBlue, currentZone.GetName()))
 				}
 			} else if len(args) == 1 {
 				if args[0] == "list" {
@@ -583,7 +597,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 					newZone := model.M.CreateZone(args[1])
 					newRoom := model.M.CreateRoom(newZone)
 
-					model.MoveCharacterToRoom(currentPlayer, newRoom)
+					model.MoveCharacterToRoom(session.player, newRoom)
 
 					currentZone = newZone
 					currentRoom = newRoom
@@ -598,7 +612,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			if len(args) == 0 {
 				printError("Nothing to say")
 			} else {
-				model.BroadcastMessage(currentPlayer, strings.Join(args, " "))
+				model.BroadcastMessage(session.player, strings.Join(args, " "))
 			}
 
 		case "say":
@@ -607,11 +621,11 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			if len(args) == 0 {
 				printError("Nothing to say")
 			} else {
-				model.Say(currentPlayer, strings.Join(args, " "))
+				model.Say(session.player, strings.Join(args, " "))
 			}
 
 		case "me":
-			model.Emote(currentPlayer, strings.Join(args, " "))
+			model.Emote(session.player, strings.Join(args, " "))
 
 		case "whisper":
 			fallthrough
@@ -637,7 +651,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			}
 
 			message := strings.Join(args[1:], " ")
-			model.Tell(currentPlayer, targetChar, message)
+			model.Tell(session.player, targetChar, message)
 
 		case "teleport":
 			fallthrough
@@ -700,7 +714,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 				return
 			}
 
-			newRoom, err := model.MoveCharacterToLocation(currentPlayer, newZone, database.Coordinate{X: x, Y: y, Z: z})
+			newRoom, err := model.MoveCharacterToLocation(session.player, newZone, database.Coordinate{X: x, Y: y, Z: z})
 
 			if err == nil {
 				currentRoom = newRoom
@@ -744,7 +758,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 		case "cm":
 			if len(args) == 0 {
 				message := "Current color mode is: "
-				switch currentUser.GetColorMode() {
+				switch session.user.GetColorMode() {
 				case utils.ColorModeNone:
 					message = message + "None"
 				case utils.ColorModeLight:
@@ -756,13 +770,13 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 			} else if len(args) == 1 {
 				switch strings.ToLower(args[0]) {
 				case "none":
-					currentUser.SetColorMode(utils.ColorModeNone)
+					session.user.SetColorMode(utils.ColorModeNone)
 					printLine("Color mode set to: None")
 				case "light":
-					currentUser.SetColorMode(utils.ColorModeLight)
+					session.user.SetColorMode(utils.ColorModeLight)
 					printLine("Color mode set to: Light")
 				case "dark":
-					currentUser.SetColorMode(utils.ColorModeDark)
+					session.user.SetColorMode(utils.ColorModeDark)
 					printLine("Color mode set to: Dark")
 				default:
 					printLine("Valid color modes are: None, Light, Dark")
@@ -914,7 +928,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 					return
 				}
 
-				currentPlayer.AddCash(amount)
+				session.player.AddCash(amount)
 				printLine("Received: %v monies", amount)
 			} else {
 				cashUsage()
@@ -929,7 +943,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 		}
 	}
 
-	printLineColor(utils.ColorWhite, "Welcome, "+currentPlayer.PrettyName())
+	printLineColor(utils.ColorWhite, "Welcome, "+session.player.PrettyName())
 	printRoom()
 
 	// Main routine in charge of actually reading input from the connection object,
@@ -948,14 +962,14 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 
 		for {
 			mode := <-inputModeChannel
-			prompt := utils.Colorize(currentUser.GetColorMode(), utils.ColorWhite, <-promptChannel)
+			prompt := utils.Colorize(session.user.GetColorMode(), utils.ColorWhite, <-promptChannel)
 			input := ""
 
 			switch mode {
 			case CleanUserInput:
-				input = utils.GetUserInput(conn, prompt)
+				input = utils.GetUserInput(session.conn, prompt)
 			case RawUserInput:
-				input = utils.GetRawUserInput(conn, prompt)
+				input = utils.GetRawUserInput(session.conn, prompt)
 			default:
 				panic("Unhandled case in switch statement (userInputMode)")
 			}
