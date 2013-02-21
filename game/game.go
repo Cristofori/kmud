@@ -176,6 +176,8 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 	}
 
 	registerAction("?", func([]string) { printLine("HELP!") })
+	registerAction("ls", func([]string) { printLine("Where do you think you are?!") })
+	registerAction("stop", func(args []string) { model.StopFight(currentPlayer) })
 
 	registerActions(makeList("l", "look"), func(args []string) {
 		if len(args) == 0 {
@@ -220,137 +222,117 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 		}
 	})
 
+	registerActions(makeList("a", "attack"), func(args []string) {
+		charList := model.M.CharactersIn(currentRoom)
+		index := utils.BestMatch(args[0], database.CharacterNames(charList))
+
+		if index == -1 {
+			printError("Not found")
+		} else if index == -2 {
+			printError("Which one do you mean?")
+		} else {
+			defender := charList[index]
+			if defender.GetId() == currentPlayer.GetId() {
+				printError("You can't attack yourself")
+			} else {
+				model.StartFight(currentPlayer, defender)
+			}
+		}
+	})
+
+	registerActions(makeList("inventory", "inv", "i"), func(args []string) {
+		itemIds := currentPlayer.GetItemIds()
+
+		if len(itemIds) == 0 {
+			printLine("You aren't carrying anything")
+		} else {
+			var itemNames []string
+			for _, item := range model.M.GetItems(itemIds) {
+				itemNames = append(itemNames, item.PrettyName())
+			}
+			printLine("You are carrying: %s", strings.Join(itemNames, ", "))
+		}
+
+		printLine("Cash: %v", currentPlayer.GetCash())
+	})
+
+	registerActions(makeList("take", "t", "get", "g"), func(args []string) {
+		takeUsage := func() {
+			printError("Usage: take <item name>")
+		}
+
+		if len(args) != 1 {
+			takeUsage()
+			return
+		}
+
+		itemsInRoom := model.M.GetItems(currentRoom.GetItemIds())
+		itemName := strings.ToLower(args[0])
+		for _, item := range itemsInRoom {
+			if strings.ToLower(item.PrettyName()) == itemName {
+				currentPlayer.AddItem(item)
+				currentRoom.RemoveItem(item)
+				return
+			}
+		}
+
+		printError("Item %s not found", args[0])
+	})
+
+	registerAction("drop", func(args []string) {
+		dropUsage := func() {
+			printError("Usage: drop <item name>")
+		}
+
+		if len(args) != 1 {
+			dropUsage()
+			return
+		}
+
+		characterItems := model.M.GetItems(currentPlayer.GetItemIds())
+
+		itemName := strings.ToLower(args[0])
+		for _, item := range characterItems {
+			if strings.ToLower(item.PrettyName()) == itemName {
+				currentPlayer.RemoveItem(item)
+				currentRoom.AddItem(item)
+				return
+			}
+		}
+
+		printError("You are not carrying a %s", args[0])
+	})
+
+	registerAction("talk", func(args []string) {
+		if len(args) != 1 {
+			printError("Usage: talk <NPC name>")
+			return
+		}
+
+		npcList := model.M.NpcsIn(currentRoom)
+		index := utils.BestMatch(args[0], database.CharacterNames(npcList))
+
+		if index == -1 {
+			printError("Not found")
+		} else if index == -2 {
+			printError("Which one do you mean?")
+		} else {
+			npc := npcList[index]
+			printLine(npc.PrettyConversation(currentUser.GetColorMode()))
+		}
+	})
+
+	registerAction("disconnect", func([]string) {
+		printLine("Take luck!")
+		panic("User quit")
+	})
+
 	processAction := func(action string, args []string) {
 		if callAction(action, args) {
 			return
 		}
 
 		switch action {
-		case "ls":
-			printLine("Where do you think you are?!")
-
-		case "a":
-			fallthrough
-		case "attack":
-			charList := model.M.CharactersIn(currentRoom)
-			index := utils.BestMatch(args[0], database.CharacterNames(charList))
-
-			if index == -1 {
-				printError("Not found")
-			} else if index == -2 {
-				printError("Which one do you mean?")
-			} else {
-				defender := charList[index]
-				if defender.GetId() == currentPlayer.GetId() {
-					printError("You can't attack yourself")
-				} else {
-					model.StartFight(currentPlayer, defender)
-				}
-			}
-
-		case "stop":
-			model.StopFight(currentPlayer)
-			return
-
-		case "inventory":
-			fallthrough
-		case "inv":
-			fallthrough
-		case "i":
-			itemIds := currentPlayer.GetItemIds()
-
-			if len(itemIds) == 0 {
-				printLine("You aren't carrying anything")
-			} else {
-				var itemNames []string
-				for _, item := range model.M.GetItems(itemIds) {
-					itemNames = append(itemNames, item.PrettyName())
-				}
-				printLine("You are carrying: %s", strings.Join(itemNames, ", "))
-			}
-
-			printLine("Cash: %v", currentPlayer.GetCash())
-
-		case "take":
-			fallthrough
-		case "t":
-			fallthrough
-		case "get":
-			fallthrough
-		case "g":
-			takeUsage := func() {
-				printError("Usage: take <item name>")
-			}
-
-			if len(args) != 1 {
-				takeUsage()
-				return
-			}
-
-			itemsInRoom := model.M.GetItems(currentRoom.GetItemIds())
-			itemName := strings.ToLower(args[0])
-			for _, item := range itemsInRoom {
-				if strings.ToLower(item.PrettyName()) == itemName {
-					currentPlayer.AddItem(item)
-					currentRoom.RemoveItem(item)
-					return
-				}
-			}
-
-			printError("Item %s not found", args[0])
-
-		case "drop":
-			dropUsage := func() {
-				printError("Usage: drop <item name>")
-			}
-
-			if len(args) != 1 {
-				dropUsage()
-				return
-			}
-
-			characterItems := model.M.GetItems(currentPlayer.GetItemIds())
-
-			itemName := strings.ToLower(args[0])
-			for _, item := range characterItems {
-				if strings.ToLower(item.PrettyName()) == itemName {
-					currentPlayer.RemoveItem(item)
-					currentRoom.AddItem(item)
-					return
-				}
-			}
-
-			printError("You are not carrying a %s", args[0])
-
-		case "talk":
-			if len(args) != 1 {
-				printError("Usage: talk <NPC name>")
-				return
-			}
-
-			npcList := model.M.NpcsIn(currentRoom)
-			index := utils.BestMatch(args[0], database.CharacterNames(npcList))
-
-			if index == -1 {
-				printError("Not found")
-			} else if index == -2 {
-				printError("Which one do you mean?")
-			} else {
-				npc := npcList[index]
-				printLine(npc.PrettyConversation(currentUser.GetColorMode()))
-			}
-
-		case "":
-			fallthrough
-		case "logout":
-			return
-
-		case "quit":
-			fallthrough
-		case "exit":
-			printLine("Take luck!")
-			panic("User quit")
-
 		default:
 			direction := database.StringToDirection(action)
 
@@ -992,7 +974,7 @@ func Exec(conn io.ReadWriter, currentUser *database.User, currentPlayer *databas
 	// Main loop
 	for {
 		input := getUserInput(RawUserInput, prompt())
-		if input == "" {
+		if input == "" || input == "logout" {
 			return
 		}
 		if strings.HasPrefix(input, "/") {
