@@ -156,195 +156,6 @@ func (session *Session) Exec() {
 		return choice, data
 	}
 
-	registerAction("?", func([]string) { session.printLine("HELP!") })
-	registerAction("ls", func([]string) { session.printLine("Where do you think you are?!") })
-	registerAction("stop", func(args []string) { model.StopFight(session.player) })
-
-	/*
-		registerActions(makeList("l", "look"), func(args []string) {
-			if len(args) == 0 {
-				printRoom()
-			} else if len(args) == 1 {
-				arg := database.StringToDirection(args[0])
-
-				if arg == database.DirectionNone {
-					charList := model.M.CharactersIn(session.room)
-					index := utils.BestMatch(args[0], database.CharacterNames(charList))
-
-					if index == -2 {
-						session.printError("Which one do you mean?")
-					} else if index != -1 {
-						session.printLine("Looking at: %s", charList[index].PrettyName())
-					} else {
-						itemList := model.M.ItemsIn(session.room)
-						index = utils.BestMatch(args[0], database.ItemNames(itemList))
-
-						if index == -1 {
-							session.printLine("Nothing to see")
-						} else if index == -2 {
-							session.printError("Which one do you mean?")
-						} else {
-							session.printLine("Looking at: %s", itemList[index].PrettyName())
-						}
-					}
-				} else {
-					if session.room.HasExit(arg) {
-						loc := session.room.NextLocation(arg)
-						roomToSee := model.M.GetRoomByLocation(loc, session.zone)
-						if roomToSee != nil {
-							session.printLine(roomToSee.ToString(database.ReadMode, session.user.GetColorMode(),
-								model.M.PlayersIn(roomToSee, nil), model.M.NpcsIn(roomToSee), nil))
-						} else {
-							session.printLine("Nothing to see")
-						}
-					} else {
-						session.printError("You can't look in that direction")
-					}
-				}
-			}
-		})
-	*/
-
-	registerActions(makeList("a", "attack"), func(args []string) {
-		charList := model.M.CharactersIn(session.room)
-		index := utils.BestMatch(args[0], database.CharacterNames(charList))
-
-		if index == -1 {
-			session.printError("Not found")
-		} else if index == -2 {
-			session.printError("Which one do you mean?")
-		} else {
-			defender := charList[index]
-			if defender.GetId() == session.player.GetId() {
-				session.printError("You can't attack yourself")
-			} else {
-				model.StartFight(session.player, defender)
-			}
-		}
-	})
-
-	registerActions(makeList("inventory", "inv", "i"), func(args []string) {
-		itemIds := session.player.GetItemIds()
-
-		if len(itemIds) == 0 {
-			session.printLine("You aren't carrying anything")
-		} else {
-			var itemNames []string
-			for _, item := range model.M.GetItems(itemIds) {
-				itemNames = append(itemNames, item.PrettyName())
-			}
-			session.printLine("You are carrying: %s", strings.Join(itemNames, ", "))
-		}
-
-		session.printLine("Cash: %v", session.player.GetCash())
-	})
-
-	registerActions(makeList("take", "t", "get", "g"), func(args []string) {
-		takeUsage := func() {
-			session.printError("Usage: take <item name>")
-		}
-
-		if len(args) != 1 {
-			takeUsage()
-			return
-		}
-
-		itemsInRoom := model.M.GetItems(session.room.GetItemIds())
-		itemName := strings.ToLower(args[0])
-		for _, item := range itemsInRoom {
-			if strings.ToLower(item.PrettyName()) == itemName {
-				session.player.AddItem(item)
-				session.room.RemoveItem(item)
-				return
-			}
-		}
-
-		session.printError("Item %s not found", args[0])
-	})
-
-	registerAction("drop", func(args []string) {
-		dropUsage := func() {
-			session.printError("Usage: drop <item name>")
-		}
-
-		if len(args) != 1 {
-			dropUsage()
-			return
-		}
-
-		characterItems := model.M.GetItems(session.player.GetItemIds())
-
-		itemName := strings.ToLower(args[0])
-		for _, item := range characterItems {
-			if strings.ToLower(item.PrettyName()) == itemName {
-				session.player.RemoveItem(item)
-				session.room.AddItem(item)
-				return
-			}
-		}
-
-		session.printError("You are not carrying a %s", args[0])
-	})
-
-	registerAction("talk", func(args []string) {
-		if len(args) != 1 {
-			session.printError("Usage: talk <NPC name>")
-			return
-		}
-
-		npcList := model.M.NpcsIn(session.room)
-		index := utils.BestMatch(args[0], database.CharacterNames(npcList))
-
-		if index == -1 {
-			session.printError("Not found")
-		} else if index == -2 {
-			session.printError("Which one do you mean?")
-		} else {
-			npc := npcList[index]
-			session.printLine(npc.PrettyConversation(session.user.GetColorMode()))
-		}
-	})
-
-	registerAction("disconnect", func([]string) {
-		session.printLine("Take luck!")
-		panic("User quit")
-	})
-
-	processAction := func(action string, args []string) {
-		switch action {
-		case "l":
-			fallthrough
-		case "look":
-			session.look(args)
-		}
-
-		if callAction(action, args) {
-			return
-		}
-
-		switch action {
-		default:
-			direction := database.StringToDirection(action)
-
-			if direction != database.DirectionNone {
-				if session.room.HasExit(direction) {
-					newRoom, err := model.MoveCharacter(session.player, direction)
-					if err == nil {
-						session.room = newRoom
-						session.printRoom()
-					} else {
-						session.printError(err.Error())
-					}
-
-				} else {
-					session.printError("You can't go that way")
-				}
-			} else {
-				session.printError("You can't do that")
-			}
-		}
-	}
-
 	processCommand := func(command string, args []string) {
 		switch command {
 		case "help":
@@ -409,52 +220,52 @@ func (session *Session) Exec() {
 			// Quick room/exit creation
 		case "/n":
 			session.room.SetExitEnabled(database.DirectionNorth, true)
-			processAction("n", []string{})
+			session.handleAction("n", []string{})
 			session.room.SetExitEnabled(database.DirectionSouth, true)
 
 		case "/e":
 			session.room.SetExitEnabled(database.DirectionEast, true)
-			processAction("e", []string{})
+			session.handleAction("e", []string{})
 			session.room.SetExitEnabled(database.DirectionWest, true)
 
 		case "/s":
 			session.room.SetExitEnabled(database.DirectionSouth, true)
-			processAction("s", []string{})
+			session.handleAction("s", []string{})
 			session.room.SetExitEnabled(database.DirectionNorth, true)
 
 		case "/w":
 			session.room.SetExitEnabled(database.DirectionWest, true)
-			processAction("w", []string{})
+			session.handleAction("w", []string{})
 			session.room.SetExitEnabled(database.DirectionEast, true)
 
 		case "/u":
 			session.room.SetExitEnabled(database.DirectionUp, true)
-			processAction("u", []string{})
+			session.handleAction("u", []string{})
 			session.room.SetExitEnabled(database.DirectionDown, true)
 
 		case "/d":
 			session.room.SetExitEnabled(database.DirectionDown, true)
-			processAction("d", []string{})
+			session.handleAction("d", []string{})
 			session.room.SetExitEnabled(database.DirectionUp, true)
 
 		case "/ne":
 			session.room.SetExitEnabled(database.DirectionNorthEast, true)
-			processAction("ne", []string{})
+			session.handleAction("ne", []string{})
 			session.room.SetExitEnabled(database.DirectionSouthWest, true)
 
 		case "/nw":
 			session.room.SetExitEnabled(database.DirectionNorthWest, true)
-			processAction("nw", []string{})
+			session.handleAction("nw", []string{})
 			session.room.SetExitEnabled(database.DirectionSouthEast, true)
 
 		case "/se":
 			session.room.SetExitEnabled(database.DirectionSouthEast, true)
-			processAction("se", []string{})
+			session.handleAction("se", []string{})
 			session.room.SetExitEnabled(database.DirectionNorthWest, true)
 
 		case "/sw":
 			session.room.SetExitEnabled(database.DirectionSouthWest, true)
-			processAction("sw", []string{})
+			session.handleAction("sw", []string{})
 			session.room.SetExitEnabled(database.DirectionNorthEast, true)
 
 		case "loc":
@@ -970,7 +781,7 @@ func (session *Session) Exec() {
 		if strings.HasPrefix(input, "/") {
 			processCommand(utils.Argify(input[1:]))
 		} else {
-			processAction(utils.Argify(input))
+			session.handleAction(utils.Argify(input))
 		}
 	}
 }

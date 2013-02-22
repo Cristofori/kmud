@@ -4,41 +4,76 @@ import (
 	"kmud/database"
 	"kmud/model"
 	"kmud/utils"
+	"strings"
 )
 
-var actionMap map[string]func([]string)
+func (session *Session) handleAction(action string, args []string) {
+	switch action {
 
-func registerAction(action string, actionFunc func([]string)) {
-	if actionMap == nil {
-		actionMap = map[string]func([]string){}
+	case "stop":
+		session.stop()
+
+	case "?":
+		session.help()
+
+	case "ls":
+		session.ls()
+
+	case "inventory":
+		fallthrough
+	case "inv":
+		fallthrough
+	case "i":
+		session.inventory()
+
+	case "l":
+		fallthrough
+	case "look":
+		session.look(args)
+
+	case "a":
+		fallthrough
+	case "attack":
+		session.attack(args)
+
+	case "disconnect":
+		session.disconnect()
+
+	case "talk":
+		session.talk(args)
+
+	case "drop":
+		session.drop(args)
+
+	case "take":
+		fallthrough
+	case "t":
+		fallthrough
+	case "get":
+		fallthrough
+	case "g":
+		session.get(args)
+
+	default:
+		direction := database.StringToDirection(action)
+
+		if direction != database.DirectionNone {
+			if session.room.HasExit(direction) {
+				newRoom, err := model.MoveCharacter(session.player, direction)
+				if err == nil {
+					session.room = newRoom
+					session.printRoom()
+				} else {
+					session.printError(err.Error())
+				}
+
+			} else {
+				session.printError("You can't go that way")
+			}
+		} else {
+			session.printError("You can't do that")
+		}
 	}
-
-	actionMap[action] = actionFunc
-}
-
-func registerActions(actions []string, actionFunc func([]string)) {
-	for _, action := range actions {
-		registerAction(action, actionFunc)
-	}
-}
-
-func callAction(action string, args []string) bool {
-	actionFunc, found := actionMap[action]
-
-	if !found {
-		return false
-	}
-
-	actionFunc(args)
-	return true
-}
-
-func makeList(argList ...string) []string {
-	list := make([]string, len(argList))
-	for i, arg := range argList {
-		list[i] = arg
-	}
-	return list
 }
 
 func (session *Session) look(args []string) {
@@ -82,6 +117,123 @@ func (session *Session) look(args []string) {
 			}
 		}
 	}
+}
+
+func (session *Session) attack(args []string) {
+	charList := model.M.CharactersIn(session.room)
+	index := utils.BestMatch(args[0], database.CharacterNames(charList))
+
+	if index == -1 {
+		session.printError("Not found")
+	} else if index == -2 {
+		session.printError("Which one do you mean?")
+	} else {
+		defender := charList[index]
+		if defender.GetId() == session.player.GetId() {
+			session.printError("You can't attack yourself")
+		} else {
+			model.StartFight(session.player, defender)
+		}
+	}
+}
+
+func (session *Session) disconnect() {
+	session.printLine("Take luck!")
+	panic("User quit")
+}
+
+func (session *Session) talk(args []string) {
+	if len(args) != 1 {
+		session.printError("Usage: talk <NPC name>")
+		return
+	}
+
+	npcList := model.M.NpcsIn(session.room)
+	index := utils.BestMatch(args[0], database.CharacterNames(npcList))
+
+	if index == -1 {
+		session.printError("Not found")
+	} else if index == -2 {
+		session.printError("Which one do you mean?")
+	} else {
+		npc := npcList[index]
+		session.printLine(npc.PrettyConversation(session.user.GetColorMode()))
+	}
+}
+
+func (session *Session) drop(args []string) {
+	dropUsage := func() {
+		session.printError("Usage: drop <item name>")
+	}
+
+	if len(args) != 1 {
+		dropUsage()
+		return
+	}
+
+	characterItems := model.M.GetItems(session.player.GetItemIds())
+
+	itemName := strings.ToLower(args[0])
+	for _, item := range characterItems {
+		if strings.ToLower(item.PrettyName()) == itemName {
+			session.player.RemoveItem(item)
+			session.room.AddItem(item)
+			return
+		}
+	}
+
+	session.printError("You are not carrying a %s", args[0])
+}
+
+func (session *Session) get(args []string) {
+	takeUsage := func() {
+		session.printError("Usage: take <item name>")
+	}
+
+	if len(args) != 1 {
+		takeUsage()
+		return
+	}
+
+	itemsInRoom := model.M.GetItems(session.room.GetItemIds())
+	itemName := strings.ToLower(args[0])
+	for _, item := range itemsInRoom {
+		if strings.ToLower(item.PrettyName()) == itemName {
+			session.player.AddItem(item)
+			session.room.RemoveItem(item)
+			return
+		}
+	}
+
+	session.printError("Item %s not found", args[0])
+}
+
+func (session *Session) inventory() {
+	itemIds := session.player.GetItemIds()
+
+	if len(itemIds) == 0 {
+		session.printLine("You aren't carrying anything")
+	} else {
+		var itemNames []string
+		for _, item := range model.M.GetItems(itemIds) {
+			itemNames = append(itemNames, item.PrettyName())
+		}
+		session.printLine("You are carrying: %s", strings.Join(itemNames, ", "))
+	}
+
+	session.printLine("Cash: %v", session.player.GetCash())
+}
+
+func (session *Session) help() {
+	session.printLine("HELP!")
+}
+
+func (session *Session) ls() {
+	session.printLine("Where do you think you are?!")
+}
+
+func (session *Session) stop() {
+	model.StopFight(session.player)
 }
 
 // vim: nocindent
