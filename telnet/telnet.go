@@ -108,11 +108,9 @@ func initLookups() {
 }
 
 // Process strips telnet control codes from the given input, returning the resulting input string
-// and a map containing data of any subnegotiation parameters that were found
+// and a map containing data of any subnegotiation parameters that were found.
 func Process(bytes []byte) (str string, subdata map[TelnetCode][]byte) {
 	initLookups()
-
-	subdata = map[TelnetCode][]byte{}
 
 	type State int
 
@@ -136,7 +134,19 @@ func Process(bytes []byte) (str string, subdata map[TelnetCode][]byte) {
 		str = str + string(b)
 	}
 
+    resetSubDataField := func(code TelnetCode) {
+        if subdata == nil {
+            subdata = map[TelnetCode][]byte{}
+        }
+
+        subdata[code] = []byte{}
+    }
+
 	captureSubData := func(code TelnetCode, b byte) {
+        if subdata == nil {
+            subdata = map[TelnetCode][]byte{}
+        }
+
 		subdata[code] = append(subdata[code], b)
 	}
 
@@ -171,9 +181,9 @@ func Process(bytes []byte) (str string, subdata map[TelnetCode][]byte) {
 
 		case InSB:
 			capture(b)
-			subdata[code] = []byte{}
 			currentSB = code
 			currentState = CapSB
+            resetSubDataField(code)
 
 		case CapSB:
 			if code == IAC {
