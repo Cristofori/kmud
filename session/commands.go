@@ -9,9 +9,8 @@ import (
 )
 
 func (session *Session) handleCommand(command string, args []string) {
-
 	if command[0] == '/' {
-		session.quickRoom(command)
+		session.quickRoom(command[1:])
 		return
 	}
 
@@ -90,57 +89,15 @@ func (session *Session) handleCommand(command string, args []string) {
 }
 
 func (session *Session) quickRoom(command string) {
-	switch command {
-	case "/n":
-		session.room.SetExitEnabled(database.DirectionNorth, true)
-		session.handleAction("n", []string{})
-		session.room.SetExitEnabled(database.DirectionSouth, true)
+	dir := database.StringToDirection(command)
 
-	case "/e":
-		session.room.SetExitEnabled(database.DirectionEast, true)
-		session.handleAction("e", []string{})
-		session.room.SetExitEnabled(database.DirectionWest, true)
-
-	case "/s":
-		session.room.SetExitEnabled(database.DirectionSouth, true)
-		session.handleAction("s", []string{})
-		session.room.SetExitEnabled(database.DirectionNorth, true)
-
-	case "/w":
-		session.room.SetExitEnabled(database.DirectionWest, true)
-		session.handleAction("w", []string{})
-		session.room.SetExitEnabled(database.DirectionEast, true)
-
-	case "/u":
-		session.room.SetExitEnabled(database.DirectionUp, true)
-		session.handleAction("u", []string{})
-		session.room.SetExitEnabled(database.DirectionDown, true)
-
-	case "/d":
-		session.room.SetExitEnabled(database.DirectionDown, true)
-		session.handleAction("d", []string{})
-		session.room.SetExitEnabled(database.DirectionUp, true)
-
-	case "/ne":
-		session.room.SetExitEnabled(database.DirectionNorthEast, true)
-		session.handleAction("ne", []string{})
-		session.room.SetExitEnabled(database.DirectionSouthWest, true)
-
-	case "/nw":
-		session.room.SetExitEnabled(database.DirectionNorthWest, true)
-		session.handleAction("nw", []string{})
-		session.room.SetExitEnabled(database.DirectionSouthEast, true)
-
-	case "/se":
-		session.room.SetExitEnabled(database.DirectionSouthEast, true)
-		session.handleAction("se", []string{})
-		session.room.SetExitEnabled(database.DirectionNorthWest, true)
-
-	case "/sw":
-		session.room.SetExitEnabled(database.DirectionSouthWest, true)
-		session.handleAction("sw", []string{})
-		session.room.SetExitEnabled(database.DirectionNorthEast, true)
+	if dir == database.DirectionNone {
+		return
 	}
+
+	session.room.SetExitEnabled(dir, true)
+	session.handleAction(command, []string{})
+	session.room.SetExitEnabled(dir.Opposite(), true)
 }
 
 func (session *Session) edit(args []string) {
