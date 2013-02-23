@@ -136,7 +136,18 @@ func Process(bytes []byte) (str string, subdata map[TelnetCode][]byte) {
 		str = str + string(b)
 	}
 
-	for _, b := range bytes {
+	captureSubData := func(code TelnetCode, b byte) {
+		subdata[code] = append(subdata[code], b)
+	}
+
+	skip := false
+
+	for i, b := range bytes {
+		if skip {
+			skip = false
+			continue
+		}
+
 		code := codeMap[b]
 
 		switch currentState {
@@ -165,11 +176,20 @@ func Process(bytes []byte) (str string, subdata map[TelnetCode][]byte) {
 			currentState = CapSB
 
 		case CapSB:
-			if code == IAC { // TODO: Handle escaped IAC sequences
+			if code == IAC {
+				// Check to see if it's an escaped IAC sequence (IAC IAC)
+				if i+1 < len(bytes) {
+					if codeMap[bytes[i+1]] == IAC {
+						skip = true
+						captureSubData(currentSB, b)
+						continue
+					}
+				}
+
 				currentState = InIAC
 				capture(b)
 			} else {
-				subdata[currentSB] = append(subdata[currentSB], b)
+				captureSubData(currentSB, b)
 			}
 		}
 	}
