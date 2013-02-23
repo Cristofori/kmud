@@ -13,3 +13,4 @@
 * Monsters/spawning
 * Hitpoints and combat
 * Mark and sweep for DB updates
+* Unbuffered processing of telnet codes
