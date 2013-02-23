@@ -108,8 +108,11 @@ func initLookups() {
 }
 
 // Process strips telnet control codes from the given input, returning the resulting input string
-func Process(bytes []byte) string {
+// and a map containing data of any subnegotiation parameters that were found
+func Process(bytes []byte) (str string, subdata map[TelnetCode][]byte) {
 	initLookups()
+
+	subdata = map[TelnetCode][]byte{}
 
 	type State int
 
@@ -121,8 +124,8 @@ func Process(bytes []byte) string {
 	)
 
 	currentState := Base
+	var currentSB TelnetCode
 
-	str := ""
 	capturedBytes := []byte{}
 
 	capture := func(b byte) {
@@ -157,13 +160,16 @@ func Process(bytes []byte) string {
 
 		case InSB:
 			capture(b)
+			subdata[code] = []byte{}
+			currentSB = code
 			currentState = CapSB
 
 		case CapSB:
-			capture(b)
-
 			if code == IAC { // TODO: Handle escaped IAC sequences
 				currentState = InIAC
+				capture(b)
+			} else {
+				subdata[currentSB] = append(subdata[currentSB], b)
 			}
 		}
 	}
@@ -172,7 +178,11 @@ func Process(bytes []byte) string {
 		fmt.Println("Processed:", ToString(capturedBytes))
 	}
 
-	return str
+	for key, value := range subdata {
+		fmt.Printf("Subdata[%s] = %v\n", CodeToString(key), value)
+	}
+
+	return str, subdata
 }
 
 func ToString(bytes []byte) string {
@@ -180,99 +190,104 @@ func ToString(bytes []byte) string {
 
 	str := ""
 	for _, b := range bytes {
-		enum, found := codeMap[b]
-		result := ""
-
-		if found {
-			switch enum {
-			case NUL:
-				result = "NUL"
-			case ECHO:
-				result = "ECHO"
-			case SGA:
-				result = "SGA"
-			case ST:
-				result = "ST"
-			case TM:
-				result = "TM"
-			case BEL:
-				result = "BEL"
-			case BS:
-				result = "BS"
-			case HT:
-				result = "HT"
-			case LF:
-				result = "LF"
-			case FF:
-				result = "FF"
-			case CR:
-				result = "CR"
-			case TT:
-				result = "TT"
-			case WS:
-				result = "WS"
-			case TS:
-				result = "TS"
-			case RFC:
-				result = "RFC"
-			case LM:
-				result = "LM"
-			case EV:
-				result = "EV"
-			case SE:
-				result = "SE"
-			case NOP:
-				result = "NOP"
-			case DM:
-				result = "DM"
-			case BRK:
-				result = "BRK"
-			case IP:
-				result = "IP"
-			case AO:
-				result = "AO"
-			case AYT:
-				result = "AYT"
-			case EC:
-				result = "EC"
-			case EL:
-				result = "EL"
-			case GA:
-				result = "GA"
-			case SB:
-				result = "SB"
-			case WILL:
-				result = "WILL"
-			case WONT:
-				result = "WONT"
-			case DO:
-				result = "DO"
-			case DONT:
-				result = "DONT"
-			case IAC:
-				result = "IAC"
-			case CMP1:
-				result = "CMP1"
-			case CMP2:
-				result = "CMP2"
-			case AARD:
-				result = "AARD"
-			case ATCP:
-				result = "ATCP"
-			case GMCP:
-				result = "GMCP"
-			}
-		} else {
-			result = "???"
-		}
 
 		if str != "" {
 			str = str + " "
 		}
-		str = str + result
+
+		code, found := codeMap[b]
+
+		if found {
+			str = str + CodeToString(code)
+		} else {
+			str = str + "???"
+		}
 	}
 
 	return str
+}
+
+func CodeToString(code TelnetCode) string {
+	switch code {
+	case NUL:
+		return "NUL"
+	case ECHO:
+		return "ECHO"
+	case SGA:
+		return "SGA"
+	case ST:
+		return "ST"
+	case TM:
+		return "TM"
+	case BEL:
+		return "BEL"
+	case BS:
+		return "BS"
+	case HT:
+		return "HT"
+	case LF:
+		return "LF"
+	case FF:
+		return "FF"
+	case CR:
+		return "CR"
+	case TT:
+		return "TT"
+	case WS:
+		return "WS"
+	case TS:
+		return "TS"
+	case RFC:
+		return "RFC"
+	case LM:
+		return "LM"
+	case EV:
+		return "EV"
+	case SE:
+		return "SE"
+	case NOP:
+		return "NOP"
+	case DM:
+		return "DM"
+	case BRK:
+		return "BRK"
+	case IP:
+		return "IP"
+	case AO:
+		return "AO"
+	case AYT:
+		return "AYT"
+	case EC:
+		return "EC"
+	case EL:
+		return "EL"
+	case GA:
+		return "GA"
+	case SB:
+		return "SB"
+	case WILL:
+		return "WILL"
+	case WONT:
+		return "WONT"
+	case DO:
+		return "DO"
+	case DONT:
+		return "DONT"
+	case IAC:
+		return "IAC"
+	case CMP1:
+		return "CMP1"
+	case CMP2:
+		return "CMP2"
+	case AARD:
+		return "AARD"
+	case ATCP:
+		return "ATCP"
+	case GMCP:
+		return "GMCP"
+	}
+
+	return "???"
 }
 
 func buildCommand(codes ...TelnetCode) []byte {

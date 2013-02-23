@@ -46,7 +46,7 @@ func GetRawUserInput(conn io.ReadWriter, prompt string) string {
 		Write(conn, prompt)
 
 		bytes, _, err := reader.ReadLine()
-		input := telnet.Process(bytes)
+		input, _ := telnet.Process(bytes)
 
 		PanicIfError(err)
 
@@ -69,7 +69,7 @@ func GetPassword(conn io.ReadWriter, prompt string) string {
 	Write(conn, prompt)
 	bytes, _, err := reader.ReadLine()
 
-	input := telnet.Process(bytes)
+	input, _ := telnet.Process(bytes)
 	PanicIfError(err)
 
 	Write(conn, "\r\n")
