@@ -45,7 +45,7 @@ func GetRawUserInput(conn io.ReadWriter, prompt string) string {
 	for {
 		Write(conn, prompt)
 
-		bytes, _, err := reader.ReadLine()
+		bytes, err := reader.ReadBytes('\n')
 		input, _ := telnet.Process(bytes)
 
 		PanicIfError(err)
