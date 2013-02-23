@@ -6,50 +6,52 @@ import (
 
 // RFC 854: http://tools.ietf.org/html/rfc854, http://support.microsoft.com/kb/231866
 
-var codeMap map[byte]int
-var commandMap map[int]byte
+var codeMap map[byte]TelnetCode
+var commandMap map[TelnetCode]byte
+
+type TelnetCode int
 
 const (
-	NUL  = iota // NULL, no operation
-	ECHO = iota // Echo
-	SGA  = iota // Suppress go ahead
-	ST   = iota // Status
-	TM   = iota // Timing mark
-	BEL  = iota // Bell
-	BS   = iota // Backspace
-	HT   = iota // Horizontal tab
-	LF   = iota // Line feed
-	FF   = iota // Form feed
-	CR   = iota // Carriage return
-	TT   = iota // Terminal type
-	WS   = iota // Window size
-	TS   = iota // Terminal speed
-	RFC  = iota // Remote flow control
-	LM   = iota // Line mode
-	EV   = iota // Environment variables
-	SE   = iota // End of subnegotiation parameters.
-	NOP  = iota // No operation.
-	DM   = iota // Data Mark. The data stream portion of a Synch. This should always be accompanied by a TCP Urgent notification.
-	BRK  = iota // Break. NVT character BRK.
-	IP   = iota // Interrupt Process
-	AO   = iota // Abort output
-	AYT  = iota // Are you there
-	EC   = iota // Erase character
-	EL   = iota // Erase line
-	GA   = iota // Go ahead signal
-	SB   = iota // Indicates that what follows is subnegotiation of the indicated option.
-	WILL = iota // Indicates the desire to begin performing, or confirmation that you are now performing, the indicated option.
-	WONT = iota // Indicates the refusal to perform, or continue performing, the indicated option.
-	DO   = iota // Indicates the request that the other party perform, or confirmation that you are expecting the other party to perform, the indicated option.
-	DONT = iota // Indicates the demand that the other party stop performing, or confirmation that you are no longer expecting the other party to perform, the indicated option.
-	IAC  = iota // Interpret as command
+	NUL  TelnetCode = iota // NULL, no operation
+	ECHO TelnetCode = iota // Echo
+	SGA  TelnetCode = iota // Suppress go ahead
+	ST   TelnetCode = iota // Status
+	TM   TelnetCode = iota // Timing mark
+	BEL  TelnetCode = iota // Bell
+	BS   TelnetCode = iota // Backspace
+	HT   TelnetCode = iota // Horizontal tab
+	LF   TelnetCode = iota // Line feed
+	FF   TelnetCode = iota // Form feed
+	CR   TelnetCode = iota // Carriage return
+	TT   TelnetCode = iota // Terminal type
+	WS   TelnetCode = iota // Window size
+	TS   TelnetCode = iota // Terminal speed
+	RFC  TelnetCode = iota // Remote flow control
+	LM   TelnetCode = iota // Line mode
+	EV   TelnetCode = iota // Environment variables
+	SE   TelnetCode = iota // End of subnegotiation parameters.
+	NOP  TelnetCode = iota // No operation.
+	DM   TelnetCode = iota // Data Mark. The data stream portion of a Synch. This should always be accompanied by a TCP Urgent notification.
+	BRK  TelnetCode = iota // Break. NVT character BRK.
+	IP   TelnetCode = iota // Interrupt Process
+	AO   TelnetCode = iota // Abort output
+	AYT  TelnetCode = iota // Are you there
+	EC   TelnetCode = iota // Erase character
+	EL   TelnetCode = iota // Erase line
+	GA   TelnetCode = iota // Go ahead signal
+	SB   TelnetCode = iota // Indicates that what follows is subnegotiation of the indicated option.
+	WILL TelnetCode = iota // Indicates the desire to begin performing, or confirmation that you are now performing, the indicated option.
+	WONT TelnetCode = iota // Indicates the refusal to perform, or continue performing, the indicated option.
+	DO   TelnetCode = iota // Indicates the request that the other party perform, or confirmation that you are expecting the other party to perform, the indicated option.
+	DONT TelnetCode = iota // Indicates the demand that the other party stop performing, or confirmation that you are no longer expecting the other party to perform, the indicated option.
+	IAC  TelnetCode = iota // Interpret as command
 
 	// Non-standard codes:
-	CMP1 = iota // MCCP Compress
-	CMP2 = iota // MCCP Compress2
-	AARD = iota // Aardwolf MUD out of band communication, http://www.aardwolf.com/blog/2008/07/10/telnet-negotiation-control-mud-client-interaction/
-	ATCP = iota // Achaea Telnet Client Protocol, http://www.ironrealms.com/rapture/manual/files/FeatATCP-txt.html
-	GMCP = iota // Generic Mud Communication Protocol
+	CMP1 TelnetCode = iota // MCCP Compress
+	CMP2 TelnetCode = iota // MCCP Compress2
+	AARD TelnetCode = iota // Aardwolf MUD out of band communication, http://www.aardwolf.com/blog/2008/07/10/telnet-negotiation-control-mud-client-interaction/
+	ATCP TelnetCode = iota // Achaea Telnet Client Protocol, http://www.ironrealms.com/rapture/manual/files/FeatATCP-txt.html
+	GMCP TelnetCode = iota // Generic Mud Communication Protocol
 )
 
 func initLookups() {
@@ -57,8 +59,8 @@ func initLookups() {
 		return
 	}
 
-	codeMap = map[byte]int{}
-	commandMap = map[int]byte{}
+	codeMap = map[byte]TelnetCode{}
+	commandMap = map[TelnetCode]byte{}
 
 	commandMap[NUL] = '\x00'
 	commandMap[ECHO] = '\x01'
@@ -173,11 +175,6 @@ func Process(bytes []byte) string {
 	return str
 }
 
-func Code(enum int) byte {
-	initLookups()
-	return commandMap[enum]
-}
-
 func ToString(bytes []byte) string {
 	initLookups()
 
@@ -278,24 +275,27 @@ func ToString(bytes []byte) string {
 	return str
 }
 
-func buildCommand(length int) []byte {
-	command := make([]byte, length)
+func buildCommand(codes ...TelnetCode) []byte {
+	command := make([]byte, len(codes)+1)
 	command[0] = commandMap[IAC]
+
+	for i, code := range codes {
+		command[i+1] = commandMap[code]
+	}
+
 	return command
 }
 
 func WillEcho() []byte {
-	command := buildCommand(3)
-	command[1] = commandMap[WILL]
-	command[2] = commandMap[ECHO]
-	return command
+	return buildCommand(WILL, ECHO)
 }
 
 func WontEcho() []byte {
-	command := buildCommand(3)
-	command[1] = commandMap[WONT]
-	command[2] = commandMap[ECHO]
-	return command
+	return buildCommand(WONT, ECHO)
+}
+
+func DoWindowSize() []byte {
+	return buildCommand(DO, WS)
 }
 
 // vim: nocindent
