@@ -109,35 +109,65 @@ func initLookups() {
 func Process(bytes []byte) string {
 	initLookups()
 
+	type State int
+
+	const (
+		Base  State = iota
+		InIAC State = iota
+		InSB  State = iota
+		CapSB State = iota
+	)
+
+	currentState := Base
+
 	str := ""
-	var bytesProcessed []byte
+	capturedBytes := []byte{}
 
-	inIAC := false
-
-	processByte := func(b byte) {
-		bytesProcessed = append(bytesProcessed, b)
+	capture := func(b byte) {
+		capturedBytes = append(capturedBytes, b)
 	}
 
-	for _, b := range bytes {
-		if b == commandMap[IAC] {
-			inIAC = true
-			processByte(b)
-			continue
-		}
-
-		if inIAC {
-			if b != commandMap[WILL] && b != commandMap[WONT] && b != commandMap[DO] && b != commandMap[DONT] {
-				inIAC = false
-			}
-			processByte(b)
-			continue
-		}
-
+	dontCapture := func(b byte) {
 		str = str + string(b)
 	}
 
-	if len(bytesProcessed) > 0 {
-		fmt.Printf("Processed: %s\n", ToString(bytesProcessed))
+	for _, b := range bytes {
+		code := codeMap[b]
+
+		switch currentState {
+		case Base:
+			if code == IAC {
+				currentState = InIAC
+				capture(b)
+			} else {
+				dontCapture(b)
+			}
+
+		case InIAC:
+			if code == WILL || code == WONT || code == DO || code == DONT {
+				// Stay in this state
+			} else if code == SB {
+				currentState = InSB
+			} else {
+				currentState = Base
+			}
+			capture(b)
+
+		case InSB:
+			capture(b)
+			currentState = CapSB
+
+		case CapSB:
+			capture(b)
+
+			if code == IAC { // TODO: Handle escaped IAC sequences
+				currentState = InIAC
+			}
+		}
+	}
+
+	if len(capturedBytes) > 0 {
+		fmt.Println("Processed:", ToString(capturedBytes))
 	}
 
 	return str
