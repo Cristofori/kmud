@@ -1,6 +1,7 @@
 package telnet
 
 import (
+	"fmt"
 	"net"
 	"time"
 )
@@ -185,6 +186,8 @@ type telnetProcessor struct {
 	capturedBytes []byte
 	subdata       map[TelnetCode][]byte
 	cleanData     string
+
+	debug bool
 }
 
 func newTelnetProcessor() telnetProcessor {
@@ -192,6 +195,7 @@ func newTelnetProcessor() telnetProcessor {
 
 	var tp telnetProcessor
 	tp.state = stateBase
+	tp.debug = false
 
 	return tp
 }
@@ -217,6 +221,10 @@ func (self *telnetProcessor) Read(p []byte) (int, error) {
 }
 
 func (self *telnetProcessor) capture(b byte) {
+	if self.debug {
+		fmt.Println("Captured:", CodeToString(codeMap[b]))
+	}
+
 	self.capturedBytes = append(self.capturedBytes, b)
 }
 
@@ -233,6 +241,10 @@ func (self *telnetProcessor) resetSubDataField(code TelnetCode) {
 }
 
 func (self *telnetProcessor) captureSubData(code TelnetCode, b byte) {
+	if self.debug {
+		fmt.Println("Captured subdata:", CodeToString(code), b)
+	}
+
 	if self.subdata == nil {
 		self.subdata = map[TelnetCode][]byte{}
 	}
