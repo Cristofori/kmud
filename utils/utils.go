@@ -45,12 +45,8 @@ func GetRawUserInput(conn io.ReadWriter, prompt string) string {
 	for {
 		Write(conn, prompt)
 
-		bytes, err := reader.ReadBytes('\n')
-		input := string(bytes)
-
-		if input == "\r\n" || input == "\n" {
-			input = ""
-		}
+		input, err := reader.ReadString('\n')
+		input = strings.Trim(input, "\r\n")
 
 		PanicIfError(err)
 
