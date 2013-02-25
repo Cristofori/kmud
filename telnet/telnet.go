@@ -1,7 +1,8 @@
 package telnet
 
 import (
-	"fmt"
+	"net"
+	"time"
 )
 
 // RFC 854: http://tools.ietf.org/html/rfc854, http://support.microsoft.com/kb/231866
@@ -10,6 +11,66 @@ var codeMap map[byte]TelnetCode
 var commandMap map[TelnetCode]byte
 
 type TelnetCode int
+
+type Telnet struct {
+	conn net.Conn
+	err  error
+
+	processor telnetProcessor
+}
+
+func NewTelnet(conn net.Conn) *Telnet {
+	var t Telnet
+	t.conn = conn
+	t.processor = newTelnetProcessor()
+	return &t
+}
+
+func (t *Telnet) Write(p []byte) (int, error) {
+	return t.conn.Write(p)
+}
+
+func (t *Telnet) Read(p []byte) (int, error) {
+	t.fill()
+	n, e := t.processor.Read(p)
+	return n, e
+}
+
+func (t *Telnet) Data(code TelnetCode) []byte {
+	return t.processor.subdata[code]
+}
+
+// Idea/name for this function shamelessly stolen from bufio
+func (t *Telnet) fill() {
+	buf := make([]byte, 1024)
+	n, err := t.conn.Read(buf)
+	t.err = err
+	t.processor.addBytes(buf[:n])
+}
+
+func (t *Telnet) Close() error {
+	return t.conn.Close()
+}
+
+func (t *Telnet) LocalAddr() net.Addr {
+	return t.conn.LocalAddr()
+}
+
+func (t *Telnet) RemoteAddr() net.Addr {
+	return t.conn.RemoteAddr()
+}
+
+func (t *Telnet) SetDeadline(dl time.Time) error {
+	return t.conn.SetDeadline(dl)
+}
+
+func (t *Telnet) SetReadDeadline(dl time.Time) error {
+	return t.conn.SetReadDeadline(dl)
+}
+
+func (t *Telnet) SetWriteDeadline(dl time.Time) error {
+	return t.conn.SetWriteDeadline(dl)
+}
 
 const (
 	NUL  TelnetCode = iota // NULL, no operation
@@ -107,112 +168,129 @@ func initLookups() {
 	}
 }
 
-// Process strips telnet control codes from the given input, returning the resulting input string
-// and a map containing data of any subnegotiation parameters that were found.
-func Process(bytes []byte) (str string, subdata map[TelnetCode][]byte) {
+type processorState int
+
+const (
+	stateBase   processorState = iota
+	stateInIAC  processorState = iota
+	stateInSB   processorState = iota
+	stateCapSB  processorState = iota
+	stateEscIAC processorState = iota
+)
+
+type telnetProcessor struct {
+	state     processorState
+	currentSB TelnetCode
+
+	capturedBytes []byte
+	subdata       map[TelnetCode][]byte
+	cleanData     string
+}
+
+func newTelnetProcessor() telnetProcessor {
 	initLookups()
 
-	type State int
+	var tp telnetProcessor
+	tp.state = stateBase
 
-	const (
-		Base  State = iota
-		InIAC State = iota
-		InSB  State = iota
-		CapSB State = iota
-	)
+	return tp
+}
 
-	currentState := Base
-	var currentSB TelnetCode
+func (self *telnetProcessor) Read(p []byte) (int, error) {
+	maxLen := len(p)
 
-	capturedBytes := []byte{}
+	n := 0
 
-	capture := func(b byte) {
-		capturedBytes = append(capturedBytes, b)
+	if maxLen >= len(self.cleanData) {
+		n = len(self.cleanData)
+	} else {
+		n = maxLen
 	}
 
-	dontCapture := func(b byte) {
-		str = str + string(b)
+	for i := 0; i < n; i++ {
+		p[i] = self.cleanData[i]
 	}
 
-    resetSubDataField := func(code TelnetCode) {
-        if subdata == nil {
-            subdata = map[TelnetCode][]byte{}
-        }
+	self.cleanData = self.cleanData[n:] // TODO: Memory leak?
 
-        subdata[code] = []byte{}
-    }
+	return n, nil
+}
 
-	captureSubData := func(code TelnetCode, b byte) {
-        if subdata == nil {
-            subdata = map[TelnetCode][]byte{}
-        }
+func (self *telnetProcessor) capture(b byte) {
+	self.capturedBytes = append(self.capturedBytes, b)
+}
 
-		subdata[code] = append(subdata[code], b)
+func (self *telnetProcessor) dontCapture(b byte) {
+	self.cleanData = self.cleanData + string(b)
+}
+
+func (self *telnetProcessor) resetSubDataField(code TelnetCode) {
+	if self.subdata == nil {
+		self.subdata = map[TelnetCode][]byte{}
 	}
 
-	skip := false
+	self.subdata[code] = []byte{}
+}
 
-	for i, b := range bytes {
-		if skip {
-			skip = false
-			continue
+func (self *telnetProcessor) captureSubData(code TelnetCode, b byte) {
+	if self.subdata == nil {
+		self.subdata = map[TelnetCode][]byte{}
+	}
+
+	self.subdata[code] = append(self.subdata[code], b)
+}
+
+func (self *telnetProcessor) addBytes(bytes []byte) {
+	for _, b := range bytes {
+		self.addByte(b)
+	}
+}
+
+func (self *telnetProcessor) addByte(b byte) {
+	code := codeMap[b]
+
+	switch self.state {
+	case stateBase:
+		if code == IAC {
+			self.state = stateInIAC
+			self.capture(b)
+		} else {
+			self.dontCapture(b)
 		}
 
-		code := codeMap[b]
+	case stateInIAC:
+		if code == WILL || code == WONT || code == DO || code == DONT {
+			// Stay in this state
+		} else if code == SB {
+			self.state = stateInSB
+		} else {
+			self.state = stateBase
+		}
+		self.capture(b)
 
-		switch currentState {
-		case Base:
-			if code == IAC {
-				currentState = InIAC
-				capture(b)
-			} else {
-				dontCapture(b)
-			}
+	case stateInSB:
+		self.capture(b)
+		self.currentSB = code
+		self.state = stateCapSB
+		self.resetSubDataField(code)
 
-		case InIAC:
-			if code == WILL || code == WONT || code == DO || code == DONT {
-				// Stay in this state
-			} else if code == SB {
-				currentState = InSB
-			} else {
-				currentState = Base
-			}
-			capture(b)
+	case stateCapSB:
+		if code == IAC {
+			self.state = stateEscIAC
+		} else {
+			self.captureSubData(self.currentSB, b)
+		}
 
-		case InSB:
-			capture(b)
-			currentSB = code
-			currentState = CapSB
-            resetSubDataField(code)
-
-		case CapSB:
-			if code == IAC {
-				// Check to see if it's an escaped IAC sequence (IAC IAC)
-				if i+1 < len(bytes) {
-					if codeMap[bytes[i+1]] == IAC {
-						skip = true
-						captureSubData(currentSB, b)
-						continue
-					}
-				}
-
-				currentState = InIAC
-				capture(b)
-			} else {
-				captureSubData(currentSB, b)
-			}
+	case stateEscIAC:
+		if code == IAC {
+			self.state = stateCapSB
+			self.captureSubData(self.currentSB, b)
+		} else {
+			self.state = stateBase
+			self.addByte(commandMap[IAC])
+			self.addByte(b)
 		}
 	}
-
-	if len(capturedBytes) > 0 {
-		fmt.Println("Processed:", ToString(capturedBytes))
-	}
-
-	for key, value := range subdata {
-		fmt.Printf("Subdata[%s] = %v\n", CodeToString(key), value)
-	}
-
-	return str, subdata
 }
 
 func ToString(bytes []byte) string {

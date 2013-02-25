@@ -5,6 +5,7 @@ import (
 	"kmud/database"
 	"kmud/model"
 	"kmud/session"
+	"kmud/telnet"
 	"kmud/utils"
 	"labix.org/v2/mgo"
 	"net"
@@ -366,7 +367,8 @@ func Exec() {
 		conn, err := listener.Accept()
 		utils.HandleError(err)
 		fmt.Println("Client connected:", conn.RemoteAddr())
-		go handleConnection(conn)
+		t := telnet.NewTelnet(conn)
+		go handleConnection(t)
 	}
 }
 
