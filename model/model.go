@@ -132,7 +132,7 @@ func (self *globalModel) GetOnlineCharacters() []*database.Character {
 	var characters []*database.Character
 
 	for _, char := range self.characters {
-		if char.IsOnline() {
+		if char.IsPlayer() && char.IsOnline() {
 			characters = append(characters, char)
 		}
 	}
