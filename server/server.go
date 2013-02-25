@@ -368,6 +368,7 @@ func Exec() {
 		utils.HandleError(err)
 		fmt.Println("Client connected:", conn.RemoteAddr())
 		t := telnet.NewTelnet(conn)
+		utils.WriteRaw(t, telnet.DoWindowSize())
 		go handleConnection(t)
 	}
 }
