@@ -48,6 +48,10 @@ func GetRawUserInput(conn io.ReadWriter, prompt string) string {
 		bytes, err := reader.ReadBytes('\n')
 		input := string(bytes)
 
+		if input == "\r\n" || input == "\n" {
+			input = ""
+		}
+
 		PanicIfError(err)
 
 		if input == "x" || input == "X" {
