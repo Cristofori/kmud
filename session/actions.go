@@ -172,17 +172,18 @@ func (session *Session) drop(args []string) {
 	}
 
 	characterItems := model.M.GetItems(session.player.GetItemIds())
+	index := utils.BestMatch(args[0], database.ItemNames(characterItems))
 
-	itemName := strings.ToLower(args[0])
-	for _, item := range characterItems {
-		if strings.ToLower(item.PrettyName()) == itemName {
-			session.player.RemoveItem(item)
-			session.room.AddItem(item)
-			return
-		}
+	if index == -1 {
+		session.printError("Not found")
+	} else if index == -2 {
+		session.printError("Which one do you mean?")
+	} else {
+		item := characterItems[index]
+		session.player.RemoveItem(item)
+		session.room.AddItem(item)
+		session.printLine("Dropped %s", item.PrettyName())
 	}
-
-	session.printError("You are not carrying a %s", args[0])
 }
 
 func (session *Session) pickup(args []string) {
