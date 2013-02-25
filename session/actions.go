@@ -52,7 +52,7 @@ func (session *Session) handleAction(action string, args []string) {
 	case "get":
 		fallthrough
 	case "g":
-		session.get(args)
+		session.pickup(args)
 
 	default:
 		direction := database.StringToDirection(action)
@@ -185,7 +185,7 @@ func (session *Session) drop(args []string) {
 	session.printError("You are not carrying a %s", args[0])
 }
 
-func (session *Session) get(args []string) {
+func (session *Session) pickup(args []string) {
 	takeUsage := func() {
 		session.printError("Usage: take <item name>")
 	}
@@ -196,16 +196,18 @@ func (session *Session) get(args []string) {
 	}
 
 	itemsInRoom := model.M.GetItems(session.room.GetItemIds())
-	itemName := strings.ToLower(args[0])
-	for _, item := range itemsInRoom {
-		if strings.ToLower(item.PrettyName()) == itemName {
-			session.player.AddItem(item)
-			session.room.RemoveItem(item)
-			return
-		}
-	}
+	index := utils.BestMatch(args[0], database.ItemNames(itemsInRoom))
 
-	session.printError("Item %s not found", args[0])
+	if index == -2 {
+		session.printError("Which one do you mean?")
+	} else if index == -1 {
+		session.printError("Item %s not found", args[0])
+	} else {
+		item := itemsInRoom[index]
+		session.player.AddItem(item)
+		session.room.RemoveItem(item)
+		session.printLine("Picked up %s", item.PrettyName())
+	}
 }
 
 func (session *Session) inventory() {
