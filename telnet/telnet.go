@@ -3,6 +3,7 @@ package telnet
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"time"
 )
 
@@ -222,7 +223,7 @@ func (self *telnetProcessor) Read(p []byte) (int, error) {
 
 func (self *telnetProcessor) capture(b byte) {
 	if self.debug {
-		fmt.Println("Captured:", CodeToString(byteToCode[b]))
+		fmt.Println("Captured:", ByteToCodeString(b))
 	}
 
 	self.capturedBytes = append(self.capturedBytes, b)
@@ -315,16 +316,20 @@ func ToString(bytes []byte) string {
 			str = str + " "
 		}
 
-		code, found := byteToCode[b]
-
-		if found {
-			str = str + CodeToString(code)
-		} else {
-			str = str + "???"
-		}
+		str = str + ByteToCodeString(b)
 	}
 
 	return str
+}
+
+func ByteToCodeString(b byte) string {
+	code, found := byteToCode[b]
+
+	if !found {
+		return "??(" + strconv.Itoa(int(b)) + ")"
+	}
+
+	return CodeToString(code)
 }
 
 func CodeToString(code TelnetCode) string {
@@ -407,7 +412,7 @@ func CodeToString(code TelnetCode) string {
 		return "GMCP"
 	}
 
-	return "???"
+	return ""
 }
 
 func buildCommand(codes ...TelnetCode) []byte {
