@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func login(conn net.Conn) *database.User {
+func login(conn *telnet.Telnet) *database.User {
 	for {
 		username := utils.GetUserInput(conn, "Username: ")
 
@@ -29,8 +29,9 @@ func login(conn net.Conn) *database.User {
 			utils.WriteLine(conn, "That user is already online")
 		} else {
 			attempts := 1
+			conn.WillEcho()
 			for {
-				password := utils.GetPassword(conn, "Password: ")
+				password := utils.GetRawUserInput(conn, "Password: ")
 				if user.VerifyPassword(password) {
 					break
 				}
@@ -46,6 +47,7 @@ func login(conn net.Conn) *database.User {
 				utils.WriteLine(conn, "Invalid password")
 				time.Sleep(1 * time.Second)
 			}
+			conn.WontEcho()
 
 			user.SetOnline(true)
 			return user
@@ -56,7 +58,7 @@ func login(conn net.Conn) *database.User {
 	return nil
 }
 
-func newUser(conn net.Conn) *database.User {
+func newUser(conn *telnet.Telnet) *database.User {
 	for {
 		name := utils.GetUserInput(conn, "Desired username: ")
 
@@ -72,15 +74,16 @@ func newUser(conn net.Conn) *database.User {
 		} else if err := utils.ValidateName(name); err != nil {
 			utils.WriteLine(conn, err.Error())
 		} else {
+			conn.WillEcho()
 			for {
-				pass1 := utils.GetPassword(conn, "Desired password: ")
+				pass1 := utils.GetRawUserInput(conn, "Desired password: ")
 
 				if len(pass1) < 7 {
 					utils.WriteLine(conn, "Passwords must be at least 7 letters in length")
 					continue
 				}
 
-				pass2 := utils.GetPassword(conn, "Reenter password: ")
+				pass2 := utils.GetRawUserInput(conn, "Reenter password: ")
 
 				if pass1 != pass2 {
 					utils.WriteLine(conn, "Passwords do not match")
@@ -91,6 +94,7 @@ func newUser(conn net.Conn) *database.User {
 
 				break
 			}
+			conn.WontEcho()
 
 			user = model.M.CreateUser(name, password)
 			user.SetOnline(true)
@@ -213,7 +217,7 @@ func userSpecificMenu(user *database.User) utils.Menu {
 	return menu
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn *telnet.Telnet) {
 	defer conn.Close()
 
 	var user *database.User
@@ -368,8 +372,10 @@ func Exec() {
 		utils.HandleError(err)
 		fmt.Println("Client connected:", conn.RemoteAddr())
 		t := telnet.NewTelnet(conn)
-		utils.WriteRaw(t, telnet.DoWindowSize())
-		utils.WriteRaw(t, telnet.DoTerminalType())
+
+		t.DoWindowSize()
+		t.DoTerminalType()
+
 		go handleConnection(t)
 	}
 }

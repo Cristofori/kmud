@@ -74,6 +74,39 @@ func (t *Telnet) SetWriteDeadline(dl time.Time) error {
 	return t.conn.SetWriteDeadline(dl)
 }
 
+func (t *Telnet) WillEcho() {
+	t.conn.Write(BuildCommand(WILL, ECHO))
+}
+
+func (t *Telnet) WontEcho() {
+	t.conn.Write(BuildCommand(WONT, ECHO))
+}
+
+func (t *Telnet) DoWindowSize() {
+	t.conn.Write(BuildCommand(DO, WS))
+}
+
+func (t *Telnet) DoTerminalType() {
+	// This is really supposed to be two commands, one to
+	// ask if they'll send a terminal type, and another
+	// to indicate that they should send it if they've
+	// expressed a "willingness" to send it. For the time
+	// being this works well enough.
+	// http://tools.ietf.org/html/rfc884
+	t.conn.Write(BuildCommand(DO, TT, IAC, SB, TT, 1, IAC, SE)) // 1 = SEND
+}
+
+func BuildCommand(codes ...TelnetCode) []byte {
+	command := make([]byte, len(codes)+1)
+	command[0] = codeToByte[IAC]
+
+	for i, code := range codes {
+		command[i+1] = codeToByte[code]
+	}
+
+	return command
+}
+
 const (
 	NUL  TelnetCode = iota // NULL, no operation
 	ECHO TelnetCode = iota // Echo
@@ -413,39 +446,6 @@ func CodeToString(code TelnetCode) string {
 	}
 
 	return ""
-}
-
-func buildCommand(codes ...TelnetCode) []byte {
-	command := make([]byte, len(codes)+1)
-	command[0] = codeToByte[IAC]
-
-	for i, code := range codes {
-		command[i+1] = codeToByte[code]
-	}
-
-	return command
-}
-
-func WillEcho() []byte {
-	return buildCommand(WILL, ECHO)
-}
-
-func WontEcho() []byte {
-	return buildCommand(WONT, ECHO)
-}
-
-func DoWindowSize() []byte {
-	return buildCommand(DO, WS)
-}
-
-func DoTerminalType() []byte {
-	// This is really supposed to be two commands, one to
-	// ask if they'll send a terminal type, and another
-	// to indicate that they should send it if they've
-	// expressed a "willingness" to send it. For the time
-	// being this works well enough.
-	// http://tools.ietf.org/html/rfc884
-	return buildCommand(DO, TT, IAC, SB, TT, 1, IAC, SE) // 1 = SEND
 }
 
 // vim: nocindent

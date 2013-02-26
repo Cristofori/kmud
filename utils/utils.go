@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"kmud/telnet"
 	"log"
 	"regexp"
 	"strings"
@@ -59,22 +58,6 @@ func GetRawUserInput(conn io.ReadWriter, prompt string) string {
 
 	panic("Unexpected code path")
 	return ""
-}
-
-func GetPassword(conn io.ReadWriter, prompt string) string {
-	WriteRaw(conn, telnet.WillEcho())
-	defer func() { WriteRaw(conn, telnet.WontEcho()) }()
-
-	reader := bufio.NewReader(conn)
-	Write(conn, prompt)
-	bytes, err := reader.ReadBytes('\n')
-
-	input := string(bytes)
-	PanicIfError(err)
-
-	Write(conn, "\r\n")
-
-	return input
 }
 
 func GetUserInput(conn io.ReadWriter, prompt string) string {
