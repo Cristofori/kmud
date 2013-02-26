@@ -49,7 +49,13 @@ func combatLoop() {
 
 		fightsMutex.RLock()
 		for a, d := range fights {
-			queueEvent(CombatEvent{Attacker: a, Defender: d, Damage: 10})
+			if a.GetRoomId() == d.GetRoomId() {
+				queueEvent(CombatEvent{Attacker: a, Defender: d, Damage: 10})
+			} else {
+				fightsMutex.RUnlock()
+				StopFight(a)
+				fightsMutex.RLock()
+			}
 		}
 		fightsMutex.RUnlock()
 	}
