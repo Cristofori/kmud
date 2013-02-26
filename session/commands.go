@@ -88,6 +88,9 @@ func (session *Session) handleCommand(command string, args []string) {
 	case "ws":
 		session.windowSize()
 
+	case "tt":
+		session.terminalType()
+
 	default:
 		session.printError("Unrecognized command: %s", command)
 	}
@@ -640,6 +643,12 @@ func (session *Session) windowSize() {
 
 		session.printLine(bottomBar)
 	}
+}
+
+func (session *Session) terminalType() {
+	t := session.conn.(*telnet.Telnet)
+	data := t.Data(telnet.TT)
+	session.printLine("Terminal type: %s", data)
 }
 
 // vim: nocindent

@@ -369,6 +369,7 @@ func Exec() {
 		fmt.Println("Client connected:", conn.RemoteAddr())
 		t := telnet.NewTelnet(conn)
 		utils.WriteRaw(t, telnet.DoWindowSize())
+		utils.WriteRaw(t, telnet.DoTerminalType())
 		go handleConnection(t)
 	}
 }

@@ -8,8 +8,8 @@ import (
 
 // RFC 854: http://tools.ietf.org/html/rfc854, http://support.microsoft.com/kb/231866
 
-var codeMap map[byte]TelnetCode
-var commandMap map[TelnetCode]byte
+var byteToCode map[byte]TelnetCode
+var codeToByte map[TelnetCode]byte
 
 type TelnetCode int
 
@@ -117,55 +117,55 @@ const (
 )
 
 func initLookups() {
-	if codeMap != nil {
+	if byteToCode != nil {
 		return
 	}
 
-	codeMap = map[byte]TelnetCode{}
-	commandMap = map[TelnetCode]byte{}
+	byteToCode = map[byte]TelnetCode{}
+	codeToByte = map[TelnetCode]byte{}
 
-	commandMap[NUL] = '\x00'
-	commandMap[ECHO] = '\x01'
-	commandMap[SGA] = '\x03'
-	commandMap[ST] = '\x05'
-	commandMap[TM] = '\x06'
-	commandMap[BEL] = '\x07'
-	commandMap[BS] = '\x08'
-	commandMap[HT] = '\x09'
-	commandMap[LF] = '\x0a'
-	commandMap[FF] = '\x0c'
-	commandMap[CR] = '\x0d'
-	commandMap[TT] = '\x18'
-	commandMap[WS] = '\x1F'
-	commandMap[TS] = '\x20'
-	commandMap[RFC] = '\x21'
-	commandMap[LM] = '\x22'
-	commandMap[EV] = '\x24'
-	commandMap[SE] = '\xf0'
-	commandMap[NOP] = '\xf1'
-	commandMap[DM] = '\xf2'
-	commandMap[BRK] = '\xf3'
-	commandMap[IP] = '\xf4'
-	commandMap[AO] = '\xf5'
-	commandMap[AYT] = '\xf6'
-	commandMap[EC] = '\xf7'
-	commandMap[EL] = '\xf8'
-	commandMap[GA] = '\xf9'
-	commandMap[SB] = '\xfa'
-	commandMap[WILL] = '\xfb'
-	commandMap[WONT] = '\xfc'
-	commandMap[DO] = '\xfd'
-	commandMap[DONT] = '\xfe'
-	commandMap[IAC] = '\xff'
+	codeToByte[NUL] = '\x00'
+	codeToByte[ECHO] = '\x01'
+	codeToByte[SGA] = '\x03'
+	codeToByte[ST] = '\x05'
+	codeToByte[TM] = '\x06'
+	codeToByte[BEL] = '\x07'
+	codeToByte[BS] = '\x08'
+	codeToByte[HT] = '\x09'
+	codeToByte[LF] = '\x0a'
+	codeToByte[FF] = '\x0c'
+	codeToByte[CR] = '\x0d'
+	codeToByte[TT] = '\x18'
+	codeToByte[WS] = '\x1F'
+	codeToByte[TS] = '\x20'
+	codeToByte[RFC] = '\x21'
+	codeToByte[LM] = '\x22'
+	codeToByte[EV] = '\x24'
+	codeToByte[SE] = '\xf0'
+	codeToByte[NOP] = '\xf1'
+	codeToByte[DM] = '\xf2'
+	codeToByte[BRK] = '\xf3'
+	codeToByte[IP] = '\xf4'
+	codeToByte[AO] = '\xf5'
+	codeToByte[AYT] = '\xf6'
+	codeToByte[EC] = '\xf7'
+	codeToByte[EL] = '\xf8'
+	codeToByte[GA] = '\xf9'
+	codeToByte[SB] = '\xfa'
+	codeToByte[WILL] = '\xfb'
+	codeToByte[WONT] = '\xfc'
+	codeToByte[DO] = '\xfd'
+	codeToByte[DONT] = '\xfe'
+	codeToByte[IAC] = '\xff'
 
-	commandMap[CMP1] = '\x55'
-	commandMap[CMP2] = '\x56'
-	commandMap[AARD] = '\x66'
-	commandMap[ATCP] = '\xc8'
-	commandMap[GMCP] = '\xc9'
+	codeToByte[CMP1] = '\x55'
+	codeToByte[CMP2] = '\x56'
+	codeToByte[AARD] = '\x66'
+	codeToByte[ATCP] = '\xc8'
+	codeToByte[GMCP] = '\xc9'
 
-	for enum, code := range commandMap {
-		codeMap[code] = enum
+	for enum, code := range codeToByte {
+		byteToCode[code] = enum
 	}
 }
 
@@ -222,7 +222,7 @@ func (self *telnetProcessor) Read(p []byte) (int, error) {
 
 func (self *telnetProcessor) capture(b byte) {
 	if self.debug {
-		fmt.Println("Captured:", CodeToString(codeMap[b]))
+		fmt.Println("Captured:", CodeToString(byteToCode[b]))
 	}
 
 	self.capturedBytes = append(self.capturedBytes, b)
@@ -259,7 +259,7 @@ func (self *telnetProcessor) addBytes(bytes []byte) {
 }
 
 func (self *telnetProcessor) addByte(b byte) {
-	code := codeMap[b]
+	code := byteToCode[b]
 
 	switch self.state {
 	case stateBase:
@@ -299,7 +299,7 @@ func (self *telnetProcessor) addByte(b byte) {
 			self.captureSubData(self.currentSB, b)
 		} else {
 			self.state = stateBase
-			self.addByte(commandMap[IAC])
+			self.addByte(codeToByte[IAC])
 			self.addByte(b)
 		}
 	}
@@ -315,7 +315,7 @@ func ToString(bytes []byte) string {
 			str = str + " "
 		}
 
-		code, found := codeMap[b]
+		code, found := byteToCode[b]
 
 		if found {
 			str = str + CodeToString(code)
@@ -412,10 +412,10 @@ func CodeToString(code TelnetCode) string {
 
 func buildCommand(codes ...TelnetCode) []byte {
 	command := make([]byte, len(codes)+1)
-	command[0] = commandMap[IAC]
+	command[0] = codeToByte[IAC]
 
 	for i, code := range codes {
-		command[i+1] = commandMap[code]
+		command[i+1] = codeToByte[code]
 	}
 
 	return command
@@ -431,6 +431,16 @@ func WontEcho() []byte {
 
 func DoWindowSize() []byte {
 	return buildCommand(DO, WS)
+}
+
+func DoTerminalType() []byte {
+	// This is really supposed to be two commands, one to
+	// ask if they'll send a terminal type, and another
+	// to indicate that they should send it if they've
+	// expressed a "willingness" to send it. For the time
+	// being this works well enough.
+	// http://tools.ietf.org/html/rfc884
+	return buildCommand(DO, TT, IAC, SB, TT, 1, IAC, SE) // 1 = SEND
 }
 
 // vim: nocindent
