@@ -14,6 +14,10 @@ var codeToByte map[TelnetCode]byte
 
 type TelnetCode int
 
+// Telnet wraps the given connection object, processing telnet codes from its byte
+// stream and interpreting them as necessary, making it possible to hand the connection
+// object off to other code so that it doesn't have to worry about telnet escape sequences
+// being found in its data.
 type Telnet struct {
 	conn net.Conn
 	err  error
@@ -213,6 +217,11 @@ const (
 	stateEscIAC processorState = iota
 )
 
+// telnetProcessor implements a state machine that reads input one byte at a time
+// and processes it according to the telnet spec. It is designed to read a raw telnet
+// stream, from which it will extract telnet escape codes and subnegotiation data.
+// The processor can then be read from with all of the telnet codes removed, leaving
+// the pure user input stream.
 type telnetProcessor struct {
 	state     processorState
 	currentSB TelnetCode

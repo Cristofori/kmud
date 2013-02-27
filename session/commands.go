@@ -474,7 +474,7 @@ func (session *Session) destroyRoom(args []string) {
 			loc := session.room.NextLocation(direction)
 			roomToDelete := model.M.GetRoomByLocation(loc, session.zone)
 			if roomToDelete != nil {
-				model.DeleteRoom(roomToDelete)
+				model.M.DeleteRoom(roomToDelete)
 				session.printLine("Room destroyed")
 			} else {
 				session.printError("No room in that direction")

@@ -20,6 +20,10 @@ type globalModel struct {
 	mutex sync.RWMutex
 }
 
+// M is the global model object. All functions are thread-safe and all changes
+// made to the model are automatically saved to the database.
+var M globalModel
+
 // CreateUser creates a new User object in the database and adds it to the model.
 // A pointer to the new User object is returned.
 func (self *globalModel) CreateUser(name string, password string) *database.User {
@@ -140,9 +144,10 @@ func (self *globalModel) GetOnlineCharacters() []*database.Character {
 	return characters
 }
 
-// CreateCharacter creates a new Character object in the database and adds it to the model.
-// A pointer to the new character object is returned.
-func (self *globalModel) CreateCharacter(name string, parentUser *database.User, startingRoom *database.Room) *database.Character {
+// CreatePlayer creates a new player-controlled Character object in the
+// database and adds it to the model.  A pointer to the new character object is
+// returned.
+func (self *globalModel) CreatePlayer(name string, parentUser *database.User, startingRoom *database.Room) *database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
@@ -152,6 +157,8 @@ func (self *globalModel) CreateCharacter(name string, parentUser *database.User,
 	return character
 }
 
+// CreateNpc is a convenience function for creating a new character object that
+// is an NPC (as opposed to an actual player-controlled character)
 func (self *globalModel) CreateNpc(name string, room *database.Room) *database.Character {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -162,8 +169,8 @@ func (self *globalModel) CreateNpc(name string, room *database.Room) *database.C
 	return npc
 }
 
-// DeleteCharacter removes the character associated with the given id from the
-// model and from the database
+// DeleteCharacter removes the character (either NPC or player-controlled)
+// associated with the given id from the model and from the database
 func (self *globalModel) DeleteCharacter(id bson.ObjectId) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -174,7 +181,7 @@ func (self *globalModel) DeleteCharacter(id bson.ObjectId) {
 }
 
 // CreateRoom creates a new Room object in the database and adds it to the model.
-// A pointer to the new room object is returned.
+// A pointer to the new Room object is returned.
 func (self *globalModel) CreateRoom(zone *database.Zone) *database.Room {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -185,6 +192,8 @@ func (self *globalModel) CreateRoom(zone *database.Zone) *database.Room {
 	return room
 }
 
+// CreateZone creates a new Zone object in the database and adds it to the model.
+// A pointer to the new Zone object is returned.
 func (self *globalModel) CreateZone(name string) *database.Zone {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -217,6 +226,8 @@ func (self *globalModel) GetRooms() []*database.Room {
 	return rooms
 }
 
+// GetRoomsInZone returns a slice containing all of the rooms that belong to
+// the given zone
 func (self *globalModel) GetRoomsInZone(zone *database.Zone) []*database.Room {
 	allRooms := self.GetRooms()
 
@@ -283,13 +294,36 @@ func (self *globalModel) GetZoneByName(name string) *database.Zone {
 	return nil
 }
 
-func (self *globalModel) deleteRoom(id bson.ObjectId) {
+// DeleteRoom removes the given room object from the model and the database. It
+// also disables all exits in neighboring rooms that lead to the given room.
+func (self *globalModel) DeleteRoom(room *database.Room) {
 	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	delete(self.rooms, room.GetId())
+	utils.HandleError(database.DeleteRoom(room.GetId()))
+	self.mutex.Unlock()
 
-	delete(self.rooms, id)
+	// Disconnect all exits leading to this room
+	loc := room.GetLocation()
 
-	utils.HandleError(database.DeleteRoom(id))
+	updateRoom := func(dir database.ExitDirection) {
+		next := loc.Next(dir)
+		room := M.GetRoomByLocation(next, M.GetZone(room.GetZoneId()))
+
+		if room != nil {
+			room.SetExitEnabled(dir.Opposite(), false)
+		}
+	}
+
+	updateRoom(database.DirectionNorth)
+	updateRoom(database.DirectionNorthEast)
+	updateRoom(database.DirectionEast)
+	updateRoom(database.DirectionSouthEast)
+	updateRoom(database.DirectionSouth)
+	updateRoom(database.DirectionSouthWest)
+	updateRoom(database.DirectionWest)
+	updateRoom(database.DirectionNorthWest)
+	updateRoom(database.DirectionUp)
+	updateRoom(database.DirectionDown)
 }
 
 // GetUser returns the User object associated with the given id
@@ -329,7 +363,8 @@ func (self *globalModel) GetUserByName(username string) *database.User {
 	return nil
 }
 
-// Removes the User assocaited with the given id from the model. Removes it from the database as well
+// Removes the User assocaited with the given id from the model. Removes it
+// from the database as well.
 func (self *globalModel) DeleteUser(id bson.ObjectId) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -346,6 +381,9 @@ func (self *globalModel) DeleteUser(id bson.ObjectId) {
 	utils.HandleError(database.DeleteUser(id))
 }
 
+// CreateItem creates an item object in the database with the given name and
+// adds it to the model. It's up to the caller to ensure that the item actually
+// gets put somewhere meaningful.
 func (self *globalModel) CreateItem(name string) *database.Item {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -375,6 +413,7 @@ func (self *globalModel) GetItems(itemIds []bson.ObjectId) []*database.Item {
 	return items
 }
 
+// ItemsIn returns a slice containing all of the items in the given room
 func (self *globalModel) ItemsIn(room *database.Room) []*database.Item {
 	return self.GetItems(room.GetItemIds())
 }
@@ -390,13 +429,7 @@ func (self *globalModel) DeleteItem(id bson.ObjectId) {
 	utils.HandleError(database.DeleteItem(id))
 }
 
-// M is the global model object. All functions are thread-safe and all changes
-// made to the model are automatically saved to the database.
-var M globalModel
-
-/**
- * Initializes the global model object and starts up the main event loop
- */
+// Initializes the global model object and starts up the main event loop
 func Init(session *mgo.Session) error {
 	database.Init(session)
 
@@ -453,6 +486,8 @@ func Init(session *mgo.Session) error {
 	return err
 }
 
+// MoveCharacter attempts to move the character to the given coordinates
+// specific by location. Returns an error if there is no room to move to.
 func MoveCharacterToLocation(character *database.Character, zone *database.Zone, location database.Coordinate) (*database.Room, error) {
 	newRoom := M.GetRoomByLocation(location, zone)
 
@@ -470,6 +505,7 @@ func MoveCharacterToLocation(character *database.Character, zone *database.Zone,
 	return newRoom, nil
 }
 
+// MoveCharacterTo room moves the character to the given room
 func MoveCharacterToRoom(character *database.Character, newRoom *database.Room) {
 	oldRoomId := character.GetRoomId()
 	character.SetRoom(newRoom.GetId())
@@ -478,6 +514,10 @@ func MoveCharacterToRoom(character *database.Character, newRoom *database.Room) 
 	queueEvent(LeaveEvent{Character: character, RoomId: oldRoomId})
 }
 
+// MoveCharacter moves the given character in the given direction. If there is
+// no exit in that direction, and error is returned. If there is an exit, but no
+// room connected to it, then a room is automatically created for the character
+// to move in to.
 func MoveCharacter(character *database.Character, direction database.ExitDirection) (*database.Room, error) {
 	room := M.GetRoom(character.GetRoomId())
 
@@ -531,77 +571,28 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 	return MoveCharacterToLocation(character, M.GetZone(room.GetZoneId()), room.GetLocation())
 }
 
-func DeleteRoom(room *database.Room) {
-	M.deleteRoom(room.GetId())
-
-	// Disconnect all exits leading to this room
-	loc := room.GetLocation()
-
-	updateRoom := func(dir database.ExitDirection) {
-		next := loc.Next(dir)
-		room := M.GetRoomByLocation(next, M.GetZone(room.GetZoneId()))
-
-		if room != nil {
-			var exitToDisable database.ExitDirection
-			switch dir {
-			case database.DirectionNorth:
-				exitToDisable = database.DirectionSouth
-			case database.DirectionNorthEast:
-				exitToDisable = database.DirectionSouthWest
-			case database.DirectionEast:
-				exitToDisable = database.DirectionWest
-			case database.DirectionSouthEast:
-				exitToDisable = database.DirectionNorthWest
-			case database.DirectionSouth:
-				exitToDisable = database.DirectionNorth
-			case database.DirectionSouthWest:
-				exitToDisable = database.DirectionNorthEast
-			case database.DirectionWest:
-				exitToDisable = database.DirectionEast
-			case database.DirectionNorthWest:
-				exitToDisable = database.DirectionSouthEast
-			case database.DirectionUp:
-				exitToDisable = database.DirectionDown
-			case database.DirectionDown:
-				exitToDisable = database.DirectionUp
-			}
-
-			room.SetExitEnabled(exitToDisable, false)
-		}
-	}
-
-	updateRoom(database.DirectionNorth)
-	updateRoom(database.DirectionNorthEast)
-	updateRoom(database.DirectionEast)
-	updateRoom(database.DirectionSouthEast)
-	updateRoom(database.DirectionSouth)
-	updateRoom(database.DirectionSouthWest)
-	updateRoom(database.DirectionWest)
-	updateRoom(database.DirectionNorthWest)
-	updateRoom(database.DirectionUp)
-	updateRoom(database.DirectionDown)
-}
-
+// BroadcastMessage sends a message to all users that are logged in
 func BroadcastMessage(from *database.Character, message string) {
 	queueEvent(BroadcastEvent{from, message})
 }
 
+// Tell sends a message to the specified character
 func Tell(from *database.Character, to *database.Character, message string) {
 	queueEvent(TellEvent{from, to, message})
 }
 
+// Say sends a message to all characters in the given character's room
 func Say(from *database.Character, message string) {
 	queueEvent(SayEvent{from, message})
 }
 
+// Emote sends an emote message to all characters in the given character's room
 func Emote(from *database.Character, message string) {
 	queueEvent(EmoteEvent{from, message})
 }
 
-/**
- * Returns cordinates that indiate the highest and lowest points of
- * the map in 3 dimensions
- */
+// ZoneCorners returns cordinates that indiate the highest and lowest points of
+// the map in 3 dimensions
 func ZoneCorners(zoneId bson.ObjectId) (database.Coordinate, database.Coordinate) {
 	var top int
 	var bottom int
@@ -658,6 +649,9 @@ func ZoneCorners(zoneId bson.ObjectId) (database.Coordinate, database.Coordinate
 		database.Coordinate{X: right, Y: bottom, Z: low}
 }
 
+// MoveRoomsToZone moves all of the rooms in given zone to the other zone.
+// Designed for moving rooms from the null zone into a fresh new zone. This
+// function will probably not be around for long.
 func MoveRoomsToZone(fromZoneId bson.ObjectId, toZoneId bson.ObjectId) {
 	for _, room := range M.GetRooms() {
 		if room.GetZoneId() == fromZoneId {

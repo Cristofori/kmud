@@ -124,7 +124,7 @@ func newPlayer(conn net.Conn, user *database.User) *database.Character {
 			utils.WriteLine(conn, err.Error())
 		} else {
 			room := model.M.GetRooms()[0] // TODO: Better way to pick an initial character location
-			return model.M.CreateCharacter(name, user, room)
+			return model.M.CreatePlayer(name, user, room)
 		}
 	}
 
