@@ -38,6 +38,10 @@ func (t *Telnet) Write(p []byte) (int, error) {
 
 func (t *Telnet) Read(p []byte) (int, error) {
 	t.fill()
+	if t.err != nil {
+		return 0, t.err
+	}
+
 	n, e := t.processor.Read(p)
 	return n, e
 }
