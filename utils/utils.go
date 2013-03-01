@@ -38,7 +38,7 @@ func Simplify(str string) string {
 	return simpleStr
 }
 
-func GetRawUserInput(conn io.ReadWriter, prompt string) string {
+func GetRawUserInputSuffix(conn io.ReadWriter, prompt string, suffix string) string {
 	reader := bufio.NewReader(conn)
 
 	for {
@@ -54,10 +54,16 @@ func GetRawUserInput(conn io.ReadWriter, prompt string) string {
 		} else if input != "" {
 			return input
 		}
+
+		Write(conn, suffix)
 	}
 
 	panic("Unexpected code path")
 	return ""
+}
+
+func GetRawUserInput(conn io.ReadWriter, prompt string) string {
+	return GetRawUserInputSuffix(conn, prompt, "")
 }
 
 func GetUserInput(conn io.ReadWriter, prompt string) string {

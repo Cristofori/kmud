@@ -68,7 +68,7 @@ func login(conn *wrappedConnection) *database.User {
 			attempts := 1
 			conn.telnet.WillEcho()
 			for {
-				password := utils.GetRawUserInput(conn, "Password: ")
+				password := utils.GetRawUserInputSuffix(conn, "Password: ", "\r\n")
 
 				if user.VerifyPassword(password) {
 					break
