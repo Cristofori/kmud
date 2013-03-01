@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -337,6 +338,19 @@ func Test_TrimEmptyRows(t *testing.T) {
 			t.Errorf("%v: TrimEmptyRows(\n%v) == \n%v,\nWanted: \n%v", i, test.input, result, test.output)
 		}
 	}
+}
+
+func Test_PanicIfError(t *testing.T) {
+	PanicIfError(nil)
+
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Errorf("PanicIfError() didn't panic on a non-nil real error")
+		}
+	}()
+
+	PanicIfError(errors.New("A real error!"))
 }
 
 // vim:nocindent
