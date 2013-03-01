@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"kmud/database"
 	"kmud/model"
-	"kmud/telnet"
 	"kmud/utils"
 	"strconv"
 	"strings"
@@ -620,35 +619,25 @@ func (session *Session) cash(args []string) {
 }
 
 func (session *Session) windowSize() {
-	t := session.conn.(*telnet.Telnet)
-	data := t.Data(telnet.WS)
+	width, height := session.user.WindowSize()
 
-	if len(data) != 4 {
-		session.printError("Malformed window size data %v:", data)
-	} else {
-		width := (255 * data[0]) + data[1]
-		height := (255 * data[2]) + data[3]
+	header := fmt.Sprintf("Width: %v, Height: %v", width, height)
 
-		header := fmt.Sprintf("Width: %v, Height: %v", width, height)
+	topBar := header + " " + strings.Repeat("-", int(width)-2-len(header)) + "+"
+	bottomBar := "+" + strings.Repeat("-", int(width)-2) + "+"
+	outline := "|" + strings.Repeat(" ", int(width)-2) + "|"
 
-		topBar := header + " " + strings.Repeat("-", int(width)-2-len(header)) + "+"
-		bottomBar := "+" + strings.Repeat("-", int(width)-2) + "+"
-		outline := "|" + strings.Repeat(" ", int(width)-2) + "|"
+	session.printLine(topBar)
 
-		session.printLine(topBar)
-
-		for i := 0; i < int(height)-3; i++ {
-			session.printLine(outline)
-		}
-
-		session.printLine(bottomBar)
+	for i := 0; i < int(height)-3; i++ {
+		session.printLine(outline)
 	}
+
+	session.printLine(bottomBar)
 }
 
 func (session *Session) terminalType() {
-	t := session.conn.(*telnet.Telnet)
-	data := t.Data(telnet.TT)
-	session.printLine("Terminal type: %s", data)
+	session.printLine("Terminal type: %s", session.user.TerminalType())
 }
 
 // vim: nocindent

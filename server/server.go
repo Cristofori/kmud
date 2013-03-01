@@ -87,8 +87,6 @@ func login(conn *wrappedConnection) *database.User {
 			}
 			conn.telnet.WontEcho()
 
-			user.SetOnline(true)
-			user.SetConnection(conn)
 			return user
 		}
 	}
@@ -136,8 +134,6 @@ func newUser(conn *wrappedConnection) *database.User {
 			conn.telnet.WontEcho()
 
 			user = model.M.CreateUser(name, password)
-			user.SetOnline(true)
-			user.SetConnection(conn)
 			return user
 		}
 	}
@@ -313,6 +309,30 @@ func handleConnection(conn *wrappedConnection) {
 				quit(conn)
 				return
 			}
+
+			user.SetOnline(true)
+			user.SetConnection(conn)
+
+			conn.telnet.DoWindowSize()
+			conn.telnet.DoTerminalType()
+
+			conn.telnet.Listen(func(code telnet.TelnetCode, data []byte) {
+				switch code {
+				case telnet.WS:
+					if len(data) != 4 {
+						fmt.Println("Malformed window size data %v:", data)
+						return
+					}
+
+					width := (255 * data[0]) + data[1]
+					height := (255 * data[2]) + data[3]
+					user.SetWindowSize(int(width), int(height))
+
+				case telnet.TT:
+					user.SetTerminalType(string(data))
+				}
+			})
+
 		} else if player == nil {
 			menu := userMenu(user)
 			choice, charId := menu.Exec(conn, user.GetColorMode())
@@ -436,9 +456,6 @@ func Exec() {
 		utils.HandleError(err)
 		fmt.Println("Client connected:", conn.RemoteAddr())
 		t := telnet.NewTelnet(conn)
-
-		t.DoWindowSize()
-		t.DoTerminalType()
 
 		wc := utils.NewWatchableReadWriter(t)
 

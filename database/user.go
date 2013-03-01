@@ -13,10 +13,13 @@ const (
 )
 
 type User struct {
-	DbObject  `bson:",inline"`
-	colorMode utils.ColorMode
-	online    bool
-	conn      net.Conn
+	DbObject     `bson:",inline"`
+	colorMode    utils.ColorMode
+	online       bool
+	conn         net.Conn
+	windowWidth  int
+	windowHeight int
+	terminalType string
 }
 
 func NewUser(name string, password string) *User {
@@ -88,6 +91,23 @@ func (self *User) SetConnection(conn net.Conn) {
 
 func (self *User) GetConnection() net.Conn {
 	return self.conn
+}
+
+func (self *User) SetWindowSize(width int, height int) {
+	self.windowWidth = width
+	self.windowHeight = height
+}
+
+func (self *User) WindowSize() (width int, height int) {
+	return self.windowWidth, self.windowHeight
+}
+
+func (self *User) SetTerminalType(tt string) {
+	self.terminalType = tt
+}
+
+func (self *User) TerminalType() string {
+	return self.terminalType
 }
 
 // vim: nocindent

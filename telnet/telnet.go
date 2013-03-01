@@ -50,6 +50,10 @@ func (t *Telnet) Data(code TelnetCode) []byte {
 	return t.processor.subdata[code]
 }
 
+func (t *Telnet) Listen(listenFunc func(TelnetCode, []byte)) {
+	t.processor.listenFunc = listenFunc
+}
+
 // Idea/name for this function shamelessly stolen from bufio
 func (t *Telnet) fill() {
 	buf := make([]byte, 1024)
@@ -233,6 +237,7 @@ type telnetProcessor struct {
 	capturedBytes []byte
 	subdata       map[TelnetCode][]byte
 	cleanData     string
+	listenFunc    func(TelnetCode, []byte)
 
 	debug bool
 }
@@ -243,6 +248,7 @@ func newTelnetProcessor() telnetProcessor {
 	var tp telnetProcessor
 	tp.state = stateBase
 	tp.debug = false
+	tp.currentSB = NUL
 
 	return tp
 }
@@ -345,10 +351,18 @@ func (self *telnetProcessor) addByte(b byte) {
 			self.state = stateCapSB
 			self.captureSubData(self.currentSB, b)
 		} else {
+			self.subDataFinished(self.currentSB)
+			self.currentSB = NUL
 			self.state = stateBase
 			self.addByte(codeToByte[IAC])
 			self.addByte(b)
 		}
+	}
+}
+
+func (self *telnetProcessor) subDataFinished(code TelnetCode) {
+	if self.listenFunc != nil {
+		self.listenFunc(code, self.subdata[code])
 	}
 }
 
