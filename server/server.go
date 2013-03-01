@@ -13,7 +13,44 @@ import (
 	"time"
 )
 
-func login(conn *telnet.Telnet) *database.User {
+type wrappedConnection struct {
+	telnet  *telnet.Telnet
+	watcher *utils.WatchableReadWriter
+}
+
+func (s *wrappedConnection) Write(p []byte) (int, error) {
+	return s.watcher.Write(p)
+}
+
+func (s *wrappedConnection) Read(p []byte) (int, error) {
+	return s.watcher.Read(p)
+}
+
+func (s *wrappedConnection) Close() error {
+	return s.telnet.Close()
+}
+
+func (s *wrappedConnection) LocalAddr() net.Addr {
+	return s.telnet.LocalAddr()
+}
+
+func (s *wrappedConnection) RemoteAddr() net.Addr {
+	return s.telnet.RemoteAddr()
+}
+
+func (s *wrappedConnection) SetDeadline(dl time.Time) error {
+	return s.telnet.SetDeadline(dl)
+}
+
+func (s *wrappedConnection) SetReadDeadline(dl time.Time) error {
+	return s.telnet.SetReadDeadline(dl)
+}
+
+func (s *wrappedConnection) SetWriteDeadline(dl time.Time) error {
+	return s.telnet.SetWriteDeadline(dl)
+}
+
+func login(conn *wrappedConnection) *database.User {
 	for {
 		username := utils.GetUserInput(conn, "Username: ")
 
@@ -29,9 +66,10 @@ func login(conn *telnet.Telnet) *database.User {
 			utils.WriteLine(conn, "That user is already online")
 		} else {
 			attempts := 1
-			conn.WillEcho()
+			conn.telnet.WillEcho()
 			for {
 				password := utils.GetRawUserInput(conn, "Password: ")
+
 				if user.VerifyPassword(password) {
 					break
 				}
@@ -44,12 +82,13 @@ func login(conn *telnet.Telnet) *database.User {
 
 				attempts++
 
+				time.Sleep(2 * time.Second)
 				utils.WriteLine(conn, "Invalid password")
-				time.Sleep(1 * time.Second)
 			}
-			conn.WontEcho()
+			conn.telnet.WontEcho()
 
 			user.SetOnline(true)
+			user.SetConnection(conn)
 			return user
 		}
 	}
@@ -58,7 +97,7 @@ func login(conn *telnet.Telnet) *database.User {
 	return nil
 }
 
-func newUser(conn *telnet.Telnet) *database.User {
+func newUser(conn *wrappedConnection) *database.User {
 	for {
 		name := utils.GetUserInput(conn, "Desired username: ")
 
@@ -74,7 +113,7 @@ func newUser(conn *telnet.Telnet) *database.User {
 		} else if err := utils.ValidateName(name); err != nil {
 			utils.WriteLine(conn, err.Error())
 		} else {
-			conn.WillEcho()
+			conn.telnet.WillEcho()
 			for {
 				pass1 := utils.GetRawUserInput(conn, "Desired password: ")
 
@@ -94,10 +133,11 @@ func newUser(conn *telnet.Telnet) *database.User {
 
 				break
 			}
-			conn.WontEcho()
+			conn.telnet.WontEcho()
 
 			user = model.M.CreateUser(name, password)
 			user.SetOnline(true)
+			user.SetConnection(conn)
 			return user
 		}
 	}
@@ -106,7 +146,7 @@ func newUser(conn *telnet.Telnet) *database.User {
 	return nil
 }
 
-func newPlayer(conn net.Conn, user *database.User) *database.Character {
+func newPlayer(conn *wrappedConnection, user *database.User) *database.Character {
 	// TODO: character slot limit
 	const SizeLimit = 12
 	for {
@@ -132,7 +172,7 @@ func newPlayer(conn net.Conn, user *database.User) *database.Character {
 	return nil
 }
 
-func quit(conn net.Conn) {
+func quit(conn *wrappedConnection) {
 	utils.WriteLine(conn, "Take luck!")
 	conn.Close()
 }
@@ -212,12 +252,24 @@ func userAdminMenu() utils.Menu {
 }
 
 func userSpecificMenu(user *database.User) utils.Menu {
-	menu := utils.NewMenu("User: " + user.PrettyName())
+	suffix := ""
+	if user.Online() {
+		suffix = "(Online)"
+	} else {
+		suffix = "(Offline)"
+	}
+
+	menu := utils.NewMenu("User: " + user.PrettyName() + " " + suffix)
 	menu.AddAction("d", "[D]elete")
+
+	if user.Online() {
+		menu.AddAction("w", "[W]atch")
+	}
+
 	return menu
 }
 
-func handleConnection(conn *telnet.Telnet) {
+func handleConnection(conn *wrappedConnection) {
 	defer conn.Close()
 
 	var user *database.User
@@ -295,6 +347,18 @@ func handleConnection(conn *telnet.Telnet) {
 										} else if choice == "d" {
 											model.M.DeleteUser(userId)
 											break
+										} else if choice == "w" {
+											userToWatch := model.M.GetUser(userId)
+
+											if userToWatch == user {
+												utils.WriteLine(conn, "You can't watch yourself!")
+											} else {
+												userConn := userToWatch.GetConnection().(*wrappedConnection)
+
+												userConn.watcher.AddWatcher(conn)
+												utils.GetRawUserInput(conn, "Type anything to stop watching\r\n")
+												userConn.watcher.RemoveWatcher(conn)
+											}
 										}
 									}
 								}
@@ -376,7 +440,9 @@ func Exec() {
 		t.DoWindowSize()
 		t.DoTerminalType()
 
-		go handleConnection(t)
+		wc := utils.NewWatchableReadWriter(t)
+
+		go handleConnection(&wrappedConnection{t, wc})
 	}
 }
 

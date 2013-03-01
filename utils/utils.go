@@ -195,4 +195,47 @@ func compress(data []byte) []byte {
 	return b.Bytes()
 }
 
+type WatchableReadWriter struct {
+	rw       io.ReadWriter
+	watchers []io.ReadWriter
+}
+
+func NewWatchableReadWriter(rw io.ReadWriter) *WatchableReadWriter {
+	var watchable WatchableReadWriter
+	watchable.rw = rw
+	return &watchable
+}
+
+func (w *WatchableReadWriter) Read(p []byte) (int, error) {
+	n, err := w.rw.Read(p)
+
+	for _, watcher := range w.watchers {
+		watcher.Write(p[:n])
+	}
+
+	return n, err
+}
+
+func (w *WatchableReadWriter) Write(p []byte) (int, error) {
+	for _, watcher := range w.watchers {
+		watcher.Write(p)
+	}
+
+	return w.rw.Write(p)
+}
+
+func (w *WatchableReadWriter) AddWatcher(rw io.ReadWriter) {
+	w.watchers = append(w.watchers, rw)
+}
+
+func (w *WatchableReadWriter) RemoveWatcher(rw io.ReadWriter) {
+	for i, watcher := range w.watchers {
+		if watcher == rw {
+			// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
+			w.watchers = append(w.watchers[:i], w.watchers[i+1:]...)
+			return
+		}
+	}
+}
+
 // vim: nocindent

@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"io"
 	"kmud/utils"
+	"net"
 )
 
 const (
@@ -15,6 +16,7 @@ type User struct {
 	DbObject  `bson:",inline"`
 	colorMode utils.ColorMode
 	online    bool
+	conn      net.Conn
 }
 
 func NewUser(name string, password string) *User {
@@ -30,6 +32,10 @@ func NewUser(name string, password string) *User {
 
 func (self *User) SetOnline(online bool) {
 	self.online = online
+
+	if !online {
+		self.conn = nil
+	}
 }
 
 func (self *User) Online() bool {
@@ -42,6 +48,12 @@ func (self *User) SetColorMode(cm utils.ColorMode) {
 
 func (self *User) GetColorMode() utils.ColorMode {
 	return self.getField(userColorMode).(utils.ColorMode)
+}
+
+func hash(data string) []byte {
+	h := sha1.New()
+	io.WriteString(h, data)
+	return h.Sum(nil)
 }
 
 // SetPassword SHA1 hashes the password before saving it to the database
@@ -70,10 +82,12 @@ func (self *User) GetPassword() []byte {
 	return []byte{}
 }
 
-func hash(data string) []byte {
-	h := sha1.New()
-	io.WriteString(h, data)
-	return h.Sum(nil)
+func (self *User) SetConnection(conn net.Conn) {
+	self.conn = conn
+}
+
+func (self *User) GetConnection() net.Conn {
+	return self.conn
 }
 
 // vim: nocindent
