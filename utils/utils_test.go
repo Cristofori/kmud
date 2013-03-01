@@ -190,4 +190,41 @@ func Test_BestMatch(t *testing.T) {
 	}
 }
 
+func compareStringLists(l1 []string, l2 []string) bool {
+	if len(l1) != len(l2) {
+		return false
+	}
+
+	for i, str := range l1 {
+		if str != l2[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func Test_Argify(t *testing.T) {
+	var tests = []struct {
+		input   string
+		output1 string
+		output2 []string
+	}{
+		{"", "", []string{}},
+		{"test", "test", []string{}},
+		{"test two", "test", []string{"two"}},
+		{"test one two", "test", []string{"one", "two"}},
+		{"this is a somewhat longer test that should also work",
+			"this", []string{"is", "a", "somewhat", "longer", "test", "that", "should", "also", "work"}},
+	}
+
+	for _, test := range tests {
+		result1, result2 := Argify(test.input)
+
+		if result1 != test.output1 || compareStringLists(result2, test.output2) == false {
+			t.Errorf("Argify(%v) == %v, %v. Want %v, %v", test.input, result1, result2, test.output1, test.output2)
+		}
+	}
+}
+
 // vim:nocindent
