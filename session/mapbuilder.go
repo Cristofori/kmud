@@ -116,12 +116,12 @@ func (self *mapBuilder) toString(cm utils.ColorMode) string {
 		rows = utils.TrimLowerRows(rows)
 
 		if self.depth > 1 {
-			divider := utils.Colorize(cm, utils.ColorWhite, "================================================================================\n")
+			divider := utils.Colorize(cm, utils.ColorWhite, "================================================================================\r\n")
 			rows = append(rows, divider)
 		}
 
 		for _, row := range rows {
-			str = str + row + "\n"
+			str = str + row + "\r\n"
 		}
 	}
 

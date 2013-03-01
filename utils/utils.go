@@ -134,8 +134,8 @@ func TrimLowerRows(rows []string) []string {
 }
 
 func TrimEmptyRows(str string) string {
-	rows := strings.Split(str, "\n")
-	return strings.Join(TrimLowerRows(TrimUpperRows(rows)), "\n")
+	rows := strings.Split(str, "\r\n")
+	return strings.Join(TrimLowerRows(TrimUpperRows(rows)), "\r\n")
 }
 
 func ValidateName(name string) error {

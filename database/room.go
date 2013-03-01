@@ -60,7 +60,7 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 	var str string
 
 	if mode == ReadMode {
-		str = fmt.Sprintf("\n %v %v %v (%v %v %v)\n\n %v\n\n",
+		str = fmt.Sprintf("\r\n %v %v %v (%v %v %v)\r\n\r\n %v\r\n\r\n",
 			utils.Colorize(colorMode, utils.ColorWhite, ">>>"),
 			utils.Colorize(colorMode, utils.ColorBlue, self.GetTitle()),
 			utils.Colorize(colorMode, utils.ColorWhite, "<<<"),
@@ -80,7 +80,7 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 			}
 			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\n"
 
-			extraNewLine = "\n"
+			extraNewLine = "\r\n"
 		}
 
 		if len(npcs) > 0 {
@@ -90,9 +90,9 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 			for _, npc := range npcs {
 				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, npc.PrettyName()))
 			}
-			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\n"
+			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\r\n"
 
-			extraNewLine = "\n"
+			extraNewLine = "\r\n"
 		}
 
 		if len(items) > 0 {
@@ -119,15 +119,15 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 				}
 				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, name))
 			}
-			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\n"
+			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\r\n"
 
-			extraNewLine = "\n"
+			extraNewLine = "\r\n"
 		}
 
 		str = str + extraNewLine + " " + utils.Colorize(colorMode, utils.ColorBlue, "Exits: ")
 
 	} else {
-		str = fmt.Sprintf(" [1] %v \n\n [2] %v \n\n [3] Exits: ", self.GetTitle(), self.GetDescription())
+		str = fmt.Sprintf(" [1] %v \r\n\r\n [2] %v \r\n\r\n [3] Exits: ", self.GetTitle(), self.GetDescription())
 	}
 
 	var exitList []string
@@ -155,7 +155,7 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 		str = str + strings.Join(exitList, " ")
 	}
 
-	str = str + "\n"
+	str = str + "\r\n"
 
 	return str
 }
