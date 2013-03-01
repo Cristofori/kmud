@@ -1,6 +1,9 @@
 package utils
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 //import "fmt"
 
@@ -223,6 +226,115 @@ func Test_Argify(t *testing.T) {
 
 		if result1 != test.output1 || compareStringLists(result2, test.output2) == false {
 			t.Errorf("Argify(%v) == %v, %v. Want %v, %v", test.input, result1, result2, test.output1, test.output2)
+		}
+	}
+}
+
+func Test_TrimUpperRows(t *testing.T) {
+	emptyRow1 := "                                                                           "
+	emptyRow2 := " "
+	emptyRow3 := ""
+
+	nonEmptyRow1 := "A"
+	nonEmptyRow2 := "A                         "
+	nonEmptyRow3 := "A                        B"
+	nonEmptyRow4 := "                         B"
+	nonEmptyRow5 := "            C             "
+
+	var tests = []struct {
+		input  []string
+		output []string
+	}{
+		{[]string{}, []string{}},
+		{[]string{nonEmptyRow1}, []string{nonEmptyRow1}},
+		{[]string{emptyRow1}, []string{}},
+		{[]string{emptyRow1, emptyRow2, emptyRow3}, []string{}},
+		{[]string{nonEmptyRow4, nonEmptyRow3, nonEmptyRow2}, []string{nonEmptyRow4, nonEmptyRow3, nonEmptyRow2}},
+		{[]string{emptyRow3, nonEmptyRow5}, []string{nonEmptyRow5}},
+		{[]string{nonEmptyRow1, nonEmptyRow2, emptyRow1, emptyRow2, emptyRow3}, []string{nonEmptyRow1, nonEmptyRow2, emptyRow1, emptyRow2, emptyRow3}},
+	}
+
+	for _, test := range tests {
+		result := TrimUpperRows(test.input)
+
+		if compareStringLists(result, test.output) == false {
+			t.Errorf("TrimUpperRows(\n%v) == \n%v,\nWanted: \n%v", test.input, result, test.output)
+		}
+	}
+}
+
+func Test_TrimLowerRows(t *testing.T) {
+	emptyRow1 := "                                                                           "
+	emptyRow2 := " "
+	emptyRow3 := ""
+
+	nonEmptyRow1 := "A"
+	nonEmptyRow2 := "A                         "
+	nonEmptyRow3 := "A                        B"
+	nonEmptyRow4 := "                         B"
+	nonEmptyRow5 := "            C             "
+
+	var tests = []struct {
+		input  []string
+		output []string
+	}{
+		{[]string{}, []string{}},
+		{[]string{nonEmptyRow1}, []string{nonEmptyRow1}},
+		{[]string{emptyRow1}, []string{}},
+		{[]string{emptyRow1, emptyRow2, emptyRow3}, []string{}},
+		{[]string{nonEmptyRow4, nonEmptyRow3, nonEmptyRow2}, []string{nonEmptyRow4, nonEmptyRow3, nonEmptyRow2}},
+		{[]string{emptyRow3, nonEmptyRow5}, []string{emptyRow3, nonEmptyRow5}},
+		{[]string{nonEmptyRow1, nonEmptyRow2, emptyRow1, emptyRow2, emptyRow3}, []string{nonEmptyRow1, nonEmptyRow2}},
+	}
+
+	for _, test := range tests {
+		result := TrimLowerRows(test.input)
+
+		if compareStringLists(result, test.output) == false {
+			t.Errorf("TrimLowerRows(\n%v) == \n%v,\nWanted: \n%v", test.input, result, test.output)
+		}
+	}
+}
+
+func Test_TrimEmptyRows(t *testing.T) {
+	emptyRow1 := "                                                                           "
+	emptyRow2 := " "
+	emptyRow3 := ""
+
+	nonEmptyRow1 := "A"
+	nonEmptyRow2 := "A                         "
+	nonEmptyRow3 := "A                        B"
+	nonEmptyRow4 := "                         B"
+	nonEmptyRow5 := "            C             "
+
+	NL := "\r\n"
+
+	var tests = []struct {
+		input  string
+		output string
+	}{
+		{"", ""},
+		{strings.Join([]string{nonEmptyRow1}, NL),
+			strings.Join([]string{nonEmptyRow1}, NL)},
+		{strings.Join([]string{emptyRow1}, NL),
+			strings.Join([]string{}, NL)},
+		{strings.Join([]string{emptyRow1, emptyRow2, emptyRow3}, NL),
+			strings.Join([]string{}, NL)},
+		{strings.Join([]string{nonEmptyRow4, nonEmptyRow3, nonEmptyRow2}, NL),
+			strings.Join([]string{nonEmptyRow4, nonEmptyRow3, nonEmptyRow2}, NL)},
+		{strings.Join([]string{emptyRow3, nonEmptyRow5}, NL),
+			strings.Join([]string{nonEmptyRow5}, NL)},
+		{strings.Join([]string{nonEmptyRow1, nonEmptyRow2, emptyRow1, emptyRow2, emptyRow3}, NL),
+			strings.Join([]string{nonEmptyRow1, nonEmptyRow2}, NL)},
+		{strings.Join([]string{emptyRow1, emptyRow2, emptyRow3, nonEmptyRow1, nonEmptyRow2, emptyRow1, emptyRow2, emptyRow3}, NL),
+			strings.Join([]string{nonEmptyRow1, nonEmptyRow2}, NL)},
+	}
+
+	for i, test := range tests {
+		result := TrimEmptyRows(test.input)
+
+		if result != test.output {
+			t.Errorf("%v: TrimEmptyRows(\n%v) == \n%v,\nWanted: \n%v", i, test.input, result, test.output)
 		}
 	}
 }
