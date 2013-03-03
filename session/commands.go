@@ -168,7 +168,7 @@ func (session *Session) edit(args []string) {
 
 func (session *Session) printMap(args []string) {
 	mapUsage := func() {
-		session.printError("Usage: /map [<radius>|all|load <name>]")
+		session.printError("Usage: /map [all]")
 	}
 
 	startX := 0
@@ -179,32 +179,26 @@ func (session *Session) printMap(args []string) {
 	endZ := 0
 
 	if len(args) == 0 {
-		args = append(args, "10")
-	}
+		width, height := session.user.WindowSize()
 
-	if len(args) == 1 {
-		radius, err := strconv.Atoi(args[0])
+		loc := session.room.GetLocation()
 
-		if err == nil && radius > 0 {
-			startX = session.room.GetLocation().X - radius
-			startY = session.room.GetLocation().Y - radius
-			startZ = session.room.GetLocation().Z
-			endX = startX + (radius * 2)
-			endY = startY + (radius * 2)
-			endZ = session.room.GetLocation().Z
-		} else if args[0] == "all" {
-			topLeft, bottomRight := model.ZoneCorners(session.zone.GetId())
+		startX = loc.X - (width / 4)
+		startY = loc.Y - (height / 4)
+		startZ = loc.Z
 
-			startX = topLeft.X
-			startY = topLeft.Y
-			startZ = topLeft.Z
-			endX = bottomRight.X
-			endY = bottomRight.Y
-			endZ = bottomRight.Z
-		} else {
-			mapUsage()
-			return
-		}
+		endX = loc.X + (width / 4)
+		endY = loc.Y + (height / 4)
+		endZ = loc.Z
+	} else if args[0] == "all" {
+		topLeft, bottomRight := model.ZoneCorners(session.zone.GetId())
+
+		startX = topLeft.X
+		startY = topLeft.Y
+		startZ = topLeft.Z
+		endX = bottomRight.X
+		endY = bottomRight.Y
+		endZ = bottomRight.Z
 	} else {
 		mapUsage()
 		return
@@ -217,9 +211,9 @@ func (session *Session) printMap(args []string) {
 	builder := newMapBuilder(width, height, depth)
 	builder.setUserRoom(session.room)
 
-	for z := startZ; z <= endZ; z += 1 {
-		for y := startY; y <= endY; y += 1 {
-			for x := startX; x <= endX; x += 1 {
+	for z := startZ; z <= endZ; z++ {
+		for y := startY; y <= endY; y++ {
+			for x := startX; x <= endX; x++ {
 				loc := database.Coordinate{x, y, z}
 				room := model.M.GetRoomByLocation(loc, session.zone)
 

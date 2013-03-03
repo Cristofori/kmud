@@ -30,6 +30,9 @@ func NewUser(name string, password string) *User {
 	user.SetColorMode(utils.ColorModeNone)
 	user.SetOnline(false)
 
+	user.windowWidth = 80
+	user.windowHeight = 40
+
 	return &user
 }
 
