@@ -51,7 +51,21 @@ for i in range(userCount):
             telnet.sendline(password)
         elif index == 4:
             telnet.sendline(password)
-            telnet.sendline("x")
+
+            while True:
+                charPatterns = telnet.compile_pattern_list(['> $', 'Desired character name', pexpect.TIMEOUT])
+                index = telnet.expect(charPatterns)
+
+                if index == 0:
+                    telnet.sendline("n")
+                elif index == 1:
+                    telnet.sendline(username)
+                    telnet.sendline("x")
+                    telnet.sendline("x")
+                    break
+
+            break
+
         else:
             print 'Timeout, %s' % username
             break

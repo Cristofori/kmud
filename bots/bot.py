@@ -29,6 +29,7 @@ if len(sys.argv) > 4:
 telnetCommand = 'telnet %s %s' % (host, port)
 
 print 'Connecting...'
+
 telnet = pexpect.spawn(telnetCommand, timeout=5)
 
 def login(user, password):
@@ -36,7 +37,11 @@ def login(user, password):
     patterns = telnet.compile_pattern_list(['> $', 'Username: $', 'Password: $', 'already online', 'User not found', pexpect.TIMEOUT])
 
     while True:
-        index = telnet.expect(patterns)
+        try:
+            index = telnet.expect(patterns)
+        except pexpect.EOF:
+            print 'Lost connection to server'
+            exit(0)
 
         if index == 0:
             telnet.sendline("l")
@@ -64,7 +69,11 @@ def runaround():
     patterns = telnet.compile_pattern_list([exits, pexpect.TIMEOUT])
 
     while True:
-        index = telnet.expect(patterns)
+        try:
+            index = telnet.expect(patterns)
+        except pexpect.EOF:
+            print 'Lost connection to server'
+            exit(0)
 
         if index == 0:
             m = telnet.match
