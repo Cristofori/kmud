@@ -1,16 +1,30 @@
 #!/usr/bin/python
 
-import pexpect, sys, re, random
-
-#host = sys.argv[1]
-#port = sys.argv[2]
-#user = sys.argv[3]
-#password = sys.argv[4]
+import pexpect, sys, re, random, exceptions
 
 host = "localhost"
 port = 8945
-user = "chris"
-password = "a"
+user = "unit"
+password = "unit"
+
+def usage():
+    print "Usage: %s [host] [port] [username] [password]" % sys.argv[0]
+    sys.exit(1)
+
+if len(sys.argv) > 1:
+    host = sys.argv[1]
+
+if len(sys.argv) > 2:
+    try:
+        port = int(sys.argv[2])
+    except exceptions.ValueError:
+        usage()
+
+if len(sys.argv) > 3:
+    user = sys.argv[3]
+
+if len(sys.argv) > 4:
+    password = sys.argv[4]
 
 telnetCommand = 'telnet %s %s' % (host, port)
 
@@ -19,16 +33,15 @@ telnet = pexpect.spawn(telnetCommand, timeout=5)
 
 def login(user, password):
     print 'Logging in as %s' % user
-    patterns = telnet.compile_pattern_list(['> $', 'Username: $', 'Password: $', 'already online', pexpect.TIMEOUT])
+    patterns = telnet.compile_pattern_list(['> $', 'Username: $', 'Password: $', 'already online', 'User not found', pexpect.TIMEOUT])
 
     while True:
         index = telnet.expect(patterns)
 
         if index == 0:
-            print 'Sending L'
             telnet.sendline("l")
         elif index == 1:
-            print 'Sending username: %s' % user
+            print 'Logging in as %s' % user
             telnet.sendline(user)
         elif index == 2:
             print 'Sending password: %s' % password
@@ -38,6 +51,9 @@ def login(user, password):
         elif index == 3:
             print 'Login failed, %s is already online' % user
             sys.exit(2)
+        elif index == 4:
+            print 'User not found: %s' % user
+            sys.exit(3)
         else:
             print 'Login timeout'
             break
