@@ -33,7 +33,6 @@ print 'Connecting...'
 telnet = pexpect.spawn(telnetCommand, timeout=5)
 
 def login(user, password):
-    print 'Logging in as %s' % user
     patterns = telnet.compile_pattern_list(['> $', 'Username: $', 'Password: $', 'already online', 'User not found', pexpect.TIMEOUT])
 
     while True:
