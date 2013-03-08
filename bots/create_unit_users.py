@@ -37,7 +37,7 @@ telnet = pexpect.spawn(telnetCommand, timeout=5)
 patterns = telnet.compile_pattern_list(['> $', 'Desired username', 'unavailable', 'Desired password', 'Confirm password', pexpect.TIMEOUT])
 
 for i in range(userCount):
-    username = baseUsername + str(i)
+    username = baseUsername + str(i+1)
     while True:
         index = telnet.expect(patterns)
 
