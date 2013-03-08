@@ -113,14 +113,14 @@ func newUser(conn *wrappedConnection) *database.User {
 		} else {
 			conn.telnet.WillEcho()
 			for {
-				pass1 := utils.GetRawUserInput(conn, "Desired password: ")
+				pass1 := utils.GetRawUserInputSuffix(conn, "Desired password: ", "\r\n")
 
 				if len(pass1) < 7 {
 					utils.WriteLine(conn, "Passwords must be at least 7 letters in length")
 					continue
 				}
 
-				pass2 := utils.GetRawUserInput(conn, "Reenter password: ")
+				pass2 := utils.GetRawUserInputSuffix(conn, "Confirm password: ", "\r\n")
 
 				if pass1 != pass2 {
 					utils.WriteLine(conn, "Passwords do not match")

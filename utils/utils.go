@@ -49,13 +49,13 @@ func GetRawUserInputSuffix(conn io.ReadWriter, prompt string, suffix string) str
 
 		PanicIfError(err)
 
+		Write(conn, suffix)
+
 		if input == "x" || input == "X" {
 			return ""
 		} else if input != "" {
 			return input
 		}
-
-		Write(conn, suffix)
 	}
 
 	panic("Unexpected code path")
@@ -152,10 +152,10 @@ func ValidateName(name string) error {
 		return errors.New(fmt.Sprintf("Names must be between %v and %v letters long", MinSize, MaxSize))
 	}
 
-	regex := regexp.MustCompile("^[a-zA-Z]*$")
+	regex := regexp.MustCompile("^[a-zA-Z0-9]*$")
 
 	if !regex.MatchString(name) {
-		return errors.New("Names may only contain letters (A-Z)")
+		return errors.New("Names may only contain letters or numbers (A-Z, 0-9)")
 	}
 
 	return nil
