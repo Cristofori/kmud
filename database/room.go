@@ -96,11 +96,14 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 		}
 
 		if len(items) > 0 {
-
 			itemMap := make(map[string]int)
 			var nameList []string
 
 			for _, item := range items {
+				if item == nil {
+					continue
+				}
+
 				_, found := itemMap[item.PrettyName()]
 				if !found {
 					nameList = append(nameList, item.PrettyName())
