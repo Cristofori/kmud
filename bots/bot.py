@@ -28,7 +28,7 @@ if len(sys.argv) > 4:
 
 telnetCommand = 'telnet %s %s' % (host, port)
 
-print 'Connecting...'
+print '%s: Connecting...' % user
 
 telnet = pexpect.spawn(telnetCommand, timeout=5)
 
@@ -39,31 +39,31 @@ def login(user, password):
         try:
             index = telnet.expect(patterns)
         except pexpect.EOF:
-            print 'Lost connection to server'
+            print '%s: Lost connection to server' % user
             exit(0)
 
         if index == 0:
             telnet.sendline("l")
         elif index == 1:
-            print 'Logging in as %s' % user
+            print '%s: Logging in' % user
             telnet.sendline(user)
         elif index == 2:
-            print 'Sending password: %s' % password
+            print '%s: Sending password' % user
             telnet.sendline(password)
             telnet.sendline("1")
             break
         elif index == 3:
-            print 'Login failed, %s is already online' % user
+            print '%s: Login failed, already online' % user
             sys.exit(2)
         elif index == 4:
-            print 'User not found: %s' % user
+            print '%s: User not found' % user
             sys.exit(3)
         else:
-            print 'Login timeout'
+            print '%s: Login timeout' % user
             break
 
 def runaround():
-    print 'Running around'
+    print '%s: Running around' % user
     exits = re.compile('Exits: (\[N\]orth)? ?(\[NE\]North East)? ?(\[E\]ast)? ?(\[SE\]South East)? ?(\[S\]outh)? ?(\[SW\]South West)? ?(\[W\]est)? ?(\[NW\]North West)?')
     patterns = telnet.compile_pattern_list([exits, pexpect.TIMEOUT])
 
@@ -71,7 +71,7 @@ def runaround():
         try:
             index = telnet.expect(patterns)
         except pexpect.EOF:
-            print 'Lost connection to server'
+            print '%s: Lost connection to server' % user
             exit(0)
 
         if index == 0:
@@ -101,11 +101,11 @@ def runaround():
 
             index = random.randint(0, len(exitList) - 1)
             direction = exitList[index]
-            print "Moving %s" % direction
+            print "%s: Moving %s" % (user, direction)
             telnet.sendline(direction)
 
         elif index == 1:
-            print 'Runaround timeout'
+            print '%s: Runaround timeout' % user
             telnet.sendline("l")
 
 
