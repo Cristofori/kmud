@@ -335,11 +335,11 @@ func (self *globalModel) GetUser(id bson.ObjectId) *database.User {
 }
 
 // GetUsers returns all of the User objects in the model
-func (self *globalModel) GetUsers() []*database.User {
+func (self *globalModel) GetUsers() database.Users {
 	self.mutex.RLock()
 	defer self.mutex.RUnlock()
 
-	var users []*database.User
+	var users database.Users
 
 	for _, user := range self.users {
 		users = append(users, user)

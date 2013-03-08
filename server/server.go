@@ -9,6 +9,7 @@ import (
 	"kmud/utils"
 	"labix.org/v2/mgo"
 	"net"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -232,7 +233,10 @@ func adminMenu() utils.Menu {
 func userAdminMenu() utils.Menu {
 	menu := utils.NewMenu("User Admin")
 
-	for i, user := range model.M.GetUsers() {
+	users := model.M.GetUsers()
+	sort.Sort(users)
+
+	for i, user := range users {
 		index := i + 1
 
 		online := ""

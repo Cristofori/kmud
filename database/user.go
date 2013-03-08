@@ -115,4 +115,28 @@ func (self *User) TerminalType() string {
 	return self.terminalType
 }
 
+func UserNames(users []*User) []string {
+	names := make([]string, len(users))
+
+	for i, user := range users {
+		names[i] = user.PrettyName()
+	}
+
+	return names
+}
+
+type Users []*User
+
+func (s Users) Len() int {
+	return len(s)
+}
+
+func (s Users) Less(i, j int) bool {
+	return s[i].PrettyName() < s[j].PrettyName()
+}
+
+func (s Users) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
 // vim: nocindent
