@@ -310,6 +310,10 @@ func handleConnection(conn *wrappedConnection) {
 				return
 			}
 
+			if user == nil {
+				continue
+			}
+
 			user.SetOnline(true)
 			user.SetConnection(conn)
 
