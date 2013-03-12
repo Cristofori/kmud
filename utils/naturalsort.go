@@ -29,7 +29,7 @@ func (s SortableStrings) Less(i, j int) bool {
 		piece2 := pieces2[i]
 
 		if piece1 != piece2 {
-			if unicode.IsDigit(rune(piece1[0])) {
+			if unicode.IsDigit(rune(piece1[0])) && unicode.IsDigit(rune(piece2[0])) {
 				num1, _ := strconv.Atoi(piece1)
 				num2, _ := strconv.Atoi(piece2)
 				return num1 < num2

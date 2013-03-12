@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-//import "fmt"
+// import "fmt"
 
 var wrote string
 
@@ -150,21 +150,21 @@ func Test_ValidateName(t *testing.T) {
 		{"t", false},
 		{"te", false},
 		{"tes", true},
-		{"te1", false},
+		{"te1", true},
 		{"test", true},
 		{"testing", true},
 		{"*(!(@#*$", false},
-		{"Abc1abc", false},
-		{"123456789012", false},
+		{"Abc1abc", true},
+		{"123456789012", true},
 		{"aslsidjfljll", true},
-		{"1slsidjfljll", false},
-		{"aslsidjfljl3", false},
+		{"1slsidjfljll", true},
+		{"aslsidjfljl3", true},
 	}
 
 	for _, test := range tests {
 		result := (ValidateName(test.input) == nil)
 		if result != test.output {
-			t.Errorf("ValidateName(%q) == %q, want %q", test.input, result, test.output)
+			t.Errorf("ValidateName(%s) == %v, want %v", test.input, result, test.output)
 		}
 	}
 }
