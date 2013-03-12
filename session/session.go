@@ -7,6 +7,8 @@ import (
 	"kmud/model"
 	"kmud/utils"
 	"labix.org/v2/mgo/bson"
+	"log"
+	"os"
 	"strings"
 	"time"
 )
@@ -20,11 +22,11 @@ type Session struct {
 
 	userInputChannel chan string
 	promptChannel    chan string
-
 	inputModeChannel chan userInputMode
 	panicChannel     chan interface{}
+	eventChannel     chan model.Event
 
-	eventChannel chan model.Event
+	logger *log.Logger
 }
 
 func NewSession(conn io.ReadWriter, user *database.User, player *database.Character) Session {
@@ -37,11 +39,14 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 
 	session.userInputChannel = make(chan string)
 	session.promptChannel = make(chan string)
-
 	session.inputModeChannel = make(chan userInputMode)
 	session.panicChannel = make(chan interface{})
-
 	session.eventChannel = model.Register(session.player)
+
+	file, err := os.OpenFile(player.PrettyName()+".log", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
+	utils.PanicIfError(err)
+
+	session.logger = log.New(file, player.PrettyName()+" ", log.LstdFlags)
 
 	return session
 }
