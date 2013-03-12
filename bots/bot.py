@@ -101,11 +101,13 @@ def runaround():
 
             index = random.randint(0, len(exitList) - 1)
             direction = exitList[index]
-            print "%s: Moving %s" % (user, direction)
+            # print "%s: Moving %s" % (user, direction)
             telnet.sendline(direction)
 
         elif index == 1:
             print '%s: Runaround timeout' % user
+            print telnet.before
+            print telnet.after
             telnet.sendline("l")
 
 
