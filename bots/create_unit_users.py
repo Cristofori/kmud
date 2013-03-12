@@ -12,7 +12,7 @@ def usage():
     print "Usage: %s [count] [host] [port]" % sys.argv[0]
     sys.exit(1)
 
-if len(sys.argv) < 1:
+if len(sys.argv) < 2:
     usage()
 
 try:
