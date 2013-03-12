@@ -133,9 +133,9 @@ func (self DbObject) PrettyName() string {
 
 func (self *DbObject) setField(key string, value interface{}) {
 	self.mutex.Lock()
-	defer self.mutex.Unlock()
-
 	self.Fields[key] = value
+	self.mutex.Unlock()
+
 	updateObject(*self, "fields."+key, value)
 }
 
