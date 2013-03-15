@@ -66,6 +66,8 @@ func (session *Session) handleCommand(command string, args []string) {
 	case "cm":
 		session.colorMode(args)
 
+    case "dr":
+        fallthrough
 	case "destroyroom":
 		session.destroyRoom(args)
 
