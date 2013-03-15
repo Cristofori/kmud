@@ -45,6 +45,7 @@ for i in range(userCount):
             telnet.sendline("n")
         elif index == 1:
             telnet.sendline(username)
+            print 'Creating user %s' % username
         elif index == 2:
             break # User already exists, move on
         elif index == 3:
@@ -60,6 +61,7 @@ for i in range(userCount):
                     telnet.sendline("n")
                 elif index == 1:
                     telnet.sendline(username)
+                    print 'Creating character %s' % username
                     telnet.sendline("x")
                     telnet.sendline("x")
                     break
