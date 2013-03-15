@@ -66,8 +66,8 @@ func (session *Session) handleCommand(command string, args []string) {
 	case "cm":
 		session.colorMode(args)
 
-    case "dr":
-        fallthrough
+	case "dr":
+		fallthrough
 	case "destroyroom":
 		session.destroyRoom(args)
 
@@ -91,6 +91,9 @@ func (session *Session) handleCommand(command string, args []string) {
 
 	case "tt":
 		session.terminalType()
+
+	case "silent":
+		session.setSilentMode(args)
 
 	default:
 		session.printError("Unrecognized command: %s", command)
@@ -634,6 +637,24 @@ func (session *Session) windowSize() {
 
 func (session *Session) terminalType() {
 	session.printLine("Terminal type: %s", session.user.TerminalType())
+}
+
+func (session *Session) setSilentMode(args []string) {
+	usage := func() {
+		session.printError("Usage: /silent [on|off]")
+	}
+
+	if len(args) != 1 {
+		usage()
+	} else if args[0] == "on" {
+		session.silentMode = true
+		session.printLine("Silent mode ON")
+	} else if args[0] == "off" {
+		session.silentMode = false
+		session.printLine("Silent mode OFF")
+	} else {
+		usage()
+	}
 }
 
 // vim: nocindent

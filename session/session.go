@@ -26,6 +26,8 @@ type Session struct {
 	panicChannel     chan interface{}
 	eventChannel     chan model.Event
 
+	silentMode bool
+
 	// logger *log.Logger
 }
 
@@ -42,6 +44,8 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 	session.inputModeChannel = make(chan userInputMode)
 	session.panicChannel = make(chan interface{})
 	session.eventChannel = model.Register(session.player)
+
+	session.silentMode = false
 
 	// file, err := os.OpenFile(player.PrettyName()+".log", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
 	// utils.PanicIfError(err)
@@ -231,7 +235,11 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 		case input := <-session.userInputChannel:
 			return input
 		case event := <-session.eventChannel:
-			message := session.processEvent(event)
+			if session.silentMode {
+				continue
+			}
+
+			message := event.ToString(session.player)
 			if message != "" {
 				session.clearLine()
 				session.printLine(message)
@@ -242,20 +250,6 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 		}
 	}
 	panic("Unexpected code path")
-}
-
-func (session *Session) processEvent(event model.Event) string {
-	message := event.ToString(session.player)
-
-	switch event.Type() {
-	case model.RoomUpdateEventType:
-		roomEvent := event.(model.RoomUpdateEvent)
-		if roomEvent.Room.GetId() == session.room.GetId() {
-			session.room = roomEvent.Room
-		}
-	}
-
-	return message
 }
 
 // vim: nocindent
