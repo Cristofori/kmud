@@ -99,6 +99,10 @@ def runaround():
                     elif i == 8: # NW
                         exitList.append("NW")
 
+            if len(exitList) == 0:
+                print '%s: Error, no exits' % user
+                sys.exit(4)
+
             index = random.randint(0, len(exitList) - 1)
             direction = exitList[index]
             # print "%s: Moving %s" % (user, direction)
