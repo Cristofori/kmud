@@ -28,6 +28,8 @@ type Session struct {
 
 	silentMode bool
 
+	commander commandHandler
+
 	// logger *log.Logger
 }
 
@@ -46,6 +48,7 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 	session.eventChannel = model.Register(session.player)
 
 	session.silentMode = false
+	session.commander.session = &session
 
 	// file, err := os.OpenFile(player.PrettyName()+".log", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
 	// utils.PanicIfError(err)
@@ -164,7 +167,7 @@ func (session *Session) Exec() {
 			return
 		}
 		if strings.HasPrefix(input, "/") {
-			session.handleCommand(utils.Argify(input[1:]))
+			session.commander.handleCommand(utils.Argify(input[1:]))
 		} else {
 			session.handleAction(utils.Argify(input))
 		}

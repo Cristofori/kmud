@@ -5,145 +5,100 @@ import (
 	"kmud/database"
 	"kmud/model"
 	"kmud/utils"
+	"reflect"
 	"strconv"
 	"strings"
 )
 
-func (session *Session) handleCommand(command string, args []string) {
+type commandHandler struct {
+	session *Session
+}
+
+func (ch *commandHandler) findMethod(name string) (reflect.Method, bool) {
+	t := reflect.TypeOf(ch)
+	for i := 0; i < t.NumMethod(); i++ {
+		method := t.Method(i)
+
+		if strings.ToLower(method.Name) == strings.ToLower(name) {
+			return method, true
+		}
+	}
+
+	return reflect.Method{}, false
+}
+
+func (ch *commandHandler) handleCommand(command string, args []string) {
 	if command[0] == '/' {
-		session.quickRoom(command[1:])
+		ch.quickRoom(command[1:])
 		return
 	}
 
-	switch command {
-	case "edit":
-		session.edit(args)
+	method, found := ch.findMethod(command)
 
-	case "loc":
-		fallthrough
-	case "location":
-		session.printLine("%v", session.room.GetLocation())
-
-	case "map":
-		session.printMap(args)
-
-	case "zone":
-		session.zoneCommand(args)
-
-	case "broadcast":
-		fallthrough
-	case "b":
-		session.broadcast(args)
-
-	case "say":
-		fallthrough
-	case "s":
-		session.say(args)
-
-	case "me":
-		session.emote(args)
-
-	case "whisper":
-		fallthrough
-	case "tell":
-		fallthrough
-	case "w":
-		session.whisper(args)
-
-	case "teleport":
-		fallthrough
-	case "tel":
-		session.teleport(args)
-
-	case "who":
-		session.who()
-
-	case "colors":
-		session.colors()
-
-	case "colormode":
-		fallthrough
-	case "cm":
-		session.colorMode(args)
-
-	case "dr":
-		fallthrough
-	case "destroyroom":
-		session.destroyRoom(args)
-
-	case "npc":
-		session.npc(args)
-
-	case "create":
-		session.createItem(args)
-
-	case "destroyitem":
-		session.destroyItem(args)
-
-	case "cash":
-		session.cash(args)
-
-	case "roomid":
-		session.printLine("Room ID: %v", session.room.GetId())
-
-	case "ws":
-		session.windowSize()
-
-	case "tt":
-		session.terminalType()
-
-	case "silent":
-		session.setSilentMode(args)
-
-	default:
-		session.printError("Unrecognized command: %s", command)
+	// An empty PkgPath here means the method is exported (reflect can't call unexported methods)
+	if found && method.PkgPath == "" {
+		methodValue := reflect.ValueOf(ch).MethodByName(method.Name)
+		vals := make([]reflect.Value, 1)
+		vals[0] = reflect.ValueOf(args)
+		methodValue.Call(vals)
+		return
 	}
+
+	ch.session.printError("Unrecognized command: %s", command)
 }
 
-func (session *Session) quickRoom(command string) {
+func (ch *commandHandler) quickRoom(command string) {
 	dir := database.StringToDirection(command)
 
 	if dir == database.DirectionNone {
 		return
 	}
 
-	session.room.SetExitEnabled(dir, true)
-	session.handleAction(command, []string{})
-	session.room.SetExitEnabled(dir.Opposite(), true)
+	ch.session.room.SetExitEnabled(dir, true)
+	ch.session.handleAction(command, []string{})
+	ch.session.room.SetExitEnabled(dir.Opposite(), true)
 }
 
-func (session *Session) edit(args []string) {
-	session.printRoomEditor()
+func (ch *commandHandler) Loc(args []string) {
+	ch.Location(args)
+}
+
+func (ch *commandHandler) Location(args []string) {
+	ch.session.printLine("%v", ch.session.room.GetLocation())
+}
+
+func (ch *commandHandler) Edit(args []string) {
+	ch.session.printRoomEditor()
 
 	for {
-		input := session.getUserInput(CleanUserInput, "Select a section to edit: ")
+		input := ch.session.getUserInput(CleanUserInput, "Select a section to edit: ")
 
 		switch input {
 		case "":
-			session.printRoom()
+			ch.session.printRoom()
 			return
 
 		case "1":
-			input = session.getUserInput(RawUserInput, "Enter new title: ")
+			input = ch.session.getUserInput(RawUserInput, "Enter new title: ")
 
 			if input != "" {
-				session.room.SetTitle(input)
+				ch.session.room.SetTitle(input)
 			}
-			session.printRoomEditor()
+			ch.session.printRoomEditor()
 
 		case "2":
-			input = session.getUserInput(RawUserInput, "Enter new description: ")
+			input = ch.session.getUserInput(RawUserInput, "Enter new description: ")
 
 			if input != "" {
-				session.room.SetDescription(input)
+				ch.session.room.SetDescription(input)
 			}
-			session.printRoomEditor()
+			ch.session.printRoomEditor()
 
 		case "3":
 			for {
-				menu := toggleExitMenu(session.user.GetColorMode(), session.room)
+				menu := toggleExitMenu(ch.session.user.GetColorMode(), ch.session.room)
 
-				choice, _ := session.execMenu(menu)
+				choice, _ := ch.session.execMenu(menu)
 
 				if choice == "" {
 					break
@@ -151,29 +106,29 @@ func (session *Session) edit(args []string) {
 
 				direction := database.StringToDirection(choice)
 				if direction != database.DirectionNone {
-					enable := !session.room.HasExit(direction)
-					session.room.SetExitEnabled(direction, enable)
+					enable := !ch.session.room.HasExit(direction)
+					ch.session.room.SetExitEnabled(direction, enable)
 
 					// Disable the corresponding exit in the adjacent room if necessary
-					loc := session.room.NextLocation(direction)
-					otherRoom := model.M.GetRoomByLocation(loc, session.zone)
+					loc := ch.session.room.NextLocation(direction)
+					otherRoom := model.M.GetRoomByLocation(loc, ch.session.zone)
 					if otherRoom != nil {
 						otherRoom.SetExitEnabled(direction.Opposite(), enable)
 					}
 				}
 			}
 
-			session.printRoomEditor()
+			ch.session.printRoomEditor()
 
 		default:
-			session.printLine("Invalid selection")
+			ch.session.printLine("Invalid selection")
 		}
 	}
 }
 
-func (session *Session) printMap(args []string) {
+func (ch *commandHandler) Map(args []string) {
 	mapUsage := func() {
-		session.printError("Usage: /map [all]")
+		ch.session.printError("Usage: /map [all]")
 	}
 
 	startX := 0
@@ -184,9 +139,9 @@ func (session *Session) printMap(args []string) {
 	endZ := 0
 
 	if len(args) == 0 {
-		width, height := session.user.WindowSize()
+		width, height := ch.session.user.WindowSize()
 
-		loc := session.room.GetLocation()
+		loc := ch.session.room.GetLocation()
 
 		startX = loc.X - (width / 4)
 		startY = loc.Y - (height / 4)
@@ -196,7 +151,7 @@ func (session *Session) printMap(args []string) {
 		endY = loc.Y + (height / 4)
 		endZ = loc.Z
 	} else if args[0] == "all" {
-		topLeft, bottomRight := model.ZoneCorners(session.zone.GetId())
+		topLeft, bottomRight := model.ZoneCorners(ch.session.zone.GetId())
 
 		startX = topLeft.X
 		startY = topLeft.Y
@@ -214,13 +169,13 @@ func (session *Session) printMap(args []string) {
 	depth := endZ - startZ + 1
 
 	builder := newMapBuilder(width, height, depth)
-	builder.setUserRoom(session.room)
+	builder.setUserRoom(ch.session.room)
 
 	for z := startZ; z <= endZ; z++ {
 		for y := startY; y <= endY; y++ {
 			for x := startX; x <= endX; x++ {
 				loc := database.Coordinate{x, y, z}
-				room := model.M.GetRoomByLocation(loc, session.zone)
+				room := model.M.GetRoomByLocation(loc, ch.session.zone)
 
 				if room != nil {
 					// Translate to 0-based coordinates and double the coordinate
@@ -231,85 +186,101 @@ func (session *Session) printMap(args []string) {
 		}
 	}
 
-	session.printLine(utils.TrimEmptyRows(builder.toString(session.user.GetColorMode())))
+	ch.session.printLine(utils.TrimEmptyRows(builder.toString(ch.session.user.GetColorMode())))
 }
 
-func (session *Session) zoneCommand(args []string) {
+func (ch *commandHandler) Zone(args []string) {
 	if len(args) == 0 {
-		if session.zone.GetId() == "" {
-			session.printLine("Currently in the null zone")
+		if ch.session.zone.GetId() == "" {
+			ch.session.printLine("Currently in the null zone")
 		} else {
-			session.printLine("Current zone: " + utils.Colorize(session.user.GetColorMode(), utils.ColorBlue, session.zone.GetName()))
+			ch.session.printLine("Current zone: " + utils.Colorize(ch.session.user.GetColorMode(), utils.ColorBlue, ch.session.zone.GetName()))
 		}
 	} else if len(args) == 1 {
 		if args[0] == "list" {
-			session.printLineColor(utils.ColorBlue, "Zones")
-			session.printLineColor(utils.ColorBlue, "-----")
+			ch.session.printLineColor(utils.ColorBlue, "Zones")
+			ch.session.printLineColor(utils.ColorBlue, "-----")
 			for _, zone := range model.M.GetZones() {
-				session.printLine(zone.GetName())
+				ch.session.printLine(zone.GetName())
 			}
 		} else {
-			session.printError("Usage: /zone [list|rename <name>|new <name>]")
+			ch.session.printError("Usage: /zone [list|rename <name>|new <name>]")
 		}
 	} else if len(args) == 2 {
 		if args[0] == "rename" {
 			zone := model.M.GetZoneByName(args[0])
 
 			if zone != nil {
-				session.printError("A zone with that name already exists")
+				ch.session.printError("A zone with that name already exists")
 				return
 			}
 
-			if session.zone.GetId() == "" {
-				session.zone = model.M.CreateZone(args[1])
-				model.MoveRoomsToZone("", session.zone.GetId())
+			if ch.session.zone.GetId() == "" {
+				ch.session.zone = model.M.CreateZone(args[1])
+				model.MoveRoomsToZone("", ch.session.zone.GetId())
 			} else {
-				session.zone.SetName(args[1])
+				ch.session.zone.SetName(args[1])
 			}
 		} else if args[0] == "new" {
 			zone := model.M.GetZoneByName(args[0])
 
 			if zone != nil {
-				session.printError("A zone with that name already exists")
+				ch.session.printError("A zone with that name already exists")
 				return
 			}
 
 			newZone := model.M.CreateZone(args[1])
 			newRoom := model.M.CreateRoom(newZone)
 
-			model.MoveCharacterToRoom(session.player, newRoom)
+			model.MoveCharacterToRoom(ch.session.player, newRoom)
 
-			session.zone = newZone
-			session.room = newRoom
+			ch.session.zone = newZone
+			ch.session.room = newRoom
 
-			session.printRoom()
+			ch.session.printRoom()
 		}
 	}
 }
 
-func (session *Session) broadcast(args []string) {
+func (ch *commandHandler) B(args []string) {
+	ch.Broadcast(args)
+}
+
+func (ch *commandHandler) Broadcast(args []string) {
 	if len(args) == 0 {
-		session.printError("Nothing to say")
+		ch.session.printError("Nothing to say")
 	} else {
-		model.BroadcastMessage(session.player, strings.Join(args, " "))
+		model.BroadcastMessage(ch.session.player, strings.Join(args, " "))
 	}
 }
 
-func (session *Session) say(args []string) {
+func (ch *commandHandler) S(args []string) {
+	ch.Say(args)
+}
+
+func (ch *commandHandler) Say(args []string) {
 	if len(args) == 0 {
-		session.printError("Nothing to say")
+		ch.session.printError("Nothing to say")
 	} else {
-		model.Say(session.player, strings.Join(args, " "))
+		model.Say(ch.session.player, strings.Join(args, " "))
 	}
 }
 
-func (session *Session) emote(args []string) {
-	model.Emote(session.player, strings.Join(args, " "))
+func (ch *commandHandler) Me(args []string) {
+	model.Emote(ch.session.player, strings.Join(args, " "))
 }
 
-func (session *Session) whisper(args []string) {
+func (ch *commandHandler) W(args []string) {
+	ch.Whisper(args)
+}
+
+func (ch *commandHandler) Tell(args []string) {
+	ch.Whisper(args)
+}
+
+func (ch *commandHandler) Whisper(args []string) {
 	if len(args) < 2 {
-		session.printError("Usage: /whisper <player> <message>")
+		ch.session.printError("Usage: /whisper <player> <message>")
 		return
 	}
 
@@ -317,40 +288,44 @@ func (session *Session) whisper(args []string) {
 	targetChar := model.M.GetCharacterByName(name)
 
 	if targetChar == nil {
-		session.printError("Player '%s' not found", name)
+		ch.session.printError("Player '%s' not found", name)
 		return
 	}
 
 	if !targetChar.IsOnline() {
-		session.printError("Player '%s' is not online", targetChar.PrettyName())
+		ch.session.printError("Player '%s' is not online", targetChar.PrettyName())
 		return
 	}
 
 	message := strings.Join(args[1:], " ")
-	model.Tell(session.player, targetChar, message)
+	model.Tell(ch.session.player, targetChar, message)
 }
 
-func (session *Session) teleport(args []string) {
+func (ch *commandHandler) Tel(args []string) {
+	ch.Teleport(args)
+}
+
+func (ch *commandHandler) Teleport(args []string) {
 	telUsage := func() {
-		session.printError("Usage: /teleport [<zone>|<X> <Y> <Z>]")
+		ch.session.printError("Usage: /teleport [<zone>|<X> <Y> <Z>]")
 	}
 
 	x := 0
 	y := 0
 	z := 0
 
-	newZone := session.zone
+	newZone := ch.session.zone
 
 	if len(args) == 1 {
 		newZone = model.M.GetZoneByName(args[0])
 
 		if newZone == nil {
-			session.printError("Zone not found")
+			ch.session.printError("Zone not found")
 			return
 		}
 
-		if newZone.GetId() == session.room.GetZoneId() {
-			session.printLine("You're already in that zone")
+		if newZone.GetId() == ch.session.room.GetZoneId() {
+			ch.session.printLine("You're already in that zone")
 			return
 		}
 
@@ -389,52 +364,56 @@ func (session *Session) teleport(args []string) {
 		return
 	}
 
-	newRoom, err := model.MoveCharacterToLocation(session.player, newZone, database.Coordinate{X: x, Y: y, Z: z})
+	newRoom, err := model.MoveCharacterToLocation(ch.session.player, newZone, database.Coordinate{X: x, Y: y, Z: z})
 
 	if err == nil {
-		session.room = newRoom
-		session.zone = newZone
-		session.printRoom()
+		ch.session.room = newRoom
+		ch.session.zone = newZone
+		ch.session.printRoom()
 	} else {
-		session.printError(err.Error())
+		ch.session.printError(err.Error())
 	}
 }
 
-func (session *Session) who() {
+func (ch *commandHandler) Who(args []string) {
 	chars := model.M.GetOnlineCharacters()
 
-	session.printLine("")
-	session.printLine("Online Players")
-	session.printLine("--------------")
+	ch.session.printLine("")
+	ch.session.printLine("Online Players")
+	ch.session.printLine("--------------")
 
 	for _, char := range chars {
-		session.printLine(char.PrettyName())
+		ch.session.printLine(char.PrettyName())
 	}
-	session.printLine("")
+	ch.session.printLine("")
 }
 
-func (session *Session) colors() {
-	session.printLineColor(utils.ColorRed, "Red")
-	session.printLineColor(utils.ColorDarkRed, "Dark Red")
-	session.printLineColor(utils.ColorGreen, "Green")
-	session.printLineColor(utils.ColorDarkGreen, "Dark Green")
-	session.printLineColor(utils.ColorBlue, "Blue")
-	session.printLineColor(utils.ColorDarkBlue, "Dark Blue")
-	session.printLineColor(utils.ColorYellow, "Yellow")
-	session.printLineColor(utils.ColorDarkYellow, "Dark Yellow")
-	session.printLineColor(utils.ColorMagenta, "Magenta")
-	session.printLineColor(utils.ColorDarkMagenta, "Dark Magenta")
-	session.printLineColor(utils.ColorCyan, "Cyan")
-	session.printLineColor(utils.ColorDarkCyan, "Dark Cyan")
-	session.printLineColor(utils.ColorBlack, "Black")
-	session.printLineColor(utils.ColorWhite, "White")
-	session.printLineColor(utils.ColorGray, "Gray")
+func (ch *commandHandler) colors(args []string) {
+	ch.session.printLineColor(utils.ColorRed, "Red")
+	ch.session.printLineColor(utils.ColorDarkRed, "Dark Red")
+	ch.session.printLineColor(utils.ColorGreen, "Green")
+	ch.session.printLineColor(utils.ColorDarkGreen, "Dark Green")
+	ch.session.printLineColor(utils.ColorBlue, "Blue")
+	ch.session.printLineColor(utils.ColorDarkBlue, "Dark Blue")
+	ch.session.printLineColor(utils.ColorYellow, "Yellow")
+	ch.session.printLineColor(utils.ColorDarkYellow, "Dark Yellow")
+	ch.session.printLineColor(utils.ColorMagenta, "Magenta")
+	ch.session.printLineColor(utils.ColorDarkMagenta, "Dark Magenta")
+	ch.session.printLineColor(utils.ColorCyan, "Cyan")
+	ch.session.printLineColor(utils.ColorDarkCyan, "Dark Cyan")
+	ch.session.printLineColor(utils.ColorBlack, "Black")
+	ch.session.printLineColor(utils.ColorWhite, "White")
+	ch.session.printLineColor(utils.ColorGray, "Gray")
 }
 
-func (session *Session) colorMode(args []string) {
+func (ch *commandHandler) CM(args []string) {
+	ch.ColorMode(args)
+}
+
+func (ch *commandHandler) ColorMode(args []string) {
 	if len(args) == 0 {
 		message := "Current color mode is: "
-		switch session.user.GetColorMode() {
+		switch ch.session.user.GetColorMode() {
 		case utils.ColorModeNone:
 			message = message + "None"
 		case utils.ColorModeLight:
@@ -442,63 +421,67 @@ func (session *Session) colorMode(args []string) {
 		case utils.ColorModeDark:
 			message = message + "Dark"
 		}
-		session.printLine(message)
+		ch.session.printLine(message)
 	} else if len(args) == 1 {
 		switch strings.ToLower(args[0]) {
 		case "none":
-			session.user.SetColorMode(utils.ColorModeNone)
-			session.printLine("Color mode set to: None")
+			ch.session.user.SetColorMode(utils.ColorModeNone)
+			ch.session.printLine("Color mode set to: None")
 		case "light":
-			session.user.SetColorMode(utils.ColorModeLight)
-			session.printLine("Color mode set to: Light")
+			ch.session.user.SetColorMode(utils.ColorModeLight)
+			ch.session.printLine("Color mode set to: Light")
 		case "dark":
-			session.user.SetColorMode(utils.ColorModeDark)
-			session.printLine("Color mode set to: Dark")
+			ch.session.user.SetColorMode(utils.ColorModeDark)
+			ch.session.printLine("Color mode set to: Dark")
 		default:
-			session.printLine("Valid color modes are: None, Light, Dark")
+			ch.session.printLine("Valid color modes are: None, Light, Dark")
 		}
 	} else {
-		session.printLine("Valid color modes are: None, Light, Dark")
+		ch.session.printLine("Valid color modes are: None, Light, Dark")
 	}
 }
 
-func (session *Session) destroyRoom(args []string) {
+func (ch *commandHandler) DR(args []string) {
+	ch.DestroyRoom(args)
+}
+
+func (ch *commandHandler) DestroyRoom(args []string) {
 	if len(args) == 1 {
 		direction := database.StringToDirection(args[0])
 
 		if direction == database.DirectionNone {
-			session.printError("Not a valid direction")
+			ch.session.printError("Not a valid direction")
 		} else {
-			loc := session.room.NextLocation(direction)
-			roomToDelete := model.M.GetRoomByLocation(loc, session.zone)
+			loc := ch.session.room.NextLocation(direction)
+			roomToDelete := model.M.GetRoomByLocation(loc, ch.session.zone)
 			if roomToDelete != nil {
 				model.M.DeleteRoom(roomToDelete)
-				session.printLine("Room destroyed")
+				ch.session.printLine("Room destroyed")
 			} else {
-				session.printError("No room in that direction")
+				ch.session.printError("No room in that direction")
 			}
 		}
 	} else {
-		session.printError("Usage: /destroyroom <direction>")
+		ch.session.printError("Usage: /destroyroom <direction>")
 	}
 }
 
-func (session *Session) npc(args []string) {
-	menu := npcMenu(session.room)
-	choice, npcId := session.execMenu(menu)
+func (ch *commandHandler) Npc(args []string) {
+	menu := npcMenu(ch.session.room)
+	choice, npcId := ch.session.execMenu(menu)
 
 	getName := func() string {
 		name := ""
 		for {
-			name = session.getUserInput(CleanUserInput, "Desired NPC name: ")
+			name = ch.session.getUserInput(CleanUserInput, "Desired NPC name: ")
 			char := model.M.GetCharacterByName(name)
 
 			if name == "" {
 				return ""
 			} else if char != nil {
-				session.printError("That name is unavailable")
+				ch.session.printError("That name is unavailable")
 			} else if err := utils.ValidateName(name); err != nil {
-				session.printError(err.Error())
+				ch.session.printError(err.Error())
 			} else {
 				break
 			}
@@ -515,10 +498,10 @@ func (session *Session) npc(args []string) {
 		if name == "" {
 			goto done
 		}
-		model.M.CreateNpc(name, session.room)
+		model.M.CreateNpc(name, ch.session.room)
 	} else if npcId != "" {
 		specificMenu := specificNpcMenu(npcId)
-		choice, _ := session.execMenu(specificMenu)
+		choice, _ := ch.session.execMenu(specificMenu)
 
 		switch choice {
 		case "d":
@@ -538,8 +521,8 @@ func (session *Session) npc(args []string) {
 				conversation = "<empty>"
 			}
 
-			session.printLine("Conversation: %s", conversation)
-			newConversation := session.getUserInput(RawUserInput, "New conversation text: ")
+			ch.session.printLine("Conversation: %s", conversation)
+			newConversation := ch.session.getUserInput(RawUserInput, "New conversation text: ")
 
 			if newConversation != "" {
 				npc.SetConversation(newConversation)
@@ -548,12 +531,12 @@ func (session *Session) npc(args []string) {
 	}
 
 done:
-	session.printRoom()
+	ch.session.printRoom()
 }
 
-func (session *Session) createItem(args []string) {
+func (ch *commandHandler) Create(args []string) {
 	createUsage := func() {
-		session.printError("Usage: /create <item name>")
+		ch.session.printError("Usage: /create <item name>")
 	}
 
 	if len(args) != 1 {
@@ -562,13 +545,13 @@ func (session *Session) createItem(args []string) {
 	}
 
 	item := model.M.CreateItem(args[0])
-	session.room.AddItem(item)
-	session.printLine("Item created")
+	ch.session.room.AddItem(item)
+	ch.session.printLine("Item created")
 }
 
-func (session *Session) destroyItem(args []string) {
+func (ch *commandHandler) DestroyItem(args []string) {
 	destroyUsage := func() {
-		session.printError("Usage: /destroyitem <item name>")
+		ch.session.printError("Usage: /destroyitem <item name>")
 	}
 
 	if len(args) != 1 {
@@ -576,24 +559,28 @@ func (session *Session) destroyItem(args []string) {
 		return
 	}
 
-	itemsInRoom := model.M.GetItems(session.room.GetItemIds())
+	itemsInRoom := model.M.GetItems(ch.session.room.GetItemIds())
 	name := strings.ToLower(args[0])
 
 	for _, item := range itemsInRoom {
 		if strings.ToLower(item.PrettyName()) == name {
-			session.room.RemoveItem(item)
+			ch.session.room.RemoveItem(item)
 			model.M.DeleteItem(item.GetId())
-			session.printLine("Item destroyed")
+			ch.session.printLine("Item destroyed")
 			return
 		}
 	}
 
-	session.printError("Item not found")
+	ch.session.printError("Item not found")
 }
 
-func (session *Session) cash(args []string) {
+func (ch *commandHandler) RoomID(args []string) {
+	ch.session.printLine("Room ID: %v", ch.session.room.GetId())
+}
+
+func (ch *commandHandler) Cash(args []string) {
 	cashUsage := func() {
-		session.printError("Usage: /cash give <amount>")
+		ch.session.printError("Usage: /cash give <amount>")
 	}
 
 	if len(args) != 2 {
@@ -609,16 +596,16 @@ func (session *Session) cash(args []string) {
 			return
 		}
 
-		session.player.AddCash(amount)
-		session.printLine("Received: %v monies", amount)
+		ch.session.player.AddCash(amount)
+		ch.session.printLine("Received: %v monies", amount)
 	} else {
 		cashUsage()
 		return
 	}
 }
 
-func (session *Session) windowSize() {
-	width, height := session.user.WindowSize()
+func (ch *commandHandler) WS() { // WindowSize
+	width, height := ch.session.user.WindowSize()
 
 	header := fmt.Sprintf("Width: %v, Height: %v", width, height)
 
@@ -626,32 +613,32 @@ func (session *Session) windowSize() {
 	bottomBar := "+" + strings.Repeat("-", int(width)-2) + "+"
 	outline := "|" + strings.Repeat(" ", int(width)-2) + "|"
 
-	session.printLine(topBar)
+	ch.session.printLine(topBar)
 
 	for i := 0; i < int(height)-3; i++ {
-		session.printLine(outline)
+		ch.session.printLine(outline)
 	}
 
-	session.printLine(bottomBar)
+	ch.session.printLine(bottomBar)
 }
 
-func (session *Session) terminalType() {
-	session.printLine("Terminal type: %s", session.user.TerminalType())
+func (ch *commandHandler) TT() { // TerminalType
+	ch.session.printLine("Terminal type: %s", ch.session.user.TerminalType())
 }
 
-func (session *Session) setSilentMode(args []string) {
+func (ch *commandHandler) Silent(args []string) {
 	usage := func() {
-		session.printError("Usage: /silent [on|off]")
+		ch.session.printError("Usage: /silent [on|off]")
 	}
 
 	if len(args) != 1 {
 		usage()
 	} else if args[0] == "on" {
-		session.silentMode = true
-		session.printLine("Silent mode ON")
+		ch.session.silentMode = true
+		ch.session.printLine("Silent mode ON")
 	} else if args[0] == "off" {
-		session.silentMode = false
-		session.printLine("Silent mode OFF")
+		ch.session.silentMode = false
+		ch.session.printLine("Silent mode OFF")
 	} else {
 		usage()
 	}
