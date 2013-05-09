@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -346,11 +347,55 @@ func Test_PanicIfError(t *testing.T) {
 	defer func() {
 		r := recover()
 		if r == nil {
-			t.Errorf("PanicIfError() didn't panic on a non-nil real error")
+			t.Errorf("PanicIfError() didn't panic on a non-nil error")
 		}
 	}()
 
 	PanicIfError(errors.New("A real error!"))
+}
+
+type FindMethodTester struct {
+}
+
+func (f *FindMethodTester) Test1() {
+}
+
+func (f *FindMethodTester) test1() {
+}
+
+func (f *FindMethodTester) test2() {
+}
+
+func (f FindMethodTester) Test3() {
+}
+
+func Test_FindMethod(t *testing.T) {
+	var f FindMethodTester
+
+	var tests = []struct {
+		methodName string
+		shouldFind bool
+	}{
+		{"Test1", true},
+		{"TEST1", true},
+		{"test1", true},
+		{"test2", false},
+		{"TEST2", false},
+		{"TEST3", true},
+	}
+
+	for _, test := range tests {
+		method, found := FindMethod(&f, test.methodName)
+
+		if found && !test.shouldFind {
+			t.Errorf("Shouldnt have found method: %s", test.methodName)
+		} else if !found && test.shouldFind {
+			t.Errorf("Unable to find method: %s", test.methodName)
+		} else if test.shouldFind {
+			var vals []reflect.Value
+			method.Call(vals) // Make sure its callable via reflection (that its exported)
+		}
+	}
 }
 
 // vim:nocindent

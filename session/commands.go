@@ -14,33 +14,18 @@ type commandHandler struct {
 	session *Session
 }
 
-func (ch *commandHandler) findMethod(name string) (reflect.Method, bool) {
-	t := reflect.TypeOf(ch)
-	for i := 0; i < t.NumMethod(); i++ {
-		method := t.Method(i)
-
-		if strings.ToLower(method.Name) == strings.ToLower(name) {
-			return method, true
-		}
-	}
-
-	return reflect.Method{}, false
-}
-
 func (ch *commandHandler) handleCommand(command string, args []string) {
 	if command[0] == '/' {
 		ch.quickRoom(command[1:])
 		return
 	}
 
-	method, found := ch.findMethod(command)
+	method, found := utils.FindMethod(ch, command)
 
-	// An empty PkgPath here means the method is exported (reflect can't call unexported methods)
-	if found && method.PkgPath == "" {
-		methodValue := reflect.ValueOf(ch).MethodByName(method.Name)
+	if found {
 		vals := make([]reflect.Value, 1)
 		vals[0] = reflect.ValueOf(args)
-		methodValue.Call(vals)
+		method.Call(vals)
 		return
 	}
 
