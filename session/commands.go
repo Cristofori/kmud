@@ -40,7 +40,7 @@ func (ch *commandHandler) quickRoom(command string) {
 	}
 
 	ch.session.room.SetExitEnabled(dir, true)
-	ch.session.handleAction(command, []string{})
+	ch.session.actioner.handleAction(command, []string{})
 	ch.session.room.SetExitEnabled(dir.Opposite(), true)
 }
 

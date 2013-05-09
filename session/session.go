@@ -28,7 +28,12 @@ type Session struct {
 
 	silentMode bool
 
+	// These handlers encapsulate all of the functions that handle user
+	// input into a single struct. This makes it so that we can use reflection
+	// to lookup the function that should handle the user's input without fear
+	// of them calling some function that we didn't intent to expose to them.
 	commander commandHandler
+	actioner  actionHandler
 
 	// logger *log.Logger
 }
@@ -49,6 +54,7 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 
 	session.silentMode = false
 	session.commander.session = &session
+	session.actioner.session = &session
 
 	// file, err := os.OpenFile(player.PrettyName()+".log", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
 	// utils.PanicIfError(err)
@@ -169,7 +175,7 @@ func (session *Session) Exec() {
 		if strings.HasPrefix(input, "/") {
 			session.commander.handleCommand(utils.Argify(input[1:]))
 		} else {
-			session.handleAction(utils.Argify(input))
+			session.actioner.handleAction(utils.Argify(input))
 		}
 	}
 }
