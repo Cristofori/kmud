@@ -14,6 +14,10 @@ import (
 	"time"
 )
 
+type Server struct {
+	listener net.Listener
+}
+
 type wrappedConnection struct {
 	telnet  *telnet.Telnet
 	watcher *utils.WatchableReadWriter
@@ -428,7 +432,7 @@ func handleConnection(conn *wrappedConnection) {
 	}
 }
 
-func Exec() {
+func (self *Server) Start() {
 	fmt.Printf("Connecting to database... ")
 	session, err := mgo.Dial("localhost")
 
@@ -436,7 +440,7 @@ func Exec() {
 
 	fmt.Println("done.")
 
-	listener, err := net.Listen("tcp", ":8945")
+	self.listener, err = net.Listen("tcp", ":8945")
 	utils.HandleError(err)
 
 	err = model.Init(session.Copy())
@@ -458,9 +462,11 @@ func Exec() {
 	}
 
 	fmt.Println("Server listening on port 8945")
+}
 
+func (self *Server) Listen() {
 	for {
-		conn, err := listener.Accept()
+		conn, err := self.listener.Accept()
 		utils.HandleError(err)
 		fmt.Println("Client connected:", conn.RemoteAddr())
 		t := telnet.NewTelnet(conn)
@@ -469,6 +475,11 @@ func Exec() {
 
 		go handleConnection(&wrappedConnection{t, wc})
 	}
+}
+
+func (self *Server) Exec() {
+	self.Start()
+	self.Listen()
 }
 
 // vim: nocindent

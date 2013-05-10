@@ -5,5 +5,7 @@ import "runtime"
 
 func main() {
 	runtime.GOMAXPROCS(8)
-	server.Exec()
+
+	var s server.Server
+	s.Exec()
 }

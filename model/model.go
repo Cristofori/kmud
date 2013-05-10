@@ -36,6 +36,18 @@ func (self *globalModel) CreateUser(name string, password string) *database.User
 	return user
 }
 
+// GetOrCreateUser attempts to retrieve the existing user from the model by the given name.
+// if none exists, then a new one is created with the given credentials.
+func (self *globalModel) GetOrCreateUser(name string, password string) *database.User {
+	user := self.GetUserByName(name)
+
+	if user == nil {
+		user = self.CreateUser(name, password)
+	}
+
+	return user
+}
+
 // GetCharacter returns the Character object associated the given Id
 func (self *globalModel) GetCharacter(id bson.ObjectId) *database.Character {
 	self.mutex.RLock()
@@ -155,6 +167,21 @@ func (self *globalModel) CreatePlayer(name string, parentUser *database.User, st
 	self.characters[character.GetId()] = character
 
 	return character
+}
+
+// GetOrCreatePlayer attempts to retrieve the existing user from the model by the given name.
+// if none exists, then a new one is created. If the name matches an NPC (rather than a player)
+// then nil will be returned.
+func (self *globalModel) GetOrCreatePlayer(name string, parentUser *database.User, startingRoom *database.Room) *database.Character {
+	player := self.GetCharacterByName(name)
+
+	if player == nil {
+		player = self.CreatePlayer(name, parentUser, startingRoom)
+	} else if player.IsNpc() {
+		return nil
+	}
+
+	return player
 }
 
 // CreateNpc is a convenience function for creating a new character object that
