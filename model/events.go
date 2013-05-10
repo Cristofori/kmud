@@ -82,7 +82,9 @@ func queueEvent(event Event) {
 
 func broadcast(event Event) {
 	for listener := range _listeners {
-		listener <- event
+		if event.IsFor(_listeners[listener]) {
+			listener <- event
+		}
 	}
 }
 
@@ -106,6 +108,7 @@ const (
 type Event interface {
 	Type() EventType
 	ToString(receiver *database.Character) string
+	IsFor(receiver *database.Character) bool
 }
 
 type BroadcastEvent struct {
@@ -177,15 +180,16 @@ func (self BroadcastEvent) ToString(receiver *database.Character) string {
 		utils.Colorize(cm, utils.ColorWhite, self.Message)
 }
 
+func (self BroadcastEvent) IsFor(receiver *database.Character) bool {
+	return true
+}
+
+// Say
 func (self SayEvent) Type() EventType {
 	return SayEventType
 }
 
 func (self SayEvent) ToString(receiver *database.Character) string {
-	if receiver.GetRoomId() != self.Character.GetRoomId() {
-		return ""
-	}
-
 	cm := getColorMode(receiver)
 
 	who := ""
@@ -199,44 +203,45 @@ func (self SayEvent) ToString(receiver *database.Character) string {
 		utils.Colorize(cm, utils.ColorWhite, "\""+self.Message+"\"")
 }
 
+func (self SayEvent) IsFor(receiver *database.Character) bool {
+	return receiver.GetRoomId() == self.Character.GetRoomId()
+}
+
+// Emote
 func (self EmoteEvent) Type() EventType {
 	return EmoteEventType
 }
 
 func (self EmoteEvent) ToString(receiver *database.Character) string {
-	if receiver.GetRoomId() != self.Character.GetRoomId() {
-		return ""
-	}
-
 	cm := getColorMode(receiver)
-
 	return utils.Colorize(cm, utils.ColorYellow, self.Character.PrettyName()+" "+self.Emote)
 }
 
+func (self EmoteEvent) IsFor(receiver *database.Character) bool {
+	return receiver.GetRoomId() == self.Character.GetRoomId()
+}
+
+// Tell
 func (self TellEvent) Type() EventType {
 	return TellEventType
 }
 
 func (self TellEvent) ToString(receiver *database.Character) string {
-	if receiver.GetId() != self.To.GetId() {
-		return ""
-	}
-
 	cm := getColorMode(receiver)
-
 	return utils.Colorize(cm, utils.ColorMagenta, fmt.Sprintf("Message from %s: ", self.From.PrettyName())) +
 		utils.Colorize(cm, utils.ColorWhite, self.Message)
 }
 
+func (self TellEvent) IsFor(receiver *database.Character) bool {
+	return receiver.GetId() == self.To.GetId()
+}
+
+// Enter
 func (self EnterEvent) Type() EventType {
 	return EnterEventType
 }
 
 func (self EnterEvent) ToString(receiver *database.Character) string {
-	if receiver.GetRoomId() != self.RoomId {
-		return ""
-	}
-
 	if receiver.GetId() == self.Character.GetId() {
 		return ""
 	}
@@ -247,54 +252,56 @@ func (self EnterEvent) ToString(receiver *database.Character) string {
 		utils.Colorize(cm, utils.ColorWhite, " has entered the room")
 }
 
+func (self EnterEvent) IsFor(receiver *database.Character) bool {
+	return receiver.GetRoomId() == self.RoomId
+}
+
+// Leave
 func (self LeaveEvent) Type() EventType {
 	return LeaveEventType
 }
 
 func (self LeaveEvent) ToString(receiver *database.Character) string {
-	if receiver.GetRoomId() != self.RoomId {
-		return ""
-	}
-
-	if receiver.GetId() == self.Character.GetId() {
-		return ""
-	}
-
 	cm := getColorMode(receiver)
-
 	return utils.Colorize(cm, utils.ColorBlue, self.Character.PrettyName()) +
 		utils.Colorize(cm, utils.ColorWhite, " has left the room")
 }
 
+func (self LeaveEvent) IsFor(receiver *database.Character) bool {
+	return receiver.GetRoomId() == self.RoomId &&
+		receiver.GetId() != self.Character.GetId()
+}
+
+// RoomUpdate
 func (self RoomUpdateEvent) Type() EventType {
 	return RoomUpdateEventType
 }
 
 func (self RoomUpdateEvent) ToString(receiver *database.Character) string {
-	if receiver.GetRoomId() != self.Room.GetId() {
-		return ""
-	}
-
 	cm := getColorMode(receiver)
-
 	return utils.Colorize(cm, utils.ColorWhite, "This room has been modified")
 }
 
+func (self RoomUpdateEvent) IsFor(receiver *database.Character) bool {
+	return receiver.GetRoomId() == self.Room.GetId()
+}
+
+// Login
 func (self LoginEvent) Type() EventType {
 	return LoginEventType
 }
 
 func (self LoginEvent) ToString(receiver *database.Character) string {
-	if receiver.GetId() == self.Character.GetId() {
-		return ""
-	}
-
 	cm := getColorMode(receiver)
-
 	return utils.Colorize(cm, utils.ColorBlue, self.Character.PrettyName()) +
 		utils.Colorize(cm, utils.ColorWhite, " has connected")
 }
 
+func (self LoginEvent) IsFor(receiver *database.Character) bool {
+	return receiver.GetId() != self.Character.GetId()
+}
+
+// Logout
 func (self LogoutEvent) Type() EventType {
 	return LogoutEventType
 }
@@ -303,11 +310,11 @@ func (self LogoutEvent) ToString(receiver *database.Character) string {
 	return fmt.Sprintf("%s has disconnected", self.Character.PrettyName())
 }
 
-func getColorMode(char *database.Character) utils.ColorMode {
-	user := M.GetUser(char.GetUserId())
-	return user.GetColorMode()
+func (self LogoutEvent) IsFor(receiver *database.Character) bool {
+	return true
 }
 
+// CombatStart
 func (self CombatStartEvent) Type() EventType {
 	return CombatStartEventType
 }
@@ -324,6 +331,11 @@ func (self CombatStartEvent) ToString(receiver *database.Character) string {
 	return ""
 }
 
+func (self CombatStartEvent) IsFor(receiver *database.Character) bool {
+	return receiver == self.Attacker || receiver == self.Defender
+}
+
+// CombatStop
 func (self CombatStopEvent) Type() EventType {
 	return CombatStopEventType
 }
@@ -340,6 +352,11 @@ func (self CombatStopEvent) ToString(receiver *database.Character) string {
 	return ""
 }
 
+func (self CombatStopEvent) IsFor(receiver *database.Character) bool {
+	return receiver == self.Attacker || receiver == self.Defender
+}
+
+// Combat
 func (self CombatEvent) Type() EventType {
 	return CombatEventType
 }
@@ -354,6 +371,10 @@ func (self CombatEvent) ToString(receiver *database.Character) string {
 	}
 
 	return ""
+}
+
+func (self CombatEvent) IsFor(receiver *database.Character) bool {
+	return receiver == self.Attacker || receiver == self.Defender
 }
 
 // vim: nocindent

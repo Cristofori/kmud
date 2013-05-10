@@ -660,4 +660,9 @@ func MoveRoomsToZone(fromZoneId bson.ObjectId, toZoneId bson.ObjectId) {
 	}
 }
 
+func getColorMode(char *database.Character) utils.ColorMode {
+	user := M.GetUser(char.GetUserId())
+	return user.GetColorMode()
+}
+
 // vim: nocindent
