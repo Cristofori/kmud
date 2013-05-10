@@ -4,7 +4,6 @@ import (
 	"kmud/database"
 	"kmud/model"
 	"kmud/utils"
-	"reflect"
 	"strings"
 )
 
@@ -34,16 +33,11 @@ func (ah *actionHandler) handleAction(action string, args []string) {
 		}
 	}
 
-	method, found := utils.FindMethod(ah, action)
+	found := utils.FindAndCallMethod(ah, action, args)
 
-	if found {
-		vals := make([]reflect.Value, 1)
-		vals[0] = reflect.ValueOf(args)
-		method.Call(vals)
-		return
+	if !found {
+		ah.session.printError("You can't do that")
 	}
-
-	ah.session.printError("You can't do that")
 }
 
 func (ah *actionHandler) L(args []string) {

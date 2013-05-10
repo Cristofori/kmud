@@ -5,7 +5,6 @@ import (
 	"kmud/database"
 	"kmud/model"
 	"kmud/utils"
-	"reflect"
 	"strconv"
 	"strings"
 )
@@ -20,16 +19,11 @@ func (ch *commandHandler) handleCommand(command string, args []string) {
 		return
 	}
 
-	method, found := utils.FindMethod(ch, command)
+	found := utils.FindAndCallMethod(ch, command, args)
 
-	if found {
-		vals := make([]reflect.Value, 1)
-		vals[0] = reflect.ValueOf(args)
-		method.Call(vals)
-		return
+	if !found {
+		ch.session.printError("Unrecognized command: %s", command)
 	}
-
-	ch.session.printError("Unrecognized command: %s", command)
 }
 
 func (ch *commandHandler) quickRoom(command string) {
@@ -589,7 +583,7 @@ func (ch *commandHandler) Cash(args []string) {
 	}
 }
 
-func (ch *commandHandler) WS() { // WindowSize
+func (ch *commandHandler) WS(args []string) { // WindowSize
 	width, height := ch.session.user.WindowSize()
 
 	header := fmt.Sprintf("Width: %v, Height: %v", width, height)
@@ -607,7 +601,7 @@ func (ch *commandHandler) WS() { // WindowSize
 	ch.session.printLine(bottomBar)
 }
 
-func (ch *commandHandler) TT() { // TerminalType
+func (ch *commandHandler) TT(args []string) { // TerminalType
 	ch.session.printLine("Terminal type: %s", ch.session.user.TerminalType())
 }
 

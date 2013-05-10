@@ -267,4 +267,19 @@ func FindMethod(object interface{}, name string) (reflect.Value, bool) {
 	return reflect.Value{}, false
 }
 
+func FindAndCallMethod(object interface{}, name string, a ...interface{}) bool {
+	method, found := FindMethod(object, name)
+
+	if found {
+		vals := make([]reflect.Value, len(a))
+		for i, arg := range a {
+			vals[i] = reflect.ValueOf(arg)
+		}
+
+		method.Call(vals)
+	}
+
+	return found
+}
+
 // vim: nocindent
