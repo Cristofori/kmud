@@ -367,7 +367,7 @@ func (ch *commandHandler) Who(args []string) {
 	ch.session.printLine("")
 }
 
-func (ch *commandHandler) colors(args []string) {
+func (ch *commandHandler) Colors(args []string) {
 	ch.session.printLineColor(utils.ColorRed, "Red")
 	ch.session.printLineColor(utils.ColorDarkRed, "Dark Red")
 	ch.session.printLineColor(utils.ColorGreen, "Green")
