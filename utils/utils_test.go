@@ -5,41 +5,14 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+    "kmud/testutils"
 )
 
 // import "fmt"
 
-var wrote string
-
-type testWriter struct {
-}
-
-func (self testWriter) Write(p []byte) (n int, err error) {
-	wrote = string(p)
-	return len(p), nil
-}
-
-type testReader struct {
-	toRead string
-}
-
-func (self testReader) Read(p []byte) (n int, err error) {
-	for i := 0; i < len(self.toRead); i++ {
-		p[i] = self.toRead[i]
-	}
-
-	p[len(self.toRead)] = '\n'
-
-	return len(self.toRead) + 1, nil
-}
-
-type testReadWriter struct {
-	testReader
-	testWriter
-}
-
 func Test_WriteLine(t *testing.T) {
-	var writer testWriter
+    var wrote string
+	writer := testutils.NewTestWriter(&wrote)
 
 	line := "This is a line"
 	want := line + "\r\n"
@@ -72,7 +45,7 @@ func Test_Simplify(t *testing.T) {
 }
 
 func Test_GetRawUserInput(t *testing.T) {
-	var readWriter testReadWriter
+	var readWriter testutils.TestReadWriter
 
 	var tests = []struct {
 		input, output string
@@ -86,7 +59,7 @@ func Test_GetRawUserInput(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		readWriter.toRead = test.input
+		readWriter.ToRead = test.input
 		line := GetRawUserInput(readWriter, ">")
 		if line != test.output {
 			t.Errorf("GetRawUserInput(%q) == %q, want %q", test.input, line, test.output)
@@ -95,7 +68,7 @@ func Test_GetRawUserInput(t *testing.T) {
 }
 
 func Test_GetUserInput(t *testing.T) {
-	var readWriter testReadWriter
+	var readWriter testutils.TestReadWriter
 
 	var tests = []struct {
 		input, output string
@@ -110,7 +83,7 @@ func Test_GetUserInput(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		readWriter.toRead = test.input
+		readWriter.ToRead = test.input
 		line := GetUserInput(readWriter, ">")
 		if line != test.output {
 			t.Errorf("GetUserInput(%q) == %q, want %q", test.input, line, test.output)
