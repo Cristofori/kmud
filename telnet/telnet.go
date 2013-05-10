@@ -99,10 +99,10 @@ func (t *Telnet) DoWindowSize() {
 }
 
 func (t *Telnet) DoTerminalType() {
-    // This is really supposed to be two commands, one to ask if they'll send a
-    // terminal type, and another to indicate that they should send it if
-    // they've expressed a "willingness" to send it. For the time being this
-    // works well enough.
+	// This is really supposed to be two commands, one to ask if they'll send a
+	// terminal type, and another to indicate that they should send it if
+	// they've expressed a "willingness" to send it. For the time being this
+	// works well enough.
 
 	// See http://tools.ietf.org/html/rfc884
 
