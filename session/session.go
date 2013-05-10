@@ -38,7 +38,7 @@ type Session struct {
 	// logger *log.Logger
 }
 
-func NewSession(conn io.ReadWriter, user *database.User, player *database.Character) Session {
+func NewSession(conn io.ReadWriter, user *database.User, player *database.Character) *Session {
 	var session Session
 	session.conn = conn
 	session.user = user
@@ -61,7 +61,7 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 
 	// session.logger = log.New(file, player.PrettyName()+" ", log.LstdFlags)
 
-	return session
+	return &session
 }
 
 type userInputMode int
