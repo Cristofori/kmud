@@ -2,16 +2,16 @@ package utils
 
 import (
 	"errors"
+	"kmud/testutils"
 	"reflect"
 	"strings"
 	"testing"
-    "kmud/testutils"
 )
 
 // import "fmt"
 
 func Test_WriteLine(t *testing.T) {
-    var wrote string
+	var wrote string
 	writer := testutils.NewTestWriter(&wrote)
 
 	line := "This is a line"
