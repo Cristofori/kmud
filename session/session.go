@@ -175,9 +175,10 @@ func (session *Session) Exec() {
 	// Main loop
 	for {
 		input := session.getUserInput(RawUserInput, session.prompt)
-		if input == "" || input == "logout" {
+		if input == "" || input == "logout" || input == "quit" {
 			return
 		}
+
 		if strings.HasPrefix(input, "/") {
 			session.commander.handleCommand(utils.Argify(input[1:]))
 		} else {
