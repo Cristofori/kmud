@@ -20,6 +20,8 @@ type Session struct {
 	room   *database.Room
 	zone   *database.Zone
 
+	prompt string
+
 	userInputChannel chan string
 	promptChannel    chan string
 	inputModeChannel chan userInputMode
@@ -35,6 +37,8 @@ type Session struct {
 	commander commandHandler
 	actioner  actionHandler
 
+	replyId bson.ObjectId
+
 	// logger *log.Logger
 }
 
@@ -45,6 +49,8 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 	session.player = player
 	session.room = model.M.GetRoom(player.GetRoomId())
 	session.zone = model.M.GetZone(session.room.GetZoneId())
+
+	session.prompt = "> "
 
 	session.userInputChannel = make(chan string)
 	session.promptChannel = make(chan string)
@@ -168,7 +174,7 @@ func (session *Session) Exec() {
 
 	// Main loop
 	for {
-		input := session.getUserInput(RawUserInput, prompt())
+		input := session.getUserInput(RawUserInput, session.prompt)
 		if input == "" || input == "logout" {
 			return
 		}
@@ -211,8 +217,9 @@ func (session *Session) clearLine() {
 	utils.ClearLine(session.conn)
 }
 
-func prompt() string {
-	return "> "
+func (session *Session) asyncMessage(message string) {
+	session.clearLine()
+	session.printLine(message)
 }
 
 // Same behavior as menu.Exec(), except that it uses getUserInput
@@ -250,10 +257,15 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 
 			message := event.ToString(session.player)
 			if message != "" {
-				session.clearLine()
-				session.printLine(message)
-				session.printString(prompt)
+				session.asyncMessage(message)
+				session.printString(session.prompt)
 			}
+
+			if event.Type() == model.TellEventType {
+				tellEvent := event.(model.TellEvent)
+				session.replyId = tellEvent.From.GetId()
+			}
+
 		case quitMessage := <-session.panicChannel:
 			panic(quitMessage)
 		}
