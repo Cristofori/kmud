@@ -186,19 +186,6 @@ func Test_Processor(t *testing.T) {
 	if compareData(bytes, data) == false {
 		t.Errorf("Bufio failure %v != %v", bytes, data)
 	}
-
-	/*
-	   go func() {
-	       time.Sleep(1 * time.Second)
-	       telnet.Write(data)
-	   }()
-
-	   reader.ReadBytes('\n')
-
-	   if compareData(bytes, data) == false {
-	       t.Errorf("Bufio failure %v != %v", bytes, data)
-	   }
-	*/
 }
 
 // vim: nocindent
