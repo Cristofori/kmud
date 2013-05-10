@@ -87,15 +87,15 @@ func (t *Telnet) SetWriteDeadline(dl time.Time) error {
 }
 
 func (t *Telnet) WillEcho() {
-	t.conn.Write(BuildCommand(WILL, ECHO))
+	t.SendCommand(WILL, ECHO)
 }
 
 func (t *Telnet) WontEcho() {
-	t.conn.Write(BuildCommand(WONT, ECHO))
+	t.SendCommand(WONT, ECHO)
 }
 
 func (t *Telnet) DoWindowSize() {
-	t.conn.Write(BuildCommand(DO, WS))
+	t.SendCommand(DO, WS)
 }
 
 func (t *Telnet) DoTerminalType() {
@@ -105,7 +105,11 @@ func (t *Telnet) DoTerminalType() {
 	// expressed a "willingness" to send it. For the time
 	// being this works well enough.
 	// http://tools.ietf.org/html/rfc884
-	t.conn.Write(BuildCommand(DO, TT, IAC, SB, TT, 1, IAC, SE)) // 1 = SEND
+	t.SendCommand(DO, TT, IAC, SB, TT, 1, IAC, SE) // 1 = SEND
+}
+
+func (t *Telnet) SendCommand(codes ...TelnetCode) {
+	t.conn.Write(BuildCommand(codes...))
 }
 
 func BuildCommand(codes ...TelnetCode) []byte {
