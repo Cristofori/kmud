@@ -623,16 +623,26 @@ func (ch *commandHandler) Silent(args []string) {
 	}
 }
 
-func (ch *commandHandler) R(args []string) {
+func (ch *commandHandler) R(args []string) { // Reply
 	targetChar := model.M.GetCharacter(ch.session.replyId)
 
 	if targetChar == nil {
 		ch.session.asyncMessage("No one to reply to")
-	} else {
+	} else if len(args) > 0 {
 		newArgs := make([]string, 1)
 		newArgs[0] = targetChar.GetName()
 		newArgs = append(newArgs, args...)
 		ch.Whisper(newArgs)
+	} else {
+		prompt := "Reply to " + targetChar.PrettyName() + ": "
+		input := ch.session.getUserInput(RawUserInput, prompt)
+
+		if input != "" {
+			newArgs := make([]string, 1)
+			newArgs[0] = targetChar.GetName()
+			newArgs = append(newArgs, input)
+			ch.Whisper(newArgs)
+		}
 	}
 }
 
