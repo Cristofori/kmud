@@ -1,6 +1,7 @@
 * More unit tests
 * NPC conversation topics
 * Currency giving, dropping
+* Trading
 * Custom room views
 * Custom room exits/actions
 * Input speed limit (at all input possibilities)
@@ -8,8 +9,7 @@
 * Permissions
 * Movement across zone boundaries
 * Spell checking
-* Improve input usability by processing each character at a time (/r > /tell <foo>)
 * Party/grouping
-* Monsters/spawning
-* Hitpoints and combat
+* Monsters/spawning/roaming
+* Hitpoints and real combat
 * Mark and sweep for DB updates
