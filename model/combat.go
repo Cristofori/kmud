@@ -2,6 +2,7 @@ package model
 
 import (
 	"kmud/database"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -50,7 +51,8 @@ func combatLoop() {
 		fightsMutex.RLock()
 		for a, d := range fights {
 			if a.GetRoomId() == d.GetRoomId() {
-				queueEvent(CombatEvent{Attacker: a, Defender: d, Damage: 10})
+				dmg := rand.Int()%10 + 1
+				queueEvent(CombatEvent{Attacker: a, Defender: d, Damage: dmg})
 			} else {
 				fightsMutex.RUnlock()
 				StopFight(a)
