@@ -7,30 +7,45 @@ import (
 
 // import "fmt"
 
-func checkExported(i interface{}) (bool, []string) {
-	exceptions := map[string]bool {"handleCommand" : true, "handleAction" : true, "quickRoom" : true }
+// Verify that all methods are exported (with some exceptions), and that they all
+// take in a []string as their only argument
+func checkMethods(i interface{}, t *testing.T) {
+	exceptions := map[string]bool{"handleCommand": true, "handleAction": true, "quickRoom": true}
 
 	objType := reflect.TypeOf(i)
 
-	pass := true
-	var failedMethods []string
+	var stringArray []string
+	stringArrayType := reflect.TypeOf(stringArray)
 
 	for i := 0; i < objType.NumMethod(); i++ {
-		methodType := objType.Method(i)
+		methodValue := objType.Method(i)
+		methodType := methodValue.Type
 
-		_, found := exceptions[methodType.Name]
+		_, found := exceptions[methodValue.Name]
 
 		if found {
 			continue
 		}
 
-		if methodType.PkgPath != "" {
-			pass = false
-			failedMethods = append(failedMethods, methodType.Name)
+        structType := methodType.In(0)
+
+		if methodValue.PkgPath != "" {
+			t.Errorf("All methods must be exported: %s.%s", structType, methodValue.Name)
+			continue
+		}
+
+		if methodType.NumIn() != 2 { // One for the receiver object, one for the actual argument
+			t.Errorf("All methods must take exactly one parameter: %s.%s, %v", structType, methodValue.Name, methodType.NumIn())
+			continue
+		}
+
+		paramType := methodType.In(1)
+
+		if !stringArrayType.AssignableTo(paramType) {
+			t.Errorf("All methods must take in a []string as their parameter: %s.%s", structType, methodValue.Name)
+			continue
 		}
 	}
-
-	return pass, failedMethods
 }
 
 func Test_UserInputHandlers(t *testing.T) {
@@ -42,19 +57,8 @@ func Test_UserInputHandlers(t *testing.T) {
 	var ah actionHandler
 	var ch commandHandler
 
-	passed, failedMethodNames := checkExported(&ah)
-	if !passed {
-		for _, failedMethodName := range failedMethodNames {
-			t.Errorf("All methods should be exported: actionHandler." + failedMethodName)
-		}
-	}
-
-	passed, failedMethodNames = checkExported(&ch)
-	if !passed {
-		for _, failedMethodName := range failedMethodNames {
-			t.Errorf("All methods should be exported: commandHandler." + failedMethodName)
-		}
-	}
+	checkMethods(&ah, t)
+	checkMethods(&ch, t)
 }
 
 // vim:nocindent
