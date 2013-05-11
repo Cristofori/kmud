@@ -27,7 +27,7 @@ func checkMethods(i interface{}, t *testing.T) {
 			continue
 		}
 
-        structType := methodType.In(0)
+		structType := methodType.In(0)
 
 		if methodValue.PkgPath != "" {
 			t.Errorf("All methods must be exported: %s.%s", structType, methodValue.Name)

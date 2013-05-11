@@ -12,6 +12,8 @@ const (
 	characterCash         string = "cash"
 	characterInventory    string = "inventory"
 	characterConversation string = "conversation"
+	characterHealth       string = "health"
+	characterHitPoints    string = "hitpoints"
 )
 
 type Character struct {
@@ -28,6 +30,8 @@ func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *Char
 	}
 	character.SetRoom(roomId)
 	character.SetCash(0)
+	character.SetHealth(100)
+	character.SetHitPoints(100)
 
 	character.SetOnline(false)
 
@@ -144,6 +148,32 @@ func CharacterNames(characters []*Character) []string {
 	}
 
 	return names
+}
+
+func (self *Character) SetHealth(health int) {
+	self.setField(characterHealth, health)
+}
+
+func (self *Character) GetHealth() int {
+	return self.getField(characterHealth).(int)
+}
+
+func (self *Character) SetHitPoints(hitpoints int) {
+	self.setField(characterHitPoints, hitpoints)
+}
+
+func (self *Character) GetHitPoints() int {
+	return self.getField(characterHitPoints).(int)
+}
+
+func (self *Character) Hit(hitpoints int) int {
+	self.SetHitPoints(self.GetHitPoints() - hitpoints)
+	return self.GetHitPoints()
+}
+
+func (self *Character) Heal(hitpoints int) int {
+	self.SetHitPoints(self.GetHitPoints() + hitpoints)
+	return self.GetHitPoints()
 }
 
 // vim: nocindent

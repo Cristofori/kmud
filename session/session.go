@@ -7,6 +7,7 @@ import (
 	"kmud/model"
 	"kmud/utils"
 	"labix.org/v2/mgo/bson"
+	"strconv"
 	// "log"
 	// "os"
 	"strings"
@@ -50,7 +51,7 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 	session.room = model.M.GetRoom(player.GetRoomId())
 	session.zone = model.M.GetZone(session.room.GetZoneId())
 
-	session.prompt = "> "
+	session.prompt = "%h/%H> "
 
 	session.userInputChannel = make(chan string)
 	session.promptChannel = make(chan string)
@@ -174,7 +175,7 @@ func (session *Session) Exec() {
 
 	// Main loop
 	for {
-		input := session.getUserInput(RawUserInput, session.prompt)
+		input := session.getUserInput(RawUserInput, session.getPrompt())
 		if input == "" || input == "logout" || input == "quit" {
 			return
 		}
@@ -259,7 +260,7 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 			message := event.ToString(session.player)
 			if message != "" {
 				session.asyncMessage(message)
-				session.printString(session.prompt)
+				session.printString(session.getPrompt())
 			}
 
 			if event.Type() == model.TellEventType {
@@ -272,6 +273,13 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 		}
 	}
 	panic("Unexpected code path")
+}
+
+func (session *Session) getPrompt() string {
+	prompt := session.prompt
+	prompt = strings.Replace(prompt, "%h", strconv.Itoa(session.player.GetHitPoints()), -1)
+	prompt = strings.Replace(prompt, "%H", strconv.Itoa(session.player.GetHealth()), -1)
+	return prompt
 }
 
 // vim: nocindent
