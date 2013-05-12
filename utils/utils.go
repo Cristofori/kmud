@@ -14,6 +14,25 @@ import (
 	"unicode"
 )
 
+type Prompter interface {
+	GetPrompt() string
+}
+
+type simplePrompter struct {
+	prompt string
+}
+
+func (sp simplePrompter) GetPrompt() string {
+	return sp.prompt
+}
+
+// SimpleRompter returns a Prompter that always returns the given string as its prompt
+func SimplePrompter(prompt string) Prompter {
+	var prompter simplePrompter
+	prompter.prompt = prompt
+	return prompter
+}
+
 func Write(conn io.Writer, text string) (int, error) {
 	return WriteRaw(conn, []byte(text))
 }
@@ -40,10 +59,14 @@ func Simplify(str string) string {
 }
 
 func GetRawUserInputSuffix(conn io.ReadWriter, prompt string, suffix string) string {
+	return GetRawUserInputSuffixP(conn, SimplePrompter(prompt), suffix)
+}
+
+func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string) string {
 	reader := bufio.NewReader(conn)
 
 	for {
-		Write(conn, prompt)
+		Write(conn, prompter.GetPrompt())
 
 		input, err := reader.ReadString('\n')
 		input = strings.Trim(input, "\r\n")
@@ -63,12 +86,21 @@ func GetRawUserInputSuffix(conn io.ReadWriter, prompt string, suffix string) str
 	return ""
 }
 
+func GetRawUserInputP(conn io.ReadWriter, prompter Prompter) string {
+	return GetRawUserInputSuffixP(conn, prompter, "")
+}
+
 func GetRawUserInput(conn io.ReadWriter, prompt string) string {
-	return GetRawUserInputSuffix(conn, prompt, "")
+	return GetRawUserInputP(conn, SimplePrompter(prompt))
+}
+
+func GetUserInputP(conn io.ReadWriter, prompter Prompter) string {
+	input := GetRawUserInputP(conn, prompter)
+	return Simplify(input)
 }
 
 func GetUserInput(conn io.ReadWriter, prompt string) string {
-	input := GetRawUserInput(conn, prompt)
+	input := GetUserInputP(conn, SimplePrompter(prompt))
 	return Simplify(input)
 }
 

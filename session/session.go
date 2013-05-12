@@ -24,7 +24,6 @@ type Session struct {
 	prompt string
 
 	userInputChannel chan string
-	promptChannel    chan string
 	inputModeChannel chan userInputMode
 	panicChannel     chan interface{}
 	eventChannel     chan model.Event
@@ -54,7 +53,6 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 	session.prompt = "%h/%H> "
 
 	session.userInputChannel = make(chan string)
-	session.promptChannel = make(chan string)
 	session.inputModeChannel = make(chan userInputMode)
 	session.panicChannel = make(chan interface{})
 	session.eventChannel = model.Register(session.player)
@@ -150,14 +148,13 @@ func (session *Session) Exec() {
 
 		for {
 			mode := <-session.inputModeChannel
-			prompt := utils.Colorize(session.user.GetColorMode(), utils.ColorWhite, <-session.promptChannel)
 			input := ""
 
 			switch mode {
 			case CleanUserInput:
-				input = utils.GetUserInput(session.conn, prompt)
+				input = utils.GetUserInputP(session.conn, session) // TODO - Check thread safety
 			case RawUserInput:
-				input = utils.GetRawUserInput(session.conn, prompt)
+				input = utils.GetRawUserInputP(session.conn, session)
 			default:
 				panic("Unhandled case in switch statement (userInputMode)")
 			}
@@ -175,7 +172,7 @@ func (session *Session) Exec() {
 
 	// Main loop
 	for {
-		input := session.getUserInput(RawUserInput, session.getPrompt())
+		input := session.getUserInput(RawUserInput, session.GetPrompt())
 		if input == "" || input == "logout" || input == "quit" {
 			return
 		}
@@ -246,7 +243,6 @@ func (session *Session) execMenu(menu utils.Menu) (string, bson.ObjectId) {
 // either the next user input or the next event.
 func (session *Session) getUserInput(inputMode userInputMode, prompt string) string {
 	session.inputModeChannel <- inputMode
-	session.promptChannel <- prompt
 
 	for {
 		select {
@@ -257,15 +253,21 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 				continue
 			}
 
-			message := event.ToString(session.player)
-			if message != "" {
-				session.asyncMessage(message)
-				session.printString(session.getPrompt())
-			}
-
 			if event.Type() == model.TellEventType {
 				tellEvent := event.(model.TellEvent)
 				session.replyId = tellEvent.From.GetId()
+			} else if event.Type() == model.CombatEventType {
+				combatEvent := event.(model.CombatEvent)
+
+				if combatEvent.Defender == session.player {
+					session.player.Hit(combatEvent.Damage)
+				}
+			}
+
+			message := event.ToString(session.player)
+			if message != "" {
+				session.asyncMessage(message)
+				session.printString(session.GetPrompt())
 			}
 
 		case quitMessage := <-session.panicChannel:
@@ -275,11 +277,12 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 	panic("Unexpected code path")
 }
 
-func (session *Session) getPrompt() string {
+func (session *Session) GetPrompt() string {
 	prompt := session.prompt
 	prompt = strings.Replace(prompt, "%h", strconv.Itoa(session.player.GetHitPoints()), -1)
 	prompt = strings.Replace(prompt, "%H", strconv.Itoa(session.player.GetHealth()), -1)
-	return prompt
+
+    return utils.Colorize(session.user.GetColorMode(), utils.ColorWhite, prompt)
 }
 
 // vim: nocindent
