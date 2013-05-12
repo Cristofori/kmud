@@ -282,7 +282,7 @@ func (session *Session) GetPrompt() string {
 	prompt = strings.Replace(prompt, "%h", strconv.Itoa(session.player.GetHitPoints()), -1)
 	prompt = strings.Replace(prompt, "%H", strconv.Itoa(session.player.GetHealth()), -1)
 
-    return utils.Colorize(session.user.GetColorMode(), utils.ColorWhite, prompt)
+	return utils.Colorize(session.user.GetColorMode(), utils.ColorWhite, prompt)
 }
 
 // vim: nocindent
