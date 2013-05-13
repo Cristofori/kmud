@@ -253,6 +253,11 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 
 				if combatEvent.Defender == session.player {
 					session.player.Hit(combatEvent.Damage)
+					if session.player.GetHitPoints() <= 0 {
+						session.asyncMessage(">> You're dead <<")
+						model.StopFight(combatEvent.Defender)
+						model.StopFight(combatEvent.Attacker)
+					}
 				}
 			} else if event.Type() == model.TimerEventType {
 				if !model.InCombat(session.player) {
