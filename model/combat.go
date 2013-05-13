@@ -44,6 +44,21 @@ func StopFight(attacker *database.Character) {
 	}
 }
 
+func InCombat(character *database.Character) bool {
+	_, found := fights[character]
+
+	if found {
+		return true
+	}
+
+	for _, defender := range fights {
+		if defender == character {
+			return true
+		}
+	}
+	return false
+}
+
 func combatLoop() {
 	for {
 		time.Sleep(3 * time.Second)

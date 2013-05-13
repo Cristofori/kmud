@@ -172,8 +172,13 @@ func (self *Character) Hit(hitpoints int) int {
 }
 
 func (self *Character) Heal(hitpoints int) int {
-	self.SetHitPoints(self.GetHitPoints() + hitpoints)
-	return self.GetHitPoints()
+	hps := self.GetHitPoints() + hitpoints
+	if hps > self.GetHealth() {
+		hps = self.GetHealth()
+	}
+
+	self.SetHitPoints(hps)
+	return hps
 }
 
 // vim: nocindent

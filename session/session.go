@@ -262,6 +262,16 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 				if combatEvent.Defender == session.player {
 					session.player.Hit(combatEvent.Damage)
 				}
+			} else if event.Type() == model.TimerEventType {
+				if !model.InCombat(session.player) {
+					oldHps := session.player.GetHitPoints()
+					newHps := session.player.Heal(5)
+
+					if oldHps != newHps {
+						session.clearLine()
+						session.printString(session.GetPrompt())
+					}
+				}
 			}
 
 			message := event.ToString(session.player)

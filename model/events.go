@@ -7,6 +7,7 @@ import (
 	"kmud/utils"
 	"labix.org/v2/mgo/bson"
 	"sync"
+	"time"
 )
 
 var _listeners map[chan Event]*database.Character
@@ -63,6 +64,24 @@ func eventLoop() {
 		}
 	}()
 
+	go func() {
+		lastTime := time.Now()
+		delay := time.Duration(1000) * time.Millisecond
+
+		for {
+
+			diff := time.Since(lastTime)
+
+			if diff < delay {
+				time.Sleep(delay - diff)
+			}
+
+			queueEvent(TimerEvent{})
+
+			lastTime = time.Now()
+		}
+	}()
+
 	for {
 		cond.L.Lock()
 		for eventQueue.Len() == 0 {
@@ -103,6 +122,7 @@ const (
 	CombatStartEventType EventType = iota
 	CombatStopEventType  EventType = iota
 	CombatEventType      EventType = iota
+	TimerEventType       EventType = iota
 )
 
 type Event interface {
@@ -168,6 +188,9 @@ type CombatEvent struct {
 	Attacker *database.Character
 	Defender *database.Character
 	Damage   int
+}
+
+type TimerEvent struct {
 }
 
 func (self BroadcastEvent) Type() EventType {
@@ -375,6 +398,20 @@ func (self CombatEvent) ToString(receiver *database.Character) string {
 
 func (self CombatEvent) IsFor(receiver *database.Character) bool {
 	return receiver == self.Attacker || receiver == self.Defender
+}
+
+// Timer
+
+func (self TimerEvent) Type() EventType {
+	return TimerEventType
+}
+
+func (self TimerEvent) ToString(receiver *database.Character) string {
+	return ""
+}
+
+func (self TimerEvent) IsFor(receiver *database.Character) bool {
+	return true
 }
 
 // vim: nocindent
