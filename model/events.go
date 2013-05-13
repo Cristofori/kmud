@@ -65,20 +65,11 @@ func eventLoop() {
 	}()
 
 	go func() {
-		lastTime := time.Now()
-		delay := time.Duration(1000) * time.Millisecond
+		throttler := utils.NewThrottler(1 * time.Second)
 
 		for {
-
-			diff := time.Since(lastTime)
-
-			if diff < delay {
-				time.Sleep(delay - diff)
-			}
-
+			throttler.Sync()
 			queueEvent(TimerEvent{})
-
-			lastTime = time.Now()
 		}
 	}()
 

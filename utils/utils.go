@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -312,6 +313,30 @@ func FindAndCallMethod(object interface{}, name string, a ...interface{}) bool {
 	}
 
 	return found
+}
+
+// Throttler is a simple utility class that allows events to occur on a
+// deterministic recurring basis. Every call to Sync() will block until the
+// duration of the Throttler's interval has passed since the last call to
+// Sync()
+type Throttler struct {
+	lastTime time.Time
+	interval time.Duration
+}
+
+func NewThrottler(interval time.Duration) *Throttler {
+	var throttler Throttler
+	throttler.lastTime = time.Now()
+	throttler.interval = interval
+	return &throttler
+}
+
+func (self *Throttler) Sync() {
+	diff := time.Since(self.lastTime)
+	if diff < self.interval {
+		time.Sleep(self.interval - diff)
+	}
+	self.lastTime = time.Now()
 }
 
 // vim: nocindent

@@ -142,9 +142,7 @@ func (session *Session) Exec() {
 			}
 		}()
 
-		lastTime := time.Now()
-
-		delay := time.Duration(200) * time.Millisecond
+		throttler := utils.NewThrottler(1000 * time.Millisecond)
 
 		for {
 			mode := <-session.inputModeChannel
@@ -159,14 +157,8 @@ func (session *Session) Exec() {
 				panic("Unhandled case in switch statement (userInputMode)")
 			}
 
-			diff := time.Since(lastTime)
-
-			if diff < delay {
-				time.Sleep(delay - diff)
-			}
-
+			throttler.Sync()
 			session.userInputChannel <- input
-			lastTime = time.Now()
 		}
 	}()
 
