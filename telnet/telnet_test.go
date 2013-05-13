@@ -90,7 +90,7 @@ func Test_Processor(t *testing.T) {
 		t.Errorf("Subdata should have been nil")
 	}
 
-	data = append(data, WillEcho()...)
+	data = append(data, BuildCommand(WILL, ECHO)...)
 	telnet.Write(data)
 	n, err = telnet.Read(readBuffer)
 	result = readBuffer[:n]
@@ -119,9 +119,9 @@ func Test_Processor(t *testing.T) {
 
 	subData := []byte{'\x00', '\x12', '\x99'}
 
-	data = append(data, buildCommand(SB, WS)...)
+	data = append(data, BuildCommand(SB, WS)...)
 	data = append(data, subData...)
-	data = append(data, buildCommand(SE)...)
+	data = append(data, BuildCommand(SE)...)
 
 	fmt.Println("Data:", data)
 
@@ -158,9 +158,9 @@ func Test_Processor(t *testing.T) {
 	subData = []byte{'\x00', '\x12', '\x99', '\xFF', '\xFF', '\x42'}
 	wantedSubData := []byte{'\x00', '\x12', '\x99', '\xFF', '\x42'}
 
-	data = append(data, buildCommand(SB, WS)...)
+	data = append(data, BuildCommand(SB, WS)...)
 	data = append(data, subData...)
-	data = append(data, buildCommand(SE)...)
+	data = append(data, BuildCommand(SE)...)
 
 	telnet.Write(data)
 	n, err = telnet.Read(readBuffer)
