@@ -64,16 +64,15 @@ func GetRawUserInputSuffix(conn io.ReadWriter, prompt string, suffix string) str
 }
 
 func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string) string {
-	reader := bufio.NewReader(conn)
+	scanner := bufio.NewScanner(conn)
 
 	for {
 		Write(conn, prompter.GetPrompt())
 
-		input, err := reader.ReadString('\n')
-		input = strings.Trim(input, "\r\n")
+		scanner.Scan()
+		PanicIfError(scanner.Err())
 
-		PanicIfError(err)
-
+		input := scanner.Text()
 		Write(conn, suffix)
 
 		if input == "x" || input == "X" {
