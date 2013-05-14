@@ -434,7 +434,7 @@ func (self *Server) Start() {
 	self.listener, err = net.Listen("tcp", ":8945")
 	utils.HandleError(err)
 
-	err = model.Init(session.Copy())
+	err = model.Init(database.NewMongoSession(session.Copy()))
 
 	// If there are no rooms at all create one
 	rooms := model.M.GetRooms()

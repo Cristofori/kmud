@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"kmud/database"
 	"kmud/utils"
-	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"sync"
 )
@@ -457,7 +456,7 @@ func (self *globalModel) DeleteItem(id bson.ObjectId) {
 }
 
 // Initializes the global model object and starts up the main event loop
-func Init(session *mgo.Session) error {
+func Init(session database.Session) error {
 	database.Init(session)
 
 	M = globalModel{}

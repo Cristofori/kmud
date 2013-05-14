@@ -4,22 +4,48 @@ import (
 	"errors"
 	"fmt"
 	"kmud/utils"
-	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 )
 
+type Session interface {
+	DB(string) Database
+}
+
+type Database interface {
+	C(string) Collection
+}
+
+type Collection interface {
+	Find(interface{}) Query
+	RemoveId(interface{}) error
+	Remove(interface{}) error
+	DropCollection() error
+	UpdateId(interface{}, interface{}) error
+	UpsertId(interface{}, interface{}) error
+}
+
+type Query interface {
+	Count() (int, error)
+	One(interface{}) error
+	Iter() Iterator
+}
+
+type Iterator interface {
+	All(interface{}) error
+}
+
 type UpdateOperation struct {
 	id         bson.ObjectId
-	collection *mgo.Collection
+	collection Collection
 	field      string
 	value      interface{}
 }
 
-var session *mgo.Session
+var session Session
 
 var updateChannel chan UpdateOperation
 
-func Init(s *mgo.Session) {
+func Init(s Session) {
 	session = s
 	updateChannel = make(chan UpdateOperation)
 	go processUpdates()
@@ -38,11 +64,11 @@ func processUpdates() {
 	}
 }
 
-func getCollection(collection collectionName) *mgo.Collection {
+func getCollection(collection collectionName) Collection {
 	return session.DB("mud").C(string(collection))
 }
 
-func getCollectionFromType(t objectType) *mgo.Collection {
+func getCollectionFromType(t objectType) Collection {
 	switch t {
 	case characterType:
 		return getCollection(cCharacters)
@@ -302,13 +328,13 @@ func DeleteAllRooms() {
 	c.DropCollection()
 }
 
-func commitObject(c *mgo.Collection, object Identifiable) error {
-	_, err := c.UpsertId(object.GetId(), object)
+func commitObject(c Collection, object Identifiable) error {
+	err := c.UpsertId(object.GetId(), object)
 	printError(err)
 	return err
 }
 
-func updateField(c *mgo.Collection, id bson.ObjectId, fieldName string, fieldValue interface{}) error {
+func updateField(c Collection, id bson.ObjectId, fieldName string, fieldValue interface{}) error {
 	err := c.UpdateId(id, bson.M{"$set": bson.M{fieldName: fieldValue}})
 	return err
 }
