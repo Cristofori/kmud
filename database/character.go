@@ -64,7 +64,7 @@ func (self *Character) IsPlayer() bool {
 }
 
 func (self *Character) GetRoomId() bson.ObjectId {
-	return self.Fields[characterRoomId].(bson.ObjectId)
+	return self.getField(characterRoomId).(bson.ObjectId)
 }
 
 func (self *Character) SetRoom(id bson.ObjectId) {
