@@ -134,7 +134,7 @@ func (s Users) Len() int {
 }
 
 func (s Users) Less(i, j int) bool {
-	return s[i].PrettyName() < s[j].PrettyName()
+	return utils.NaturalLessThan(s[i].PrettyName(), s[j].PrettyName())
 }
 
 func (s Users) Swap(i, j int) {

@@ -18,8 +18,12 @@ func (s SortableStrings) Swap(i, j int) {
 }
 
 func (s SortableStrings) Less(i, j int) bool {
-	pieces1 := piecesOf(s[i])
-	pieces2 := piecesOf(s[j])
+	return NaturalLessThan(s[i], s[j])
+}
+
+func NaturalLessThan(str1, str2 string) bool {
+	pieces1 := piecesOf(str1)
+	pieces2 := piecesOf(str2)
 
 	for i, piece1 := range pieces1 {
 		if i >= len(pieces2) {
