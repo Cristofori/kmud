@@ -115,7 +115,7 @@ func (self *DbObject) initDbObject(name string, objType objectType) {
 	self.objType = objType
 	self.Fields = map[string]interface{}{}
 
-	commitObject(getCollectionFromType(objType), *self)
+	commitObject(getCollectionFromType(objType), self)
 	self.SetName(name)
 }
 
@@ -123,11 +123,11 @@ func (self DbObject) GetId() bson.ObjectId {
 	return self.Id
 }
 
-func (self DbObject) GetType() objectType {
+func (self *DbObject) GetType() objectType {
 	return self.objType
 }
 
-func (self DbObject) PrettyName() string {
+func (self *DbObject) PrettyName() string {
 	return utils.FormatName(self.GetName())
 }
 
@@ -136,7 +136,7 @@ func (self *DbObject) setField(key string, value interface{}) {
 	self.Fields[key] = value
 	self.mutex.Unlock()
 
-	updateObject(*self, "fields."+key, value)
+	updateObject(self, "fields."+key, value)
 }
 
 func (self *DbObject) getField(key string) interface{} {

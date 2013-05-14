@@ -339,23 +339,23 @@ func updateField(c Collection, id bson.ObjectId, fieldName string, fieldValue in
 	return err
 }
 
-func CommitUser(user User) error {
+func CommitUser(user *User) error {
 	return commitObject(getCollection(cUsers), user)
 }
 
-func CommitRoom(room Room) error {
+func CommitRoom(room *Room) error {
 	return commitObject(getCollection(cRooms), room)
 }
 
-func CommitCharacter(character Character) error {
+func CommitCharacter(character *Character) error {
 	return commitObject(getCollection(cCharacters), character)
 }
 
-func CommitZone(zone Zone) error {
+func CommitZone(zone *Zone) error {
 	return commitObject(getCollection(cZones), zone)
 }
 
-func CommitItem(item Item) error {
+func CommitItem(item *Item) error {
 	return commitObject(getCollection(cItems), item)
 }
 
