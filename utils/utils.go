@@ -82,9 +82,6 @@ func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string
 			return input
 		}
 	}
-
-	panic("Unexpected code path")
-	return ""
 }
 
 func GetRawUserInputP(conn io.ReadWriter, prompter Prompter) string {
@@ -196,7 +193,7 @@ func ValidateName(name string) error {
 }
 
 func MonitorChannel() {
-	// TODO: See if there's a way to take in a generic channel and see how close it is to being full 
+	// TODO: See if there's a way to take in a generic channel and see how close it is to being full
 }
 
 // BestMatch searches the given list for the given pattern, the index of the

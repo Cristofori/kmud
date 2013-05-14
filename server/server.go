@@ -95,9 +95,6 @@ func login(conn *wrappedConnection) *database.User {
 			return user
 		}
 	}
-
-	panic("Unexpected code path")
-	return nil
 }
 
 func newUser(conn *wrappedConnection) *database.User {
@@ -142,9 +139,6 @@ func newUser(conn *wrappedConnection) *database.User {
 			return user
 		}
 	}
-
-	panic("Unexpected code path")
-	return nil
 }
 
 func newPlayer(conn *wrappedConnection, user *database.User) *database.Character {
@@ -168,9 +162,6 @@ func newPlayer(conn *wrappedConnection, user *database.User) *database.Character
 			return model.M.CreatePlayer(name, user, room)
 		}
 	}
-
-	panic("Unexpected code path")
-	return nil
 }
 
 func quit(conn *wrappedConnection) {
@@ -332,7 +323,7 @@ func handleConnection(conn *wrappedConnection) {
 				switch code {
 				case telnet.WS:
 					if len(data) != 4 {
-						fmt.Println("Malformed window size data %v:", data)
+						fmt.Println("Malformed window size data:", data)
 						return
 					}
 

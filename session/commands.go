@@ -153,7 +153,7 @@ func (ch *commandHandler) Map(args []string) {
 	for z := startZ; z <= endZ; z++ {
 		for y := startY; y <= endY; y++ {
 			for x := startX; x <= endX; x++ {
-				loc := database.Coordinate{x, y, z}
+				loc := database.Coordinate{X: x, Y: y, Z: z}
 				room := model.M.GetRoomByLocation(loc, ch.session.zone)
 
 				if room != nil {

@@ -134,7 +134,7 @@ func (session *Session) Exec() {
 
 	// Main routine in charge of actually reading input from the connection object,
 	// also has built in throttling to limit how fast we are allowed to process
-	// commands from the user. 
+	// commands from the user.
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -281,7 +281,6 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 			panic(quitMessage)
 		}
 	}
-	panic("Unexpected code path")
 }
 
 func (session *Session) GetPrompt() string {

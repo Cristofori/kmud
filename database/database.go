@@ -57,8 +57,6 @@ func getCollectionFromType(t objectType) *mgo.Collection {
 	default:
 		panic("database.updateObject: Unhandled object type")
 	}
-
-	return nil
 }
 
 type collectionName string

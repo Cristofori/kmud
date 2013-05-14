@@ -70,15 +70,17 @@ func (self *User) SetPassword(password string) {
 func (self *User) VerifyPassword(password string) bool {
 	return true // TODO
 
-	hashed := hash(password)
+	/*
+		hashed := hash(password)
 
-	for i, b := range self.GetPassword() {
-		if b != hashed[i] {
-			return false
+		for i, b := range self.GetPassword() {
+			if b != hashed[i] {
+				return false
+			}
 		}
-	}
 
-	return true
+		return true
+	*/
 }
 
 // GetPassword returns the SHA1 of the user's password

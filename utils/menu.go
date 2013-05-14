@@ -78,9 +78,6 @@ func (self *Menu) Exec(conn io.ReadWriter, cm ColorMode) (string, bson.ObjectId)
 			return action.key, action.data
 		}
 	}
-
-	panic("Unexpected code path")
-	return "", ""
 }
 
 func (self *Menu) Print(conn io.Writer, cm ColorMode) {
