@@ -5,6 +5,7 @@ go install kmud
 
 Dependencies
 ============
+Google Go v1.1
 MongoDB: www.mongodb.org 
 
 mgo: http://labix.org/mgo
