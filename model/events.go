@@ -44,7 +44,10 @@ func Unregister(listener chan Event) {
 	character.SetOnline(false)
 
 	queueEvent(LogoutEvent{character})
+
+	_mutex.Lock()
 	delete(_listeners, listener)
+	_mutex.Unlock()
 }
 
 func eventLoop() {
@@ -91,11 +94,13 @@ func queueEvent(event Event) {
 }
 
 func broadcast(event Event) {
+	_mutex.Lock()
 	for listener := range _listeners {
 		if event.IsFor(_listeners[listener]) {
 			listener <- event
 		}
 	}
+	_mutex.Unlock()
 }
 
 type EventType int

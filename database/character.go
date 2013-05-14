@@ -43,10 +43,15 @@ func NewNpc(name string, roomId bson.ObjectId) *Character {
 }
 
 func (self *Character) SetOnline(online bool) {
+	self.mutex.Lock()
 	self.online = online
+	self.mutex.Unlock()
 }
 
 func (self *Character) IsOnline() bool {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
 	return self.online || self.IsNpc()
 }
 
