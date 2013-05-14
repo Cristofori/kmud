@@ -142,7 +142,7 @@ func (session *Session) Exec() {
 			}
 		}()
 
-		throttler := utils.NewThrottler(1000 * time.Millisecond)
+		throttler := utils.NewThrottler(200 * time.Millisecond)
 
 		for {
 			mode := <-session.inputModeChannel
