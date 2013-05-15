@@ -113,6 +113,18 @@ func (self *Character) RemoveItem(item *Item) {
 	}
 }
 
+func (self *Character) HasItem(item *Item) bool {
+	items := self.GetItemIds()
+
+	for _, itemId := range items {
+		if itemId == item.GetId() {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (self *Character) GetItemIds() []bson.ObjectId {
 	if self.hasField(characterInventory) {
 		return self.getField(characterInventory).([]bson.ObjectId)
@@ -157,6 +169,15 @@ func CharacterNames(characters []*Character) []string {
 
 func (self *Character) SetHealth(health int) {
 	self.setField(characterHealth, health)
+
+	// TODO - Fix this after we get around to using the mark and sweep database back-end
+	//        and we don't have to deal with all the type assertions that we use and
+	//        nil interfaces we get.
+
+	// This code panics
+	// if self.GetHitPoints() > self.GetHealth() {
+	//     self.SetHitPoints(self.GetHealth())
+	// }
 }
 
 func (self *Character) GetHealth() int {
@@ -164,6 +185,10 @@ func (self *Character) GetHealth() int {
 }
 
 func (self *Character) SetHitPoints(hitpoints int) {
+	if hitpoints > self.GetHealth() {
+		hitpoints = self.GetHealth()
+	}
+
 	self.setField(characterHitPoints, hitpoints)
 }
 
@@ -176,14 +201,8 @@ func (self *Character) Hit(hitpoints int) int {
 	return self.GetHitPoints()
 }
 
-func (self *Character) Heal(hitpoints int) int {
-	hps := self.GetHitPoints() + hitpoints
-	if hps > self.GetHealth() {
-		hps = self.GetHealth()
-	}
-
-	self.SetHitPoints(hps)
-	return hps
+func (self *Character) Heal(hitpoints int) {
+	self.SetHitPoints(self.GetHitPoints() + hitpoints)
 }
 
 // vim: nocindent
