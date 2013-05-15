@@ -262,7 +262,8 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 			} else if event.Type() == model.TimerEventType {
 				if !model.InCombat(session.player) {
 					oldHps := session.player.GetHitPoints()
-					newHps := session.player.Heal(5)
+					session.player.Heal(5)
+					newHps := session.player.GetHitPoints()
 
 					if oldHps != newHps {
 						session.clearLine()
