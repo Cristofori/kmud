@@ -119,7 +119,7 @@ func (self *DbObject) initDbObject(name string, objType objectType) {
 	self.SetName(name)
 }
 
-func (self DbObject) GetId() bson.ObjectId {
+func (self *DbObject) GetId() bson.ObjectId {
 	return self.Id
 }
 
