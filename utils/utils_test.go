@@ -168,20 +168,6 @@ func Test_BestMatch(t *testing.T) {
 	}
 }
 
-func compareStringLists(l1 []string, l2 []string) bool {
-	if len(l1) != len(l2) {
-		return false
-	}
-
-	for i, str := range l1 {
-		if str != l2[i] {
-			return false
-		}
-	}
-
-	return true
-}
-
 func Test_Argify(t *testing.T) {
 	var tests = []struct {
 		input   string
@@ -199,7 +185,7 @@ func Test_Argify(t *testing.T) {
 	for _, test := range tests {
 		result1, result2 := Argify(test.input)
 
-		if result1 != test.output1 || compareStringLists(result2, test.output2) == false {
+		if result1 != test.output1 || reflect.DeepEqual(result2, test.output2) == false {
 			t.Errorf("Argify(%v) == %v, %v. Want %v, %v", test.input, result1, result2, test.output1, test.output2)
 		}
 	}
@@ -232,7 +218,7 @@ func Test_TrimUpperRows(t *testing.T) {
 	for _, test := range tests {
 		result := TrimUpperRows(test.input)
 
-		if compareStringLists(result, test.output) == false {
+		if reflect.DeepEqual(result, test.output) == false {
 			t.Errorf("TrimUpperRows(\n%v) == \n%v,\nWanted: \n%v", test.input, result, test.output)
 		}
 	}
@@ -265,7 +251,7 @@ func Test_TrimLowerRows(t *testing.T) {
 	for _, test := range tests {
 		result := TrimLowerRows(test.input)
 
-		if compareStringLists(result, test.output) == false {
+		if reflect.DeepEqual(result, test.output) == false {
 			t.Errorf("TrimLowerRows(\n%v) == \n%v,\nWanted: \n%v", test.input, result, test.output)
 		}
 	}

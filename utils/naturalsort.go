@@ -47,7 +47,7 @@ func NaturalLessThan(str1, str2 string) bool {
 }
 
 func piecesOf(str string) []string {
-	var pieces []string
+	pieces := []string{}
 
 	if len(str) == 0 {
 		return pieces

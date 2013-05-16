@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"reflect"
 	"sort"
 	"testing"
 )
@@ -20,7 +21,7 @@ func Test_piecesOf(t *testing.T) {
 	for _, test := range tests {
 		result := piecesOf(test.input)
 
-		if compareStringLists(result, test.output) == false {
+		if reflect.DeepEqual(result, test.output) == false {
 			t.Errorf("piecesOf(%v) == %v. Want %v", test.input, result, test.output)
 		}
 	}
@@ -79,7 +80,7 @@ func Test_sort(t *testing.T) {
 
 	sort.Sort(input)
 
-	if compareStringLists(input, output) == false {
+	if reflect.DeepEqual(input, output) == false {
 		t.Errorf("Undeisred sorting result: %v\n", input)
 		t.Errorf("Wanted  : %v\n", output)
 	}
