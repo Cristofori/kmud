@@ -5,16 +5,15 @@ import (
 	"io"
 	"kmud/utils"
 	"net"
-)
-
-const (
-	userColorMode string = "colormode"
-	userPassword  string = "password"
+	"reflect"
 )
 
 type User struct {
-	DbObject     `bson:",inline"`
-	colorMode    utils.ColorMode
+	DbObject `bson:",inline"`
+
+	ColorMode utils.ColorMode
+	Password  []byte
+
 	online       bool
 	conn         net.Conn
 	windowWidth  int
@@ -49,11 +48,20 @@ func (self *User) Online() bool {
 }
 
 func (self *User) SetColorMode(cm utils.ColorMode) {
-	self.setField(userColorMode, cm)
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	if cm != self.ColorMode {
+		self.ColorMode = cm
+		modified(self)
+	}
 }
 
 func (self *User) GetColorMode() utils.ColorMode {
-	return self.getField(userColorMode).(utils.ColorMode)
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	return self.ColorMode
 }
 
 func hash(data string) []byte {
@@ -64,32 +72,28 @@ func hash(data string) []byte {
 
 // SetPassword SHA1 hashes the password before saving it to the database
 func (self *User) SetPassword(password string) {
-	self.setField(userPassword, hash(userPassword))
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	hashed := hash(password)
+
+	if !reflect.DeepEqual(hashed, self.Password) {
+		self.Password = hashed
+		modified(self)
+	}
 }
 
 func (self *User) VerifyPassword(password string) bool {
-	return true // TODO
-
-	/*
-		hashed := hash(password)
-
-		for i, b := range self.GetPassword() {
-			if b != hashed[i] {
-				return false
-			}
-		}
-
-		return true
-	*/
+	hashed := hash(password)
+	return reflect.DeepEqual(hashed, self.GetPassword())
 }
 
 // GetPassword returns the SHA1 of the user's password
 func (self *User) GetPassword() []byte {
-	if self.hasField(userPassword) {
-		return self.getField(userPassword).([]byte)
-	}
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
-	return []byte{}
+	return self.Password
 }
 
 func (self *User) SetConnection(conn net.Conn) {

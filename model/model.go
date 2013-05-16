@@ -523,7 +523,7 @@ func MoveCharacterToLocation(character *database.Character, zone *database.Zone,
 
 	oldRoom := M.GetRoom(character.GetRoomId())
 
-	character.SetRoom(newRoom.GetId())
+	character.SetRoomId(newRoom.GetId())
 
 	queueEvent(EnterEvent{Character: character, RoomId: newRoom.GetId()})
 	queueEvent(LeaveEvent{Character: character, RoomId: oldRoom.GetId()})
@@ -534,7 +534,7 @@ func MoveCharacterToLocation(character *database.Character, zone *database.Zone,
 // MoveCharacterTo room moves the character to the given room
 func MoveCharacterToRoom(character *database.Character, newRoom *database.Room) {
 	oldRoomId := character.GetRoomId()
-	character.SetRoom(newRoom.GetId())
+	character.SetRoomId(newRoom.GetId())
 
 	queueEvent(EnterEvent{Character: character, RoomId: newRoom.GetId()})
 	queueEvent(LeaveEvent{Character: character, RoomId: oldRoomId})

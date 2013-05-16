@@ -3,9 +3,7 @@ package database
 import (
 	"fmt"
 	"kmud/utils"
-	"labix.org/v2/mgo/bson"
 	"strings"
-	"sync"
 )
 
 type Coordinate struct {
@@ -13,60 +11,6 @@ type Coordinate struct {
 	Y int
 	Z int
 }
-
-// All database types should meet this interface
-type Identifiable interface {
-	GetId() bson.ObjectId
-	GetType() objectType
-}
-
-type Nameable interface {
-	PrettyName() string
-}
-
-type objectType int
-
-const (
-	characterType objectType = iota
-	roomType      objectType = iota
-	userType      objectType = iota
-	zoneType      objectType = iota
-	itemType      objectType = iota
-)
-
-const (
-	dbObjectName string = "name"
-)
-
-type DbObject struct {
-	Id      bson.ObjectId `bson:"_id"`
-	objType objectType
-	Fields  map[string]interface{}
-	mutex   sync.RWMutex
-}
-
-type ExitDirection int
-
-const (
-	DirectionNone      ExitDirection = iota
-	DirectionNorth     ExitDirection = iota
-	DirectionNorthEast ExitDirection = iota
-	DirectionEast      ExitDirection = iota
-	DirectionSouthEast ExitDirection = iota
-	DirectionSouth     ExitDirection = iota
-	DirectionSouthWest ExitDirection = iota
-	DirectionWest      ExitDirection = iota
-	DirectionNorthWest ExitDirection = iota
-	DirectionUp        ExitDirection = iota
-	DirectionDown      ExitDirection = iota
-)
-
-type PrintMode int
-
-const (
-	ReadMode PrintMode = iota
-	EditMode PrintMode = iota
-)
 
 func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) string {
 
@@ -108,58 +52,6 @@ func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) s
 	}
 
 	panic("Unexpected code path")
-}
-
-func (self *DbObject) initDbObject(name string, objType objectType) {
-	self.Id = bson.NewObjectId()
-	self.objType = objType
-	self.Fields = map[string]interface{}{}
-
-	commitObject(getCollectionFromType(objType), self)
-	self.SetName(name)
-}
-
-func (self *DbObject) GetId() bson.ObjectId {
-	return self.Id
-}
-
-func (self *DbObject) GetType() objectType {
-	return self.objType
-}
-
-func (self *DbObject) PrettyName() string {
-	return utils.FormatName(self.GetName())
-}
-
-func (self *DbObject) setField(key string, value interface{}) {
-	self.mutex.Lock()
-	self.Fields[key] = value
-	self.mutex.Unlock()
-
-	updateObject(self, "fields."+key, value)
-}
-
-func (self *DbObject) getField(key string) interface{} {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
-
-	return self.Fields[key]
-}
-
-func (self *DbObject) hasField(key string) bool {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
-
-	_, found := self.Fields[key]
-	return found
-}
-
-func (self *DbObject) SetName(name string) {
-	self.setField(dbObjectName, name)
-}
-
-func (self *DbObject) GetName() string {
-	return self.getField(dbObjectName).(string)
 }
 
 func (self *Coordinate) Next(direction ExitDirection) Coordinate {

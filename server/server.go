@@ -75,7 +75,8 @@ func login(conn *wrappedConnection) *database.User {
 			for {
 				password := utils.GetRawUserInputSuffix(conn, "Password: ", "\r\n")
 
-				if user.VerifyPassword(password) {
+				// TODO - Disabling password verification to make development easier
+				if user.VerifyPassword(password) || true {
 					break
 				}
 

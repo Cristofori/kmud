@@ -147,7 +147,7 @@ func Test_Character(t *testing.T) {
 	testutils.Assert(!character.IsPlayer(), t, "Character with no userId should NOT be a Player")
 	testutils.Assert(character.IsOnline(), t, "NPCs should always be considered as online")
 
-	character.SetUser(fakeId)
+	character.SetUserId(fakeId)
 
 	testutils.Assert(character.GetUserId() == fakeId, t, "Call to character.SetUser() failed", fakeId, character.GetUserId())
 	testutils.Assert(!character.IsNpc(), t, "Character with a userId should NOT be an NPC")
@@ -158,7 +158,7 @@ func Test_Character(t *testing.T) {
 
 	testutils.Assert(character.IsOnline(), t, "Call to character.SetOnline(true) failed")
 
-	character.SetRoom(fakeId)
+	character.SetRoomId(fakeId)
 
 	testutils.Assert(character.GetRoomId() == fakeId, t, "Call to character.SetRoom() failed", fakeId, character.GetRoomId())
 

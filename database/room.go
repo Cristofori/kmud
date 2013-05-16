@@ -8,27 +8,48 @@ import (
 	"strings"
 )
 
-const (
-	roomZoneId        string = "zoneid"
-	roomTitle         string = "title"
-	roomDescription   string = "description"
-	roomItems         string = "items"
-	roomLocation      string = "location"
-	roomExitNorth     string = "exitnorth"
-	roomExitNorthEast string = "exitnortheast"
-	roomExitEast      string = "exiteast"
-	roomExitSouthEast string = "exitsoutheast"
-	roomExitSouth     string = "exitsouth"
-	roomExitSouthWest string = "exitsouthwest"
-	roomExitWest      string = "exitwest"
-	roomExitNorthWest string = "exitnorthwest"
-	roomExitUp        string = "exitup"
-	roomExitDown      string = "exitdown"
-)
-
 type Room struct {
 	DbObject `bson:",inline"`
+
+	ZoneId        bson.ObjectId
+	Title         string
+	Description   string
+	Items         []bson.ObjectId
+	Location      Coordinate
+	ExitNorth     bool
+	ExitNorthEast bool
+	ExitEast      bool
+	ExitSouthEast bool
+	ExitSouth     bool
+	ExitSouthWest bool
+	ExitWest      bool
+	ExitNorthWest bool
+	ExitUp        bool
+	ExitDown      bool
 }
+
+type ExitDirection int
+
+const (
+	DirectionNone      ExitDirection = iota
+	DirectionNorth     ExitDirection = iota
+	DirectionNorthEast ExitDirection = iota
+	DirectionEast      ExitDirection = iota
+	DirectionSouthEast ExitDirection = iota
+	DirectionSouth     ExitDirection = iota
+	DirectionSouthWest ExitDirection = iota
+	DirectionWest      ExitDirection = iota
+	DirectionNorthWest ExitDirection = iota
+	DirectionUp        ExitDirection = iota
+	DirectionDown      ExitDirection = iota
+)
+
+type PrintMode int
+
+const (
+	ReadMode PrintMode = iota
+	EditMode PrintMode = iota
+)
 
 func NewRoom(zoneId bson.ObjectId) *Room {
 	var room Room
@@ -164,113 +185,178 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 }
 
 func (self *Room) HasExit(dir ExitDirection) bool {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
 	switch dir {
 	case DirectionNorth:
-		return self.getField(roomExitNorth).(bool)
+		return self.ExitNorth
 	case DirectionNorthEast:
-		return self.getField(roomExitNorthEast).(bool)
+		return self.ExitNorthEast
 	case DirectionEast:
-		return self.getField(roomExitEast).(bool)
+		return self.ExitEast
 	case DirectionSouthEast:
-		return self.getField(roomExitSouthEast).(bool)
+		return self.ExitSouthEast
 	case DirectionSouth:
-		return self.getField(roomExitSouth).(bool)
+		return self.ExitSouth
 	case DirectionSouthWest:
-		return self.getField(roomExitSouthWest).(bool)
+		return self.ExitSouthWest
 	case DirectionWest:
-		return self.getField(roomExitWest).(bool)
+		return self.ExitWest
 	case DirectionNorthWest:
-		return self.getField(roomExitNorthWest).(bool)
+		return self.ExitNorthWest
 	case DirectionUp:
-		return self.getField(roomExitUp).(bool)
+		return self.ExitUp
 	case DirectionDown:
-		return self.getField(roomExitDown).(bool)
+		return self.ExitDown
 	}
 
 	panic("Unexpected code path")
 }
 
 func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
 	switch dir {
 	case DirectionNorth:
-		self.setField(roomExitNorth, enabled)
+		self.ExitNorth = enabled
 	case DirectionNorthEast:
-		self.setField(roomExitNorthEast, enabled)
+		self.ExitNorthEast = enabled
 	case DirectionEast:
-		self.setField(roomExitEast, enabled)
+		self.ExitEast = enabled
 	case DirectionSouthEast:
-		self.setField(roomExitSouthEast, enabled)
+		self.ExitSouthEast = enabled
 	case DirectionSouth:
-		self.setField(roomExitSouth, enabled)
+		self.ExitSouth = enabled
 	case DirectionSouthWest:
-		self.setField(roomExitSouthWest, enabled)
+		self.ExitSouthWest = enabled
 	case DirectionWest:
-		self.setField(roomExitWest, enabled)
+		self.ExitWest = enabled
 	case DirectionNorthWest:
-		self.setField(roomExitNorthWest, enabled)
+		self.ExitNorthWest = enabled
 	case DirectionUp:
-		self.setField(roomExitUp, enabled)
+		self.ExitUp = enabled
 	case DirectionDown:
-		self.setField(roomExitDown, enabled)
+		self.ExitDown = enabled
 	}
+
+	modified(self)
 }
 
 func (self *Room) AddItem(item *Item) {
-	itemIds := self.GetItemIds()
-	itemIds = append(itemIds, item.GetId())
-	self.setField(roomItems, itemIds)
+	if !self.HasItem(item) {
+		self.mutex.Lock()
+		defer self.mutex.Unlock()
+
+		self.Items = append(self.Items, item.GetId())
+		modified(self)
+	}
 }
 
 func (self *Room) RemoveItem(item *Item) {
-	itemIds := self.GetItemIds()
-	for i, itemId := range itemIds {
-		if itemId == item.GetId() {
-			// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
-			itemIds = append(itemIds[:i], itemIds[i+1:]...)
-			self.setField(roomItems, itemIds)
-			return
+	if self.HasItem(item) {
+		self.mutex.Lock()
+		defer self.mutex.Unlock()
+
+		for i, itemId := range self.Items {
+			if itemId == item.GetId() {
+				// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
+				self.Items = append(self.Items[:i], self.Items[i+1:]...)
+				break
+			}
 		}
+
+		modified(self)
 	}
 }
 
-func (self *Room) SetTitle(title string) {
-	self.setField(roomTitle, title)
-}
+func (self *Room) HasItem(item *Item) bool {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
-func (self *Room) GetTitle() string {
-	return self.getField(roomTitle).(string)
-}
+	for _, itemId := range self.Items {
+		if itemId == item.GetId() {
+			return true
+		}
+	}
 
-func (self *Room) SetDescription(description string) {
-	self.setField(roomDescription, description)
-}
-
-func (self *Room) GetDescription() string {
-	return self.getField(roomDescription).(string)
-}
-
-func (self *Room) SetLocation(location Coordinate) {
-	self.setField(roomLocation, location)
-}
-
-func (self *Room) GetLocation() Coordinate {
-	return self.getField(roomLocation).(Coordinate)
-}
-
-func (self *Room) SetZoneId(zoneId bson.ObjectId) {
-	self.setField(roomZoneId, zoneId)
-}
-
-func (self *Room) GetZoneId() bson.ObjectId {
-	return self.getField(roomZoneId).(bson.ObjectId)
+	return false
 }
 
 func (self *Room) GetItemIds() []bson.ObjectId {
-	if self.hasField(roomItems) {
-		return self.getField(roomItems).([]bson.ObjectId)
-	}
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
-	return []bson.ObjectId{}
+	return self.Items
+}
+
+func (self *Room) SetTitle(title string) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	if title != self.Title {
+		self.Title = title
+		modified(self)
+	}
+}
+
+func (self *Room) GetTitle() string {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	return self.Title
+}
+
+func (self *Room) SetDescription(description string) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	if self.Description != description {
+		self.Description = description
+		modified(self)
+	}
+}
+
+func (self *Room) GetDescription() string {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	return self.Description
+}
+
+func (self *Room) SetLocation(location Coordinate) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	if location != self.Location {
+		self.Location = location
+		modified(self)
+	}
+}
+
+func (self *Room) GetLocation() Coordinate {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	return self.Location
+}
+
+func (self *Room) SetZoneId(zoneId bson.ObjectId) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	if zoneId != self.ZoneId {
+		self.ZoneId = zoneId
+		modified(self)
+	}
+}
+
+func (self *Room) GetZoneId() bson.ObjectId {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	return self.ZoneId
 }
 
 func (self *Room) NextLocation(direction ExitDirection) Coordinate {

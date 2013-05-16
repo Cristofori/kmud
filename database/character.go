@@ -6,29 +6,26 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
-const (
-	characterRoomId       string = "roomid"
-	characterUserId       string = "userid"
-	characterCash         string = "cash"
-	characterInventory    string = "inventory"
-	characterConversation string = "conversation"
-	characterHealth       string = "health"
-	characterHitPoints    string = "hitpoints"
-)
-
 type Character struct {
 	DbObject `bson:",inline"`
-	online   bool
+
+	RoomId       bson.ObjectId
+	UserId       bson.ObjectId
+	Cash         int
+	Inventory    []bson.ObjectId
+	Conversation string
+	Health       int
+	HitPoints    int
+
+	online bool
 }
 
 func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *Character {
 	var character Character
-	character.initDbObject(name, characterType)
+	character.initDbObject(name, charType)
 
-	if userId != "" {
-		character.SetUser(userId)
-	}
-	character.SetRoom(roomId)
+	character.SetUserId(userId)
+	character.SetRoomId(roomId)
 	character.SetCash(0)
 	character.SetHealth(100)
 	character.SetHitPoints(100)
@@ -56,67 +53,103 @@ func (self *Character) IsOnline() bool {
 }
 
 func (self *Character) IsNpc() bool {
-	return !self.hasField(characterUserId)
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	return self.UserId == ""
 }
 
 func (self *Character) IsPlayer() bool {
 	return !self.IsNpc()
 }
 
+func (self *Character) SetRoomId(id bson.ObjectId) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	if id != self.RoomId {
+		self.RoomId = id
+		modified(self)
+	}
+}
+
 func (self *Character) GetRoomId() bson.ObjectId {
-	return self.getField(characterRoomId).(bson.ObjectId)
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	return self.RoomId
 }
 
-func (self *Character) SetRoom(id bson.ObjectId) {
-	self.setField(characterRoomId, id)
-}
+func (self *Character) SetUserId(id bson.ObjectId) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
 
-func (self *Character) SetUser(id bson.ObjectId) {
-	self.setField(characterUserId, id)
+	if id != self.UserId {
+		self.UserId = id
+		modified(self)
+	}
 }
 
 func (self *Character) GetUserId() bson.ObjectId {
-	if self.IsNpc() {
-		return ""
-	}
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
-	return self.getField(characterUserId).(bson.ObjectId)
+	return self.UserId
 }
 
-func (self *Character) SetCash(amount int) {
-	self.setField(characterCash, amount)
+func (self *Character) SetCash(cash int) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	if cash != self.Cash {
+		self.Cash = cash
+		modified(self)
+	}
 }
 
 func (self *Character) AddCash(amount int) {
-	self.setField(characterCash, self.GetCash()+amount)
+	self.SetCash(self.GetCash() + amount)
 }
 
 func (self *Character) GetCash() int {
-	return self.getField(characterCash).(int)
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	return self.Cash
 }
 
 func (self *Character) AddItem(item *Item) {
-	itemIds := self.GetItemIds()
-	itemIds = append(itemIds, item.GetId())
-	self.setField(characterInventory, itemIds)
+	if !self.HasItem(item) {
+		self.mutex.Lock()
+		defer self.mutex.Unlock()
+
+		self.Inventory = append(self.Inventory, item.GetId())
+		modified(self)
+	}
 }
 
 func (self *Character) RemoveItem(item *Item) {
-	itemIds := self.GetItemIds()
-	for i, itemId := range itemIds {
-		if itemId == item.GetId() {
-			// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
-			itemIds = append(itemIds[:i], itemIds[i+1:]...)
-			self.setField(characterInventory, itemIds)
-			return
+	if self.HasItem(item) {
+		self.mutex.Lock()
+		defer self.mutex.Unlock()
+
+		for i, itemId := range self.Inventory {
+			if itemId == item.GetId() {
+				// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
+				self.Inventory = append(self.Inventory[:i], self.Inventory[i+1:]...)
+				break
+			}
 		}
+
+		modified(self)
 	}
 }
 
 func (self *Character) HasItem(item *Item) bool {
-	items := self.GetItemIds()
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
 
-	for _, itemId := range items {
+	for _, itemId := range self.Inventory {
 		if itemId == item.GetId() {
 			return true
 		}
@@ -126,19 +159,25 @@ func (self *Character) HasItem(item *Item) bool {
 }
 
 func (self *Character) GetItemIds() []bson.ObjectId {
-	if self.hasField(characterInventory) {
-		return self.getField(characterInventory).([]bson.ObjectId)
-	}
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+	return self.Inventory
+}
 
-	return []bson.ObjectId{}
+func (self *Character) SetConversation(conversation string) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	if self.Conversation != conversation {
+		self.Conversation = conversation
+		modified(self)
+	}
 }
 
 func (self *Character) GetConversation() string {
-	if self.hasField(characterConversation) {
-		return self.getField(characterConversation).(string)
-	}
-
-	return ""
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+	return self.Conversation
 }
 
 func (self *Character) PrettyConversation(cm utils.ColorMode) string {
@@ -153,8 +192,55 @@ func (self *Character) PrettyConversation(cm utils.ColorMode) string {
 		utils.Colorize(cm, utils.ColorWhite, ": "+conv))
 }
 
-func (self *Character) SetConversation(conversation string) {
-	self.setField(characterConversation, conversation)
+func (self *Character) SetHealth(health int) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	if health != self.Health {
+		self.Health = health
+
+		if self.HitPoints > self.Health {
+			self.HitPoints = self.Health
+		}
+
+		modified(self)
+	}
+}
+
+func (self *Character) GetHealth() int {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	return self.Health
+}
+
+func (self *Character) SetHitPoints(hitpoints int) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	if hitpoints > self.Health {
+		hitpoints = self.Health
+	}
+
+	if hitpoints != self.HitPoints {
+		self.HitPoints = hitpoints
+		modified(self)
+	}
+}
+
+func (self *Character) GetHitPoints() int {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	return self.HitPoints
+}
+
+func (self *Character) Hit(hitpoints int) {
+	self.SetHitPoints(self.GetHitPoints() - hitpoints)
+}
+
+func (self *Character) Heal(hitpoints int) {
+	self.SetHitPoints(self.GetHitPoints() + hitpoints)
 }
 
 func CharacterNames(characters []*Character) []string {
@@ -165,44 +251,6 @@ func CharacterNames(characters []*Character) []string {
 	}
 
 	return names
-}
-
-func (self *Character) SetHealth(health int) {
-	self.setField(characterHealth, health)
-
-	// TODO - Fix this after we get around to using the mark and sweep database back-end
-	//        and we don't have to deal with all the type assertions that we use and
-	//        nil interfaces we get.
-
-	// This code panics
-	// if self.GetHitPoints() > self.GetHealth() {
-	//     self.SetHitPoints(self.GetHealth())
-	// }
-}
-
-func (self *Character) GetHealth() int {
-	return self.getField(characterHealth).(int)
-}
-
-func (self *Character) SetHitPoints(hitpoints int) {
-	if hitpoints > self.GetHealth() {
-		hitpoints = self.GetHealth()
-	}
-
-	self.setField(characterHitPoints, hitpoints)
-}
-
-func (self *Character) GetHitPoints() int {
-	return self.getField(characterHitPoints).(int)
-}
-
-func (self *Character) Hit(hitpoints int) int {
-	self.SetHitPoints(self.GetHitPoints() - hitpoints)
-	return self.GetHitPoints()
-}
-
-func (self *Character) Heal(hitpoints int) {
-	self.SetHitPoints(self.GetHitPoints() + hitpoints)
 }
 
 // vim: nocindent
