@@ -521,12 +521,12 @@ func MoveCharacterToLocation(character *database.Character, zone *database.Zone,
 		return newRoom, errors.New("Invalid location")
 	}
 
-	oldRoom := M.GetRoom(character.GetRoomId())
+	oldRoomId := character.GetRoomId()
 
 	character.SetRoomId(newRoom.GetId())
 
 	queueEvent(EnterEvent{Character: character, RoomId: newRoom.GetId()})
-	queueEvent(LeaveEvent{Character: character, RoomId: oldRoom.GetId()})
+	queueEvent(LeaveEvent{Character: character, RoomId: oldRoomId})
 
 	return newRoom, nil
 }

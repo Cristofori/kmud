@@ -113,10 +113,6 @@ func printError(err error) {
 	}
 }
 
-func GetCharacterRoom(character Character) (Room, error) {
-	return GetRoom(character.GetRoomId())
-}
-
 func findObject(collection collectionName, query interface{}, object interface{}) error {
 	c := getCollection(collection)
 	q := c.Find(query)
@@ -148,22 +144,6 @@ func GetAllUsers() ([]*User, error) {
 
 	for _, user := range users {
 		user.objType = userType
-
-		// TODO: Also sucks
-		/*
-			colorMode := user.getField(userColorMode).(int)
-
-			switch utils.ColorMode(colorMode) {
-			case utils.ColorModeLight:
-				user.Fields[userColorMode] = utils.ColorModeLight
-			case utils.ColorModeDark:
-				user.Fields[userColorMode] = utils.ColorModeDark
-			case utils.ColorModeNone:
-				user.Fields[userColorMode] = utils.ColorModeNone
-			default:
-				panic("database.GetAllUsers(): Unhandled case in switch statement")
-			}
-		*/
 	}
 
 	return users, err
@@ -172,6 +152,11 @@ func GetAllUsers() ([]*User, error) {
 func GetAllCharacters() ([]*Character, error) {
 	var characters []*Character
 	err := findObjects(cCharacters, &characters)
+
+	for _, char := range characters {
+		char.objType = charType
+	}
+
 	return characters, err
 }
 
@@ -189,55 +174,23 @@ func GetAllRooms() ([]*Room, error) {
 func GetAllZones() ([]*Zone, error) {
 	var zones []*Zone
 	err := findObjects(cZones, &zones)
+
+	for _, zone := range zones {
+		zone.objType = zoneType
+	}
+
 	return zones, err
 }
 
 func GetAllItems() ([]*Item, error) {
 	var items []*Item
 	err := findObjects(cItems, &items)
+
+	for _, item := range items {
+		item.objType = itemType
+	}
+
 	return items, err
-}
-
-func findRoom(query interface{}) (Room, error) {
-	var room Room
-	err := findObject(cRooms, query, &room)
-	return room, err
-}
-
-func findCharacter(query interface{}) (Character, error) {
-	var character Character
-	err := findObject(cCharacters, query, &character)
-	return character, err
-}
-
-func findUser(query interface{}) (User, error) {
-	var user User
-	err := findObject(cUsers, query, &user)
-	return user, err
-}
-
-func GetUser(id bson.ObjectId) (User, error) {
-	return findUser(bson.M{fId: id})
-}
-
-func GetUserByName(name string) (User, error) {
-	return findUser(bson.M{fName: name})
-}
-
-func GetCharacter(id bson.ObjectId) (Character, error) {
-	return findCharacter(bson.M{fId: id})
-}
-
-func GetCharacterByName(name string) (Character, error) {
-	return findCharacter(bson.M{fName: name})
-}
-
-func GetRoom(id bson.ObjectId) (Room, error) {
-	return findRoom(bson.M{fId: id})
-}
-
-func GetRoomByLocation(location Coordinate) (Room, error) {
-	return findRoom(bson.M{fLocation: location})
 }
 
 func DeleteRoom(id bson.ObjectId) error {
@@ -258,30 +211,6 @@ func DeleteCharacter(id bson.ObjectId) error {
 func DeleteItem(id bson.ObjectId) error {
 	c := getCollection(cItems)
 	return c.Remove(bson.M{fId: id})
-}
-
-func StartingRoom() (Room, error) {
-	c := getCollection(cRooms)
-	q := c.Find(bson.M{fDefault: true})
-
-	count, err := q.Count()
-
-	var room Room
-	if err != nil {
-		return room, err
-	}
-
-	if count == 0 {
-		return room, errors.New("No default room found")
-	}
-
-	if count > 1 {
-		fmt.Println("Warning: More than one default room found")
-	}
-
-	err = q.One(&room)
-
-	return room, err
 }
 
 func DeleteAllRooms() {
