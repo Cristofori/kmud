@@ -25,13 +25,14 @@ func NewUser(name string, password string) *User {
 	var user User
 	user.initDbObject(name, userType)
 
-	user.SetPassword(password)
-	user.SetColorMode(utils.ColorModeNone)
-	user.SetOnline(false)
+	user.Password = hash(password)
+	user.ColorMode = utils.ColorModeNone
+	user.online = false
 
 	user.windowWidth = 80
 	user.windowHeight = 40
 
+	modified(&user)
 	return &user
 }
 

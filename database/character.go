@@ -24,14 +24,15 @@ func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *Char
 	var character Character
 	character.initDbObject(name, charType)
 
-	character.SetUserId(userId)
-	character.SetRoomId(roomId)
-	character.SetCash(0)
-	character.SetHealth(100)
-	character.SetHitPoints(100)
+	character.UserId = userId
+	character.RoomId = roomId
+	character.Cash = 0
+	character.Health = 100
+	character.HitPoints = 100
 
-	character.SetOnline(false)
+	character.online = false
 
+	modified(&character)
 	return &character
 }
 

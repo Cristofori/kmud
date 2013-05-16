@@ -53,7 +53,6 @@ func modified(obj Identifiable) {
 func watchModifiedObjects() {
 	for {
 		obj := <-modifiedObjectChannel
-		// fmt.Println("Processing update:", op.id, op.field, op.value)
 		commitObject(obj)
 	}
 }

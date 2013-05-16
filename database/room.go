@@ -55,25 +55,26 @@ func NewRoom(zoneId bson.ObjectId) *Room {
 	var room Room
 	room.initDbObject("", roomType)
 
-	room.SetTitle("The Void")
-	room.SetDescription("You are floating in the blackness of space. Complete darkness surrounds " +
+	room.Title = "The Void"
+	room.Description = "You are floating in the blackness of space. Complete darkness surrounds " +
 		"you in all directions. There is no escape, there is no hope, just the emptiness. " +
-		"You are likely to be eaten by a grue.")
+		"You are likely to be eaten by a grue."
 
-	room.SetExitEnabled(DirectionNorth, false)
-	room.SetExitEnabled(DirectionNorthEast, false)
-	room.SetExitEnabled(DirectionEast, false)
-	room.SetExitEnabled(DirectionSouthEast, false)
-	room.SetExitEnabled(DirectionSouth, false)
-	room.SetExitEnabled(DirectionSouthWest, false)
-	room.SetExitEnabled(DirectionWest, false)
-	room.SetExitEnabled(DirectionNorthWest, false)
-	room.SetExitEnabled(DirectionUp, false)
-	room.SetExitEnabled(DirectionDown, false)
+	room.ExitNorth = false
+	room.ExitNorthEast = false
+	room.ExitEast = false
+	room.ExitSouthEast = false
+	room.ExitSouth = false
+	room.ExitSouthWest = false
+	room.ExitWest = false
+	room.ExitNorthWest = false
+	room.ExitUp = false
+	room.ExitDown = false
 
 	room.SetLocation(Coordinate{0, 0, 0})
 	room.SetZoneId(zoneId)
 
+	modified(&room)
 	return &room
 }
 

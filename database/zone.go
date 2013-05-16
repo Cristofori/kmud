@@ -8,6 +8,7 @@ func NewZone(name string) *Zone {
 	var zone Zone
 	zone.initDbObject(name, zoneType)
 
+	modified(&zone)
 	return &zone
 }
 

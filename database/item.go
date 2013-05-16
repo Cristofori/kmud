@@ -8,6 +8,7 @@ func NewItem(name string) *Item {
 	var item Item
 	item.initDbObject(name, itemType)
 
+	modified(&item)
 	return &item
 }
 

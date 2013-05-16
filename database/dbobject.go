@@ -33,9 +33,7 @@ type DbObject struct {
 func (self *DbObject) initDbObject(name string, objType objectType) {
 	self.Id = bson.NewObjectId()
 	self.objType = objType
-
-	self.SetName(name)
-	modified(self)
+	self.Name = name
 }
 
 func (self *DbObject) GetId() bson.ObjectId {
