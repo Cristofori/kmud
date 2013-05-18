@@ -31,7 +31,6 @@ type Room struct {
 type ExitDirection int
 
 const (
-	DirectionNone      ExitDirection = iota
 	DirectionNorth     ExitDirection = iota
 	DirectionNorthEast ExitDirection = iota
 	DirectionEast      ExitDirection = iota
@@ -42,6 +41,7 @@ const (
 	DirectionNorthWest ExitDirection = iota
 	DirectionUp        ExitDirection = iota
 	DirectionDown      ExitDirection = iota
+	DirectionNone      ExitDirection = iota
 )
 
 type PrintMode int

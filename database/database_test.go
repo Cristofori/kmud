@@ -171,8 +171,8 @@ func Test_Character(t *testing.T) {
 
 	testutils.Assert(character.GetCash() == cashAmount*2, t, "Call to character.AddCash() failed", cashAmount*2, character.GetCash())
 
-	item1 := NewItem("")
-	item2 := NewItem("")
+	item1 := NewItem("test_item1")
+	item2 := NewItem("test_item2")
 
 	character.AddItem(item1)
 
@@ -223,15 +223,74 @@ func Test_Character(t *testing.T) {
 }
 
 func Test_Zone(t *testing.T) {
-	// zone := NewZone("")
+	zoneName := "testzone"
+	zone := NewZone(zoneName)
+
+	testutils.Assert(zone.GetName() == zoneName, t, "Zone didn't have correct name upon creation", zoneName, zone.GetName())
 }
 
 func Test_Room(t *testing.T) {
-	// room := NewRoom("")
+	fakeZoneId := bson.ObjectId("!2345")
+	room := NewRoom(fakeZoneId)
+
+	testutils.Assert(room.GetZoneId() == fakeZoneId, t, "Room didn't have correct zone ID upon creation", fakeZoneId, room.GetZoneId())
+
+	fakeZoneId2 := bson.ObjectId("11111")
+	room.SetZoneId(fakeZoneId2)
+	testutils.Assert(room.GetZoneId() == fakeZoneId2, t, "Call to room.SetZoneId() failed")
+
+	directionList := make([]ExitDirection, 10)
+	directionCount := 10
+
+	for i := 0; i < directionCount; i++ {
+		directionList[i] = ExitDirection(i)
+	}
+
+	for _, dir := range directionList {
+		testutils.Assert(!room.HasExit(dir), t, "Room shouldn't have any exits enabled by default", dir)
+		room.SetExitEnabled(dir, true)
+		testutils.Assert(room.HasExit(dir), t, "Call to room.SetExitEnabled(true) failed")
+		room.SetExitEnabled(dir, false)
+		testutils.Assert(!room.HasExit(dir), t, "Call to room.SetExitEnabled(false) failed")
+	}
+
+	item1 := NewItem("test_item1")
+	item2 := NewItem("test_item2")
+
+	room.AddItem(item1)
+	testutils.Assert(room.HasItem(item1), t, "Call to room.AddItem(item1) faled")
+	testutils.Assert(!room.HasItem(item2), t, "Room shouldn't have item2 in it yet")
+
+	room.AddItem(item2)
+	testutils.Assert(room.HasItem(item2), t, "Call to room.AddItem(item2) failed")
+	testutils.Assert(room.HasItem(item1), t, "Room should still have item1 in it")
+
+	room.RemoveItem(item1)
+	testutils.Assert(!room.HasItem(item1), t, "Call to room.RemoveItem(item1) failed")
+	testutils.Assert(room.HasItem(item2), t, "Room should still have item2 in it")
+
+	room.RemoveItem(item2)
+	testutils.Assert(!room.HasItem(item2), t, "Call to room.RemoveItem(item2) failed")
+	testutils.Assert(!room.HasItem(item1), t, "Room still shouldn't have item1 in it")
+
+	title := "Test Title"
+	room.SetTitle(title)
+	testutils.Assert(title == room.GetTitle(), t, "Call to room.SetTitle() failed", title, room.GetTitle())
+
+	description := "This is a fake description"
+	room.SetDescription(description)
+	testutils.Assert(description == room.GetDescription(), t, "Call to room.SetDescription() failed", description, room.GetDescription())
+
+	coord := Coordinate{X: 1, Y: 2, Z: 3}
+	room.SetLocation(coord)
+	testutils.Assert(coord == room.GetLocation(), t, "Call to room.SetLocation() failed", coord, room.GetLocation())
 }
 
 func Test_Item(t *testing.T) {
-	// item := NewItem("")
+	name := "test_item"
+	item := NewItem(name)
+
+	testutils.Assert(item.GetName() == name, t, "Item didn't get created with correct name", name, item.GetName())
 }
 
 // vim: nocindent
