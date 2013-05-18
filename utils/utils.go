@@ -31,7 +31,7 @@ func (sp simplePrompter) GetPrompt() string {
 func SimplePrompter(prompt string) Prompter {
 	var prompter simplePrompter
 	prompter.prompt = prompt
-	return prompter
+	return &prompter
 }
 
 func Write(conn io.Writer, text string) (int, error) {

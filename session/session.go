@@ -25,6 +25,7 @@ type Session struct {
 
 	userInputChannel chan string
 	inputModeChannel chan userInputMode
+	prompterChannel  chan utils.Prompter
 	panicChannel     chan interface{}
 	eventChannel     chan model.Event
 
@@ -54,6 +55,7 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 
 	session.userInputChannel = make(chan string)
 	session.inputModeChannel = make(chan userInputMode)
+	session.prompterChannel = make(chan utils.Prompter)
 	session.panicChannel = make(chan interface{})
 	session.eventChannel = model.Register(session.player)
 
@@ -76,7 +78,7 @@ const (
 	RawUserInput   userInputMode = iota
 )
 
-func toggleExitMenu(cm utils.ColorMode, room *database.Room) utils.Menu {
+func toggleExitMenu(cm utils.ColorMode, room *database.Room) *utils.Menu {
 	onOrOff := func(direction database.ExitDirection) string {
 		text := "Off"
 		if room.HasExit(direction) {
@@ -98,10 +100,10 @@ func toggleExitMenu(cm utils.ColorMode, room *database.Room) utils.Menu {
 	menu.AddAction("u", "[U]p: "+onOrOff(database.DirectionUp))
 	menu.AddAction("d", "[D]own: "+onOrOff(database.DirectionDown))
 
-	return menu
+	return &menu
 }
 
-func npcMenu(room *database.Room) utils.Menu {
+func npcMenu(room *database.Room) *utils.Menu {
 	npcs := model.M.NpcsIn(room)
 
 	menu := utils.NewMenu("NPCs")
@@ -114,16 +116,16 @@ func npcMenu(room *database.Room) utils.Menu {
 		menu.AddActionData(index, actionText, npc.GetId())
 	}
 
-	return menu
+	return &menu
 }
 
-func specificNpcMenu(npcId bson.ObjectId) utils.Menu {
+func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
 	npc := model.M.GetCharacter(npcId)
 	menu := utils.NewMenu(npc.PrettyName())
 	menu.AddAction("r", "[R]ename")
 	menu.AddAction("d", "[D]elete")
 	menu.AddAction("c", "[C]onversation")
-	return menu
+	return &menu
 }
 
 func (session *Session) Exec() {
@@ -146,13 +148,14 @@ func (session *Session) Exec() {
 
 		for {
 			mode := <-session.inputModeChannel
+			prompter := <-session.prompterChannel
 			input := ""
 
 			switch mode {
 			case CleanUserInput:
-				input = utils.GetUserInputP(session.conn, session) // TODO - Check thread safety
+				input = utils.GetUserInputP(session.conn, prompter)
 			case RawUserInput:
-				input = utils.GetRawUserInputP(session.conn, session)
+				input = utils.GetRawUserInputP(session.conn, prompter)
 			default:
 				panic("Unhandled case in switch statement (userInputMode)")
 			}
@@ -164,7 +167,7 @@ func (session *Session) Exec() {
 
 	// Main loop
 	for {
-		input := session.getUserInput(RawUserInput, session.GetPrompt())
+		input := session.getUserInputP(RawUserInput, session)
 		if input == "" || input == "logout" || input == "quit" {
 			return
 		}
@@ -215,13 +218,13 @@ func (session *Session) asyncMessage(message string) {
 
 // Same behavior as menu.Exec(), except that it uses getUserInput
 // which doesn't block the event loop while waiting for input
-func (session *Session) execMenu(menu utils.Menu) (string, bson.ObjectId) {
+func (session *Session) execMenu(menu *utils.Menu) (string, bson.ObjectId) {
 	choice := ""
 	var data bson.ObjectId
 
 	for {
 		menu.Print(session.conn, session.user.GetColorMode())
-		choice = session.getUserInput(CleanUserInput, menu.GetPrompt())
+		choice = session.getUserInputP(CleanUserInput, menu)
 		if menu.HasAction(choice) || choice == "" {
 			data = menu.GetData(choice)
 			break
@@ -233,8 +236,9 @@ func (session *Session) execMenu(menu utils.Menu) (string, bson.ObjectId) {
 // getUserInput allows us to retrieve user input in a way that doesn't block the
 // event loop by using channels and a separate Go routine to grab
 // either the next user input or the next event.
-func (session *Session) getUserInput(inputMode userInputMode, prompt string) string {
+func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Prompter) string {
 	session.inputModeChannel <- inputMode
+	session.prompterChannel <- prompter
 
 	for {
 		select {
@@ -267,7 +271,7 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 
 					if oldHps != newHps {
 						session.clearLine()
-						session.printString(session.GetPrompt())
+						session.printString(prompter.GetPrompt())
 					}
 				}
 			}
@@ -275,13 +279,17 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 			message := event.ToString(session.player)
 			if message != "" {
 				session.asyncMessage(message)
-				session.printString(session.GetPrompt())
+				session.printString(prompter.GetPrompt())
 			}
 
 		case quitMessage := <-session.panicChannel:
 			panic(quitMessage)
 		}
 	}
+}
+
+func (session *Session) getUserInput(inputMode userInputMode, prompt string) string {
+	return session.getUserInputP(inputMode, utils.SimplePrompter(prompt))
 }
 
 func (session *Session) GetPrompt() string {
