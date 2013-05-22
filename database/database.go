@@ -203,7 +203,9 @@ func DeleteObject(obj Identifiable) error {
 
 func commitObject(object Identifiable) error {
 	c := getCollectionFromType(object.GetType())
+	object.ReadLock()
 	err := c.UpsertId(object.GetId(), object)
+	object.ReadUnlock()
 	printError(err)
 	return err
 }

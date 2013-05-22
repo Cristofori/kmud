@@ -13,7 +13,6 @@ type Coordinate struct {
 }
 
 func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) string {
-
 	letterColor := utils.ColorBlue
 	bracketColor := utils.ColorDarkBlue
 	textColor := utils.ColorWhite

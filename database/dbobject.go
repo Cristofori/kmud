@@ -11,6 +11,8 @@ type objectType int
 type Identifiable interface {
 	GetId() bson.ObjectId
 	GetType() objectType
+	ReadLock()
+	ReadUnlock()
 }
 
 const (
@@ -65,6 +67,14 @@ func (self *DbObject) GetName() string {
 	defer self.mutex.RUnlock()
 
 	return self.Name
+}
+
+func (self *DbObject) ReadLock() {
+	self.mutex.RLock()
+}
+
+func (self *DbObject) ReadUnlock() {
+	self.mutex.RUnlock()
 }
 
 // vim: nocindent
