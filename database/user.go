@@ -49,8 +49,8 @@ func (self *User) Online() bool {
 }
 
 func (self *User) SetColorMode(cm utils.ColorMode) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if cm != self.ColorMode {
 		self.ColorMode = cm
@@ -59,8 +59,8 @@ func (self *User) SetColorMode(cm utils.ColorMode) {
 }
 
 func (self *User) GetColorMode() utils.ColorMode {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.ColorMode
 }
@@ -73,8 +73,8 @@ func hash(data string) []byte {
 
 // SetPassword SHA1 hashes the password before saving it to the database
 func (self *User) SetPassword(password string) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	hashed := hash(password)
 
@@ -91,8 +91,8 @@ func (self *User) VerifyPassword(password string) bool {
 
 // GetPassword returns the SHA1 of the user's password
 func (self *User) GetPassword() []byte {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.Password
 }

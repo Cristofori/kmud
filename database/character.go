@@ -41,21 +41,21 @@ func NewNpc(name string, roomId bson.ObjectId) *Character {
 }
 
 func (self *Character) SetOnline(online bool) {
-	self.mutex.Lock()
+	self.WriteLock()
 	self.online = online
-	self.mutex.Unlock()
+	self.WriteUnlock()
 }
 
 func (self *Character) IsOnline() bool {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.online || self.IsNpc()
 }
 
 func (self *Character) IsNpc() bool {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.UserId == ""
 }
@@ -65,8 +65,8 @@ func (self *Character) IsPlayer() bool {
 }
 
 func (self *Character) SetRoomId(id bson.ObjectId) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if id != self.RoomId {
 		self.RoomId = id
@@ -75,15 +75,15 @@ func (self *Character) SetRoomId(id bson.ObjectId) {
 }
 
 func (self *Character) GetRoomId() bson.ObjectId {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.RoomId
 }
 
 func (self *Character) SetUserId(id bson.ObjectId) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if id != self.UserId {
 		self.UserId = id
@@ -92,15 +92,15 @@ func (self *Character) SetUserId(id bson.ObjectId) {
 }
 
 func (self *Character) GetUserId() bson.ObjectId {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.UserId
 }
 
 func (self *Character) SetCash(cash int) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if cash != self.Cash {
 		self.Cash = cash
@@ -113,16 +113,16 @@ func (self *Character) AddCash(amount int) {
 }
 
 func (self *Character) GetCash() int {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.Cash
 }
 
 func (self *Character) AddItem(item *Item) {
 	if !self.HasItem(item) {
-		self.mutex.Lock()
-		defer self.mutex.Unlock()
+		self.WriteLock()
+		defer self.WriteUnlock()
 
 		self.Inventory = append(self.Inventory, item.GetId())
 		modified(self)
@@ -131,8 +131,8 @@ func (self *Character) AddItem(item *Item) {
 
 func (self *Character) RemoveItem(item *Item) {
 	if self.HasItem(item) {
-		self.mutex.Lock()
-		defer self.mutex.Unlock()
+		self.WriteLock()
+		defer self.WriteUnlock()
 
 		for i, itemId := range self.Inventory {
 			if itemId == item.GetId() {
@@ -147,8 +147,8 @@ func (self *Character) RemoveItem(item *Item) {
 }
 
 func (self *Character) HasItem(item *Item) bool {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	for _, itemId := range self.Inventory {
 		if itemId == item.GetId() {
@@ -160,14 +160,14 @@ func (self *Character) HasItem(item *Item) bool {
 }
 
 func (self *Character) GetItemIds() []bson.ObjectId {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 	return self.Inventory
 }
 
 func (self *Character) SetConversation(conversation string) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if self.Conversation != conversation {
 		self.Conversation = conversation
@@ -176,8 +176,8 @@ func (self *Character) SetConversation(conversation string) {
 }
 
 func (self *Character) GetConversation() string {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 	return self.Conversation
 }
 
@@ -194,8 +194,8 @@ func (self *Character) PrettyConversation(cm utils.ColorMode) string {
 }
 
 func (self *Character) SetHealth(health int) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if health != self.Health {
 		self.Health = health
@@ -209,15 +209,15 @@ func (self *Character) SetHealth(health int) {
 }
 
 func (self *Character) GetHealth() int {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.Health
 }
 
 func (self *Character) SetHitPoints(hitpoints int) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if hitpoints > self.Health {
 		hitpoints = self.Health
@@ -230,8 +230,8 @@ func (self *Character) SetHitPoints(hitpoints int) {
 }
 
 func (self *Character) GetHitPoints() int {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.HitPoints
 }

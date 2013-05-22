@@ -53,8 +53,8 @@ func (self *DbObject) PrettyName() string {
 }
 
 func (self *DbObject) SetName(name string) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if name != self.Name {
 		self.Name = name
@@ -63,8 +63,8 @@ func (self *DbObject) SetName(name string) {
 }
 
 func (self *DbObject) GetName() string {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.Name
 }
@@ -75,6 +75,14 @@ func (self *DbObject) ReadLock() {
 
 func (self *DbObject) ReadUnlock() {
 	self.mutex.RUnlock()
+}
+
+func (self *DbObject) WriteLock() {
+	self.mutex.Lock()
+}
+
+func (self *DbObject) WriteUnlock() {
+	self.mutex.Unlock()
 }
 
 // vim: nocindent

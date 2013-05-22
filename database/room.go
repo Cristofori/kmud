@@ -186,8 +186,8 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 }
 
 func (self *Room) HasExit(dir ExitDirection) bool {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	switch dir {
 	case DirectionNorth:
@@ -216,8 +216,8 @@ func (self *Room) HasExit(dir ExitDirection) bool {
 }
 
 func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	switch dir {
 	case DirectionNorth:
@@ -247,8 +247,8 @@ func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
 
 func (self *Room) AddItem(item *Item) {
 	if !self.HasItem(item) {
-		self.mutex.Lock()
-		defer self.mutex.Unlock()
+		self.WriteLock()
+		defer self.WriteUnlock()
 
 		self.Items = append(self.Items, item.GetId())
 		modified(self)
@@ -257,8 +257,8 @@ func (self *Room) AddItem(item *Item) {
 
 func (self *Room) RemoveItem(item *Item) {
 	if self.HasItem(item) {
-		self.mutex.Lock()
-		defer self.mutex.Unlock()
+		self.WriteLock()
+		defer self.WriteUnlock()
 
 		for i, itemId := range self.Items {
 			if itemId == item.GetId() {
@@ -273,8 +273,8 @@ func (self *Room) RemoveItem(item *Item) {
 }
 
 func (self *Room) HasItem(item *Item) bool {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	for _, itemId := range self.Items {
 		if itemId == item.GetId() {
@@ -286,15 +286,15 @@ func (self *Room) HasItem(item *Item) bool {
 }
 
 func (self *Room) GetItemIds() []bson.ObjectId {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.Items
 }
 
 func (self *Room) SetTitle(title string) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if title != self.Title {
 		self.Title = title
@@ -303,15 +303,15 @@ func (self *Room) SetTitle(title string) {
 }
 
 func (self *Room) GetTitle() string {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.Title
 }
 
 func (self *Room) SetDescription(description string) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if self.Description != description {
 		self.Description = description
@@ -320,15 +320,15 @@ func (self *Room) SetDescription(description string) {
 }
 
 func (self *Room) GetDescription() string {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.Description
 }
 
 func (self *Room) SetLocation(location Coordinate) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if location != self.Location {
 		self.Location = location
@@ -337,15 +337,15 @@ func (self *Room) SetLocation(location Coordinate) {
 }
 
 func (self *Room) GetLocation() Coordinate {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.Location
 }
 
 func (self *Room) SetZoneId(zoneId bson.ObjectId) {
-	self.mutex.Lock()
-	defer self.mutex.Unlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
 	if zoneId != self.ZoneId {
 		self.ZoneId = zoneId
@@ -354,8 +354,8 @@ func (self *Room) SetZoneId(zoneId bson.ObjectId) {
 }
 
 func (self *Room) GetZoneId() bson.ObjectId {
-	self.mutex.RLock()
-	defer self.mutex.RUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
 	return self.ZoneId
 }
