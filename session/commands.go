@@ -130,7 +130,7 @@ func (ch *commandHandler) Map(args []string) {
 		endY = loc.Y + (height / 4)
 		endZ = loc.Z
 	} else if args[0] == "all" {
-		topLeft, bottomRight := model.ZoneCorners(ch.session.zone.GetId())
+		topLeft, bottomRight := model.ZoneCorners(ch.session.zone)
 
 		startX = topLeft.X
 		startY = topLeft.Y
@@ -194,21 +194,15 @@ func (ch *commandHandler) Zone(args []string) {
 				return
 			}
 
-			if ch.session.zone.GetId() == "" {
-				ch.session.zone = model.M.CreateZone(args[1])
-				model.MoveRoomsToZone("", ch.session.zone.GetId())
-			} else {
-				ch.session.zone.SetName(args[1])
-			}
+			ch.session.zone.SetName(args[1])
 		} else if args[0] == "new" {
-			zone := model.M.GetZoneByName(args[0])
+			newZone, errorMessage := model.M.CreateZone(args[1])
 
-			if zone != nil {
-				ch.session.printError("A zone with that name already exists")
+			if newZone == nil {
+				ch.session.printError(errorMessage)
 				return
 			}
 
-			newZone := model.M.CreateZone(args[1])
 			newRoom := model.M.CreateRoom(newZone)
 
 			model.MoveCharacterToRoom(ch.session.player, newRoom)
@@ -484,7 +478,7 @@ func (ch *commandHandler) Npc(args []string) {
 
 		switch choice {
 		case "d":
-			model.M.DeleteCharacter(npcId)
+			model.M.DeleteCharacterId(npcId)
 		case "r":
 			name := getName()
 			if name == "" {
@@ -544,7 +538,7 @@ func (ch *commandHandler) DestroyItem(args []string) {
 	for _, item := range itemsInRoom {
 		if strings.ToLower(item.PrettyName()) == name {
 			ch.session.room.RemoveItem(item)
-			model.M.DeleteItem(item.GetId())
+			model.M.DeleteItem(item)
 			ch.session.printLine("Item destroyed")
 			return
 		}

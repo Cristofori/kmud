@@ -134,16 +134,25 @@ func UserNames(users []*User) []string {
 
 type Users []*User
 
-func (s Users) Len() int {
-	return len(s)
+func (self Users) Len() int {
+	return len(self)
 }
 
-func (s Users) Less(i, j int) bool {
-	return utils.NaturalLessThan(s[i].PrettyName(), s[j].PrettyName())
+func (self Users) Less(i, j int) bool {
+	return utils.NaturalLessThan(self[i].PrettyName(), self[j].PrettyName())
 }
 
-func (s Users) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
+func (self Users) Swap(i, j int) {
+	self[i], self[j] = self[j], self[i]
+}
+
+func (self Users) Contains(u *User) bool {
+	for _, user := range self {
+		if u == user {
+			return true
+		}
+	}
+	return false
 }
 
 // vim: nocindent

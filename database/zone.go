@@ -12,4 +12,16 @@ func NewZone(name string) *Zone {
 	return &zone
 }
 
+type Zones []*Zone
+
+func (self Zones) Contains(z *Zone) bool {
+	for _, zone := range self {
+		if z == zone {
+			return true
+		}
+	}
+
+	return false
+}
+
 // vim: nocindent

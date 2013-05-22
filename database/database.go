@@ -61,6 +61,10 @@ func getCollection(collection collectionName) Collection {
 	return session.DB("mud").C(string(collection))
 }
 
+func getCollectionOfObject(obj Identifiable) Collection {
+	return getCollectionFromType(obj.GetType())
+}
+
 func getCollectionFromType(t objectType) Collection {
 	switch t {
 	case charType:
@@ -192,29 +196,9 @@ func GetAllItems() ([]*Item, error) {
 	return items, err
 }
 
-func DeleteRoom(id bson.ObjectId) error {
-	c := getCollection(cRooms)
-	return c.RemoveId(id)
-}
-
-func DeleteUser(id bson.ObjectId) error {
-	c := getCollection(cUsers)
-	return c.RemoveId(id)
-}
-
-func DeleteCharacter(id bson.ObjectId) error {
-	c := getCollection(cCharacters)
-	return c.Remove(bson.M{fId: id})
-}
-
-func DeleteItem(id bson.ObjectId) error {
-	c := getCollection(cItems)
-	return c.Remove(bson.M{fId: id})
-}
-
-func DeleteAllRooms() {
-	c := getCollection(cRooms)
-	c.DropCollection()
+func DeleteObject(obj Identifiable) error {
+	c := getCollectionOfObject(obj)
+	return c.RemoveId(obj.GetId())
 }
 
 func commitObject(object Identifiable) error {

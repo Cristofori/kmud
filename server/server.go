@@ -369,7 +369,7 @@ func handleConnection(conn *wrappedConnection) {
 										if choice == "" {
 											break
 										} else if choice == "d" {
-											model.M.DeleteUser(userId)
+											model.M.DeleteUserId(userId)
 											break
 										} else if choice == "w" {
 											userToWatch := model.M.GetUser(userId)
@@ -405,7 +405,7 @@ func handleConnection(conn *wrappedConnection) {
 
 					if err == nil {
 						// TODO: Delete confirmation
-						model.M.DeleteCharacter(deleteCharId)
+						model.M.DeleteCharacterId(deleteCharId)
 					}
 				}
 
@@ -445,7 +445,7 @@ func (self *Server) Start() {
 		var zone *database.Zone
 
 		if len(zones) == 0 {
-			zone = model.M.CreateZone("Default")
+			zone, _ = model.M.CreateZone("Default")
 		} else {
 			zone = zones[0]
 		}
