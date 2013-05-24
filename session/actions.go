@@ -57,7 +57,7 @@ func (ah *actionHandler) Look(args []string) {
 			if index == -2 {
 				ah.session.printError("Which one do you mean?")
 			} else if index != -1 {
-				ah.session.printLine("Looking at: %s", charList[index].PrettyName())
+				ah.session.printLine("Looking at: %s", charList[index].GetName())
 			} else {
 				itemList := model.M.ItemsIn(ah.session.room)
 				index = utils.BestMatch(args[0], database.ItemNames(itemList))
@@ -67,7 +67,7 @@ func (ah *actionHandler) Look(args []string) {
 				} else if index == -2 {
 					ah.session.printError("Which one do you mean?")
 				} else {
-					ah.session.printLine("Looking at: %s", itemList[index].PrettyName())
+					ah.session.printLine("Looking at: %s", itemList[index].GetName())
 				}
 			}
 		} else {
@@ -154,7 +154,7 @@ func (ah *actionHandler) Drop(args []string) {
 		item := characterItems[index]
 		ah.session.player.RemoveItem(item)
 		ah.session.room.AddItem(item)
-		ah.session.printLine("Dropped %s", item.PrettyName())
+		ah.session.printLine("Dropped %s", item.GetName())
 	}
 }
 
@@ -195,7 +195,7 @@ func (ah *actionHandler) Pickup(args []string) {
 		item := itemsInRoom[index]
 		ah.session.player.AddItem(item)
 		ah.session.room.RemoveItem(item)
-		ah.session.printLine("Picked up %s", item.PrettyName())
+		ah.session.printLine("Picked up %s", item.GetName())
 	}
 }
 
@@ -215,7 +215,7 @@ func (ah *actionHandler) Inventory(args []string) {
 	} else {
 		var itemNames []string
 		for _, item := range model.M.GetItems(itemIds) {
-			itemNames = append(itemNames, item.PrettyName())
+			itemNames = append(itemNames, item.GetName())
 		}
 		ah.session.printLine("You are carrying: %s", strings.Join(itemNames, ", "))
 	}

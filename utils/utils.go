@@ -311,6 +311,11 @@ func FindAndCallMethod(object interface{}, name string, a ...interface{}) bool {
 	return found
 }
 
+// Case-insensitive string comparison
+func Compare(str1, str2 string) bool {
+	return strings.ToLower(str1) == strings.ToLower(str2)
+}
+
 // Throttler is a simple utility class that allows events to occur on a
 // deterministic recurring basis. Every call to Sync() will block until the
 // duration of the Throttler's interval has passed since the last call to

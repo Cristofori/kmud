@@ -3,7 +3,25 @@ package database
 import (
 	"fmt"
 	"kmud/utils"
+	"labix.org/v2/mgo/bson"
 	"strings"
+)
+
+type Identifiable interface {
+	GetId() bson.ObjectId
+	GetType() objectType
+	ReadLock()
+	ReadUnlock()
+}
+
+type objectType int
+
+const (
+	CharType objectType = iota
+	RoomType objectType = iota
+	UserType objectType = iota
+	ZoneType objectType = iota
+	ItemType objectType = iota
 )
 
 type Coordinate struct {

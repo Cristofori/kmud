@@ -266,7 +266,7 @@ func (ch *commandHandler) Whisper(args []string) {
 	}
 
 	if !targetChar.IsOnline() {
-		ch.session.printError("Player '%s' is not online", targetChar.PrettyName())
+		ch.session.printError("Player '%s' is not online", targetChar.GetName())
 		return
 	}
 
@@ -356,7 +356,7 @@ func (ch *commandHandler) Who(args []string) {
 	ch.session.printLine("--------------")
 
 	for _, char := range chars {
-		ch.session.printLine(char.PrettyName())
+		ch.session.printLine(char.GetName())
 	}
 	ch.session.printLine("")
 }
@@ -536,7 +536,7 @@ func (ch *commandHandler) DestroyItem(args []string) {
 	name := strings.ToLower(args[0])
 
 	for _, item := range itemsInRoom {
-		if strings.ToLower(item.PrettyName()) == name {
+		if strings.ToLower(item.GetName()) == name {
 			ch.session.room.RemoveItem(item)
 			model.M.DeleteItem(item)
 			ch.session.printLine("Item destroyed")
@@ -628,7 +628,7 @@ func (ch *commandHandler) R(args []string) { // Reply
 		newArgs = append(newArgs, args...)
 		ch.Whisper(newArgs)
 	} else {
-		prompt := "Reply to " + targetChar.PrettyName() + ": "
+		prompt := "Reply to " + targetChar.GetName() + ": "
 		input := ch.session.getUserInput(RawUserInput, prompt)
 
 		if input != "" {

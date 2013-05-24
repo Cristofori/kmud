@@ -68,7 +68,7 @@ func (self *globalModel) GetUserByName(username string) *database.User {
 	defer self.mutex.RUnlock()
 
 	for _, user := range self.users {
-		if user.GetName() == username {
+		if utils.Compare(user.GetName(), username) {
 			return user
 		}
 	}
@@ -371,7 +371,7 @@ func (self *globalModel) GetZoneByName(name string) *database.Zone {
 	defer self.mutex.RUnlock()
 
 	for _, zone := range self.zones {
-		if zone.GetName() == name {
+		if utils.Compare(zone.GetName(), name) {
 			return zone
 		}
 	}
@@ -484,35 +484,41 @@ func Init(session database.Session) error {
 	M.zones = map[bson.ObjectId]*database.Zone{}
 	M.items = map[bson.ObjectId]*database.Item{}
 
-	users, err := database.GetAllUsers()
+	users := []*database.User{}
+	err := database.RetrieveObjects(database.UserType, &users)
+	fmt.Println("Users:", len(users))
 	utils.HandleError(err)
 
 	for _, user := range users {
 		M.users[user.GetId()] = user
 	}
 
-	characters, err := database.GetAllCharacters()
+	characters := []*database.Character{}
+	err = database.RetrieveObjects(database.CharType, &characters)
 	utils.HandleError(err)
 
 	for _, character := range characters {
 		M.chars[character.GetId()] = character
 	}
 
-	rooms, err := database.GetAllRooms()
+	rooms := []*database.Room{}
+	err = database.RetrieveObjects(database.RoomType, &rooms)
 	utils.HandleError(err)
 
 	for _, room := range rooms {
 		M.rooms[room.GetId()] = room
 	}
 
-	zones, err := database.GetAllZones()
+	zones := []*database.Zone{}
+	err = database.RetrieveObjects(database.ZoneType, &zones)
 	utils.HandleError(err)
 
 	for _, zone := range zones {
 		M.zones[zone.GetId()] = zone
 	}
 
-	items, err := database.GetAllItems()
+	items := []*database.Item{}
+	err = database.RetrieveObjects(database.ItemType, &items)
 	utils.HandleError(err)
 
 	for _, item := range items {
@@ -577,9 +583,11 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 
 	if newRoom == nil {
 		zone := M.GetZone(room.GetZoneId())
-		fmt.Printf("No room found at location %v %v, creating a new one (%s)\n", zone.GetName(), newLocation, character.PrettyName())
+		fmt.Printf("No room found at location %v %v, creating a new one (%s)\n", zone.GetName(), newLocation, character.GetName())
 
+		fmt.Println(1)
 		room = M.CreateRoom(M.GetZone(room.GetZoneId()))
+		fmt.Println(2)
 
 		switch direction {
 		case database.DirectionNorth:
@@ -605,12 +613,16 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 		default:
 			panic("Unexpected code path")
 		}
+		fmt.Println(3)
 
 		room.SetLocation(newLocation)
+		fmt.Println(4)
 	} else {
 		room = newRoom
 	}
 
+	fmt.Println(5)
+	defer fmt.Println(6)
 	return MoveCharacterToLocation(character, M.GetZone(room.GetZoneId()), room.GetLocation())
 }
 

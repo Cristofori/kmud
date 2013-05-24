@@ -195,7 +195,7 @@ func (self BroadcastEvent) Type() EventType {
 
 func (self BroadcastEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
-	return utils.Colorize(cm, utils.ColorCyan, "Broadcast from "+self.Character.PrettyName()+": ") +
+	return utils.Colorize(cm, utils.ColorCyan, "Broadcast from "+self.Character.GetName()+": ") +
 		utils.Colorize(cm, utils.ColorWhite, self.Message)
 }
 
@@ -215,7 +215,7 @@ func (self SayEvent) ToString(receiver *database.Character) string {
 	if receiver.GetId() == self.Character.GetId() {
 		who = "You say"
 	} else {
-		who = self.Character.PrettyName() + " says"
+		who = self.Character.GetName() + " says"
 	}
 
 	return utils.Colorize(cm, utils.ColorBlue, who+", ") +
@@ -233,7 +233,7 @@ func (self EmoteEvent) Type() EventType {
 
 func (self EmoteEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
-	return utils.Colorize(cm, utils.ColorYellow, self.Character.PrettyName()+" "+self.Emote)
+	return utils.Colorize(cm, utils.ColorYellow, self.Character.GetName()+" "+self.Emote)
 }
 
 func (self EmoteEvent) IsFor(receiver *database.Character) bool {
@@ -247,7 +247,7 @@ func (self TellEvent) Type() EventType {
 
 func (self TellEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
-	return utils.Colorize(cm, utils.ColorMagenta, fmt.Sprintf("Message from %s: ", self.From.PrettyName())) +
+	return utils.Colorize(cm, utils.ColorMagenta, fmt.Sprintf("Message from %s: ", self.From.GetName())) +
 		utils.Colorize(cm, utils.ColorWhite, self.Message)
 }
 
@@ -267,7 +267,7 @@ func (self EnterEvent) ToString(receiver *database.Character) string {
 
 	cm := getColorMode(receiver)
 
-	return utils.Colorize(cm, utils.ColorBlue, self.Character.PrettyName()) +
+	return utils.Colorize(cm, utils.ColorBlue, self.Character.GetName()) +
 		utils.Colorize(cm, utils.ColorWhite, " has entered the room")
 }
 
@@ -282,7 +282,7 @@ func (self LeaveEvent) Type() EventType {
 
 func (self LeaveEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
-	return utils.Colorize(cm, utils.ColorBlue, self.Character.PrettyName()) +
+	return utils.Colorize(cm, utils.ColorBlue, self.Character.GetName()) +
 		utils.Colorize(cm, utils.ColorWhite, " has left the room")
 }
 
@@ -312,7 +312,7 @@ func (self LoginEvent) Type() EventType {
 
 func (self LoginEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
-	return utils.Colorize(cm, utils.ColorBlue, self.Character.PrettyName()) +
+	return utils.Colorize(cm, utils.ColorBlue, self.Character.GetName()) +
 		utils.Colorize(cm, utils.ColorWhite, " has connected")
 }
 
@@ -326,7 +326,7 @@ func (self LogoutEvent) Type() EventType {
 }
 
 func (self LogoutEvent) ToString(receiver *database.Character) string {
-	return fmt.Sprintf("%s has disconnected", self.Character.PrettyName())
+	return fmt.Sprintf("%s has disconnected", self.Character.GetName())
 }
 
 func (self LogoutEvent) IsFor(receiver *database.Character) bool {
@@ -342,9 +342,9 @@ func (self CombatStartEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
 
 	if receiver == self.Attacker {
-		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("You are attacking %s!", self.Defender.PrettyName()))
+		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("You are attacking %s!", self.Defender.GetName()))
 	} else if receiver == self.Defender {
-		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("%s is attacking you!", self.Attacker.PrettyName()))
+		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("%s is attacking you!", self.Attacker.GetName()))
 	}
 
 	return ""
@@ -363,9 +363,9 @@ func (self CombatStopEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
 
 	if receiver == self.Attacker {
-		return utils.Colorize(cm, utils.ColorGreen, fmt.Sprintf("You stopped attacking %s", self.Defender.PrettyName()))
+		return utils.Colorize(cm, utils.ColorGreen, fmt.Sprintf("You stopped attacking %s", self.Defender.GetName()))
 	} else if receiver == self.Defender {
-		return utils.Colorize(cm, utils.ColorGreen, fmt.Sprintf("%s has stopped attacking you", self.Attacker.PrettyName()))
+		return utils.Colorize(cm, utils.ColorGreen, fmt.Sprintf("%s has stopped attacking you", self.Attacker.GetName()))
 	}
 
 	return ""
@@ -384,9 +384,9 @@ func (self CombatEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
 
 	if receiver == self.Attacker {
-		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("You hit %s for %v damage", self.Defender.PrettyName(), self.Damage))
+		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("You hit %s for %v damage", self.Defender.GetName(), self.Damage))
 	} else if receiver == self.Defender {
-		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("%s hits you for %v damage", self.Attacker.PrettyName(), self.Damage))
+		return utils.Colorize(cm, utils.ColorRed, fmt.Sprintf("%s hits you for %v damage", self.Attacker.GetName(), self.Damage))
 	}
 
 	return ""

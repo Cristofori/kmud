@@ -11,6 +11,7 @@ import (
 type User struct {
 	DbObject `bson:",inline"`
 
+	Name      string
 	ColorMode utils.ColorMode
 	Password  []byte
 
@@ -23,8 +24,9 @@ type User struct {
 
 func NewUser(name string, password string) *User {
 	var user User
-	user.initDbObject(name, userType)
+	user.initDbObject()
 
+	user.Name = utils.FormatName(name)
 	user.Password = hash(password)
 	user.ColorMode = utils.ColorModeNone
 	user.online = false
@@ -34,6 +36,17 @@ func NewUser(name string, password string) *User {
 
 	modified(&user)
 	return &user
+}
+
+func (self *User) GetType() objectType {
+	return UserType
+}
+
+func (self *User) GetName() string {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Name
 }
 
 func (self *User) SetOnline(online bool) {
@@ -49,11 +62,11 @@ func (self *User) Online() bool {
 }
 
 func (self *User) SetColorMode(cm utils.ColorMode) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if cm != self.ColorMode {
+	if cm != self.GetColorMode() {
+		self.WriteLock()
 		self.ColorMode = cm
+		self.WriteUnlock()
+
 		modified(self)
 	}
 }
@@ -73,13 +86,13 @@ func hash(data string) []byte {
 
 // SetPassword SHA1 hashes the password before saving it to the database
 func (self *User) SetPassword(password string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
 	hashed := hash(password)
 
-	if !reflect.DeepEqual(hashed, self.Password) {
+	if !reflect.DeepEqual(hashed, self.GetPassword()) {
+		self.WriteLock()
 		self.Password = hashed
+		self.WriteUnlock()
+
 		modified(self)
 	}
 }
@@ -126,7 +139,7 @@ func UserNames(users []*User) []string {
 	names := make([]string, len(users))
 
 	for i, user := range users {
-		names[i] = user.PrettyName()
+		names[i] = user.GetName()
 	}
 
 	return names
@@ -139,7 +152,7 @@ func (self Users) Len() int {
 }
 
 func (self Users) Less(i, j int) bool {
-	return utils.NaturalLessThan(self[i].PrettyName(), self[j].PrettyName())
+	return utils.NaturalLessThan(self[i].GetName(), self[j].GetName())
 }
 
 func (self Users) Swap(i, j int) {

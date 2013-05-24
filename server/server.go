@@ -83,7 +83,7 @@ func login(conn *wrappedConnection) *database.User {
 				if attempts >= 3 {
 					utils.WriteLine(conn, "Too many failed login attempts")
 					conn.Close()
-					panic("Booted user due to too many failed logins (" + user.PrettyName() + ")")
+					panic("Booted user due to too many failed logins (" + user.GetName() + ")")
 				}
 
 				attempts++
@@ -183,7 +183,7 @@ func mainMenu() utils.Menu {
 func userMenu(user *database.User) utils.Menu {
 	chars := model.M.GetUserCharacters(user)
 
-	menu := utils.NewMenu(user.PrettyName())
+	menu := utils.NewMenu(user.GetName())
 	menu.AddAction("l", "[L]ogout")
 	menu.AddAction("a", "[A]dmin")
 	menu.AddAction("n", "[N]ew character")
@@ -195,7 +195,7 @@ func userMenu(user *database.User) utils.Menu {
 
 	for i, char := range chars {
 		index := i + 1
-		actionText := fmt.Sprintf("[%v]%v", index, char.PrettyName())
+		actionText := fmt.Sprintf("[%v]%v", index, char.GetName())
 		menu.AddActionData(index, actionText, char.GetId())
 	}
 
@@ -213,7 +213,7 @@ func deleteMenu(user *database.User) utils.Menu {
 
 	for i, char := range chars {
 		index := i + 1
-		actionText := fmt.Sprintf("[%v]%v", index, char.PrettyName())
+		actionText := fmt.Sprintf("[%v]%v", index, char.GetName())
 		menu.AddActionData(index, actionText, char.GetId())
 	}
 
@@ -240,7 +240,7 @@ func userAdminMenu() utils.Menu {
 			online = "*"
 		}
 
-		actionText := fmt.Sprintf("[%v]%v", index, user.PrettyName()+online)
+		actionText := fmt.Sprintf("[%v]%v", index, user.GetName()+online)
 		menu.AddActionData(index, actionText, user.GetId())
 	}
 
@@ -255,7 +255,7 @@ func userSpecificMenu(user *database.User) utils.Menu {
 		suffix = "(Offline)"
 	}
 
-	menu := utils.NewMenu("User: " + user.PrettyName() + " " + suffix)
+	menu := utils.NewMenu("User: " + user.GetName() + " " + suffix)
 	menu.AddAction("d", "[D]elete")
 
 	if user.Online() {
@@ -278,11 +278,11 @@ func handleConnection(conn *wrappedConnection) {
 
 			if user != nil {
 				user.SetOnline(false)
-				username = user.PrettyName()
+				username = user.GetName()
 			}
 
 			if player != nil {
-				charname = player.PrettyName()
+				charname = player.GetName()
 			}
 
 			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",

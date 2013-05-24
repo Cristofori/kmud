@@ -63,10 +63,10 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 	session.commander.session = &session
 	session.actioner.session = &session
 
-	// file, err := os.OpenFile(player.PrettyName()+".log", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
+	// file, err := os.OpenFile(player.GetName()+".log", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
 	// utils.PanicIfError(err)
 
-	// session.logger = log.New(file, player.PrettyName()+" ", log.LstdFlags)
+	// session.logger = log.New(file, player.GetName()+" ", log.LstdFlags)
 
 	return &session
 }
@@ -112,7 +112,7 @@ func npcMenu(room *database.Room) *utils.Menu {
 
 	for i, npc := range npcs {
 		index := i + 1
-		actionText := fmt.Sprintf("[%v]%v", index, npc.PrettyName())
+		actionText := fmt.Sprintf("[%v]%v", index, npc.GetName())
 		menu.AddActionData(index, actionText, npc.GetId())
 	}
 
@@ -121,7 +121,7 @@ func npcMenu(room *database.Room) *utils.Menu {
 
 func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
 	npc := model.M.GetCharacter(npcId)
-	menu := utils.NewMenu(npc.PrettyName())
+	menu := utils.NewMenu(npc.GetName())
 	menu.AddAction("r", "[R]ename")
 	menu.AddAction("d", "[D]elete")
 	menu.AddAction("c", "[C]onversation")
@@ -131,7 +131,7 @@ func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
 func (session *Session) Exec() {
 	defer model.Unregister(session.eventChannel)
 
-	session.printLineColor(utils.ColorWhite, "Welcome, "+session.player.PrettyName())
+	session.printLineColor(utils.ColorWhite, "Welcome, "+session.player.GetName())
 	session.printRoom()
 
 	// Main routine in charge of actually reading input from the connection object,

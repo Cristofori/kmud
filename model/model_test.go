@@ -17,7 +17,7 @@ func Test_Init(t *testing.T) {
 }
 
 func Test_UserFunctions(t *testing.T) {
-	name1 := "test_name1"
+	name1 := "Test_name1"
 	password1 := "test_password2"
 
 	user1 := M.CreateUser(name1, password1)

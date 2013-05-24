@@ -53,7 +53,7 @@ const (
 
 func NewRoom(zoneId bson.ObjectId) *Room {
 	var room Room
-	room.initDbObject("", roomType)
+	room.initDbObject()
 
 	room.Title = "The Void"
 	room.Description = "You are floating in the blackness of space. Complete darkness surrounds " +
@@ -78,6 +78,10 @@ func NewRoom(zoneId bson.ObjectId) *Room {
 	return &room
 }
 
+func (self *Room) GetType() objectType {
+	return RoomType
+}
+
 func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []*Character, npcs []*Character, items []*Item) string {
 	var str string
 
@@ -98,7 +102,7 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 
 			var names []string
 			for _, char := range players {
-				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, char.PrettyName()))
+				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, char.GetName()))
 			}
 			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\n"
 
@@ -110,7 +114,7 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 
 			var names []string
 			for _, npc := range npcs {
-				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, npc.PrettyName()))
+				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, npc.GetName()))
 			}
 			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\r\n"
 
@@ -126,11 +130,11 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 					continue
 				}
 
-				_, found := itemMap[item.PrettyName()]
+				_, found := itemMap[item.GetName()]
 				if !found {
-					nameList = append(nameList, item.PrettyName())
+					nameList = append(nameList, item.GetName())
 				}
-				itemMap[item.PrettyName()]++
+				itemMap[item.GetName()]++
 			}
 
 			sort.Strings(nameList)

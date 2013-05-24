@@ -1,7 +1,6 @@
 package database
 
 import (
-	"errors"
 	"fmt"
 	"labix.org/v2/mgo/bson"
 )
@@ -67,15 +66,15 @@ func getCollectionOfObject(obj Identifiable) Collection {
 
 func getCollectionFromType(t objectType) Collection {
 	switch t {
-	case charType:
+	case CharType:
 		return getCollection(cCharacters)
-	case roomType:
+	case RoomType:
 		return getCollection(cRooms)
-	case userType:
+	case UserType:
 		return getCollection(cUsers)
-	case zoneType:
+	case ZoneType:
 		return getCollection(cZones)
-	case itemType:
+	case ItemType:
 		return getCollection(cItems)
 	default:
 		panic("database.getCollectionFromType: Unhandled object type")
@@ -116,84 +115,10 @@ func printError(err error) {
 	}
 }
 
-func findObject(collection collectionName, query interface{}, object interface{}) error {
-	c := getCollection(collection)
-	q := c.Find(query)
-
-	count, err := q.Count()
-
-	if err != nil {
-		return err
-	}
-
-	if count == 0 {
-		return errors.New(fmt.Sprintf("Query return no results: %v", query))
-	}
-
-	err = q.One(object)
-
-	return err
-}
-
-func findObjects(collection collectionName, objects interface{}) error {
-	c := getCollection(collection)
+func RetrieveObjects(t objectType, objects interface{}) error {
+	c := getCollectionFromType(t)
 	iter := c.Find(nil).Iter()
 	return iter.All(objects)
-}
-
-func GetAllUsers() ([]*User, error) {
-	var users []*User
-	err := findObjects(cUsers, &users)
-
-	for _, user := range users {
-		user.objType = userType
-	}
-
-	return users, err
-}
-
-func GetAllCharacters() ([]*Character, error) {
-	var characters []*Character
-	err := findObjects(cCharacters, &characters)
-
-	for _, char := range characters {
-		char.objType = charType
-	}
-
-	return characters, err
-}
-
-func GetAllRooms() ([]*Room, error) {
-	var rooms []*Room
-	err := findObjects(cRooms, &rooms)
-
-	for _, room := range rooms {
-		room.objType = roomType
-	}
-
-	return rooms, err
-}
-
-func GetAllZones() ([]*Zone, error) {
-	var zones []*Zone
-	err := findObjects(cZones, &zones)
-
-	for _, zone := range zones {
-		zone.objType = zoneType
-	}
-
-	return zones, err
-}
-
-func GetAllItems() ([]*Item, error) {
-	var items []*Item
-	err := findObjects(cItems, &items)
-
-	for _, item := range items {
-		item.objType = itemType
-	}
-
-	return items, err
 }
 
 func DeleteObject(obj Identifiable) error {

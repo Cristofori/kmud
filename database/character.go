@@ -9,8 +9,10 @@ import (
 type Character struct {
 	DbObject `bson:",inline"`
 
-	RoomId       bson.ObjectId
-	UserId       bson.ObjectId
+	RoomId bson.ObjectId
+	UserId bson.ObjectId
+
+	Name         string
 	Cash         int
 	Inventory    []bson.ObjectId
 	Conversation string
@@ -22,18 +24,39 @@ type Character struct {
 
 func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *Character {
 	var character Character
-	character.initDbObject(name, charType)
+	character.initDbObject()
 
 	character.UserId = userId
 	character.RoomId = roomId
 	character.Cash = 0
 	character.Health = 100
 	character.HitPoints = 100
+	character.Name = utils.FormatName(name)
 
 	character.online = false
 
 	modified(&character)
 	return &character
+}
+
+func (self *Character) GetType() objectType {
+	return CharType
+}
+
+func (self *Character) GetName() string {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Name
+}
+
+func (self *Character) SetName(name string) {
+	if name != self.GetName() {
+		self.WriteLock()
+		self.Name = utils.FormatName(name)
+		self.WriteUnlock()
+		modified(self)
+	}
 }
 
 func NewNpc(name string, roomId bson.ObjectId) *Character {
@@ -185,11 +208,11 @@ func (self *Character) PrettyConversation(cm utils.ColorMode) string {
 	conv := self.GetConversation()
 
 	if conv == "" {
-		return fmt.Sprintf("%s has nothing to say", self.PrettyName())
+		return fmt.Sprintf("%s has nothing to say", self.GetName())
 	}
 
 	return fmt.Sprintf("%s%s",
-		utils.Colorize(cm, utils.ColorBlue, self.PrettyName()),
+		utils.Colorize(cm, utils.ColorBlue, self.GetName()),
 		utils.Colorize(cm, utils.ColorWhite, ": "+conv))
 }
 
@@ -248,7 +271,7 @@ func CharacterNames(characters []*Character) []string {
 	names := make([]string, len(characters))
 
 	for i, char := range characters {
-		names[i] = char.PrettyName()
+		names[i] = char.GetName()
 	}
 
 	return names
