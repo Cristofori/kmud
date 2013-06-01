@@ -145,6 +145,12 @@ func (ch *commandHandler) Map(args []string) {
 
 	width := endX - startX + 1
 	height := endY - startY + 1
+
+	// Width and height need to be even numbers so that we don't go off
+	// the edge of the screen in either direction
+	width -= (width % 2)
+	height -= (height % 2)
+
 	depth := endZ - startZ + 1
 
 	builder := newMapBuilder(width, height, depth)
