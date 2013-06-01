@@ -486,7 +486,6 @@ func Init(session database.Session) error {
 
 	users := []*database.User{}
 	err := database.RetrieveObjects(database.UserType, &users)
-	fmt.Println("Users:", len(users))
 	utils.HandleError(err)
 
 	for _, user := range users {
@@ -585,9 +584,7 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 		zone := M.GetZone(room.GetZoneId())
 		fmt.Printf("No room found at location %v %v, creating a new one (%s)\n", zone.GetName(), newLocation, character.GetName())
 
-		fmt.Println(1)
 		room = M.CreateRoom(M.GetZone(room.GetZoneId()))
-		fmt.Println(2)
 
 		switch direction {
 		case database.DirectionNorth:
@@ -613,16 +610,12 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 		default:
 			panic("Unexpected code path")
 		}
-		fmt.Println(3)
 
 		room.SetLocation(newLocation)
-		fmt.Println(4)
 	} else {
 		room = newRoom
 	}
 
-	fmt.Println(5)
-	defer fmt.Println(6)
 	return MoveCharacterToLocation(character, M.GetZone(room.GetZoneId()), room.GetLocation())
 }
 

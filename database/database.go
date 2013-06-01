@@ -41,7 +41,7 @@ func Init(s Session) {
 	session = s
 
 	modifiedObjects = make(map[Identifiable]bool)
-	modifiedObjectChannel = make(chan Identifiable)
+	modifiedObjectChannel = make(chan Identifiable, 10)
 	go watchModifiedObjects()
 }
 
