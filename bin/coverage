@@ -1,0 +1,17 @@
+#!/bin/bash
+
+cd "`dirname $0`/.."
+
+mkdir -p html
+
+MODULES="utils telnet server database session model"
+
+printf "<html>\n  <body>\n    <ul>\n" > html/index.html
+
+for module in $MODULES; do
+    gocov test "kmud/$module" | gocov-html > "html/$module.html"
+    printf "      <li><a href='$module.html'>$module</a></li>\n" >> html/index.html
+done
+
+printf "    </ul>\n  </body>\\n</html>" >> html/index.html
+
