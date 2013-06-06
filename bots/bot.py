@@ -101,6 +101,8 @@ def runaround():
 
             if len(exitList) == 0:
                 print '%s: Error, no exits' % user
+                print telnet.before
+                print telnet.after
                 sys.exit(4)
 
             index = random.randint(0, len(exitList) - 1)
