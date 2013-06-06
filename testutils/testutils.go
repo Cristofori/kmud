@@ -29,9 +29,14 @@ func (self TestWriter) Write(p []byte) (n int, err error) {
 
 type TestReader struct {
 	ToRead string
+	err    error
 }
 
-func (self TestReader) Read(p []byte) (n int, err error) {
+func (self *TestReader) Read(p []byte) (n int, err error) {
+	if self.err != nil {
+		return 0, self.err
+	}
+
 	for i := 0; i < len(self.ToRead); i++ {
 		p[i] = self.ToRead[i]
 	}
@@ -39,6 +44,10 @@ func (self TestReader) Read(p []byte) (n int, err error) {
 	p[len(self.ToRead)] = '\n'
 
 	return len(self.ToRead) + 1, nil
+}
+
+func (self *TestReader) SetError(err error) {
+	self.err = err
 }
 
 type TestReadWriter struct {

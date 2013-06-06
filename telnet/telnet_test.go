@@ -2,7 +2,6 @@ package telnet
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -123,8 +122,6 @@ func Test_Processor(t *testing.T) {
 	data = append(data, subData...)
 	data = append(data, BuildCommand(SE)...)
 
-	fmt.Println("Data:", data)
-
 	telnet.Write(data)
 	n, err = telnet.Read(readBuffer)
 	result = readBuffer[:n]
@@ -139,8 +136,6 @@ func Test_Processor(t *testing.T) {
 
 	data = append(data, []byte(" again")...)
 	testStr = testStr + " again"
-
-	fmt.Println("Data:", data)
 
 	telnet.Write(data)
 	n, err = telnet.Read(readBuffer)

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"io"
 	"kmud/testutils"
 	"reflect"
 	"strings"
@@ -45,7 +46,7 @@ func Test_Simplify(t *testing.T) {
 }
 
 func Test_GetRawUserInput(t *testing.T) {
-	var readWriter testutils.TestReadWriter
+	readWriter := &testutils.TestReadWriter{}
 
 	var tests = []struct {
 		input, output string
@@ -68,7 +69,7 @@ func Test_GetRawUserInput(t *testing.T) {
 }
 
 func Test_GetUserInput(t *testing.T) {
-	var readWriter testutils.TestReadWriter
+	readWriter := &testutils.TestReadWriter{}
 
 	var tests = []struct {
 		input, output string
@@ -89,6 +90,20 @@ func Test_GetUserInput(t *testing.T) {
 			t.Errorf("GetUserInput(%q) == %q, want %q", test.input, line, test.output)
 		}
 	}
+}
+
+func Test_GetUserInputPanicOnEOF(t *testing.T) {
+	readWriter := &testutils.TestReadWriter{}
+	readWriter.SetError(io.EOF)
+
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Errorf("PanicIfError() didn't panic on a non-nil error")
+		}
+	}()
+
+	GetUserInput(readWriter, "")
 }
 
 func Test_HandleError(t *testing.T) {
