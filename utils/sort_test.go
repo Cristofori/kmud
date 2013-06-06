@@ -3,6 +3,7 @@ package utils
 import (
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -81,8 +82,8 @@ func Test_sort(t *testing.T) {
 	sort.Sort(input)
 
 	if reflect.DeepEqual(input, output) == false {
-		t.Errorf("Undeisred sorting result: %v\n", input)
-		t.Errorf("Wanted  : %v\n", output)
+		t.Errorf("Undeisred sorting result: %v\n", strings.Join(input, ", "))
+		t.Errorf("Wanted                  : %v\n", strings.Join(output, ", "))
 	}
 }
 
