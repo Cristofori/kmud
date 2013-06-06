@@ -450,7 +450,7 @@ func (self *Server) Start() {
 			zone = zones[0]
 		}
 
-		model.M.CreateRoom(zone)
+		model.M.CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
 	}
 
 	fmt.Println("Server listening on port 8945")

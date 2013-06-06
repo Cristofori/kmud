@@ -51,7 +51,7 @@ const (
 	EditMode PrintMode = iota
 )
 
-func NewRoom(zoneId bson.ObjectId) *Room {
+func NewRoom(zoneId bson.ObjectId, location Coordinate) *Room {
 	var room Room
 	room.initDbObject()
 
@@ -71,8 +71,8 @@ func NewRoom(zoneId bson.ObjectId) *Room {
 	room.ExitUp = false
 	room.ExitDown = false
 
-	room.SetLocation(Coordinate{0, 0, 0})
-	room.SetZoneId(zoneId)
+	room.Location = location
+	room.ZoneId = zoneId
 
 	modified(&room)
 	return &room

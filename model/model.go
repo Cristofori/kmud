@@ -80,8 +80,7 @@ func (self *globalModel) DeleteUserId(userId bson.ObjectId) {
 	self.DeleteUser(self.GetUser(userId))
 }
 
-// Removes the User assocaited with the given id from the model. Removes it
-// from the database as well.
+// Removes the given User from the model. Removes it from the database as well.
 func (self *globalModel) DeleteUser(user *database.User) {
 	for _, character := range M.GetUserCharacters(user) {
 		self.DeleteCharacter(character)
@@ -258,14 +257,19 @@ func (self *globalModel) DeleteCharacter(character *database.Character) {
 
 // CreateRoom creates a new Room object in the database and adds it to the model.
 // A pointer to the new Room object is returned.
-func (self *globalModel) CreateRoom(zone *database.Zone) *database.Room {
+func (self *globalModel) CreateRoom(zone *database.Zone, location database.Coordinate) (*database.Room, error) {
+	existingRoom := M.GetRoomByLocation(location, zone)
+	if existingRoom != nil {
+		return nil, errors.New("A room already exists at that location")
+	}
+
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	room := database.NewRoom(zone.GetId())
+	room := database.NewRoom(zone.GetId(), location)
 	self.rooms[room.GetId()] = room
 
-	return room
+	return room, nil
 }
 
 // GetRoom returns the room object associated with the given id
@@ -345,9 +349,9 @@ func (self *globalModel) GetZones() database.Zones {
 
 // CreateZone creates a new Zone object in the database and adds it to the model.
 // A pointer to the new Zone object is returned.
-func (self *globalModel) CreateZone(name string) (*database.Zone, string) {
+func (self *globalModel) CreateZone(name string) (*database.Zone, error) {
 	if M.GetZoneByName(name) != nil {
-		return nil, "A zone with that name already exists"
+		return nil, errors.New("A zone with that name already exists")
 	}
 
 	self.mutex.Lock()
@@ -356,12 +360,16 @@ func (self *globalModel) CreateZone(name string) (*database.Zone, string) {
 	zone := database.NewZone(name)
 	self.zones[zone.GetId()] = zone
 
-	return zone, ""
+	return zone, nil
 }
 
-func (self *globalModel) DeleteZone(zoneId bson.ObjectId) {
+// Removes the given Zone from the model. Removes it from the database as well.
+func (self *globalModel) DeleteZone(zone *database.Zone) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
+
+	delete(self.zones, zone.GetId())
+	utils.HandleError(database.DeleteObject(zone))
 }
 
 // GetZoneByName name searches for a zone with the given name, returns a zone
@@ -584,7 +592,12 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 		zone := M.GetZone(room.GetZoneId())
 		fmt.Printf("No room found at location %v %v, creating a new one (%s)\n", zone.GetName(), newLocation, character.GetName())
 
-		room = M.CreateRoom(M.GetZone(room.GetZoneId()))
+		var err error
+		room, err = M.CreateRoom(M.GetZone(room.GetZoneId()), newLocation)
+
+		if err != nil {
+			return nil, err
+		}
 
 		switch direction {
 		case database.DirectionNorth:
@@ -610,8 +623,6 @@ func MoveCharacter(character *database.Character, direction database.ExitDirecti
 		default:
 			panic("Unexpected code path")
 		}
-
-		room.SetLocation(newLocation)
 	} else {
 		room = newRoom
 	}

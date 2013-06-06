@@ -232,7 +232,7 @@ func Test_Zone(t *testing.T) {
 
 func Test_Room(t *testing.T) {
 	fakeZoneId := bson.ObjectId("!2345")
-	room := database.NewRoom(fakeZoneId)
+	room := database.NewRoom(fakeZoneId, database.Coordinate{X: 0, Y: 0, Z: 0})
 
 	testutils.Assert(room.GetZoneId() == fakeZoneId, t, "Room didn't have correct zone ID upon creation", fakeZoneId, room.GetZoneId())
 

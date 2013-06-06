@@ -1,10 +1,39 @@
 package model
 
 import (
+	"kmud/database"
 	"kmud/database/dbtest"
 	tu "kmud/testutils"
 	"testing"
+	"time"
 )
+
+func _cleanup(t *testing.T) {
+	for _, item := range M.items {
+		M.DeleteItem(item)
+	}
+	tu.Assert(len(M.items) == 0, t, "Failed to cleanup all items")
+
+	for _, char := range M.chars {
+		M.DeleteCharacter(char)
+	}
+	tu.Assert(len(M.chars) == 0, t, "Failed to cleanup all characters")
+
+	for _, user := range M.users {
+		M.DeleteUser(user)
+	}
+	tu.Assert(len(M.users) == 0, t, "Failed to cleanup all users")
+
+	for _, room := range M.rooms {
+		M.DeleteRoom(room)
+	}
+	tu.Assert(len(M.rooms) == 0, t, "Failed to cleanup all rooms")
+
+	for _, zone := range M.zones {
+		M.DeleteZone(zone)
+	}
+	tu.Assert(len(M.zones) == 0, t, "Failed to cleanup all zones")
+}
 
 func Test_Init(t *testing.T) {
 	Init(&dbtest.TestSession{})
@@ -52,26 +81,30 @@ func Test_UserFunctions(t *testing.T) {
 	userList = M.GetUsers()
 	tu.Assert(!userList.Contains(user1), t, "GetUsers() shouldn't have user1 in it anymore")
 
-	// Cleanup
-	M.DeleteUser(user2)
-	M.DeleteUser(user3)
-	tu.Assert(len(M.users) == 0, t, "There shouldn't be any users left")
+	zone, _ := M.CreateZone("testZone")
+	room, _ := M.CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
+	M.CreatePlayer("testPlayer", user1, room)
+
+	M.DeleteUser(user1)
+	tu.Assert(len(M.chars) == 0, t, "Deleting a user should have deleted its characters")
+
+	_cleanup(t)
 }
 
 func TestZoneFunctions(t *testing.T) {
 	name := "zone1"
-	zone1, _ := M.CreateZone(name)
+	zone1, err1 := M.CreateZone(name)
 
-	tu.Assert(zone1 != nil, t, "Zone creation failed")
+	tu.Assert(zone1 != nil && err1 == nil, t, "Zone creation failed")
 
 	zoneByName := M.GetZoneByName(name)
 	tu.Assert(zoneByName == zone1, t, "GetZoneByName() failed")
 
-	zone2, _ := M.CreateZone("zone2")
-	zone3, _ := M.CreateZone("zone3")
+	zone2, err2 := M.CreateZone("zone2")
+	tu.Assert(zone2 != nil && err2 == nil, t, "Failed to create zone2")
 
-	tu.Assert(zone2 != nil, t, "Failed to create zone2")
-	tu.Assert(zone3 != nil, t, "Failed to create zone3")
+	zone3, err3 := M.CreateZone("zone3")
+	tu.Assert(zone3 != nil && err3 == nil, t, "Failed to create zone3")
 
 	zoneList := M.GetZones()
 	tu.Assert(zoneList.Contains(zone1), t, "GetZones() didn't return zone1")
@@ -81,11 +114,33 @@ func TestZoneFunctions(t *testing.T) {
 	zoneById := M.GetZone(zone1.GetId())
 	tu.Assert(zoneById == zone1, t, "GetZoneById() failed")
 
-	// Cleanup
+	_, err := M.CreateZone("zone3")
+	tu.Assert(err != nil, t, "Creating zone with duplicate name should have failed")
+
+	_cleanup(t)
 }
 
 func TestRoomFunctions(t *testing.T) {
-	//name := "room"
+	zone, err := M.CreateZone("zone")
+	tu.Assert(zone != nil && err == nil, t, "Zone creation failed")
+
+	room1, err1 := M.CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
+	tu.Assert(room1 != nil && err1 == nil, t, "Room creation failed")
+
+	badRoom, shouldError := M.CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
+	tu.Assert(badRoom == nil && shouldError != nil, t, "Creating two rooms at the same location should have failed")
+
+	room2, err2 := M.CreateRoom(zone, database.Coordinate{X: 0, Y: 1, Z: 0})
+	tu.Assert(room2 != nil && err2 == nil, t, "Second room creation failed")
+
+	room1.SetExitEnabled(database.DirectionSouth, true)
+	room2.SetExitEnabled(database.DirectionNorth, true)
+
+	tu.Assert(room2.HasExit(database.DirectionNorth), t, "Call to room.SetExitEnabled failed")
+	M.DeleteRoom(room1)
+	tu.Assert(!room2.HasExit(database.DirectionNorth), t, "Deleting room1 should have removed corresponding exit from room2")
+
+	_cleanup(t)
 }
 
 func TestRoomAndZoneFunctions(t *testing.T) {
@@ -97,6 +152,41 @@ func TestCharFunctions(t *testing.T) {
 	//user := M.CreateUser("user1", "")
 	//playerName1 := "player1"
 	//player1 := M.CreatePlayer(name1, user
+}
+
+func TestEventLoop(t *testing.T) {
+	zone, _ := M.CreateZone("zone")
+	room, _ := M.CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
+	user := M.CreateUser("user", "password")
+	char := M.CreatePlayer("char", user, room)
+
+	eventChannel := Register(char)
+
+	message := "hey how are yah"
+	queueEvent(TellEvent{char, char, message})
+
+	timeout := make(chan bool, 1)
+
+	go func() {
+		time.Sleep(3 * time.Second)
+		timeout <- true
+	}()
+
+	select {
+	case event := <-eventChannel:
+		tu.Assert(event.Type() == TellEventType, t, "Didn't get a Tell event back")
+		tellEvent := event.(TellEvent)
+		tu.Assert(tellEvent.Message == message, t, "Didn't get the right message back:", tellEvent.Message, message)
+	case <-timeout:
+		tu.Assert(false, t, "Timed out waiting for tell event")
+	}
+
+	select {
+	case event := <-eventChannel:
+		tu.Assert(event.Type() == TimerEventType, t, "Expected to get a timer event")
+	case <-timeout:
+		tu.Assert(false, t, "Timed out waiting for timer event")
+	}
 }
 
 // vim: nocindent

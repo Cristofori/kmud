@@ -202,14 +202,15 @@ func (ch *commandHandler) Zone(args []string) {
 
 			ch.session.zone.SetName(args[1])
 		} else if args[0] == "new" {
-			newZone, errorMessage := model.M.CreateZone(args[1])
+			newZone, err := model.M.CreateZone(args[1])
 
-			if newZone == nil {
-				ch.session.printError(errorMessage)
+			if err != nil {
+				ch.session.printError(err.Error())
 				return
 			}
 
-			newRoom := model.M.CreateRoom(newZone)
+			newRoom, err := model.M.CreateRoom(newZone, database.Coordinate{X: 0, Y: 0, Z: 0})
+			utils.PanicIfError(err)
 
 			model.MoveCharacterToRoom(ch.session.player, newRoom)
 
