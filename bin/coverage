@@ -4,7 +4,11 @@ cd "`dirname $0`/.."
 
 mkdir -p html
 
-MODULES="utils telnet server database session model"
+MODULES="$1"
+
+if [ -z "$MODULES" ]; then
+    MODULES="utils telnet server database session model"
+fi
 
 printf "<html>\n  <body>\n    <ul>\n" > html/index.html
 
