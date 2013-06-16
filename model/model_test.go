@@ -3,6 +3,7 @@ package model
 import (
 	"kmud/database"
 	"kmud/database/dbtest"
+	"kmud/testutils"
 	tu "kmud/testutils"
 	"testing"
 	"time"
@@ -91,7 +92,7 @@ func Test_UserFunctions(t *testing.T) {
 	_cleanup(t)
 }
 
-func TestZoneFunctions(t *testing.T) {
+func Test_ZoneFunctions(t *testing.T) {
 	name := "zone1"
 	zone1, err1 := M.CreateZone(name)
 
@@ -120,7 +121,7 @@ func TestZoneFunctions(t *testing.T) {
 	_cleanup(t)
 }
 
-func TestRoomFunctions(t *testing.T) {
+func Test_RoomFunctions(t *testing.T) {
 	zone, err := M.CreateZone("zone")
 	tu.Assert(zone != nil && err == nil, t, "Zone creation failed")
 
@@ -143,18 +144,18 @@ func TestRoomFunctions(t *testing.T) {
 	_cleanup(t)
 }
 
-func TestRoomAndZoneFunctions(t *testing.T) {
+func Test_RoomAndZoneFunctions(t *testing.T) {
 	// ZoneCorners
 	// GetRoomsInZone
 }
 
-func TestCharFunctions(t *testing.T) {
+func Test_CharFunctions(t *testing.T) {
 	//user := M.CreateUser("user1", "")
 	//playerName1 := "player1"
 	//player1 := M.CreatePlayer(name1, user
 }
 
-func TestEventLoop(t *testing.T) {
+func Test_EventLoop(t *testing.T) {
 	zone, _ := M.CreateZone("zone")
 	room, _ := M.CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
 	user := M.CreateUser("user", "password")
@@ -165,12 +166,7 @@ func TestEventLoop(t *testing.T) {
 	message := "hey how are yah"
 	queueEvent(TellEvent{char, char, message})
 
-	timeout := make(chan bool, 1)
-
-	go func() {
-		time.Sleep(3 * time.Second)
-		timeout <- true
-	}()
+	timeout := testutils.Timeout(3 * time.Second)
 
 	select {
 	case event := <-eventChannel:
@@ -187,6 +183,49 @@ func TestEventLoop(t *testing.T) {
 	case <-timeout:
 		tu.Assert(false, t, "Timed out waiting for timer event")
 	}
+
+	_cleanup(t)
+}
+
+func Test_CombatLoop(t *testing.T) {
+	zone, _ := M.CreateZone("zone")
+	room, _ := M.CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
+	user := M.CreateUser("user", "password")
+
+	char1 := M.CreatePlayer("char1", user, room)
+	char2 := M.CreatePlayer("char2", user, room)
+
+	eventChannel1 := Register(char1)
+	// eventChannel2 := Register(char2)
+
+	StartFight(char1, char2)
+	// StartFight(char2, char1)
+
+	verifyEvents := func(eventChannel chan Event) {
+		timeout := testutils.Timeout(3 * time.Second)
+		expectedTypes := make(map[EventType]bool)
+		expectedTypes[CombatEventType] = true
+		expectedTypes[CombatStartEventType] = true
+
+		for {
+			select {
+			case event := <-eventChannel1:
+				if event.Type() != TimerEventType {
+					tu.Assert(expectedTypes[event.Type()] == true, t, "Unexpected event type:", event.Type())
+					delete(expectedTypes, event.Type())
+				}
+			case <-timeout:
+				tu.Assert(false, t, "Timed out waiting for combat event")
+			}
+
+			if len(expectedTypes) == 0 {
+				break
+			}
+		}
+	}
+
+	verifyEvents(eventChannel1)
+	// verifyEvents(eventChannel2)
 }
 
 // vim: nocindent

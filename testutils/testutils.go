@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 // import "fmt"
@@ -124,6 +125,18 @@ func Assert(condition bool, t *testing.T, failMessage ...interface{}) {
 	if !condition {
 		t.Error(failMessage...)
 	}
+}
+
+// Timeout writes a value to the channel it returns after the given amount of
+// time has elapsed
+func Timeout(d time.Duration) chan bool {
+	timeoutChan := make(chan bool, 1)
+	go func() {
+		time.Sleep(d)
+		timeoutChan <- true
+	}()
+
+	return timeoutChan
 }
 
 // vim: nocindent
