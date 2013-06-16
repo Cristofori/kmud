@@ -118,6 +118,21 @@ func (self *globalModel) GetCharacterByName(name string) *database.Character {
 	return nil
 }
 
+func (self *globalModel) GetAllNpcs() []*database.Character {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	npcs := []*database.Character{}
+
+	for _, character := range self.chars {
+		if character.IsNpc() {
+			npcs = append(npcs, character)
+		}
+	}
+
+	return npcs
+}
+
 // GetUserCharacters returns all of the Character objects associated with the
 // given user id
 func (self *globalModel) GetUserCharacters(user *database.User) []*database.Character {

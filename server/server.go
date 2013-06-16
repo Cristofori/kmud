@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"kmud/database"
+	"kmud/engine"
 	"kmud/model"
 	"kmud/session"
 	"kmud/telnet"
@@ -471,6 +472,7 @@ func (self *Server) Listen() {
 
 func (self *Server) Exec() {
 	self.Start()
+	engine.Start()
 	self.Listen()
 }
 
