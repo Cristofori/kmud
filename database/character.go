@@ -10,7 +10,7 @@ type Character struct {
 	DbObject `bson:",inline"`
 
 	RoomId bson.ObjectId
-	UserId bson.ObjectId
+	UserId bson.ObjectId ",omitempty"
 
 	Name         string
 	Cash         int
