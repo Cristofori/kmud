@@ -4,10 +4,10 @@ import (
 	"errors"
 	"io"
 	"kmud/testutils"
+	"math/rand"
 	"reflect"
 	"strings"
 	"testing"
-    "math/rand"
 )
 
 func Test_WriteLine(t *testing.T) {
@@ -372,27 +372,27 @@ func Test_FindMethod(t *testing.T) {
 }
 
 func Test_Random(t *testing.T) {
-    var tests = []struct {
-        low int
-        high int
-    }{
-        {0, 0},
-        {0, 1},
-        {-10, 0},
-        {1, 2},
-        {1000, 2000},
-    }
+	var tests = []struct {
+		low  int
+		high int
+	}{
+		{0, 0},
+		{0, 1},
+		{-10, 0},
+		{1, 2},
+		{1000, 2000},
+	}
 
-    for i := 0; i < 100; i++ {
-        rand.Seed(int64(i))
-        for _, test := range tests {
-            result := Random(test.low, test.high)
+	for i := 0; i < 100; i++ {
+		rand.Seed(int64(i))
+		for _, test := range tests {
+			result := Random(test.low, test.high)
 
-            if result < test.low || result > test.high {
-                t.Errorf("Random number was out of range %v-%v, got %v", test.low, test.high, result)
-            }
-        }
-    }
+			if result < test.low || result > test.high {
+				t.Errorf("Random number was out of range %v-%v, got %v", test.low, test.high, result)
+			}
+		}
+	}
 }
 
 // vim:nocindent

@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"reflect"
 	"regexp"
 	"strings"
 	"time"
 	"unicode"
-    "math/rand"
 )
 
 type Prompter interface {
@@ -346,20 +346,20 @@ func (self *Throttler) Sync() {
 
 // Random returns a random integer between low and high, inclusive
 func Random(low, high int) int {
-    if high < low {
-        panic("utils.Random: high should be >= low")
-    }
+	if high < low {
+		panic("utils.Random: high should be >= low")
+	}
 
-    diff := high - low
+	diff := high - low
 
-    if diff == 0 {
-        return low
-    }
+	if diff == 0 {
+		return low
+	}
 
-    result := rand.Int() % diff
-    result += low
+	result := rand.Int() % diff
+	result += low
 
-    return result
+	return result
 }
 
 // vim: nocindent

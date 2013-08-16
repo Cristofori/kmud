@@ -159,32 +159,32 @@ func StringToDirection(str string) Direction {
 }
 
 func DirectionToString(dir Direction) string {
-    switch dir {
-        case DirectionNorth:
-            return "North"
-        case DirectionNorthEast:
-            return "NorthEast"
-        case DirectionEast:
-            return "East"
-        case DirectionSouthEast:
-            return "SouthEast"
-        case DirectionSouth:
-            return "South"
-        case DirectionSouthWest:
-            return "SouthWest"
-        case DirectionWest:
-            return "West"
-        case DirectionNorthWest:
-            return "NorthWest"
-        case DirectionUp:
-            return "Up"
-        case DirectionDown:
-            return "Down"
-        case DirectionNone:
-            return "None"
-    }
+	switch dir {
+	case DirectionNorth:
+		return "North"
+	case DirectionNorthEast:
+		return "NorthEast"
+	case DirectionEast:
+		return "East"
+	case DirectionSouthEast:
+		return "SouthEast"
+	case DirectionSouth:
+		return "South"
+	case DirectionSouthWest:
+		return "SouthWest"
+	case DirectionWest:
+		return "West"
+	case DirectionNorthWest:
+		return "NorthWest"
+	case DirectionUp:
+		return "Up"
+	case DirectionDown:
+		return "Down"
+	case DirectionNone:
+		return "None"
+	}
 
-    panic("Unexpected code path")
+	panic("Unexpected code path")
 }
 
 func (self Direction) Opposite() Direction {

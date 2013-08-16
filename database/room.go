@@ -144,9 +144,9 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 	}
 
 	var exitList []string
-    for _, direction := range self.GetExits() {
-        exitList = append(exitList, directionToExitString(colorMode, direction))
-    }
+	for _, direction := range self.GetExits() {
+		exitList = append(exitList, directionToExitString(colorMode, direction))
+	}
 
 	if len(exitList) == 0 {
 		str = str + utils.Colorize(colorMode, utils.ColorWhite, "None")
@@ -359,7 +359,7 @@ func (self *Room) GetExits() []Direction {
 	appendIfExists(DirectionUp)
 	appendIfExists(DirectionDown)
 
-    return exits
+	return exits
 }
 
 // vim: nocindent
