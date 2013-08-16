@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"fmt"
 	"kmud/database"
 	"kmud/model"
 	"kmud/utils"
@@ -20,14 +19,8 @@ func manage(npc *database.Character) {
 	for {
 		room := model.M.GetRoom(npc.GetRoomId())
 		exits := room.GetExits()
-		exitToTake := utils.Random(-1, len(exits)-1)
-
-		if exitToTake != -1 {
-			fmt.Printf("Moving to exit %s\n", database.DirectionToString(exits[exitToTake]))
-			model.MoveCharacter(npc, exits[exitToTake])
-		} else {
-			fmt.Println("Staying put")
-		}
+		exitToTake := utils.Random(0, len(exits)-1)
+        model.MoveCharacter(npc, exits[exitToTake])
 
 		throttler.Sync()
 	}
