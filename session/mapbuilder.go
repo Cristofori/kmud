@@ -62,7 +62,7 @@ func (self *mapBuilder) setUserRoom(room *database.Room) {
 }
 
 func (self *mapBuilder) addRoom(room *database.Room, x int, y int, z int) {
-	addIfExists := func(dir database.ExitDirection, x int, y int) {
+	addIfExists := func(dir database.Direction, x int, y int) {
 		if x < 0 || y < 0 {
 			return
 		}
@@ -128,7 +128,7 @@ func (self *mapBuilder) toString(cm utils.ColorMode) string {
 	return str
 }
 
-func (self *mapTile) addExit(dir database.ExitDirection) {
+func (self *mapTile) addExit(dir database.Direction) {
 	combineChars := func(r1 rune, r2 rune, r3 rune) {
 		if self.char == r1 {
 			self.char = r2

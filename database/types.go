@@ -7,6 +7,22 @@ import (
 	"strings"
 )
 
+type Direction int
+
+const (
+	DirectionNorth     Direction = iota
+	DirectionNorthEast Direction = iota
+	DirectionEast      Direction = iota
+	DirectionSouthEast Direction = iota
+	DirectionSouth     Direction = iota
+	DirectionSouthWest Direction = iota
+	DirectionWest      Direction = iota
+	DirectionNorthWest Direction = iota
+	DirectionUp        Direction = iota
+	DirectionDown      Direction = iota
+	DirectionNone      Direction = iota
+)
+
 type Identifiable interface {
 	GetId() bson.ObjectId
 	GetType() objectType
@@ -30,7 +46,7 @@ type Coordinate struct {
 	Z int
 }
 
-func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) string {
+func directionToExitString(colorMode utils.ColorMode, direction Direction) string {
 	letterColor := utils.ColorBlue
 	bracketColor := utils.ColorDarkBlue
 	textColor := utils.ColorWhite
@@ -71,7 +87,7 @@ func directionToExitString(colorMode utils.ColorMode, direction ExitDirection) s
 	panic("Unexpected code path")
 }
 
-func (self *Coordinate) Next(direction ExitDirection) Coordinate {
+func (self *Coordinate) Next(direction Direction) Coordinate {
 	newCoord := *self
 	switch direction {
 	case DirectionNorth:
@@ -102,7 +118,7 @@ func (self *Coordinate) Next(direction ExitDirection) Coordinate {
 	return newCoord
 }
 
-func StringToDirection(str string) ExitDirection {
+func StringToDirection(str string) Direction {
 	dirStr := strings.ToLower(str)
 	switch dirStr {
 	case "n":
@@ -142,7 +158,36 @@ func StringToDirection(str string) ExitDirection {
 	return DirectionNone
 }
 
-func (self ExitDirection) Opposite() ExitDirection {
+func DirectionToString(dir Direction) string {
+    switch dir {
+        case DirectionNorth:
+            return "North"
+        case DirectionNorthEast:
+            return "NorthEast"
+        case DirectionEast:
+            return "East"
+        case DirectionSouthEast:
+            return "SouthEast"
+        case DirectionSouth:
+            return "South"
+        case DirectionSouthWest:
+            return "SouthWest"
+        case DirectionWest:
+            return "West"
+        case DirectionNorthWest:
+            return "NorthWest"
+        case DirectionUp:
+            return "Up"
+        case DirectionDown:
+            return "Down"
+        case DirectionNone:
+            return "None"
+    }
+
+    panic("Unexpected code path")
+}
+
+func (self Direction) Opposite() Direction {
 	switch self {
 	case DirectionNorth:
 		return DirectionSouth

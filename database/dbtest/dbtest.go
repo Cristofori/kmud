@@ -240,11 +240,11 @@ func Test_Room(t *testing.T) {
 	room.SetZoneId(fakeZoneId2)
 	testutils.Assert(room.GetZoneId() == fakeZoneId2, t, "Call to room.SetZoneId() failed")
 
-	directionList := make([]database.ExitDirection, 10)
+	directionList := make([]database.Direction, 10)
 	directionCount := 10
 
 	for i := 0; i < directionCount; i++ {
-		directionList[i] = database.ExitDirection(i)
+		directionList[i] = database.Direction(i)
 	}
 
 	for _, dir := range directionList {

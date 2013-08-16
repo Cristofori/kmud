@@ -414,7 +414,7 @@ func (self *globalModel) DeleteRoom(room *database.Room) {
 	// Disconnect all exits leading to this room
 	loc := room.GetLocation()
 
-	updateRoom := func(dir database.ExitDirection) {
+	updateRoom := func(dir database.Direction) {
 		next := loc.Next(dir)
 		room := M.GetRoomByLocation(next, M.GetZone(room.GetZoneId()))
 
@@ -589,7 +589,7 @@ func MoveCharacterToRoom(character *database.Character, newRoom *database.Room) 
 // no exit in that direction, and error is returned. If there is an exit, but no
 // room connected to it, then a room is automatically created for the character
 // to move in to.
-func MoveCharacter(character *database.Character, direction database.ExitDirection) (*database.Room, error) {
+func MoveCharacter(character *database.Character, direction database.Direction) (*database.Room, error) {
 	room := M.GetRoom(character.GetRoomId())
 
 	if room == nil {

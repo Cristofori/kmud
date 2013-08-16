@@ -79,7 +79,7 @@ const (
 )
 
 func toggleExitMenu(cm utils.ColorMode, room *database.Room) *utils.Menu {
-	onOrOff := func(direction database.ExitDirection) string {
+	onOrOff := func(direction database.Direction) string {
 		text := "Off"
 		if room.HasExit(direction) {
 			text = "On"

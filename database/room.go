@@ -28,22 +28,6 @@ type Room struct {
 	ExitDown      bool
 }
 
-type ExitDirection int
-
-const (
-	DirectionNorth     ExitDirection = iota
-	DirectionNorthEast ExitDirection = iota
-	DirectionEast      ExitDirection = iota
-	DirectionSouthEast ExitDirection = iota
-	DirectionSouth     ExitDirection = iota
-	DirectionSouthWest ExitDirection = iota
-	DirectionWest      ExitDirection = iota
-	DirectionNorthWest ExitDirection = iota
-	DirectionUp        ExitDirection = iota
-	DirectionDown      ExitDirection = iota
-	DirectionNone      ExitDirection = iota
-)
-
 type PrintMode int
 
 const (
@@ -189,7 +173,7 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 	return str
 }
 
-func (self *Room) HasExit(dir ExitDirection) bool {
+func (self *Room) HasExit(dir Direction) bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
@@ -219,7 +203,7 @@ func (self *Room) HasExit(dir ExitDirection) bool {
 	panic("Unexpected code path")
 }
 
-func (self *Room) SetExitEnabled(dir ExitDirection, enabled bool) {
+func (self *Room) SetExitEnabled(dir Direction, enabled bool) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
