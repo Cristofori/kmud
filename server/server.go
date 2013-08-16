@@ -471,6 +471,7 @@ func (self *Server) Listen() {
 }
 
 func (self *Server) Exec() {
+    database.GetTime()
 	self.Start()
 	engine.Start()
 	self.Listen()

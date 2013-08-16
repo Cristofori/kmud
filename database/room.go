@@ -144,23 +144,9 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 	}
 
 	var exitList []string
-
-	appendIfExists := func(direction ExitDirection) {
-		if self.HasExit(direction) {
-			exitList = append(exitList, directionToExitString(colorMode, direction))
-		}
-	}
-
-	appendIfExists(DirectionNorth)
-	appendIfExists(DirectionNorthEast)
-	appendIfExists(DirectionEast)
-	appendIfExists(DirectionSouthEast)
-	appendIfExists(DirectionSouth)
-	appendIfExists(DirectionSouthWest)
-	appendIfExists(DirectionWest)
-	appendIfExists(DirectionNorthWest)
-	appendIfExists(DirectionUp)
-	appendIfExists(DirectionDown)
+    for _, direction := range self.GetExits() {
+        exitList = append(exitList, directionToExitString(colorMode, direction))
+    }
 
 	if len(exitList) == 0 {
 		str = str + utils.Colorize(colorMode, utils.ColorWhite, "None")
@@ -348,9 +334,32 @@ func (self *Room) GetZoneId() bson.ObjectId {
 	return self.ZoneId
 }
 
-func (self *Room) NextLocation(direction ExitDirection) Coordinate {
+func (self *Room) NextLocation(direction Direction) Coordinate {
 	loc := self.GetLocation()
 	return loc.Next(direction)
+}
+
+func (self *Room) GetExits() []Direction {
+	var exits []Direction
+
+	appendIfExists := func(direction Direction) {
+		if self.HasExit(direction) {
+			exits = append(exits, direction)
+		}
+	}
+
+	appendIfExists(DirectionNorth)
+	appendIfExists(DirectionNorthEast)
+	appendIfExists(DirectionEast)
+	appendIfExists(DirectionSouthEast)
+	appendIfExists(DirectionSouth)
+	appendIfExists(DirectionSouthWest)
+	appendIfExists(DirectionWest)
+	appendIfExists(DirectionNorthWest)
+	appendIfExists(DirectionUp)
+	appendIfExists(DirectionDown)
+
+    return exits
 }
 
 // vim: nocindent
