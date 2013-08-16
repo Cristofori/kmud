@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+    "math/rand"
 )
 
 type Prompter interface {
@@ -341,6 +342,24 @@ func (self *Throttler) Sync() {
 		time.Sleep(self.interval - diff)
 	}
 	self.lastTime = time.Now()
+}
+
+// Random returns a random integer between low and high, inclusive
+func Random(low, high int) int {
+    if high < low {
+        panic("utils.Random: high should be >= low")
+    }
+
+    diff := high - low
+
+    if diff == 0 {
+        return low
+    }
+
+    result := rand.Int() % diff
+    result += low
+
+    return result
 }
 
 // vim: nocindent

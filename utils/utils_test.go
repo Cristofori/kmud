@@ -7,9 +7,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+    "math/rand"
 )
-
-// import "fmt"
 
 func Test_WriteLine(t *testing.T) {
 	var wrote string
@@ -370,6 +369,30 @@ func Test_FindMethod(t *testing.T) {
 			method.Call(vals) // Make sure its callable via reflection (that its exported)
 		}
 	}
+}
+
+func Test_Random(t *testing.T) {
+    var tests = []struct {
+        low int
+        high int
+    }{
+        {0, 0},
+        {0, 1},
+        {-10, 0},
+        {1, 2},
+        {1000, 2000},
+    }
+
+    for i := 0; i < 100; i++ {
+        rand.Seed(int64(i))
+        for _, test := range tests {
+            result := Random(test.low, test.high)
+
+            if result < test.low || result > test.high {
+                t.Errorf("Random number was out of range %v-%v, got %v", test.low, test.high, result)
+            }
+        }
+    }
 }
 
 // vim:nocindent
