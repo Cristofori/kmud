@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"kmud/database"
 	"kmud/utils"
-	"labix.org/v2/mgo/bson"
 	"sync"
 	"time"
 )
@@ -149,13 +148,15 @@ type TellEvent struct {
 }
 
 type EnterEvent struct {
-	Character *database.Character
-	RoomId    bson.ObjectId
+	Character  *database.Character
+	Room       *database.Room
+    SourceRoom *database.Room
 }
 
 type LeaveEvent struct {
 	Character *database.Character
-	RoomId    bson.ObjectId
+	Room      *database.Room
+    DestRoom  *database.Room
 }
 
 type RoomUpdateEvent struct {
@@ -267,12 +268,19 @@ func (self EnterEvent) ToString(receiver *database.Character) string {
 
 	cm := getColorMode(receiver)
 
-	return utils.Colorize(cm, utils.ColorBlue, self.Character.GetName()) +
+    str := utils.Colorize(cm, utils.ColorBlue, self.Character.GetName()) +
 		utils.Colorize(cm, utils.ColorWhite, " has entered the room")
+
+    dir := DirectionBetween(self.Room, self.SourceRoom)
+    if dir != database.DirectionNone {
+        str = str + utils.Colorize(cm, utils.ColorWhite, " from the " + database.DirectionToString(dir))
+    }
+
+    return str
 }
 
 func (self EnterEvent) IsFor(receiver *database.Character) bool {
-	return receiver.GetRoomId() == self.RoomId
+	return receiver.GetRoomId() == self.Room.GetId()
 }
 
 // Leave
@@ -282,12 +290,20 @@ func (self LeaveEvent) Type() EventType {
 
 func (self LeaveEvent) ToString(receiver *database.Character) string {
 	cm := getColorMode(receiver)
-	return utils.Colorize(cm, utils.ColorBlue, self.Character.GetName()) +
+
+	str := utils.Colorize(cm, utils.ColorBlue, self.Character.GetName()) +
 		utils.Colorize(cm, utils.ColorWhite, " has left the room")
+
+    dir := DirectionBetween(self.Room, self.DestRoom)
+    if dir != database.DirectionNone {
+        str = str + utils.Colorize(cm, utils.ColorWhite, " to the " + database.DirectionToString(dir))
+    }
+
+    return str
 }
 
 func (self LeaveEvent) IsFor(receiver *database.Character) bool {
-	return receiver.GetRoomId() == self.RoomId &&
+	return receiver.GetRoomId() == self.Room.GetId() &&
 		receiver.GetId() != self.Character.GetId()
 }
 

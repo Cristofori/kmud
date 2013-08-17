@@ -563,16 +563,10 @@ func MoveCharacterToLocation(character *database.Character, zone *database.Zone,
 	newRoom := M.GetRoomByLocation(location, zone)
 
 	if newRoom == nil {
-		return newRoom, errors.New("Invalid location")
+		return nil, errors.New("Invalid location")
 	}
 
-	oldRoomId := character.GetRoomId()
-
-	character.SetRoomId(newRoom.GetId())
-
-	queueEvent(EnterEvent{Character: character, RoomId: newRoom.GetId()})
-	queueEvent(LeaveEvent{Character: character, RoomId: oldRoomId})
-
+    MoveCharacterToRoom(character, newRoom)
 	return newRoom, nil
 }
 
@@ -581,8 +575,10 @@ func MoveCharacterToRoom(character *database.Character, newRoom *database.Room) 
 	oldRoomId := character.GetRoomId()
 	character.SetRoomId(newRoom.GetId())
 
-	queueEvent(EnterEvent{Character: character, RoomId: newRoom.GetId()})
-	queueEvent(LeaveEvent{Character: character, RoomId: oldRoomId})
+    oldRoom := M.GetRoom(oldRoomId)
+
+	queueEvent(EnterEvent{Character: character, Room: newRoom, SourceRoom: oldRoom})
+	queueEvent(LeaveEvent{Character: character, Room: oldRoom, DestRoom: newRoom})
 }
 
 // MoveCharacter moves the given character in the given direction. If there is
@@ -720,6 +716,21 @@ func ZoneCorners(zone *database.Zone) (database.Coordinate, database.Coordinate)
 func getColorMode(char *database.Character) utils.ColorMode {
 	user := M.GetUser(char.GetUserId())
 	return user.GetColorMode()
+}
+
+// Returns the exit direction of the given room if it is adjacent, otherwise DirectionNone
+func DirectionBetween(from, to *database.Room) database.Direction {
+    zone := M.GetZone(from.GetZoneId())
+    for _, exit := range from.GetExits() {
+        nextLocation := from.NextLocation(exit)
+        nextRoom := M.GetRoomByLocation(nextLocation, zone)
+
+        if nextRoom == to {
+            return exit
+        }
+    }
+
+    return database.DirectionNone
 }
 
 // vim: nocindent
