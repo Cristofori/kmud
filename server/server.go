@@ -302,8 +302,8 @@ func handleConnection(conn *wrappedConnection) {
 			case "":
 				fallthrough
 			case "q":
-                utils.WriteLine(conn, "Take luck!", utils.ColorModeNone)
-                conn.Close()
+				utils.WriteLine(conn, "Take luck!", utils.ColorModeNone)
+				conn.Close()
 				return
 			}
 
@@ -467,7 +467,7 @@ func (self *Server) Listen() {
 }
 
 func (self *Server) Exec() {
-    database.GetTime()
+	database.GetTime()
 	self.Start()
 	engine.Start()
 	self.Listen()

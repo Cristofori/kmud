@@ -20,7 +20,7 @@ func manage(npc *database.Character) {
 		room := model.M.GetRoom(npc.GetRoomId())
 		exits := room.GetExits()
 		exitToTake := utils.Random(0, len(exits)-1)
-        model.MoveCharacter(npc, exits[exitToTake])
+		model.MoveCharacter(npc, exits[exitToTake])
 
 		throttler.Sync()
 	}

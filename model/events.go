@@ -150,13 +150,13 @@ type TellEvent struct {
 type EnterEvent struct {
 	Character  *database.Character
 	Room       *database.Room
-    SourceRoom *database.Room
+	SourceRoom *database.Room
 }
 
 type LeaveEvent struct {
 	Character *database.Character
 	Room      *database.Room
-    DestRoom  *database.Room
+	DestRoom  *database.Room
 }
 
 type RoomUpdateEvent struct {
@@ -266,14 +266,14 @@ func (self EnterEvent) ToString(receiver *database.Character) string {
 		return ""
 	}
 
-    str := fmt.Sprintf("%s%s %shas entered the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
+	str := fmt.Sprintf("%s%s %shas entered the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
 
-    dir := DirectionBetween(self.Room, self.SourceRoom)
-    if dir != database.DirectionNone {
-        str = str + " from the " + database.DirectionToString(dir)
-    }
+	dir := DirectionBetween(self.Room, self.SourceRoom)
+	if dir != database.DirectionNone {
+		str = str + " from the " + database.DirectionToString(dir)
+	}
 
-    return str
+	return str
 }
 
 func (self EnterEvent) IsFor(receiver *database.Character) bool {
@@ -286,14 +286,14 @@ func (self LeaveEvent) Type() EventType {
 }
 
 func (self LeaveEvent) ToString(receiver *database.Character) string {
-    str := fmt.Sprintf("%s%s %shas left the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
+	str := fmt.Sprintf("%s%s %shas left the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
 
-    dir := DirectionBetween(self.Room, self.DestRoom)
-    if dir != database.DirectionNone {
-        str = str + " to the " + database.DirectionToString(dir)
-    }
+	dir := DirectionBetween(self.Room, self.DestRoom)
+	if dir != database.DirectionNone {
+		str = str + " to the " + database.DirectionToString(dir)
+	}
 
-    return str
+	return str
 }
 
 func (self LeaveEvent) IsFor(receiver *database.Character) bool {
