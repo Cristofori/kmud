@@ -35,23 +35,19 @@ func SimplePrompter(prompt string) Prompter {
 	return &prompter
 }
 
-func Write(conn io.Writer, text string) (int, error) {
-	return WriteRaw(conn, []byte(text))
+func Write(conn io.Writer, text string, cm ColorMode) (int, error) {
+	return conn.Write([]byte(processColors(text, cm)))
 }
 
-func WriteRaw(conn io.Writer, bytes []byte) (int, error) {
-	return conn.Write(bytes)
-}
-
-func WriteLine(conn io.Writer, line string) (int, error) {
-	return Write(conn, line+"\r\n")
+func WriteLine(conn io.Writer, line string, cm ColorMode) (int, error) {
+	return Write(conn, line+"\r\n", cm)
 }
 
 // ClearLine sends the VT100 code for erasing the line followed by a carriage
 // return to move the cursor back to the beginning of the line
 func ClearLine(conn io.Writer) {
 	clearline := "\x1B[2K"
-	Write(conn, clearline+"\r")
+	Write(conn, clearline+"\r", ColorModeNone)
 }
 
 func Simplify(str string) string {
@@ -60,15 +56,15 @@ func Simplify(str string) string {
 	return simpleStr
 }
 
-func GetRawUserInputSuffix(conn io.ReadWriter, prompt string, suffix string) string {
-	return GetRawUserInputSuffixP(conn, SimplePrompter(prompt), suffix)
+func GetRawUserInputSuffix(conn io.ReadWriter, prompt string, suffix string, cm ColorMode) string {
+	return GetRawUserInputSuffixP(conn, SimplePrompter(prompt), suffix, cm)
 }
 
-func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string) string {
+func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string, cm ColorMode) string {
 	scanner := bufio.NewScanner(conn)
 
 	for {
-		Write(conn, prompter.GetPrompt())
+		Write(conn, prompter.GetPrompt(), cm)
 
 		if !scanner.Scan() {
 			panic("EOF")
@@ -77,7 +73,7 @@ func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string
 		PanicIfError(scanner.Err())
 
 		input := scanner.Text()
-		Write(conn, suffix)
+		Write(conn, suffix, cm)
 
 		if input == "x" || input == "X" {
 			return ""
@@ -87,21 +83,21 @@ func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string
 	}
 }
 
-func GetRawUserInputP(conn io.ReadWriter, prompter Prompter) string {
-	return GetRawUserInputSuffixP(conn, prompter, "")
+func GetRawUserInputP(conn io.ReadWriter, prompter Prompter, cm ColorMode) string {
+	return GetRawUserInputSuffixP(conn, prompter, "", cm)
 }
 
-func GetRawUserInput(conn io.ReadWriter, prompt string) string {
-	return GetRawUserInputP(conn, SimplePrompter(prompt))
+func GetRawUserInput(conn io.ReadWriter, prompt string, cm ColorMode) string {
+	return GetRawUserInputP(conn, SimplePrompter(prompt), cm)
 }
 
-func GetUserInputP(conn io.ReadWriter, prompter Prompter) string {
-	input := GetRawUserInputP(conn, prompter)
+func GetUserInputP(conn io.ReadWriter, prompter Prompter, cm ColorMode) string {
+	input := GetRawUserInputP(conn, prompter, cm)
 	return Simplify(input)
 }
 
-func GetUserInput(conn io.ReadWriter, prompt string) string {
-	input := GetUserInputP(conn, SimplePrompter(prompt))
+func GetUserInput(conn io.ReadWriter, prompt string, cm ColorMode) string {
+	input := GetUserInputP(conn, SimplePrompter(prompt), cm)
 	return Simplify(input)
 }
 

@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"strings"
+    "regexp"
 )
 
 type ColorMode int
@@ -13,26 +14,27 @@ const (
 	ColorModeNone  ColorMode = iota
 )
 
-type Color int
-
-const ColorNormal string = "\033[0m"
+type Color string
 
 const (
-	ColorRed         Color = iota
-	ColorGreen       Color = iota
-	ColorYellow      Color = iota
-	ColorBlue        Color = iota
-	ColorMagenta     Color = iota
-	ColorCyan        Color = iota
-	ColorWhite       Color = iota
-	ColorDarkRed     Color = iota
-	ColorDarkGreen   Color = iota
-	ColorDarkYellow  Color = iota
-	ColorDarkBlue    Color = iota
-	ColorDarkMagenta Color = iota
-	ColorDarkCyan    Color = iota
-	ColorBlack       Color = iota
-	ColorGray        Color = iota
+	ColorRed         Color = "@0"
+	ColorGreen       Color = "@1"
+	ColorYellow      Color = "@2"
+	ColorBlue        Color = "@3"
+	ColorMagenta     Color = "@4"
+	ColorCyan        Color = "@5"
+	ColorWhite       Color = "@6"
+
+	ColorDarkRed     Color = "#0"
+	ColorDarkGreen   Color = "#1"
+	ColorDarkYellow  Color = "#2"
+	ColorDarkBlue    Color = "#3"
+	ColorDarkMagenta Color = "#4"
+	ColorDarkCyan    Color = "#5"
+	ColorBlack       Color = "#6"
+
+	ColorGray        Color = "@@"
+    ColorNormal      Color = "##"
 )
 
 type colorCode string
@@ -55,9 +57,10 @@ const (
 	black       colorCode = "\033[22;30m"
 
 	gray colorCode = "\033[22;37m"
+    normal colorCode = "\033[0m"
 )
 
-func GetColor(mode ColorMode, color Color) string {
+func getAsciiCode(mode ColorMode, color Color) string {
 	if mode == ColorModeNone {
 		return ""
 	}
@@ -111,14 +114,46 @@ func GetColor(mode ColorMode, color Color) string {
 
 // Wraps the given text in the given color, followed by a color reset
 func Colorize(cm ColorMode, color Color, text string) string {
-	colorStr := GetColor(cm, color)
+	return fmt.Sprintf("%s%s%s", string(color), text, string(ColorNormal))
+}
 
-	after := ColorNormal
-	if cm == ColorModeNone {
-		after = ""
-	}
+// Strips MUD color codes and replaces them with ascii color codes
+func processColors(text string, cm ColorMode) string {
+    regex := regexp.MustCompile("([@#][0-6]|@@|##)")
 
-	return fmt.Sprintf("%s%s%s", colorStr, text, after)
+    lookup := map[Color]bool{}
+
+    lookup[ColorRed] = true
+    lookup[ColorGreen] = true
+    lookup[ColorYellow] = true
+    lookup[ColorBlue] = true
+    lookup[ColorMagenta] = true
+    lookup[ColorCyan] = true
+    lookup[ColorWhite] = true
+
+    lookup[ColorDarkRed] = true
+    lookup[ColorDarkGreen] = true
+    lookup[ColorDarkYellow] = true
+    lookup[ColorDarkBlue] = true
+    lookup[ColorDarkMagenta] = true
+    lookup[ColorDarkCyan] = true
+    lookup[ColorBlack] = true
+
+    lookup[ColorGray] = true
+    lookup[ColorNormal] = true
+
+    replace := func(match string) string {
+        _, found := lookup[Color(match)]
+
+        if found {
+            return getAsciiCode(cm, Color(match))
+        }
+
+        return match
+    }
+
+    after := regex.ReplaceAllStringFunc(text, replace)
+    return after
 }
 
 // vim: nocindent

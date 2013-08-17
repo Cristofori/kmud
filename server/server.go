@@ -58,7 +58,7 @@ func (s *wrappedConnection) SetWriteDeadline(dl time.Time) error {
 
 func login(conn *wrappedConnection) *database.User {
 	for {
-		username := utils.GetUserInput(conn, "Username: ")
+		username := utils.GetUserInput(conn, "Username: ", utils.ColorModeNone)
 
 		if username == "" {
 			return nil
@@ -67,14 +67,14 @@ func login(conn *wrappedConnection) *database.User {
 		user := model.M.GetUserByName(username)
 
 		if user == nil {
-			utils.WriteLine(conn, "User not found")
+			utils.WriteLine(conn, "User not found", utils.ColorModeNone)
 		} else if user.Online() {
-			utils.WriteLine(conn, "That user is already online")
+			utils.WriteLine(conn, "That user is already online", utils.ColorModeNone)
 		} else {
 			attempts := 1
 			conn.telnet.WillEcho()
 			for {
-				password := utils.GetRawUserInputSuffix(conn, "Password: ", "\r\n")
+				password := utils.GetRawUserInputSuffix(conn, "Password: ", "\r\n", utils.ColorModeNone)
 
 				// TODO - Disabling password verification to make development easier
 				if user.VerifyPassword(password) || true {
@@ -82,7 +82,7 @@ func login(conn *wrappedConnection) *database.User {
 				}
 
 				if attempts >= 3 {
-					utils.WriteLine(conn, "Too many failed login attempts")
+					utils.WriteLine(conn, "Too many failed login attempts", utils.ColorModeNone)
 					conn.Close()
 					panic("Booted user due to too many failed logins (" + user.GetName() + ")")
 				}
@@ -90,7 +90,7 @@ func login(conn *wrappedConnection) *database.User {
 				attempts++
 
 				time.Sleep(2 * time.Second)
-				utils.WriteLine(conn, "Invalid password")
+				utils.WriteLine(conn, "Invalid password", utils.ColorModeNone)
 			}
 			conn.telnet.WontEcho()
 
@@ -101,7 +101,7 @@ func login(conn *wrappedConnection) *database.User {
 
 func newUser(conn *wrappedConnection) *database.User {
 	for {
-		name := utils.GetUserInput(conn, "Desired username: ")
+		name := utils.GetUserInput(conn, "Desired username: ", utils.ColorModeNone)
 
 		if name == "" {
 			return nil
@@ -111,23 +111,23 @@ func newUser(conn *wrappedConnection) *database.User {
 		password := ""
 
 		if user != nil {
-			utils.WriteLine(conn, "That name is unavailable")
+			utils.WriteLine(conn, "That name is unavailable", utils.ColorModeNone)
 		} else if err := utils.ValidateName(name); err != nil {
-			utils.WriteLine(conn, err.Error())
+			utils.WriteLine(conn, err.Error(), utils.ColorModeNone)
 		} else {
 			conn.telnet.WillEcho()
 			for {
-				pass1 := utils.GetRawUserInputSuffix(conn, "Desired password: ", "\r\n")
+				pass1 := utils.GetRawUserInputSuffix(conn, "Desired password: ", "\r\n", utils.ColorModeNone)
 
 				if len(pass1) < 7 {
-					utils.WriteLine(conn, "Passwords must be at least 7 letters in length")
+					utils.WriteLine(conn, "Passwords must be at least 7 letters in length", utils.ColorModeNone)
 					continue
 				}
 
-				pass2 := utils.GetRawUserInputSuffix(conn, "Confirm password: ", "\r\n")
+				pass2 := utils.GetRawUserInputSuffix(conn, "Confirm password: ", "\r\n", utils.ColorModeNone)
 
 				if pass1 != pass2 {
-					utils.WriteLine(conn, "Passwords do not match")
+					utils.WriteLine(conn, "Passwords do not match", utils.ColorModeNone)
 					continue
 				}
 
@@ -147,7 +147,7 @@ func newPlayer(conn *wrappedConnection, user *database.User) *database.Character
 	// TODO: character slot limit
 	const SizeLimit = 12
 	for {
-		name := utils.GetUserInput(conn, "Desired character name: ")
+		name := user.GetInput("Desired character name: ")
 
 		if name == "" {
 			return nil
@@ -156,19 +156,14 @@ func newPlayer(conn *wrappedConnection, user *database.User) *database.Character
 		char := model.M.GetCharacterByName(name)
 
 		if char != nil {
-			utils.WriteLine(conn, "That name is unavailable")
+			user.WriteLine("That name is unavailable")
 		} else if err := utils.ValidateName(name); err != nil {
-			utils.WriteLine(conn, err.Error())
+			user.WriteLine(err.Error())
 		} else {
 			room := model.M.GetRooms()[0] // TODO: Better way to pick an initial character location
 			return model.M.CreatePlayer(name, user, room)
 		}
 	}
-}
-
-func quit(conn *wrappedConnection) {
-	utils.WriteLine(conn, "Take luck!")
-	conn.Close()
 }
 
 func mainMenu() utils.Menu {
@@ -307,7 +302,8 @@ func handleConnection(conn *wrappedConnection) {
 			case "":
 				fallthrough
 			case "q":
-				quit(conn)
+                utils.WriteLine(conn, "Take luck!", utils.ColorModeNone)
+                conn.Close()
 				return
 			}
 
@@ -376,12 +372,12 @@ func handleConnection(conn *wrappedConnection) {
 											userToWatch := model.M.GetUser(userId)
 
 											if userToWatch == user {
-												utils.WriteLine(conn, "You can't watch yourself!")
+												user.WriteLine("You can't watch yourself!")
 											} else {
 												userConn := userToWatch.GetConnection().(*wrappedConnection)
 
 												userConn.watcher.AddWatcher(conn)
-												utils.GetRawUserInput(conn, "Type anything to stop watching\r\n")
+												utils.GetRawUserInput(conn, "Type anything to stop watching\r\n", user.GetColorMode())
 												userConn.watcher.RemoveWatcher(conn)
 											}
 										}

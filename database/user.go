@@ -135,6 +135,14 @@ func (self *User) TerminalType() string {
 	return self.terminalType
 }
 
+func (self *User) GetInput(text string) string {
+    return utils.GetUserInput(self.conn, text, self.GetColorMode())
+}
+
+func (self *User) WriteLine(line string) (int, error) {
+    return utils.WriteLine(self.conn, line, self.GetColorMode())
+}
+
 func UserNames(users []*User) []string {
 	names := make([]string, len(users))
 

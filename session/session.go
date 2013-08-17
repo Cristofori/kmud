@@ -153,9 +153,9 @@ func (session *Session) Exec() {
 
 			switch mode {
 			case CleanUserInput:
-				input = utils.GetUserInputP(session.conn, prompter)
+				input = utils.GetUserInputP(session.conn, prompter, session.user.GetColorMode())
 			case RawUserInput:
-				input = utils.GetRawUserInputP(session.conn, prompter)
+				input = utils.GetRawUserInputP(session.conn, prompter, session.user.GetColorMode())
 			default:
 				panic("Unhandled case in switch statement (userInputMode)")
 			}
@@ -185,7 +185,7 @@ func (session *Session) printString(data string) {
 }
 
 func (session *Session) printLineColor(color utils.Color, line string, a ...interface{}) {
-	utils.WriteLine(session.conn, utils.Colorize(session.user.GetColorMode(), color, fmt.Sprintf(line, a...)))
+	session.user.WriteLine(utils.Colorize(session.user.GetColorMode(), color, fmt.Sprintf(line, a...)))
 }
 
 func (session *Session) printLine(line string, a ...interface{}) {

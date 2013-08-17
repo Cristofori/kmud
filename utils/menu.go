@@ -67,7 +67,7 @@ func (self *Menu) HasAction(key string) bool {
 func (self *Menu) Exec(conn io.ReadWriter, cm ColorMode) (string, bson.ObjectId) {
 	for {
 		self.Print(conn, cm)
-		input := GetUserInput(conn, Colorize(cm, ColorWhite, self.prompt))
+		input := GetUserInput(conn, Colorize(cm, ColorWhite, self.prompt), cm)
 
 		if input == "" {
 			return "", ""
@@ -83,7 +83,7 @@ func (self *Menu) Exec(conn io.ReadWriter, cm ColorMode) (string, bson.ObjectId)
 func (self *Menu) Print(conn io.Writer, cm ColorMode) {
 	border := Colorize(cm, ColorWhite, "-=-=-")
 	title := Colorize(cm, ColorBlue, self.title)
-	WriteLine(conn, fmt.Sprintf("%s %s %s", border, title, border))
+	WriteLine(conn, fmt.Sprintf("%s %s %s", border, title, border), cm)
 
 	for _, action := range self.actions {
 		regex := regexp.MustCompile("^\\[([^\\]]*)\\](.*)")
@@ -98,7 +98,7 @@ func (self *Menu) Print(conn io.Writer, cm ColorMode) {
 				Colorize(cm, ColorWhite, matches[2])
 		}
 
-		WriteLine(conn, "  "+actionText)
+		WriteLine(conn, "  "+actionText, cm)
 	}
 }
 
