@@ -7,8 +7,9 @@
 * Input speed limit (at all input possibilities)
 * Locks/doors
 * Permissions
-* Movement across zone boundaries
+* Movement/exits across zone boundaries
 * Spell checking
 * Party/grouping
 * Monsters/spawning/roaming
 * Mark and sweep for DB updates
+* Convert colorizing to in-line color codes
