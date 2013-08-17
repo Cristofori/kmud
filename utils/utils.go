@@ -356,7 +356,7 @@ func Random(low, high int) int {
 		return low
 	}
 
-	result := rand.Int() % diff
+	result := rand.Int() % (diff + 1)
 	result += low
 
 	return result
