@@ -266,14 +266,11 @@ func (self EnterEvent) ToString(receiver *database.Character) string {
 		return ""
 	}
 
-	cm := getColorMode(receiver)
-
-    str := utils.Colorize(cm, utils.ColorBlue, self.Character.GetName()) +
-		utils.Colorize(cm, utils.ColorWhite, " has entered the room")
+    str := fmt.Sprintf("%s%s %shas entered the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
 
     dir := DirectionBetween(self.Room, self.SourceRoom)
     if dir != database.DirectionNone {
-        str = str + utils.Colorize(cm, utils.ColorWhite, " from the " + database.DirectionToString(dir))
+        str = str + " from the " + database.DirectionToString(dir)
     }
 
     return str
@@ -289,14 +286,11 @@ func (self LeaveEvent) Type() EventType {
 }
 
 func (self LeaveEvent) ToString(receiver *database.Character) string {
-	cm := getColorMode(receiver)
-
-	str := utils.Colorize(cm, utils.ColorBlue, self.Character.GetName()) +
-		utils.Colorize(cm, utils.ColorWhite, " has left the room")
+    str := fmt.Sprintf("%s%s %shas left the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
 
     dir := DirectionBetween(self.Room, self.DestRoom)
     if dir != database.DirectionNone {
-        str = str + utils.Colorize(cm, utils.ColorWhite, " to the " + database.DirectionToString(dir))
+        str = str + " to the " + database.DirectionToString(dir)
     }
 
     return str
