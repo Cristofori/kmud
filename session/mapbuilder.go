@@ -18,7 +18,7 @@ type mapTile struct {
 	color utils.Color
 }
 
-func (self *mapTile) toString(cm utils.ColorMode) string {
+func (self *mapTile) toString() string {
 	if self.char == ' ' {
 		return string(self.char)
 	}
@@ -99,7 +99,7 @@ func (self *mapBuilder) addRoom(room *database.Room, x int, y int, z int) {
 	addIfExists(database.DirectionNorthWest, x-1, y-1)
 }
 
-func (self *mapBuilder) toString(cm utils.ColorMode) string {
+func (self *mapBuilder) toString() string {
 	str := ""
 
 	for z := 0; z < self.depth; z++ {
@@ -107,7 +107,7 @@ func (self *mapBuilder) toString(cm utils.ColorMode) string {
 		for y := 0; y < self.height; y++ {
 			row := ""
 			for x := 0; x < self.width; x++ {
-				tile := self.data[z][y][x].toString(cm)
+				tile := self.data[z][y][x].toString()
 				row = row + tile
 			}
 			rows = append(rows, row)

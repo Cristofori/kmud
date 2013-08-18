@@ -171,7 +171,7 @@ func (ch *commandHandler) Map(args []string) {
 		}
 	}
 
-	ch.session.printLine(utils.TrimEmptyRows(builder.toString(ch.session.user.GetColorMode())))
+	ch.session.printLine(utils.TrimEmptyRows(builder.toString()))
 }
 
 func (ch *commandHandler) Zone(args []string) {
