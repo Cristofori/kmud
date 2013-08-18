@@ -143,6 +143,10 @@ func (self *User) WriteLine(line string) (int, error) {
 	return utils.WriteLine(self.conn, line, self.GetColorMode())
 }
 
+func (self *User) Write(text string) (int, error) {
+    return utils.Write(self.conn, text, self.GetColorMode())
+}
+
 func UserNames(users []*User) []string {
 	names := make([]string, len(users))
 

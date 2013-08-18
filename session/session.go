@@ -180,10 +180,6 @@ func (session *Session) Exec() {
 	}
 }
 
-func (session *Session) printString(data string) {
-	io.WriteString(session.conn, data)
-}
-
 func (session *Session) printLineColor(color utils.Color, line string, a ...interface{}) {
 	session.user.WriteLine(utils.Colorize(session.user.GetColorMode(), color, fmt.Sprintf(line, a...)))
 }
@@ -271,7 +267,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 
 					if oldHps != newHps {
 						session.clearLine()
-						session.printString(prompter.GetPrompt())
+						session.user.Write(prompter.GetPrompt())
 					}
 				}
 			}
@@ -279,7 +275,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 			message := event.ToString(session.player)
 			if message != "" {
 				session.asyncMessage(message)
-				session.printString(prompter.GetPrompt())
+				session.user.Write(prompter.GetPrompt())
 			}
 
 		case quitMessage := <-session.panicChannel:
