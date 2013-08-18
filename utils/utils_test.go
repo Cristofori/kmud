@@ -17,7 +17,7 @@ func Test_WriteLine(t *testing.T) {
 	line := "This is a line"
 	want := line + "\r\n"
 
-	WriteLine(writer, line)
+	WriteLine(writer, line, ColorModeNone)
 
 	if wrote != want {
 		t.Errorf("WriteLine(%q) == %q, want %q", line, wrote, want)
@@ -60,7 +60,7 @@ func Test_GetRawUserInput(t *testing.T) {
 
 	for _, test := range tests {
 		readWriter.ToRead = test.input
-		line := GetRawUserInput(readWriter, ">")
+		line := GetRawUserInput(readWriter, ">", ColorModeNone)
 		if line != test.output {
 			t.Errorf("GetRawUserInput(%q) == %q, want %q", test.input, line, test.output)
 		}
@@ -84,7 +84,7 @@ func Test_GetUserInput(t *testing.T) {
 
 	for _, test := range tests {
 		readWriter.ToRead = test.input
-		line := GetUserInput(readWriter, ">")
+		line := GetUserInput(readWriter, ">", ColorModeNone)
 		if line != test.output {
 			t.Errorf("GetUserInput(%q) == %q, want %q", test.input, line, test.output)
 		}
@@ -102,7 +102,7 @@ func Test_GetUserInputPanicOnEOF(t *testing.T) {
 		}
 	}()
 
-	GetUserInput(readWriter, "")
+	GetUserInput(readWriter, "", ColorModeNone)
 }
 
 func Test_HandleError(t *testing.T) {
