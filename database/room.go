@@ -66,41 +66,39 @@ func (self *Room) GetType() objectType {
 	return RoomType
 }
 
-func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []*Character, npcs []*Character, items []*Item) string {
+func (self *Room) ToString(mode PrintMode, players []*Character, npcs []*Character, items []*Item) string {
 	var str string
 
 	if mode == ReadMode {
-		str = fmt.Sprintf("\r\n %v %v %v (%v %v %v)\r\n\r\n %v\r\n\r\n",
-			utils.Colorize(colorMode, utils.ColorWhite, ">>>"),
-			utils.Colorize(colorMode, utils.ColorBlue, self.GetTitle()),
-			utils.Colorize(colorMode, utils.ColorWhite, "<<<"),
+		str = fmt.Sprintf("\r\n @6>>> @3%v @6<<< @@(%v %v %v)\r\n\r\n @6%v\r\n\r\n",
+			self.GetTitle(),
 			self.GetLocation().X,
 			self.GetLocation().Y,
 			self.GetLocation().Z,
-			utils.Colorize(colorMode, utils.ColorWhite, self.GetDescription()))
+			self.GetDescription())
 
 		extraNewLine := ""
 
 		if len(players) > 0 {
-			str = str + " " + utils.Colorize(colorMode, utils.ColorBlue, "Also here: ")
+			str = str + " @3Also here: "
 
 			var names []string
 			for _, char := range players {
-				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, char.GetName()))
+				names = append(names, utils.Colorize(utils.ColorWhite, char.GetName()))
 			}
-			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\n"
+			str = str + strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")) + "\n"
 
 			extraNewLine = "\r\n"
 		}
 
 		if len(npcs) > 0 {
-			str = str + " " + utils.Colorize(colorMode, utils.ColorBlue, "NPCs: ")
+			str = str + " " + utils.Colorize(utils.ColorBlue, "NPCs: ")
 
 			var names []string
 			for _, npc := range npcs {
-				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, npc.GetName()))
+				names = append(names, utils.Colorize(utils.ColorWhite, npc.GetName()))
 			}
-			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\r\n"
+			str = str + strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")) + "\r\n"
 
 			extraNewLine = "\r\n"
 		}
@@ -123,21 +121,21 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 
 			sort.Strings(nameList)
 
-			str = str + " " + utils.Colorize(colorMode, utils.ColorBlue, "Items: ")
+			str = str + " " + utils.Colorize(utils.ColorBlue, "Items: ")
 
 			var names []string
 			for _, name := range nameList {
 				if itemMap[name] > 1 {
 					name = fmt.Sprintf("%s x%v", name, itemMap[name])
 				}
-				names = append(names, utils.Colorize(colorMode, utils.ColorWhite, name))
+				names = append(names, utils.Colorize(utils.ColorWhite, name))
 			}
-			str = str + strings.Join(names, utils.Colorize(colorMode, utils.ColorBlue, ", ")) + "\r\n"
+			str = str + strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")) + "\r\n"
 
 			extraNewLine = "\r\n"
 		}
 
-		str = str + extraNewLine + " " + utils.Colorize(colorMode, utils.ColorBlue, "Exits: ")
+		str = str + extraNewLine + " " + utils.Colorize(utils.ColorBlue, "Exits: ")
 
 	} else {
 		str = fmt.Sprintf(" [1] %v \r\n\r\n [2] %v \r\n\r\n [3] Exits: ", self.GetTitle(), self.GetDescription())
@@ -145,11 +143,11 @@ func (self *Room) ToString(mode PrintMode, colorMode utils.ColorMode, players []
 
 	var exitList []string
 	for _, direction := range self.GetExits() {
-		exitList = append(exitList, directionToExitString(colorMode, direction))
+		exitList = append(exitList, directionToExitString(direction))
 	}
 
 	if len(exitList) == 0 {
-		str = str + utils.Colorize(colorMode, utils.ColorWhite, "None")
+		str = str + utils.Colorize(utils.ColorWhite, "None")
 	} else {
 		str = str + strings.Join(exitList, " ")
 	}

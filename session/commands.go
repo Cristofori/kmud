@@ -75,7 +75,7 @@ func (ch *commandHandler) Edit(args []string) {
 
 		case "3":
 			for {
-				menu := toggleExitMenu(ch.session.user.GetColorMode(), ch.session.room)
+				menu := toggleExitMenu(ch.session.room)
 
 				choice, _ := ch.session.execMenu(menu)
 
@@ -179,7 +179,7 @@ func (ch *commandHandler) Zone(args []string) {
 		if ch.session.zone.GetId() == "" {
 			ch.session.printLine("Currently in the null zone")
 		} else {
-			ch.session.printLine("Current zone: " + utils.Colorize(ch.session.user.GetColorMode(), utils.ColorBlue, ch.session.zone.GetName()))
+			ch.session.printLine("Current zone: " + utils.Colorize(utils.ColorBlue, ch.session.zone.GetName()))
 		}
 	} else if len(args) == 1 {
 		if args[0] == "list" {

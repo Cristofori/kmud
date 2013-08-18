@@ -67,7 +67,7 @@ func (self *Menu) HasAction(key string) bool {
 func (self *Menu) Exec(conn io.ReadWriter, cm ColorMode) (string, bson.ObjectId) {
 	for {
 		self.Print(conn, cm)
-		input := GetUserInput(conn, Colorize(cm, ColorWhite, self.prompt), cm)
+		input := GetUserInput(conn, Colorize(ColorWhite, self.prompt), cm)
 
 		if input == "" {
 			return "", ""
@@ -81,8 +81,8 @@ func (self *Menu) Exec(conn io.ReadWriter, cm ColorMode) (string, bson.ObjectId)
 }
 
 func (self *Menu) Print(conn io.Writer, cm ColorMode) {
-	border := Colorize(cm, ColorWhite, "-=-=-")
-	title := Colorize(cm, ColorBlue, self.title)
+	border := Colorize(ColorWhite, "-=-=-")
+	title := Colorize(ColorBlue, self.title)
 	WriteLine(conn, fmt.Sprintf("%s %s %s", border, title, border), cm)
 
 	for _, action := range self.actions {
@@ -92,10 +92,10 @@ func (self *Menu) Print(conn io.Writer, cm ColorMode) {
 		actionText := action.text
 
 		if len(matches) == 3 {
-			actionText = Colorize(cm, ColorDarkBlue, "[") +
-				Colorize(cm, ColorBlue, matches[1]) +
-				Colorize(cm, ColorDarkBlue, "]") +
-				Colorize(cm, ColorWhite, matches[2])
+			actionText = Colorize(ColorDarkBlue, "[") +
+				Colorize(ColorBlue, matches[1]) +
+				Colorize(ColorDarkBlue, "]") +
+				Colorize(ColorWhite, matches[2])
 		}
 
 		WriteLine(conn, "  "+actionText, cm)

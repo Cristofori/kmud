@@ -75,7 +75,7 @@ func (ah *actionHandler) Look(args []string) {
 				loc := ah.session.room.NextLocation(arg)
 				roomToSee := model.M.GetRoomByLocation(loc, ah.session.zone)
 				if roomToSee != nil {
-					ah.session.printLine(roomToSee.ToString(database.ReadMode, ah.session.user.GetColorMode(),
+					ah.session.printLine(roomToSee.ToString(database.ReadMode,
 						model.M.PlayersIn(roomToSee, nil), model.M.NpcsIn(roomToSee), nil))
 				} else {
 					ah.session.printLine("Nothing to see")
@@ -129,7 +129,7 @@ func (ah *actionHandler) Talk(args []string) {
 		ah.session.printError("Which one do you mean?")
 	} else {
 		npc := npcList[index]
-		ah.session.printLine(npc.PrettyConversation(ah.session.user.GetColorMode()))
+		ah.session.printLine(npc.PrettyConversation())
 	}
 }
 

@@ -23,7 +23,7 @@ func (self *mapTile) toString(cm utils.ColorMode) string {
 		return string(self.char)
 	}
 
-	return utils.Colorize(cm, self.color, string(self.char))
+	return utils.Colorize(self.color, string(self.char))
 }
 
 func newMapBuilder(width int, height int, depth int) mapBuilder {
@@ -116,7 +116,7 @@ func (self *mapBuilder) toString(cm utils.ColorMode) string {
 		rows = utils.TrimLowerRows(rows)
 
 		if self.depth > 1 {
-			divider := utils.Colorize(cm, utils.ColorWhite, "================================================================================\r\n")
+			divider := utils.Colorize(utils.ColorWhite, "================================================================================\r\n")
 			rows = append(rows, divider)
 		}
 

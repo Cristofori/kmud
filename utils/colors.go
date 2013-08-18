@@ -113,7 +113,7 @@ func getAsciiCode(mode ColorMode, color Color) string {
 }
 
 // Wraps the given text in the given color, followed by a color reset
-func Colorize(cm ColorMode, color Color, text string) string {
+func Colorize(color Color, text string) string {
 	return fmt.Sprintf("%s%s%s", string(color), text, string(ColorNormal))
 }
 

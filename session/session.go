@@ -78,13 +78,13 @@ const (
 	RawUserInput   userInputMode = iota
 )
 
-func toggleExitMenu(cm utils.ColorMode, room *database.Room) *utils.Menu {
+func toggleExitMenu(room *database.Room) *utils.Menu {
 	onOrOff := func(direction database.Direction) string {
 		text := "Off"
 		if room.HasExit(direction) {
 			text = "On"
 		}
-		return utils.Colorize(cm, utils.ColorBlue, text)
+		return utils.Colorize(utils.ColorBlue, text)
 	}
 
 	menu := utils.NewMenu("Edit Exits")
@@ -181,7 +181,7 @@ func (session *Session) Exec() {
 }
 
 func (session *Session) printLineColor(color utils.Color, line string, a ...interface{}) {
-	session.user.WriteLine(utils.Colorize(session.user.GetColorMode(), color, fmt.Sprintf(line, a...)))
+	session.user.WriteLine(utils.Colorize(color, fmt.Sprintf(line, a...)))
 }
 
 func (session *Session) printLine(line string, a ...interface{}) {
@@ -195,12 +195,12 @@ func (session *Session) printError(err string, a ...interface{}) {
 func (session *Session) printRoom() {
 	playerList := model.M.PlayersIn(session.room, session.player)
 	npcList := model.M.NpcsIn(session.room)
-	session.printLine(session.room.ToString(database.ReadMode, session.user.GetColorMode(),
+	session.printLine(session.room.ToString(database.ReadMode,
 		playerList, npcList, model.M.GetItems(session.room.GetItemIds())))
 }
 
 func (session *Session) printRoomEditor() {
-	session.printLine(session.room.ToString(database.EditMode, session.user.GetColorMode(), nil, nil, nil))
+	session.printLine(session.room.ToString(database.EditMode, nil, nil, nil))
 }
 
 func (session *Session) clearLine() {
@@ -293,7 +293,7 @@ func (session *Session) GetPrompt() string {
 	prompt = strings.Replace(prompt, "%h", strconv.Itoa(session.player.GetHitPoints()), -1)
 	prompt = strings.Replace(prompt, "%H", strconv.Itoa(session.player.GetHealth()), -1)
 
-	return utils.Colorize(session.user.GetColorMode(), utils.ColorWhite, prompt)
+	return utils.Colorize(utils.ColorWhite, prompt)
 }
 
 // vim: nocindent

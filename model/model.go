@@ -713,11 +713,6 @@ func ZoneCorners(zone *database.Zone) (database.Coordinate, database.Coordinate)
 		database.Coordinate{X: right, Y: bottom, Z: low}
 }
 
-func getColorMode(char *database.Character) utils.ColorMode {
-	user := M.GetUser(char.GetUserId())
-	return user.GetColorMode()
-}
-
 // Returns the exit direction of the given room if it is adjacent, otherwise DirectionNone
 func DirectionBetween(from, to *database.Room) database.Direction {
 	zone := M.GetZone(from.GetZoneId())

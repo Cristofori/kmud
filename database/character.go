@@ -204,7 +204,7 @@ func (self *Character) GetConversation() string {
 	return self.Conversation
 }
 
-func (self *Character) PrettyConversation(cm utils.ColorMode) string {
+func (self *Character) PrettyConversation() string {
 	conv := self.GetConversation()
 
 	if conv == "" {
@@ -212,8 +212,8 @@ func (self *Character) PrettyConversation(cm utils.ColorMode) string {
 	}
 
 	return fmt.Sprintf("%s%s",
-		utils.Colorize(cm, utils.ColorBlue, self.GetName()),
-		utils.Colorize(cm, utils.ColorWhite, ": "+conv))
+		utils.Colorize(utils.ColorBlue, self.GetName()),
+		utils.Colorize(utils.ColorWhite, ": "+conv))
 }
 
 func (self *Character) SetHealth(health int) {

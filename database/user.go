@@ -144,7 +144,7 @@ func (self *User) WriteLine(line string) (int, error) {
 }
 
 func (self *User) Write(text string) (int, error) {
-    return utils.Write(self.conn, text, self.GetColorMode())
+	return utils.Write(self.conn, text, self.GetColorMode())
 }
 
 func UserNames(users []*User) []string {

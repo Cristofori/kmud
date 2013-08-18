@@ -46,17 +46,17 @@ type Coordinate struct {
 	Z int
 }
 
-func directionToExitString(colorMode utils.ColorMode, direction Direction) string {
+func directionToExitString(direction Direction) string {
 	letterColor := utils.ColorBlue
 	bracketColor := utils.ColorDarkBlue
 	textColor := utils.ColorWhite
 
 	colorize := func(letters string, text string) string {
 		return fmt.Sprintf("%s%s%s%s",
-			utils.Colorize(colorMode, bracketColor, "["),
-			utils.Colorize(colorMode, letterColor, letters),
-			utils.Colorize(colorMode, bracketColor, "]"),
-			utils.Colorize(colorMode, textColor, text))
+			utils.Colorize(bracketColor, "["),
+			utils.Colorize(letterColor, letters),
+			utils.Colorize(bracketColor, "]"),
+			utils.Colorize(textColor, text))
 	}
 
 	switch direction {
@@ -81,7 +81,7 @@ func directionToExitString(colorMode utils.ColorMode, direction Direction) strin
 	case DirectionDown:
 		return colorize("D", "own")
 	case DirectionNone:
-		return utils.Colorize(colorMode, utils.ColorWhite, "None")
+		return utils.Colorize(utils.ColorWhite, "None")
 	}
 
 	panic("Unexpected code path")
