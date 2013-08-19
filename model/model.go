@@ -9,6 +9,12 @@ import (
 	"sync"
 )
 
+type UpdateType int
+
+const (
+	NewNpcUpdate UpdateType = iota
+)
+
 type globalModel struct {
 	users map[bson.ObjectId]*database.User
 	chars map[bson.ObjectId]*database.Character
@@ -22,6 +28,8 @@ type globalModel struct {
 // M is the global model object. All functions are thread-safe and all changes
 // made to the model are automatically saved to the database.
 var M globalModel
+
+var eventListeners map[UpdateType][]chan interface{}
 
 // CreateUser creates a new User object in the database and adds it to the model.
 // A pointer to the new User object is returned.
@@ -252,6 +260,8 @@ func (self *globalModel) CreateNpc(name string, room *database.Room) *database.C
 
 	npc := database.NewNpc(name, room.GetId())
 	self.chars[npc.GetId()] = npc
+
+	emit(NewNpcUpdate, npc)
 
 	return npc
 }
@@ -501,6 +511,8 @@ func Init(session database.Session) error {
 
 	M = globalModel{}
 
+	eventListeners = map[UpdateType][]chan interface{}{}
+
 	M.users = map[bson.ObjectId]*database.User{}
 	M.chars = map[bson.ObjectId]*database.Character{}
 	M.rooms = map[bson.ObjectId]*database.Room{}
@@ -726,6 +738,30 @@ func DirectionBetween(from, to *database.Room) database.Direction {
 	}
 
 	return database.DirectionNone
+}
+
+func emit(updateType UpdateType, data interface{}) {
+	for _, channel := range eventListeners[updateType] {
+		channel <- data
+	}
+}
+
+func Watch(updateType UpdateType) chan interface{} {
+	channel := make(chan interface{})
+	eventListeners[updateType] = append(eventListeners[updateType], channel)
+	return channel
+}
+
+func Unwatch(updateType UpdateType, channel chan interface{}) bool {
+	for i, myChannel := range eventListeners[updateType] {
+		if myChannel == channel {
+			// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
+			eventListeners[updateType] = append(eventListeners[updateType][:i], eventListeners[updateType][i+1:]...)
+			return true
+		}
+	}
+
+	return false
 }
 
 // vim: nocindent
