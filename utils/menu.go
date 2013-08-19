@@ -86,17 +86,12 @@ func (self *Menu) Print(conn io.Writer, cm ColorMode) {
 	WriteLine(conn, fmt.Sprintf("%s %s %s", border, title, border), cm)
 
 	for _, action := range self.actions {
-		regex := regexp.MustCompile("^\\[([^\\]]*)\\](.*)")
-		matches := regex.FindStringSubmatch(action.text)
-
-		actionText := action.text
-
-		if len(matches) == 3 {
-			actionText = Colorize(ColorDarkBlue, "[") +
-				Colorize(ColorBlue, matches[1]) +
-				Colorize(ColorDarkBlue, "]") +
-				Colorize(ColorWhite, matches[2])
+		regex := regexp.MustCompile("\\[([^\\]]*)\\]")
+		replace := func(str string) string {
+			return "#3[@3" + str[1:len(str)-1] + "#3]@6"
 		}
+
+		actionText := regex.ReplaceAllStringFunc(action.text, replace)
 
 		WriteLine(conn, "  "+actionText, cm)
 	}
