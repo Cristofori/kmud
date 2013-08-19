@@ -5,9 +5,41 @@ import (
 	"kmud/database"
 	"kmud/model"
 	"kmud/utils"
+	"labix.org/v2/mgo/bson"
 	"strconv"
 	"strings"
 )
+
+func npcMenu(room *database.Room) *utils.Menu {
+	var npcs []*database.Character
+
+	if room != nil {
+		npcs = model.M.NpcsIn(room)
+	} else {
+		npcs = model.M.GetAllNpcs()
+	}
+
+	menu := utils.NewMenu("NPCs")
+
+	menu.AddAction("n", "[N]ew")
+
+	for i, npc := range npcs {
+		index := i + 1
+		actionText := fmt.Sprintf("[%v]%v", index, npc.GetName())
+		menu.AddActionData(index, actionText, npc.GetId())
+	}
+
+	return &menu
+}
+
+func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
+	npc := model.M.GetCharacter(npcId)
+	menu := utils.NewMenu(npc.GetName())
+	menu.AddAction("r", "[R]ename")
+	menu.AddAction("d", "[D]elete")
+	menu.AddAction("c", "[C]onversation")
+	return &menu
+}
 
 type commandHandler struct {
 	session *Session
@@ -447,7 +479,7 @@ func (ch *commandHandler) DestroyRoom(args []string) {
 }
 
 func (ch *commandHandler) Npc(args []string) {
-	menu := npcMenu(ch.session.room)
+	menu := npcMenu(nil)
 	choice, npcId := ch.session.execMenu(menu)
 
 	getName := func() string {

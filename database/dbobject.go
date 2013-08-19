@@ -8,8 +8,9 @@ import (
 type DbObject struct {
 	Id bson.ObjectId `bson:"_id"`
 
-	objType objectType
-	mutex   sync.RWMutex
+	objType   objectType
+	mutex     sync.RWMutex
+	destroyed bool
 }
 
 func (self *DbObject) initDbObject() {
@@ -35,6 +36,20 @@ func (self *DbObject) WriteLock() {
 
 func (self *DbObject) WriteUnlock() {
 	self.mutex.Unlock()
+}
+
+func (self *DbObject) Destroy() {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	self.destroyed = true
+}
+
+func (self *DbObject) IsDestroyed() bool {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.destroyed
 }
 
 // vim: nocindent

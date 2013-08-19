@@ -12,7 +12,8 @@ import (
 type UpdateType int
 
 const (
-	NewNpcUpdate UpdateType = iota
+	NewNpcUpdate          UpdateType = iota
+	CharacterDeleteUpdate UpdateType = iota
 )
 
 type globalModel struct {
@@ -275,6 +276,8 @@ func (self *globalModel) DeleteCharacterId(id bson.ObjectId) {
 func (self *globalModel) DeleteCharacter(character *database.Character) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
+
+	emit(CharacterDeleteUpdate, character)
 
 	delete(self.chars, character.GetId())
 	utils.HandleError(database.DeleteObject(character))

@@ -28,6 +28,8 @@ type Identifiable interface {
 	GetType() objectType
 	ReadLock()
 	ReadUnlock()
+	Destroy()
+	IsDestroyed() bool
 }
 
 type objectType int

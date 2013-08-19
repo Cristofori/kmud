@@ -103,31 +103,6 @@ func toggleExitMenu(room *database.Room) *utils.Menu {
 	return &menu
 }
 
-func npcMenu(room *database.Room) *utils.Menu {
-	npcs := model.M.NpcsIn(room)
-
-	menu := utils.NewMenu("NPCs")
-
-	menu.AddAction("n", "[N]ew")
-
-	for i, npc := range npcs {
-		index := i + 1
-		actionText := fmt.Sprintf("[%v]%v", index, npc.GetName())
-		menu.AddActionData(index, actionText, npc.GetId())
-	}
-
-	return &menu
-}
-
-func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
-	npc := model.M.GetCharacter(npcId)
-	menu := utils.NewMenu(npc.GetName())
-	menu.AddAction("r", "[R]ename")
-	menu.AddAction("d", "[D]elete")
-	menu.AddAction("c", "[C]onversation")
-	return &menu
-}
-
 func (session *Session) Exec() {
 	defer model.Unregister(session.eventChannel)
 

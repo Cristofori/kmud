@@ -27,6 +27,10 @@ func manage(npc *database.Character) {
 		throttler := utils.NewThrottler(1 * time.Second)
 
 		for {
+			if npc.IsDestroyed() {
+				return
+			}
+
 			room := model.M.GetRoom(npc.GetRoomId())
 			exits := room.GetExits()
 			exitToTake := utils.Random(0, len(exits)-1)

@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"labix.org/v2/mgo/bson"
 )
 
 type Session interface {
@@ -122,21 +121,21 @@ func RetrieveObjects(t objectType, objects interface{}) error {
 }
 
 func DeleteObject(obj Identifiable) error {
+	obj.Destroy()
 	c := getCollectionOfObject(obj)
 	return c.RemoveId(obj.GetId())
 }
 
 func commitObject(object Identifiable) error {
+	if object.IsDestroyed() {
+		return nil
+	}
+
 	c := getCollectionFromType(object.GetType())
 	object.ReadLock()
 	err := c.UpsertId(object.GetId(), object)
 	object.ReadUnlock()
 	printError(err)
-	return err
-}
-
-func updateField(c Collection, id bson.ObjectId, fieldName string, fieldValue interface{}) error {
-	err := c.UpdateId(id, bson.M{"$set": bson.M{fieldName: fieldValue}})
 	return err
 }
 
