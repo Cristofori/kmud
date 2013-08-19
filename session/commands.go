@@ -647,4 +647,35 @@ func (ch *commandHandler) R(args []string) { // Reply
 	}
 }
 
+func (ch *commandHandler) Prop(args []string) {
+	props := ch.session.room.GetProperties()
+
+	keyVals := []string{}
+
+	for key, value := range props {
+		keyVals = append(keyVals, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	for _, line := range keyVals {
+		ch.session.printLine(line)
+	}
+}
+
+func (ch *commandHandler) SetProp(args []string) {
+	if len(args) != 2 {
+		ch.session.printError("Usage: /setprop <key> <value>")
+		return
+	}
+
+	ch.session.room.SetProperty(args[0], args[1])
+}
+
+func (ch *commandHandler) DelProp(args []string) {
+	if len(args) != 1 {
+		ch.session.printError("Usage: /delprop <key>")
+	}
+
+	ch.session.room.RemoveProperty(args[0])
+}
+
 // vim: nocindent

@@ -26,6 +26,8 @@ type Room struct {
 	ExitNorthWest bool
 	ExitUp        bool
 	ExitDown      bool
+
+	Properties map[string]string
 }
 
 type PrintMode int
@@ -358,6 +360,42 @@ func (self *Room) GetExits() []Direction {
 	appendIfExists(DirectionDown)
 
 	return exits
+}
+
+func (self *Room) SetProperty(name, value string) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	if self.Properties == nil {
+		self.Properties = map[string]string{}
+	}
+
+	if self.Properties[name] != value {
+		self.Properties[name] = value
+		modified(self)
+	}
+}
+
+func (self *Room) GetProperty(name string) string {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Properties[name]
+}
+
+func (self *Room) GetProperties() map[string]string {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Properties
+}
+
+func (self *Room) RemoveProperty(key string) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	delete(self.Properties, key)
+	modified(self)
 }
 
 // vim: nocindent
