@@ -60,7 +60,7 @@ const (
 	normal colorCode = "\033[0m"
 )
 
-func getAsciiCode(mode ColorMode, color Color) string {
+func getAnsiCode(mode ColorMode, color Color) string {
 	if mode == ColorModeNone {
 		return ""
 	}
@@ -117,7 +117,7 @@ func Colorize(color Color, text string) string {
 	return fmt.Sprintf("%s%s%s", string(color), text, string(ColorNormal))
 }
 
-// Strips MUD color codes and replaces them with ascii color codes
+// Strips MUD color codes and replaces them with ansi color codes
 func processColors(text string, cm ColorMode) string {
 	regex := regexp.MustCompile("([@#][0-6]|@@|##)")
 
@@ -146,7 +146,7 @@ func processColors(text string, cm ColorMode) string {
 		_, found := lookup[Color(match)]
 
 		if found {
-			return getAsciiCode(cm, Color(match))
+			return getAnsiCode(cm, Color(match))
 		}
 
 		return match

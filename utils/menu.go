@@ -88,7 +88,8 @@ func (self *Menu) Print(conn io.Writer, cm ColorMode) {
 	for _, action := range self.actions {
 		regex := regexp.MustCompile("\\[([^\\]]*)\\]")
 		replace := func(str string) string {
-			return "#3[@3" + str[1:len(str)-1] + "#3]@6"
+			return fmt.Sprintf("%s[%s" + str[1:len(str)-1] + "%s]%s",
+                ColorDarkBlue, ColorBlue, ColorDarkBlue, ColorWhite)
 		}
 
 		actionText := regex.ReplaceAllStringFunc(action.text, replace)
