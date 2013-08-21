@@ -3,6 +3,7 @@ package session
 import (
 	"fmt"
 	"kmud/database"
+	"kmud/engine"
 	"kmud/model"
 	"kmud/utils"
 	"labix.org/v2/mgo/bson"
@@ -38,6 +39,13 @@ func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
 	menu.AddAction("r", "[R]ename")
 	menu.AddAction("d", "[D]elete")
 	menu.AddAction("c", "[C]onversation")
+
+	roamingState := "Off"
+	if npc.GetProperty(engine.RoamingProperty) == "true" {
+		roamingState = "On"
+	}
+
+	menu.AddAction("o", fmt.Sprintf("R[o]aming - %s", roamingState))
 	return &menu
 }
 
@@ -479,9 +487,6 @@ func (ch *commandHandler) DestroyRoom(args []string) {
 }
 
 func (ch *commandHandler) Npc(args []string) {
-	menu := npcMenu(nil)
-	choice, npcId := ch.session.execMenu(menu)
-
 	getName := func() string {
 		name := ""
 		for {
@@ -501,48 +506,56 @@ func (ch *commandHandler) Npc(args []string) {
 		return name
 	}
 
-	if choice == "" {
-		goto done
-	}
-
-	if choice == "n" {
-		name := getName()
-		if name == "" {
-			goto done
-		}
-		model.M.CreateNpc(name, ch.session.room)
-	} else if npcId != "" {
-		specificMenu := specificNpcMenu(npcId)
-		choice, _ := ch.session.execMenu(specificMenu)
-
-		switch choice {
-		case "d":
-			model.M.DeleteCharacterId(npcId)
-		case "r":
+	for {
+		choice, npcId := ch.session.execMenu(npcMenu(nil))
+		if choice == "" {
+			break
+		} else if choice == "n" {
 			name := getName()
-			if name == "" {
-				break
+			if name != "" {
+				model.M.CreateNpc(name, ch.session.room)
 			}
-			npc := model.M.GetCharacter(npcId)
-			npc.SetName(name)
-		case "c":
-			npc := model.M.GetCharacter(npcId)
-			conversation := npc.GetConversation()
+		} else if npcId != "" {
+			for {
+				specificMenu := specificNpcMenu(npcId)
+				choice, _ := ch.session.execMenu(specificMenu)
+				npc := model.M.GetCharacter(npcId)
 
-			if conversation == "" {
-				conversation = "<empty>"
-			}
+				if choice == "d" {
+					model.M.DeleteCharacterId(npcId)
+				} else if choice == "r" {
+					name := getName()
+					if name != "" {
+						npc.SetName(name)
+					}
+				} else if choice == "c" {
+					conversation := npc.GetConversation()
 
-			ch.session.printLine("Conversation: %s", conversation)
-			newConversation := ch.session.getUserInput(RawUserInput, "New conversation text: ")
+					if conversation == "" {
+						conversation = "<empty>"
+					}
 
-			if newConversation != "" {
-				npc.SetConversation(newConversation)
+					ch.session.printLine("Conversation: %s", conversation)
+					newConversation := ch.session.getUserInput(RawUserInput, "New conversation text: ")
+
+					if newConversation != "" {
+						npc.SetConversation(newConversation)
+					}
+				} else if choice == "o" {
+					currentVal := npc.GetProperty(engine.RoamingProperty)
+					newVal := "true"
+					if currentVal == "true" {
+						newVal = "false"
+					}
+
+					npc.SetProperty(engine.RoamingProperty, newVal)
+				} else if choice == "" {
+					break
+				}
 			}
 		}
 	}
 
-done:
 	ch.session.printRoom()
 }
 

@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+const (
+	RoamingProperty = "roaming"
+)
+
 func Start() {
 	for _, npc := range model.M.GetAllNpcs() {
 		manage(npc)
@@ -31,10 +35,12 @@ func manage(npc *database.Character) {
 				return
 			}
 
-			room := model.M.GetRoom(npc.GetRoomId())
-			exits := room.GetExits()
-			exitToTake := utils.Random(0, len(exits)-1)
-			model.MoveCharacter(npc, exits[exitToTake])
+			if npc.GetProperty(RoamingProperty) == "true" {
+				room := model.M.GetRoom(npc.GetRoomId())
+				exits := room.GetExits()
+				exitToTake := utils.Random(0, len(exits)-1)
+				model.MoveCharacter(npc, exits[exitToTake])
+			}
 
 			throttler.Sync()
 		}
