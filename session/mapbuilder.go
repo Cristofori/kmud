@@ -62,6 +62,9 @@ func (self *mapBuilder) setUserRoom(room *database.Room) {
 }
 
 func (self *mapBuilder) addRoom(room *database.Room, x int, y int, z int) {
+	x = x * 2
+	y = y * 2
+
 	addIfExists := func(dir database.Direction, x int, y int) {
 		if x < 0 || y < 0 {
 			return

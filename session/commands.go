@@ -203,9 +203,8 @@ func (ch *commandHandler) Map(args []string) {
 				room := model.M.GetRoomByLocation(loc, ch.session.zone)
 
 				if room != nil {
-					// Translate to 0-based coordinates and double the coordinate
-					// space to leave room for the exit lines
-					builder.addRoom(room, (x-startX)*2, (y-startY)*2, z-startZ)
+					// Translate to 0-based coordinates
+					builder.addRoom(room, x-startX, y-startY, z-startZ)
 				}
 			}
 		}
