@@ -200,6 +200,10 @@ func (session *Session) execMenu(menu *utils.Menu) (string, bson.ObjectId) {
 			data = menu.GetData(choice)
 			break
 		}
+
+		if choice != "?" {
+			session.printError("Invalid selection")
+		}
 	}
 	return choice, data
 }
