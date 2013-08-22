@@ -142,6 +142,21 @@ func (self *globalModel) GetAllNpcs() []*database.Character {
 	return npcs
 }
 
+func (self *globalModel) GetAllNpcTemplates() []*database.Character {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	templates := []*database.Character{}
+
+	for _, character := range self.chars {
+		if character.IsNpcTemplate() {
+			templates = append(templates, character)
+		}
+	}
+
+	return templates
+}
+
 // GetUserCharacters returns all of the Character objects associated with the
 // given user id
 func (self *globalModel) GetUserCharacters(user *database.User) []*database.Character {
@@ -265,6 +280,16 @@ func (self *globalModel) CreateNpc(name string, room *database.Room) *database.C
 	emit(NewNpcUpdate, npc)
 
 	return npc
+}
+
+func (self *globalModel) CreateNpcTemplate(name string) *database.Character {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	template := database.NewNpcTemplate(name)
+	self.chars[template.GetId()] = template
+
+	return template
 }
 
 func (self *globalModel) DeleteCharacterId(id bson.ObjectId) {

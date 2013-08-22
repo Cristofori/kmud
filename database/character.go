@@ -9,7 +9,7 @@ import (
 type Character struct {
 	DbObject `bson:",inline"`
 
-	RoomId bson.ObjectId
+	RoomId bson.ObjectId `bson:",omitempty"`
 	UserId bson.ObjectId `bson:",omitempty"`
 
 	Name         string
@@ -64,6 +64,14 @@ func NewNpc(name string, roomId bson.ObjectId) *Character {
 	return NewCharacter(name, "", roomId)
 }
 
+func NewNpcTemplate(name string) *Character {
+	return NewCharacter(name, "", "")
+}
+
+func NewNpcFromTemplate(template *Character, roomId bson.ObjectId) *Character {
+	return NewNpc(template.GetName(), template.GetRoomId())
+}
+
 func (self *Character) SetOnline(online bool) {
 	self.WriteLock()
 	self.online = online
@@ -81,7 +89,14 @@ func (self *Character) IsNpc() bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
-	return self.UserId == ""
+	return self.UserId == "" && self.RoomId != ""
+}
+
+func (self *Character) IsNpcTemplate() bool {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.UserId == "" && self.RoomId == ""
 }
 
 func (self *Character) IsPlayer() bool {

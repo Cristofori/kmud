@@ -49,6 +49,32 @@ func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
 	return &menu
 }
 
+func spawnMenu() *utils.Menu {
+	menu := utils.NewMenu("Spawn")
+
+	menu.AddAction("n", "[N]ew")
+
+	templates := model.M.GetAllNpcTemplates()
+
+	for i, template := range templates {
+		index := i + 1
+		actionText := fmt.Sprintf("[%v]%v", index, template.GetName())
+		menu.AddActionData(index, actionText, template.GetId())
+	}
+
+	return &menu
+}
+
+func specificSpawnMenu(templateId bson.ObjectId) *utils.Menu {
+	template := model.M.GetCharacter(templateId)
+	menu := utils.NewMenu(template.GetName())
+
+	menu.AddAction("r", "[R]ename")
+	menu.AddAction("d", "[D]elete")
+
+	return &menu
+}
+
 type commandHandler struct {
 	session *Session
 }
@@ -485,32 +511,32 @@ func (ch *commandHandler) DestroyRoom(args []string) {
 	}
 }
 
-func (ch *commandHandler) Npc(args []string) {
-	getName := func() string {
-		name := ""
-		for {
-			name = ch.session.getUserInput(CleanUserInput, "Desired NPC name: ")
-			char := model.M.GetCharacterByName(name)
+func getNpcName(ch *commandHandler) string {
+	name := ""
+	for {
+		name = ch.session.getUserInput(CleanUserInput, "Desired NPC name: ")
+		char := model.M.GetCharacterByName(name)
 
-			if name == "" {
-				return ""
-			} else if char != nil {
-				ch.session.printError("That name is unavailable")
-			} else if err := utils.ValidateName(name); err != nil {
-				ch.session.printError(err.Error())
-			} else {
-				break
-			}
+		if name == "" {
+			return ""
+		} else if char != nil {
+			ch.session.printError("That name is unavailable")
+		} else if err := utils.ValidateName(name); err != nil {
+			ch.session.printError(err.Error())
+		} else {
+			break
 		}
-		return name
 	}
+	return name
+}
 
+func (ch *commandHandler) Npc(args []string) {
 	for {
 		choice, npcId := ch.session.execMenu(npcMenu(nil))
 		if choice == "" {
 			break
 		} else if choice == "n" {
-			name := getName()
+			name := getNpcName(ch)
 			if name != "" {
 				model.M.CreateNpc(name, ch.session.room)
 			}
@@ -523,7 +549,7 @@ func (ch *commandHandler) Npc(args []string) {
 				if choice == "d" {
 					model.M.DeleteCharacterId(npcId)
 				} else if choice == "r" {
-					name := getName()
+					name := getNpcName(ch)
 					if name != "" {
 						npc.SetName(name)
 					}
@@ -556,6 +582,40 @@ func (ch *commandHandler) Npc(args []string) {
 	}
 
 	ch.session.printRoom()
+}
+
+func (ch *commandHandler) Spawn(args []string) {
+	for {
+		menu := spawnMenu()
+		choice, templateId := ch.session.execMenu(menu)
+
+		if choice == "" {
+			break
+		} else if choice == "n" {
+			name := getNpcName(ch)
+			if name != "" {
+				model.M.CreateNpcTemplate(name)
+			}
+		} else {
+			for {
+				specificMenu := specificSpawnMenu(templateId)
+				choice, _ := ch.session.execMenu(specificMenu)
+
+				if choice == "" {
+					break
+				} else if choice == "r" {
+					newName := getNpcName(ch)
+					if newName != "" {
+						template := model.M.GetCharacter(templateId)
+						template.SetName(newName)
+					}
+				} else if choice == "d" {
+					model.M.DeleteCharacterId(templateId)
+					break
+				}
+			}
+		}
+	}
 }
 
 func (ch *commandHandler) Create(args []string) {
