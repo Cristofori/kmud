@@ -73,11 +73,11 @@ func (self *Room) ToString(mode PrintMode, players []*Character, npcs []*Charact
 
 	if mode == ReadMode {
 		str = fmt.Sprintf("\r\n %s>>> %s%v %s<<< %s(%v %v %v)\r\n\r\n %s%v\r\n\r\n",
-			utils.ColorGray, utils.ColorBlue,
+			utils.ColorWhite, utils.ColorBlue,
 			self.GetTitle(),
-			utils.ColorGray, utils.ColorGray,
+			utils.ColorWhite, utils.ColorBlue,
 			self.GetLocation().X, self.GetLocation().Y, self.GetLocation().Z,
-			utils.ColorGray,
+			utils.ColorWhite,
 			self.GetDescription())
 
 		extraNewLine := ""
