@@ -261,7 +261,7 @@ func (self EnterEvent) ToString(receiver *database.Character) string {
 		return ""
 	}
 
-	str := fmt.Sprintf("%s%s %shas entered the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
+	str := fmt.Sprintf("%v%s %vhas entered the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
 
 	dir := DirectionBetween(self.Room, self.SourceRoom)
 	if dir != database.DirectionNone {
@@ -281,7 +281,7 @@ func (self LeaveEvent) Type() EventType {
 }
 
 func (self LeaveEvent) ToString(receiver *database.Character) string {
-	str := fmt.Sprintf("%s%s %shas left the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
+	str := fmt.Sprintf("%v%s %vhas left the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
 
 	dir := DirectionBetween(self.Room, self.DestRoom)
 	if dir != database.DirectionNone {

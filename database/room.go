@@ -72,7 +72,7 @@ func (self *Room) ToString(mode PrintMode, players []*Character, npcs []*Charact
 	var str string
 
 	if mode == ReadMode {
-		str = fmt.Sprintf("\r\n %s>>> %s%v %s<<< %s(%v %v %v)\r\n\r\n %s%v\r\n\r\n",
+		str = fmt.Sprintf("\r\n %v>>> %v%s %v<<< %v(%v %v %v)\r\n\r\n %v%s\r\n\r\n",
 			utils.ColorWhite, utils.ColorBlue,
 			self.GetTitle(),
 			utils.ColorWhite, utils.ColorBlue,
