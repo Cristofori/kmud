@@ -20,11 +20,11 @@ type Menu struct {
 	prompt  string
 }
 
-func NewMenu(text string) Menu {
+func NewMenu(text string) *Menu {
 	var menu Menu
 	menu.title = text
 	menu.prompt = "> "
-	return menu
+	return &menu
 }
 
 func (self *Menu) AddAction(key string, text string) {

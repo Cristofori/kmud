@@ -100,7 +100,7 @@ func toggleExitMenu(room *database.Room) *utils.Menu {
 	menu.AddAction("u", "[U]p: "+onOrOff(database.DirectionUp))
 	menu.AddAction("d", "[D]own: "+onOrOff(database.DirectionDown))
 
-	return &menu
+	return menu
 }
 
 func (session *Session) Exec() {
@@ -170,12 +170,8 @@ func (session *Session) printError(err string, a ...interface{}) {
 func (session *Session) printRoom() {
 	playerList := model.M.PlayersIn(session.room, session.player)
 	npcList := model.M.NpcsIn(session.room)
-	session.printLine(session.room.ToString(database.ReadMode,
-		playerList, npcList, model.M.GetItems(session.room.GetItemIds())))
-}
-
-func (session *Session) printRoomEditor() {
-	session.printLine(session.room.ToString(database.EditMode, nil, nil, nil))
+	session.printLine(session.room.ToString(playerList, npcList,
+		model.M.GetItems(session.room.GetItemIds())))
 }
 
 func (session *Session) clearLine() {

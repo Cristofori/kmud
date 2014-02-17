@@ -166,7 +166,7 @@ func newPlayer(conn *wrappedConnection, user *database.User) *database.Character
 	}
 }
 
-func mainMenu() utils.Menu {
+func mainMenu() *utils.Menu {
 	menu := utils.NewMenu("MUD")
 
 	menu.AddAction("l", "[L]ogin")
@@ -176,7 +176,7 @@ func mainMenu() utils.Menu {
 	return menu
 }
 
-func userMenu(user *database.User) utils.Menu {
+func userMenu(user *database.User) *utils.Menu {
 	chars := model.M.GetUserCharacters(user)
 
 	menu := utils.NewMenu(user.GetName())
@@ -198,7 +198,7 @@ func userMenu(user *database.User) utils.Menu {
 	return menu
 }
 
-func deleteMenu(user *database.User) utils.Menu {
+func deleteMenu(user *database.User) *utils.Menu {
 	chars := model.M.GetUserCharacters(user)
 
 	menu := utils.NewMenu("Delete character")
@@ -216,13 +216,13 @@ func deleteMenu(user *database.User) utils.Menu {
 	return menu
 }
 
-func adminMenu() utils.Menu {
+func adminMenu() *utils.Menu {
 	menu := utils.NewMenu("Admin")
 	menu.AddAction("u", "[U]sers")
 	return menu
 }
 
-func userAdminMenu() utils.Menu {
+func userAdminMenu() *utils.Menu {
 	menu := utils.NewMenu("User Admin")
 
 	users := model.M.GetUsers()
@@ -243,7 +243,7 @@ func userAdminMenu() utils.Menu {
 	return menu
 }
 
-func userSpecificMenu(user *database.User) utils.Menu {
+func userSpecificMenu(user *database.User) *utils.Menu {
 	suffix := ""
 	if user.Online() {
 		suffix = "(Online)"

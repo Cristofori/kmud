@@ -30,13 +30,6 @@ type Room struct {
 	Properties map[string]string
 }
 
-type PrintMode int
-
-const (
-	ReadMode PrintMode = iota
-	EditMode PrintMode = iota
-)
-
 func NewRoom(zoneId bson.ObjectId, location Coordinate) *Room {
 	var room Room
 	room.initDbObject()
@@ -68,81 +61,76 @@ func (self *Room) GetType() objectType {
 	return RoomType
 }
 
-func (self *Room) ToString(mode PrintMode, players []*Character, npcs []*Character, items []*Item) string {
+func (self *Room) ToString(players []*Character, npcs []*Character, items []*Item) string {
 	var str string
 
-	if mode == ReadMode {
-		str = fmt.Sprintf("\r\n %v>>> %v%s %v<<< %v(%v %v %v)\r\n\r\n %v%s\r\n\r\n",
-			utils.ColorWhite, utils.ColorBlue,
-			self.GetTitle(),
-			utils.ColorWhite, utils.ColorBlue,
-			self.GetLocation().X, self.GetLocation().Y, self.GetLocation().Z,
-			utils.ColorWhite,
-			self.GetDescription())
+	str = fmt.Sprintf("\r\n %v>>> %v%s %v<<< %v(%v %v %v)\r\n\r\n %v%s\r\n\r\n",
+		utils.ColorWhite, utils.ColorBlue,
+		self.GetTitle(),
+		utils.ColorWhite, utils.ColorBlue,
+		self.GetLocation().X, self.GetLocation().Y, self.GetLocation().Z,
+		utils.ColorWhite,
+		self.GetDescription())
 
-		extraNewLine := ""
+	extraNewLine := ""
 
-		if len(players) > 0 {
-			str = str + " @3Also here: "
+	if len(players) > 0 {
+		str = str + " @3Also here: "
 
-			var names []string
-			for _, char := range players {
-				names = append(names, utils.Colorize(utils.ColorWhite, char.GetName()))
-			}
-			str = str + strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")) + "\n"
-
-			extraNewLine = "\r\n"
+		var names []string
+		for _, char := range players {
+			names = append(names, utils.Colorize(utils.ColorWhite, char.GetName()))
 		}
+		str = str + strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")) + "\n"
 
-		if len(npcs) > 0 {
-			str = str + " " + utils.Colorize(utils.ColorBlue, "NPCs: ")
-
-			var names []string
-			for _, npc := range npcs {
-				names = append(names, utils.Colorize(utils.ColorWhite, npc.GetName()))
-			}
-			str = str + strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")) + "\r\n"
-
-			extraNewLine = "\r\n"
-		}
-
-		if len(items) > 0 {
-			itemMap := make(map[string]int)
-			var nameList []string
-
-			for _, item := range items {
-				if item == nil {
-					continue
-				}
-
-				_, found := itemMap[item.GetName()]
-				if !found {
-					nameList = append(nameList, item.GetName())
-				}
-				itemMap[item.GetName()]++
-			}
-
-			sort.Strings(nameList)
-
-			str = str + " " + utils.Colorize(utils.ColorBlue, "Items: ")
-
-			var names []string
-			for _, name := range nameList {
-				if itemMap[name] > 1 {
-					name = fmt.Sprintf("%s x%v", name, itemMap[name])
-				}
-				names = append(names, utils.Colorize(utils.ColorWhite, name))
-			}
-			str = str + strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")) + "\r\n"
-
-			extraNewLine = "\r\n"
-		}
-
-		str = str + extraNewLine + " " + utils.Colorize(utils.ColorBlue, "Exits: ")
-
-	} else {
-		str = fmt.Sprintf(" [1] %v \r\n\r\n [2] %v \r\n\r\n [3] Exits: ", self.GetTitle(), self.GetDescription())
+		extraNewLine = "\r\n"
 	}
+
+	if len(npcs) > 0 {
+		str = str + " " + utils.Colorize(utils.ColorBlue, "NPCs: ")
+
+		var names []string
+		for _, npc := range npcs {
+			names = append(names, utils.Colorize(utils.ColorWhite, npc.GetName()))
+		}
+		str = str + strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")) + "\r\n"
+
+		extraNewLine = "\r\n"
+	}
+
+	if len(items) > 0 {
+		itemMap := make(map[string]int)
+		var nameList []string
+
+		for _, item := range items {
+			if item == nil {
+				continue
+			}
+
+			_, found := itemMap[item.GetName()]
+			if !found {
+				nameList = append(nameList, item.GetName())
+			}
+			itemMap[item.GetName()]++
+		}
+
+		sort.Strings(nameList)
+
+		str = str + " " + utils.Colorize(utils.ColorBlue, "Items: ")
+
+		var names []string
+		for _, name := range nameList {
+			if itemMap[name] > 1 {
+				name = fmt.Sprintf("%s x%v", name, itemMap[name])
+			}
+			names = append(names, utils.Colorize(utils.ColorWhite, name))
+		}
+		str = str + strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")) + "\r\n"
+
+		extraNewLine = "\r\n"
+	}
+
+	str = str + extraNewLine + " " + utils.Colorize(utils.ColorBlue, "Exits: ")
 
 	var exitList []string
 	for _, direction := range self.GetExits() {

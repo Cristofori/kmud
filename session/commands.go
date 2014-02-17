@@ -11,6 +11,10 @@ import (
 	"strings"
 )
 
+type commandHandler struct {
+	session *Session
+}
+
 func npcMenu(room *database.Room) *utils.Menu {
 	var npcs []*database.Character
 
@@ -30,7 +34,7 @@ func npcMenu(room *database.Room) *utils.Menu {
 		menu.AddActionData(index, actionText, npc.GetId())
 	}
 
-	return &menu
+	return menu
 }
 
 func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
@@ -46,7 +50,7 @@ func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
 	}
 
 	menu.AddAction("o", fmt.Sprintf("R[o]aming - %s", roamingState))
-	return &menu
+	return menu
 }
 
 func spawnMenu() *utils.Menu {
@@ -62,7 +66,7 @@ func spawnMenu() *utils.Menu {
 		menu.AddActionData(index, actionText, template.GetId())
 	}
 
-	return &menu
+	return menu
 }
 
 func specificSpawnMenu(templateId bson.ObjectId) *utils.Menu {
@@ -72,11 +76,7 @@ func specificSpawnMenu(templateId bson.ObjectId) *utils.Menu {
 	menu.AddAction("r", "[R]ename")
 	menu.AddAction("d", "[D]elete")
 
-	return &menu
-}
-
-type commandHandler struct {
-	session *Session
+	return menu
 }
 
 func (ch *commandHandler) handleCommand(command string, args []string) {
@@ -112,34 +112,36 @@ func (ch *commandHandler) Location(args []string) {
 	ch.session.printLine("%v", ch.session.room.GetLocation())
 }
 
-func (ch *commandHandler) Edit(args []string) {
-	ch.session.printRoomEditor()
+func (ch *commandHandler) Room(args []string) {
+	menu := utils.NewMenu("Room")
+
+	menu.AddAction("t", "[T]itle")
+	menu.AddAction("d", "[D]escription")
+	menu.AddAction("e", "[E]xits")
 
 	for {
-		input := ch.session.getUserInput(CleanUserInput, "Select a section to edit: ")
+		choice, _ := ch.session.execMenu(menu)
 
-		switch input {
+		switch choice {
 		case "":
 			ch.session.printRoom()
 			return
 
-		case "1":
-			input = ch.session.getUserInput(RawUserInput, "Enter new title: ")
+		case "t":
+			title := ch.session.getUserInput(RawUserInput, "Enter new title: ")
 
-			if input != "" {
-				ch.session.room.SetTitle(input)
+			if title != "" {
+				ch.session.room.SetTitle(title)
 			}
-			ch.session.printRoomEditor()
 
-		case "2":
-			input = ch.session.getUserInput(RawUserInput, "Enter new description: ")
+		case "d":
+			description := ch.session.getUserInput(RawUserInput, "Enter new description: ")
 
-			if input != "" {
-				ch.session.room.SetDescription(input)
+			if description != "" {
+				ch.session.room.SetDescription(description)
 			}
-			ch.session.printRoomEditor()
 
-		case "3":
+		case "e":
 			for {
 				menu := toggleExitMenu(ch.session.room)
 
@@ -162,11 +164,6 @@ func (ch *commandHandler) Edit(args []string) {
 					}
 				}
 			}
-
-			ch.session.printRoomEditor()
-
-		default:
-			ch.session.printLine("Invalid selection")
 		}
 	}
 }
