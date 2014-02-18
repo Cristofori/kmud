@@ -67,12 +67,14 @@ func getCollectionFromType(t objectType) Collection {
 	switch t {
 	case CharType:
 		return getCollection(cCharacters)
-	case RoomType:
-		return getCollection(cRooms)
 	case UserType:
 		return getCollection(cUsers)
 	case ZoneType:
 		return getCollection(cZones)
+    case AreaType:
+        return getCollection(cAreas)
+	case RoomType:
+		return getCollection(cRooms)
 	case ItemType:
 		return getCollection(cItems)
 	default:
@@ -89,6 +91,7 @@ const (
 	cRooms      = collectionName("rooms")
 	cZones      = collectionName("zones")
 	cItems      = collectionName("items")
+	cAreas      = collectionName("areas")
 )
 
 // Field names
@@ -116,8 +119,7 @@ func printError(err error) {
 
 func RetrieveObjects(t objectType, objects interface{}) error {
 	c := getCollectionFromType(t)
-	iter := c.Find(nil).Iter()
-	return iter.All(objects)
+	return c.Find(nil).Iter().All(objects)
 }
 
 func DeleteObject(obj Identifiable) error {

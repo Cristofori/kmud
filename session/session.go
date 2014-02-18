@@ -19,7 +19,6 @@ type Session struct {
 	user   *database.User
 	player *database.Character
 	room   *database.Room
-	zone   *database.Zone
 
 	prompt string
 
@@ -49,7 +48,6 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 	session.user = user
 	session.player = player
 	session.room = model.M.GetRoom(player.GetRoomId())
-	session.zone = model.M.GetZone(session.room.GetZoneId())
 
 	session.prompt = "%h/%H> "
 
@@ -170,8 +168,9 @@ func (session *Session) printError(err string, a ...interface{}) {
 func (session *Session) printRoom() {
 	playerList := model.M.PlayersIn(session.room, session.player)
 	npcList := model.M.NpcsIn(session.room)
+    area := model.M.GetArea(session.room.GetAreaId())
 	session.printLine(session.room.ToString(playerList, npcList,
-		model.M.GetItems(session.room.GetItemIds())))
+		model.M.GetItems(session.room.GetItemIds()), area))
 }
 
 func (session *Session) clearLine() {
@@ -269,6 +268,10 @@ func (session *Session) GetPrompt() string {
 	prompt = strings.Replace(prompt, "%H", strconv.Itoa(session.player.GetHealth()), -1)
 
 	return utils.Colorize(utils.ColorWhite, prompt)
+}
+
+func (session *Session) currentZone() *database.Zone {
+	return model.M.GetZone(session.room.GetZoneId())
 }
 
 // vim: nocindent

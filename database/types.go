@@ -36,9 +36,10 @@ type objectType int
 
 const (
 	CharType objectType = iota
-	RoomType objectType = iota
 	UserType objectType = iota
 	ZoneType objectType = iota
+    AreaType objectType = iota
+	RoomType objectType = iota
 	ItemType objectType = iota
 )
 

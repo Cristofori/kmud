@@ -12,6 +12,7 @@ type Room struct {
 	DbObject `bson:",inline"`
 
 	ZoneId        bson.ObjectId
+    AreaId        bson.ObjectId `bson:",omitempty"`
 	Title         string
 	Description   string
 	Items         []bson.ObjectId
@@ -61,12 +62,17 @@ func (self *Room) GetType() objectType {
 	return RoomType
 }
 
-func (self *Room) ToString(players []*Character, npcs []*Character, items []*Item) string {
+func (self *Room) ToString(players []*Character, npcs []*Character, items []*Item, area *Area) string {
 	var str string
 
-	str = fmt.Sprintf("\r\n %v>>> %v%s %v<<< %v(%v %v %v)\r\n\r\n %v%s\r\n\r\n",
+    areaStr := ""
+    if area != nil {
+        areaStr = fmt.Sprintf(" - %s", area.GetName())
+    }
+
+	str = fmt.Sprintf("\r\n %v>>> %v%s%s %v<<< %v(%v %v %v)\r\n\r\n %v%s\r\n\r\n",
 		utils.ColorWhite, utils.ColorBlue,
-		self.GetTitle(),
+		self.GetTitle(), areaStr,
 		utils.ColorWhite, utils.ColorBlue,
 		self.GetLocation().X, self.GetLocation().Y, self.GetLocation().Z,
 		utils.ColorWhite,
@@ -75,7 +81,7 @@ func (self *Room) ToString(players []*Character, npcs []*Character, items []*Ite
 	extraNewLine := ""
 
 	if len(players) > 0 {
-		str = str + " @3Also here: "
+		str = fmt.Sprintf("%s %sAlso here:", str, utils.ColorBlue)
 
 		var names []string
 		for _, char := range players {
@@ -321,6 +327,23 @@ func (self *Room) GetZoneId() bson.ObjectId {
 	defer self.ReadUnlock()
 
 	return self.ZoneId
+}
+
+func (self *Room) SetAreaId(areaId bson.ObjectId) {
+    self.WriteLock()
+    defer self.WriteUnlock()
+
+    if areaId != self.AreaId {
+        self.AreaId = areaId
+        modified(self)
+    }
+}
+
+func (self *Room) GetAreaId() bson.ObjectId {
+    self.ReadLock()
+    defer self.ReadUnlock()
+
+    return self.AreaId
 }
 
 func (self *Room) NextLocation(direction Direction) Coordinate {

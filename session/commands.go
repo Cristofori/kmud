@@ -118,6 +118,7 @@ func (ch *commandHandler) Room(args []string) {
 	menu.AddAction("t", "[T]itle")
 	menu.AddAction("d", "[D]escription")
 	menu.AddAction("e", "[E]xits")
+	menu.AddAction("a", "[A]rea")
 
 	for {
 		choice, _ := ch.session.execMenu(menu)
@@ -158,12 +159,32 @@ func (ch *commandHandler) Room(args []string) {
 
 					// Disable the corresponding exit in the adjacent room if necessary
 					loc := ch.session.room.NextLocation(direction)
-					otherRoom := model.M.GetRoomByLocation(loc, ch.session.zone)
+					otherRoom := model.M.GetRoomByLocation(loc, ch.session.currentZone())
 					if otherRoom != nil {
 						otherRoom.SetExitEnabled(direction.Opposite(), enable)
 					}
 				}
 			}
+        case "a":
+            menu := utils.NewMenu("Change Area")
+            menu.AddAction("n", "[N]one")
+            for i, area := range model.M.GetAreas(ch.session.currentZone()) {
+                index := i + 1
+                actionText := fmt.Sprintf("[%v]%v", index, area.GetName())
+                if area.GetId() == ch.session.room.GetAreaId() {
+                    actionText += "*"
+                }
+                menu.AddActionData(index, actionText, area.GetId())
+            }
+
+            choice, areaId := ch.session.execMenu(menu);
+
+            switch choice {
+                case "n":
+                    ch.session.room.SetAreaId("")
+                default:
+                    ch.session.room.SetAreaId(areaId)
+            }
 		}
 	}
 }
@@ -193,7 +214,7 @@ func (ch *commandHandler) Map(args []string) {
 		endY = loc.Y + (height / 4)
 		endZ = loc.Z
 	} else if args[0] == "all" {
-		topLeft, bottomRight := model.ZoneCorners(ch.session.zone)
+		topLeft, bottomRight := model.ZoneCorners(ch.session.currentZone())
 
 		startX = topLeft.X
 		startY = topLeft.Y
@@ -223,7 +244,7 @@ func (ch *commandHandler) Map(args []string) {
 		for y := startY; y <= endY; y++ {
 			for x := startX; x <= endX; x++ {
 				loc := database.Coordinate{X: x, Y: y, Z: z}
-				room := model.M.GetRoomByLocation(loc, ch.session.zone)
+				room := model.M.GetRoomByLocation(loc, ch.session.currentZone())
 
 				if room != nil {
 					// Translate to 0-based coordinates
@@ -238,11 +259,7 @@ func (ch *commandHandler) Map(args []string) {
 
 func (ch *commandHandler) Zone(args []string) {
 	if len(args) == 0 {
-		if ch.session.zone.GetId() == "" {
-			ch.session.printLine("Currently in the null zone")
-		} else {
-			ch.session.printLine("Current zone: " + utils.Colorize(utils.ColorBlue, ch.session.zone.GetName()))
-		}
+        ch.session.printLine("Current zone: " + utils.Colorize(utils.ColorBlue, ch.session.currentZone().GetName()))
 	} else if len(args) == 1 {
 		if args[0] == "list" {
 			ch.session.printLineColor(utils.ColorBlue, "Zones")
@@ -262,7 +279,7 @@ func (ch *commandHandler) Zone(args []string) {
 				return
 			}
 
-			ch.session.zone.SetName(args[1])
+			ch.session.currentZone().SetName(args[1])
 		} else if args[0] == "new" {
 			newZone, err := model.M.CreateZone(args[1])
 
@@ -276,7 +293,6 @@ func (ch *commandHandler) Zone(args []string) {
 
 			model.MoveCharacterToRoom(ch.session.player, newRoom)
 
-			ch.session.zone = newZone
 			ch.session.room = newRoom
 
 			ch.session.printRoom()
@@ -356,7 +372,7 @@ func (ch *commandHandler) Teleport(args []string) {
 	y := 0
 	z := 0
 
-	newZone := ch.session.zone
+	newZone := ch.session.currentZone()
 
 	if len(args) == 1 {
 		newZone = model.M.GetZoneByName(args[0])
@@ -410,7 +426,6 @@ func (ch *commandHandler) Teleport(args []string) {
 
 	if err == nil {
 		ch.session.room = newRoom
-		ch.session.zone = newZone
 		ch.session.printRoom()
 	} else {
 		ch.session.printError(err.Error())
@@ -495,7 +510,7 @@ func (ch *commandHandler) DestroyRoom(args []string) {
 			ch.session.printError("Not a valid direction")
 		} else {
 			loc := ch.session.room.NextLocation(direction)
-			roomToDelete := model.M.GetRoomByLocation(loc, ch.session.zone)
+			roomToDelete := model.M.GetRoomByLocation(loc, ch.session.currentZone())
 			if roomToDelete != nil {
 				model.M.DeleteRoom(roomToDelete)
 				ch.session.printLine("Room destroyed")
@@ -777,6 +792,62 @@ func (ch *commandHandler) DelProp(args []string) {
 	}
 
 	ch.session.room.RemoveProperty(args[0])
+}
+
+func (ch *commandHandler) Area(args []string) {
+    for {
+        menu := utils.NewMenu("Areas")
+
+        menu.AddAction("n", "[N]ew")
+
+        for i, area := range model.M.GetAreas(ch.session.currentZone()) {
+            index := i + 1
+            actionText := fmt.Sprintf("[%v]%v", index, area.GetName())
+            menu.AddActionData(index, actionText, area.GetId())
+        }
+
+        choice, areaId := ch.session.execMenu(menu)
+
+        switch(choice) {
+            case "":
+                return
+            case "n":
+                name := ch.session.getUserInput(RawUserInput, "Area name: ")
+
+                if name != "" {
+                    model.M.CreateArea(name, ch.session.currentZone())
+                }
+            default:
+                area := model.M.GetArea(areaId)
+
+                if area != nil  {
+                    areaMenu := utils.NewMenu(area.GetName())
+                    areaMenu.AddAction("r", "[R]ename")
+                    areaMenu.AddAction("d", "[D]elete")
+
+                    choice, _ = ch.session.execMenu(areaMenu)
+
+                    switch(choice) {
+                        case "":
+                            break
+                        case "r":
+                            newName := ch.session.getUserInput(RawUserInput, "New name: ")
+
+                            if newName != "" {
+                                area.SetName(newName)
+                            }
+                        case "d":
+                            answer := ch.session.getUserInput(RawUserInput, "Are you sure? ")
+
+                            if(strings.ToLower(answer) == "y") {
+                                model.M.DeleteArea(area)
+                            }
+                    }
+                } else {
+                    ch.session.printError("That area doesn't exist")
+                }
+        }
+    }
 }
 
 // vim: nocindent

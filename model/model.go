@@ -19,8 +19,9 @@ const (
 type globalModel struct {
 	users map[bson.ObjectId]*database.User
 	chars map[bson.ObjectId]*database.Character
-	rooms map[bson.ObjectId]*database.Room
 	zones map[bson.ObjectId]*database.Zone
+    areas map[bson.ObjectId]*database.Area
+	rooms map[bson.ObjectId]*database.Room
 	items map[bson.ObjectId]*database.Item
 
 	mutex sync.RWMutex
@@ -391,7 +392,7 @@ func (self *globalModel) GetZones() database.Zones {
 	self.mutex.RLock()
 	defer self.mutex.RUnlock()
 
-	var zones []*database.Zone
+	var zones database.Zones
 
 	for _, zone := range self.zones {
 		zones = append(zones, zone)
@@ -438,6 +439,63 @@ func (self *globalModel) GetZoneByName(name string) *database.Zone {
 	}
 
 	return nil
+}
+
+func (self *globalModel) GetAreas(zone *database.Zone) database.Areas {
+    self.mutex.RLock()
+    defer self.mutex.RUnlock()
+
+    var areas database.Areas
+
+    for _, area := range self.areas {
+        if area.GetZoneId() == zone.GetId() {
+            areas = append(areas, area)
+        }
+    }
+
+    return areas
+}
+
+func (self *globalModel) GetArea(areaId bson.ObjectId) *database.Area {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	return self.areas[areaId]
+}
+
+func (self *globalModel) CreateArea(name string, zone *database.Zone) (*database.Area, error) {
+    if M.GetAreaByName(name) != nil {
+        return nil, errors.New("An area with that name already exists")
+    }
+
+    self.mutex.Lock()
+    defer self.mutex.Unlock()
+
+    area := database.NewArea(name, zone.GetId())
+    self.areas[area.GetId()] = area
+
+    return area, nil
+}
+
+func (self *globalModel) GetAreaByName(name string) *database.Area {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	for _, area := range self.areas {
+		if utils.Compare(area.GetName(), name) {
+			return area
+		}
+	}
+
+	return nil
+}
+
+func (self *globalModel) DeleteArea(area *database.Area) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+
+	delete(self.areas, area.GetId())
+	utils.HandleError(database.DeleteObject(area))
 }
 
 // DeleteRoom removes the given room object from the model and the database. It
@@ -543,8 +601,9 @@ func Init(session database.Session) error {
 
 	M.users = map[bson.ObjectId]*database.User{}
 	M.chars = map[bson.ObjectId]*database.Character{}
-	M.rooms = map[bson.ObjectId]*database.Room{}
 	M.zones = map[bson.ObjectId]*database.Zone{}
+	M.areas = map[bson.ObjectId]*database.Area{}
+	M.rooms = map[bson.ObjectId]*database.Room{}
 	M.items = map[bson.ObjectId]*database.Item{}
 
 	users := []*database.User{}
@@ -563,20 +622,28 @@ func Init(session database.Session) error {
 		M.chars[character.GetId()] = character
 	}
 
-	rooms := []*database.Room{}
-	err = database.RetrieveObjects(database.RoomType, &rooms)
-	utils.HandleError(err)
-
-	for _, room := range rooms {
-		M.rooms[room.GetId()] = room
-	}
-
 	zones := []*database.Zone{}
 	err = database.RetrieveObjects(database.ZoneType, &zones)
 	utils.HandleError(err)
 
 	for _, zone := range zones {
 		M.zones[zone.GetId()] = zone
+	}
+
+    areas := []*database.Area{}
+    err = database.RetrieveObjects(database.AreaType, &areas)
+    utils.HandleError(err)
+
+    for _, area := range areas {
+        M.areas[area.GetId()] = area
+    }
+
+	rooms := []*database.Room{}
+	err = database.RetrieveObjects(database.RoomType, &rooms)
+	utils.HandleError(err)
+
+	for _, room := range rooms {
+		M.rooms[room.GetId()] = room
 	}
 
 	items := []*database.Item{}

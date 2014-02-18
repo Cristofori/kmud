@@ -73,10 +73,11 @@ func (ah *actionHandler) Look(args []string) {
 		} else {
 			if ah.session.room.HasExit(arg) {
 				loc := ah.session.room.NextLocation(arg)
-				roomToSee := model.M.GetRoomByLocation(loc, ah.session.zone)
+				roomToSee := model.M.GetRoomByLocation(loc, ah.session.currentZone())
 				if roomToSee != nil {
+                    area := model.M.GetArea(roomToSee.GetAreaId())
 					ah.session.printLine(roomToSee.ToString(model.M.PlayersIn(roomToSee, nil),
-						model.M.NpcsIn(roomToSee), nil))
+						model.M.NpcsIn(roomToSee), nil, area))
 				} else {
 					ah.session.printLine("Nothing to see")
 				}
