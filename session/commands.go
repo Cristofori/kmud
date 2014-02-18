@@ -19,9 +19,9 @@ func npcMenu(room *database.Room) *utils.Menu {
 	var npcs []*database.Character
 
 	if room != nil {
-		npcs = model.M.NpcsIn(room)
+		npcs = model.NpcsIn(room)
 	} else {
-		npcs = model.M.GetAllNpcs()
+		npcs = model.GetAllNpcs()
 	}
 
 	menu := utils.NewMenu("NPCs")
@@ -38,7 +38,7 @@ func npcMenu(room *database.Room) *utils.Menu {
 }
 
 func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
-	npc := model.M.GetCharacter(npcId)
+	npc := model.GetCharacter(npcId)
 	menu := utils.NewMenu(npc.GetName())
 	menu.AddAction("r", "[R]ename")
 	menu.AddAction("d", "[D]elete")
@@ -58,7 +58,7 @@ func spawnMenu() *utils.Menu {
 
 	menu.AddAction("n", "[N]ew")
 
-	templates := model.M.GetAllNpcTemplates()
+	templates := model.GetAllNpcTemplates()
 
 	for i, template := range templates {
 		index := i + 1
@@ -70,7 +70,7 @@ func spawnMenu() *utils.Menu {
 }
 
 func specificSpawnMenu(templateId bson.ObjectId) *utils.Menu {
-	template := model.M.GetCharacter(templateId)
+	template := model.GetCharacter(templateId)
 	menu := utils.NewMenu(template.GetName())
 
 	menu.AddAction("r", "[R]ename")
@@ -159,7 +159,7 @@ func (ch *commandHandler) Room(args []string) {
 
 					// Disable the corresponding exit in the adjacent room if necessary
 					loc := ch.session.room.NextLocation(direction)
-					otherRoom := model.M.GetRoomByLocation(loc, ch.session.currentZone())
+					otherRoom := model.GetRoomByLocation(loc, ch.session.currentZone())
 					if otherRoom != nil {
 						otherRoom.SetExitEnabled(direction.Opposite(), enable)
 					}
@@ -168,7 +168,7 @@ func (ch *commandHandler) Room(args []string) {
         case "a":
             menu := utils.NewMenu("Change Area")
             menu.AddAction("n", "[N]one")
-            for i, area := range model.M.GetAreas(ch.session.currentZone()) {
+            for i, area := range model.GetAreas(ch.session.currentZone()) {
                 index := i + 1
                 actionText := fmt.Sprintf("[%v]%v", index, area.GetName())
                 if area.GetId() == ch.session.room.GetAreaId() {
@@ -244,7 +244,7 @@ func (ch *commandHandler) Map(args []string) {
 		for y := startY; y <= endY; y++ {
 			for x := startX; x <= endX; x++ {
 				loc := database.Coordinate{X: x, Y: y, Z: z}
-				room := model.M.GetRoomByLocation(loc, ch.session.currentZone())
+				room := model.GetRoomByLocation(loc, ch.session.currentZone())
 
 				if room != nil {
 					// Translate to 0-based coordinates
@@ -264,7 +264,7 @@ func (ch *commandHandler) Zone(args []string) {
 		if args[0] == "list" {
 			ch.session.printLineColor(utils.ColorBlue, "Zones")
 			ch.session.printLineColor(utils.ColorBlue, "-----")
-			for _, zone := range model.M.GetZones() {
+			for _, zone := range model.GetZones() {
 				ch.session.printLine(zone.GetName())
 			}
 		} else {
@@ -272,7 +272,7 @@ func (ch *commandHandler) Zone(args []string) {
 		}
 	} else if len(args) == 2 {
 		if args[0] == "rename" {
-			zone := model.M.GetZoneByName(args[0])
+			zone := model.GetZoneByName(args[0])
 
 			if zone != nil {
 				ch.session.printError("A zone with that name already exists")
@@ -281,14 +281,14 @@ func (ch *commandHandler) Zone(args []string) {
 
 			ch.session.currentZone().SetName(args[1])
 		} else if args[0] == "new" {
-			newZone, err := model.M.CreateZone(args[1])
+			newZone, err := model.CreateZone(args[1])
 
 			if err != nil {
 				ch.session.printError(err.Error())
 				return
 			}
 
-			newRoom, err := model.M.CreateRoom(newZone, database.Coordinate{X: 0, Y: 0, Z: 0})
+			newRoom, err := model.CreateRoom(newZone, database.Coordinate{X: 0, Y: 0, Z: 0})
 			utils.PanicIfError(err)
 
 			model.MoveCharacterToRoom(ch.session.player, newRoom)
@@ -343,7 +343,7 @@ func (ch *commandHandler) Whisper(args []string) {
 	}
 
 	name := string(args[0])
-	targetChar := model.M.GetCharacterByName(name)
+	targetChar := model.GetCharacterByName(name)
 
 	if targetChar == nil {
 		ch.session.printError("Player '%s' not found", name)
@@ -375,7 +375,7 @@ func (ch *commandHandler) Teleport(args []string) {
 	newZone := ch.session.currentZone()
 
 	if len(args) == 1 {
-		newZone = model.M.GetZoneByName(args[0])
+		newZone = model.GetZoneByName(args[0])
 
 		if newZone == nil {
 			ch.session.printError("Zone not found")
@@ -387,7 +387,7 @@ func (ch *commandHandler) Teleport(args []string) {
 			return
 		}
 
-		zoneRooms := model.M.GetRoomsInZone(newZone)
+		zoneRooms := model.GetRoomsInZone(newZone)
 
 		if len(zoneRooms) > 0 {
 			r := zoneRooms[0]
@@ -433,7 +433,7 @@ func (ch *commandHandler) Teleport(args []string) {
 }
 
 func (ch *commandHandler) Who(args []string) {
-	chars := model.M.GetOnlineCharacters()
+	chars := model.GetOnlineCharacters()
 
 	ch.session.printLine("")
 	ch.session.printLine("Online Players")
@@ -510,9 +510,9 @@ func (ch *commandHandler) DestroyRoom(args []string) {
 			ch.session.printError("Not a valid direction")
 		} else {
 			loc := ch.session.room.NextLocation(direction)
-			roomToDelete := model.M.GetRoomByLocation(loc, ch.session.currentZone())
+			roomToDelete := model.GetRoomByLocation(loc, ch.session.currentZone())
 			if roomToDelete != nil {
-				model.M.DeleteRoom(roomToDelete)
+				model.DeleteRoom(roomToDelete)
 				ch.session.printLine("Room destroyed")
 			} else {
 				ch.session.printError("No room in that direction")
@@ -527,7 +527,7 @@ func getNpcName(ch *commandHandler) string {
 	name := ""
 	for {
 		name = ch.session.getUserInput(CleanUserInput, "Desired NPC name: ")
-		char := model.M.GetCharacterByName(name)
+		char := model.GetCharacterByName(name)
 
 		if name == "" {
 			return ""
@@ -550,16 +550,16 @@ func (ch *commandHandler) Npc(args []string) {
 		} else if choice == "n" {
 			name := getNpcName(ch)
 			if name != "" {
-				model.M.CreateNpc(name, ch.session.room)
+				model.CreateNpc(name, ch.session.room)
 			}
 		} else if npcId != "" {
 			for {
 				specificMenu := specificNpcMenu(npcId)
 				choice, _ := ch.session.execMenu(specificMenu)
-				npc := model.M.GetCharacter(npcId)
+				npc := model.GetCharacter(npcId)
 
 				if choice == "d" {
-					model.M.DeleteCharacterId(npcId)
+					model.DeleteCharacterId(npcId)
 				} else if choice == "r" {
 					name := getNpcName(ch)
 					if name != "" {
@@ -606,7 +606,7 @@ func (ch *commandHandler) Spawn(args []string) {
 		} else if choice == "n" {
 			name := getNpcName(ch)
 			if name != "" {
-				model.M.CreateNpcTemplate(name)
+				model.CreateNpcTemplate(name)
 			}
 		} else {
 			for {
@@ -618,11 +618,11 @@ func (ch *commandHandler) Spawn(args []string) {
 				} else if choice == "r" {
 					newName := getNpcName(ch)
 					if newName != "" {
-						template := model.M.GetCharacter(templateId)
+						template := model.GetCharacter(templateId)
 						template.SetName(newName)
 					}
 				} else if choice == "d" {
-					model.M.DeleteCharacterId(templateId)
+					model.DeleteCharacterId(templateId)
 					break
 				}
 			}
@@ -640,7 +640,7 @@ func (ch *commandHandler) Create(args []string) {
 		return
 	}
 
-	item := model.M.CreateItem(args[0])
+	item := model.CreateItem(args[0])
 	ch.session.room.AddItem(item)
 	ch.session.printLine("Item created")
 }
@@ -655,13 +655,13 @@ func (ch *commandHandler) DestroyItem(args []string) {
 		return
 	}
 
-	itemsInRoom := model.M.GetItems(ch.session.room.GetItemIds())
+	itemsInRoom := model.GetItems(ch.session.room.GetItemIds())
 	name := strings.ToLower(args[0])
 
 	for _, item := range itemsInRoom {
 		if strings.ToLower(item.GetName()) == name {
 			ch.session.room.RemoveItem(item)
-			model.M.DeleteItem(item)
+			model.DeleteItem(item)
 			ch.session.printLine("Item destroyed")
 			return
 		}
@@ -741,7 +741,7 @@ func (ch *commandHandler) Silent(args []string) {
 }
 
 func (ch *commandHandler) R(args []string) { // Reply
-	targetChar := model.M.GetCharacter(ch.session.replyId)
+	targetChar := model.GetCharacter(ch.session.replyId)
 
 	if targetChar == nil {
 		ch.session.asyncMessage("No one to reply to")
@@ -800,7 +800,7 @@ func (ch *commandHandler) Area(args []string) {
 
         menu.AddAction("n", "[N]ew")
 
-        for i, area := range model.M.GetAreas(ch.session.currentZone()) {
+        for i, area := range model.GetAreas(ch.session.currentZone()) {
             index := i + 1
             actionText := fmt.Sprintf("[%v]%v", index, area.GetName())
             menu.AddActionData(index, actionText, area.GetId())
@@ -815,10 +815,10 @@ func (ch *commandHandler) Area(args []string) {
                 name := ch.session.getUserInput(RawUserInput, "Area name: ")
 
                 if name != "" {
-                    model.M.CreateArea(name, ch.session.currentZone())
+                    model.CreateArea(name, ch.session.currentZone())
                 }
             default:
-                area := model.M.GetArea(areaId)
+                area := model.GetArea(areaId)
 
                 if area != nil  {
                     areaMenu := utils.NewMenu(area.GetName())
@@ -840,7 +840,7 @@ func (ch *commandHandler) Area(args []string) {
                             answer := ch.session.getUserInput(RawUserInput, "Are you sure? ")
 
                             if(strings.ToLower(answer) == "y") {
-                                model.M.DeleteArea(area)
+                                model.DeleteArea(area)
                             }
                     }
                 } else {

@@ -64,7 +64,7 @@ func login(conn *wrappedConnection) *database.User {
 			return nil
 		}
 
-		user := model.M.GetUserByName(username)
+		user := model.GetUserByName(username)
 
 		if user == nil {
 			utils.WriteLine(conn, "User not found", utils.ColorModeNone)
@@ -107,7 +107,7 @@ func newUser(conn *wrappedConnection) *database.User {
 			return nil
 		}
 
-		user := model.M.GetUserByName(name)
+		user := model.GetUserByName(name)
 		password := ""
 
 		if user != nil {
@@ -137,7 +137,7 @@ func newUser(conn *wrappedConnection) *database.User {
 			}
 			conn.telnet.WontEcho()
 
-			user = model.M.CreateUser(name, password)
+			user = model.CreateUser(name, password)
 			return user
 		}
 	}
@@ -153,15 +153,15 @@ func newPlayer(conn *wrappedConnection, user *database.User) *database.Character
 			return nil
 		}
 
-		char := model.M.GetCharacterByName(name)
+		char := model.GetCharacterByName(name)
 
 		if char != nil {
 			user.WriteLine("That name is unavailable")
 		} else if err := utils.ValidateName(name); err != nil {
 			user.WriteLine(err.Error())
 		} else {
-			room := model.M.GetRooms()[0] // TODO: Better way to pick an initial character location
-			return model.M.CreatePlayer(name, user, room)
+			room := model.GetRooms()[0] // TODO: Better way to pick an initial character location
+			return model.CreatePlayer(name, user, room)
 		}
 	}
 }
@@ -177,7 +177,7 @@ func mainMenu() *utils.Menu {
 }
 
 func userMenu(user *database.User) *utils.Menu {
-	chars := model.M.GetUserCharacters(user)
+	chars := model.GetUserCharacters(user)
 
 	menu := utils.NewMenu(user.GetName())
 	menu.AddAction("l", "[L]ogout")
@@ -199,7 +199,7 @@ func userMenu(user *database.User) *utils.Menu {
 }
 
 func deleteMenu(user *database.User) *utils.Menu {
-	chars := model.M.GetUserCharacters(user)
+	chars := model.GetUserCharacters(user)
 
 	menu := utils.NewMenu("Delete character")
 
@@ -225,7 +225,7 @@ func adminMenu() *utils.Menu {
 func userAdminMenu() *utils.Menu {
 	menu := utils.NewMenu("User Admin")
 
-	users := model.M.GetUsers()
+	users := model.GetUsers()
 	sort.Sort(users)
 
 	for i, user := range users {
@@ -361,15 +361,15 @@ func handleConnection(conn *wrappedConnection) {
 
 								if err == nil {
 									for {
-										userMenu := userSpecificMenu(model.M.GetUser(userId))
+										userMenu := userSpecificMenu(model.GetUser(userId))
 										choice, _ = userMenu.Exec(conn, user.GetColorMode())
 										if choice == "" {
 											break
 										} else if choice == "d" {
-											model.M.DeleteUserId(userId)
+											model.DeleteUserId(userId)
 											break
 										} else if choice == "w" {
-											userToWatch := model.M.GetUser(userId)
+											userToWatch := model.GetUser(userId)
 
 											if userToWatch == user {
 												user.WriteLine("You can't watch yourself!")
@@ -402,7 +402,7 @@ func handleConnection(conn *wrappedConnection) {
 
 					if err == nil {
 						// TODO: Delete confirmation
-						model.M.DeleteCharacterId(deleteCharId)
+						model.DeleteCharacterId(deleteCharId)
 					}
 				}
 
@@ -410,7 +410,7 @@ func handleConnection(conn *wrappedConnection) {
 				_, err := strconv.Atoi(choice)
 
 				if err == nil {
-					player = model.M.GetCharacter(charId)
+					player = model.GetCharacter(charId)
 				}
 			}
 		} else {
@@ -435,19 +435,19 @@ func (self *Server) Start() {
 	err = model.Init(database.NewMongoSession(session.Copy()))
 
 	// If there are no rooms at all create one
-	rooms := model.M.GetRooms()
+	rooms := model.GetRooms()
 	if len(rooms) == 0 {
-		zones := model.M.GetZones()
+		zones := model.GetZones()
 
 		var zone *database.Zone
 
 		if len(zones) == 0 {
-			zone, _ = model.M.CreateZone("Default")
+			zone, _ = model.CreateZone("Default")
 		} else {
 			zone = zones[0]
 		}
 
-		model.M.CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
+		model.CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
 	}
 
 	fmt.Println("Server listening on port 8945")

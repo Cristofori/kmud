@@ -51,7 +51,7 @@ func (ah *actionHandler) Look(args []string) {
 		arg := database.StringToDirection(args[0])
 
 		if arg == database.DirectionNone {
-			charList := model.M.CharactersIn(ah.session.room)
+			charList := model.CharactersIn(ah.session.room)
 			index := utils.BestMatch(args[0], database.CharacterNames(charList))
 
 			if index == -2 {
@@ -59,7 +59,7 @@ func (ah *actionHandler) Look(args []string) {
 			} else if index != -1 {
 				ah.session.printLine("Looking at: %s", charList[index].GetName())
 			} else {
-				itemList := model.M.ItemsIn(ah.session.room)
+				itemList := model.ItemsIn(ah.session.room)
 				index = utils.BestMatch(args[0], database.ItemNames(itemList))
 
 				if index == -1 {
@@ -73,11 +73,11 @@ func (ah *actionHandler) Look(args []string) {
 		} else {
 			if ah.session.room.HasExit(arg) {
 				loc := ah.session.room.NextLocation(arg)
-				roomToSee := model.M.GetRoomByLocation(loc, ah.session.currentZone())
+				roomToSee := model.GetRoomByLocation(loc, ah.session.currentZone())
 				if roomToSee != nil {
-                    area := model.M.GetArea(roomToSee.GetAreaId())
-					ah.session.printLine(roomToSee.ToString(model.M.PlayersIn(roomToSee, nil),
-						model.M.NpcsIn(roomToSee), nil, area))
+                    area := model.GetArea(roomToSee.GetAreaId())
+					ah.session.printLine(roomToSee.ToString(model.PlayersIn(roomToSee, nil),
+						model.NpcsIn(roomToSee), nil, area))
 				} else {
 					ah.session.printLine("Nothing to see")
 				}
@@ -93,7 +93,7 @@ func (ah *actionHandler) A(args []string) {
 }
 
 func (ah *actionHandler) Attack(args []string) {
-	charList := model.M.CharactersIn(ah.session.room)
+	charList := model.CharactersIn(ah.session.room)
 	index := utils.BestMatch(args[0], database.CharacterNames(charList))
 
 	if index == -1 {
@@ -121,7 +121,7 @@ func (ah *actionHandler) Talk(args []string) {
 		return
 	}
 
-	npcList := model.M.NpcsIn(ah.session.room)
+	npcList := model.NpcsIn(ah.session.room)
 	index := utils.BestMatch(args[0], database.CharacterNames(npcList))
 
 	if index == -1 {
@@ -144,7 +144,7 @@ func (ah *actionHandler) Drop(args []string) {
 		return
 	}
 
-	characterItems := model.M.GetItems(ah.session.player.GetItemIds())
+	characterItems := model.GetItems(ah.session.player.GetItemIds())
 	index := utils.BestMatch(args[0], database.ItemNames(characterItems))
 
 	if index == -1 {
@@ -185,7 +185,7 @@ func (ah *actionHandler) Pickup(args []string) {
 		return
 	}
 
-	itemsInRoom := model.M.GetItems(ah.session.room.GetItemIds())
+	itemsInRoom := model.GetItems(ah.session.room.GetItemIds())
 	index := utils.BestMatch(args[0], database.ItemNames(itemsInRoom))
 
 	if index == -2 {
@@ -215,7 +215,7 @@ func (ah *actionHandler) Inventory(args []string) {
 		ah.session.printLine("You aren't carrying anything")
 	} else {
 		var itemNames []string
-		for _, item := range model.M.GetItems(itemIds) {
+		for _, item := range model.GetItems(itemIds) {
 			itemNames = append(itemNames, item.GetName())
 		}
 		ah.session.printLine("You are carrying: %s", strings.Join(itemNames, ", "))

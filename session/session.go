@@ -47,7 +47,7 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 	session.conn = conn
 	session.user = user
 	session.player = player
-	session.room = model.M.GetRoom(player.GetRoomId())
+	session.room = model.GetRoom(player.GetRoomId())
 
 	session.prompt = "%h/%H> "
 
@@ -166,11 +166,11 @@ func (session *Session) printError(err string, a ...interface{}) {
 }
 
 func (session *Session) printRoom() {
-	playerList := model.M.PlayersIn(session.room, session.player)
-	npcList := model.M.NpcsIn(session.room)
-    area := model.M.GetArea(session.room.GetAreaId())
+	playerList := model.PlayersIn(session.room, session.player)
+	npcList := model.NpcsIn(session.room)
+    area := model.GetArea(session.room.GetAreaId())
 	session.printLine(session.room.ToString(playerList, npcList,
-		model.M.GetItems(session.room.GetItemIds()), area))
+		model.GetItems(session.room.GetItemIds()), area))
 }
 
 func (session *Session) clearLine() {
@@ -271,7 +271,7 @@ func (session *Session) GetPrompt() string {
 }
 
 func (session *Session) currentZone() *database.Zone {
-	return model.M.GetZone(session.room.GetZoneId())
+	return model.GetZone(session.room.GetZoneId())
 }
 
 // vim: nocindent

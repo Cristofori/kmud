@@ -12,7 +12,7 @@ const (
 )
 
 func Start() {
-	for _, npc := range model.M.GetAllNpcs() {
+	for _, npc := range model.GetAllNpcs() {
 		manage(npc)
 	}
 
@@ -36,7 +36,7 @@ func manage(npc *database.Character) {
 			}
 
 			if npc.GetProperty(RoamingProperty) == "true" {
-				room := model.M.GetRoom(npc.GetRoomId())
+				room := model.GetRoom(npc.GetRoomId())
 				exits := room.GetExits()
 				exitToTake := utils.Random(0, len(exits)-1)
 				model.MoveCharacter(npc, exits[exitToTake])
