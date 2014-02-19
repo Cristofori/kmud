@@ -71,8 +71,8 @@ func getCollectionFromType(t objectType) Collection {
 		return getCollection(cUsers)
 	case ZoneType:
 		return getCollection(cZones)
-    case AreaType:
-        return getCollection(cAreas)
+	case AreaType:
+		return getCollection(cAreas)
 	case RoomType:
 		return getCollection(cRooms)
 	case ItemType:

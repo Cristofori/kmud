@@ -436,18 +436,18 @@ func GetZoneByName(name string) *database.Zone {
 }
 
 func GetAreas(zone *database.Zone) database.Areas {
-    mutex.RLock()
-    defer mutex.RUnlock()
+	mutex.RLock()
+	defer mutex.RUnlock()
 
-    var areas database.Areas
+	var areas database.Areas
 
-    for _, area := range _areas {
-        if area.GetZoneId() == zone.GetId() {
-            areas = append(areas, area)
-        }
-    }
+	for _, area := range _areas {
+		if area.GetZoneId() == zone.GetId() {
+			areas = append(areas, area)
+		}
+	}
 
-    return areas
+	return areas
 }
 
 func GetArea(areaId bson.ObjectId) *database.Area {
@@ -458,17 +458,17 @@ func GetArea(areaId bson.ObjectId) *database.Area {
 }
 
 func CreateArea(name string, zone *database.Zone) (*database.Area, error) {
-    if GetAreaByName(name) != nil {
-        return nil, errors.New("An area with that name already exists")
-    }
+	if GetAreaByName(name) != nil {
+		return nil, errors.New("An area with that name already exists")
+	}
 
-    mutex.Lock()
-    defer mutex.Unlock()
+	mutex.Lock()
+	defer mutex.Unlock()
 
-    area := database.NewArea(name, zone.GetId())
-    _areas[area.GetId()] = area
+	area := database.NewArea(name, zone.GetId())
+	_areas[area.GetId()] = area
 
-    return area, nil
+	return area, nil
 }
 
 func GetAreaByName(name string) *database.Area {
@@ -622,13 +622,13 @@ func Init(session database.Session) error {
 		_zones[zone.GetId()] = zone
 	}
 
-    areas := []*database.Area{}
-    err = database.RetrieveObjects(database.AreaType, &areas)
-    utils.HandleError(err)
+	areas := []*database.Area{}
+	err = database.RetrieveObjects(database.AreaType, &areas)
+	utils.HandleError(err)
 
-    for _, area := range areas {
-        _areas[area.GetId()] = area
-    }
+	for _, area := range areas {
+		_areas[area.GetId()] = area
+	}
 
 	rooms := []*database.Room{}
 	err = database.RetrieveObjects(database.RoomType, &rooms)

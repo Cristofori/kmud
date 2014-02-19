@@ -38,7 +38,7 @@ const (
 	CharType objectType = iota
 	UserType objectType = iota
 	ZoneType objectType = iota
-    AreaType objectType = iota
+	AreaType objectType = iota
 	RoomType objectType = iota
 	ItemType objectType = iota
 )

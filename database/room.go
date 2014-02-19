@@ -12,7 +12,7 @@ type Room struct {
 	DbObject `bson:",inline"`
 
 	ZoneId        bson.ObjectId
-    AreaId        bson.ObjectId `bson:",omitempty"`
+	AreaId        bson.ObjectId `bson:",omitempty"`
 	Title         string
 	Description   string
 	Items         []bson.ObjectId
@@ -65,10 +65,10 @@ func (self *Room) GetType() objectType {
 func (self *Room) ToString(players []*Character, npcs []*Character, items []*Item, area *Area) string {
 	var str string
 
-    areaStr := ""
-    if area != nil {
-        areaStr = fmt.Sprintf(" - %s", area.GetName())
-    }
+	areaStr := ""
+	if area != nil {
+		areaStr = fmt.Sprintf(" - %s", area.GetName())
+	}
 
 	str = fmt.Sprintf("\r\n %v>>> %v%s%s %v<<< %v(%v %v %v)\r\n\r\n %v%s\r\n\r\n",
 		utils.ColorWhite, utils.ColorBlue,
@@ -330,20 +330,20 @@ func (self *Room) GetZoneId() bson.ObjectId {
 }
 
 func (self *Room) SetAreaId(areaId bson.ObjectId) {
-    self.WriteLock()
-    defer self.WriteUnlock()
+	self.WriteLock()
+	defer self.WriteUnlock()
 
-    if areaId != self.AreaId {
-        self.AreaId = areaId
-        modified(self)
-    }
+	if areaId != self.AreaId {
+		self.AreaId = areaId
+		modified(self)
+	}
 }
 
 func (self *Room) GetAreaId() bson.ObjectId {
-    self.ReadLock()
-    defer self.ReadUnlock()
+	self.ReadLock()
+	defer self.ReadUnlock()
 
-    return self.AreaId
+	return self.AreaId
 }
 
 func (self *Room) NextLocation(direction Direction) Coordinate {

@@ -55,7 +55,7 @@ func (self *Menu) GetPrompt() string {
 }
 
 func (self *Menu) getAction(key string) action {
-    key = strings.ToLower(key)
+	key = strings.ToLower(key)
 
 	for _, action := range self.actions {
 		if action.key == key {

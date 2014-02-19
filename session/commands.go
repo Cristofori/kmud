@@ -188,26 +188,26 @@ func (ch *commandHandler) Room(args []string) {
 					}
 				}
 			}
-        case "a":
-            menu := utils.NewMenu("Change Area")
-            menu.AddAction("n", "None")
-            for i, area := range model.GetAreas(ch.session.currentZone()) {
-                index := i + 1
-                actionText := area.GetName()
-                if area.GetId() == ch.session.room.GetAreaId() {
-                    actionText += "*"
-                }
-                menu.AddActionData(index, actionText, area.GetId())
-            }
+		case "a":
+			menu := utils.NewMenu("Change Area")
+			menu.AddAction("n", "None")
+			for i, area := range model.GetAreas(ch.session.currentZone()) {
+				index := i + 1
+				actionText := area.GetName()
+				if area.GetId() == ch.session.room.GetAreaId() {
+					actionText += "*"
+				}
+				menu.AddActionData(index, actionText, area.GetId())
+			}
 
-            choice, areaId := ch.session.execMenu(menu);
+			choice, areaId := ch.session.execMenu(menu)
 
-            switch choice {
-                case "n":
-                    ch.session.room.SetAreaId("")
-                default:
-                    ch.session.room.SetAreaId(areaId)
-            }
+			switch choice {
+			case "n":
+				ch.session.room.SetAreaId("")
+			default:
+				ch.session.room.SetAreaId(areaId)
+			}
 		}
 	}
 }
@@ -282,7 +282,7 @@ func (ch *commandHandler) Map(args []string) {
 
 func (ch *commandHandler) Zone(args []string) {
 	if len(args) == 0 {
-        ch.session.printLine("Current zone: " + utils.Colorize(utils.ColorBlue, ch.session.currentZone().GetName()))
+		ch.session.printLine("Current zone: " + utils.Colorize(utils.ColorBlue, ch.session.currentZone().GetName()))
 	} else if len(args) == 1 {
 		if args[0] == "list" {
 			ch.session.printLineColor(utils.ColorBlue, "Zones")
@@ -818,58 +818,58 @@ func (ch *commandHandler) DelProp(args []string) {
 }
 
 func (ch *commandHandler) Area(args []string) {
-    for {
-        menu := utils.NewMenu("Areas")
+	for {
+		menu := utils.NewMenu("Areas")
 
-        menu.AddAction("n", "New")
+		menu.AddAction("n", "New")
 
-        for i, area := range model.GetAreas(ch.session.currentZone()) {
-            index := i + 1
-            menu.AddActionData(index, area.GetName(), area.GetId())
-        }
+		for i, area := range model.GetAreas(ch.session.currentZone()) {
+			index := i + 1
+			menu.AddActionData(index, area.GetName(), area.GetId())
+		}
 
-        choice, areaId := ch.session.execMenu(menu)
+		choice, areaId := ch.session.execMenu(menu)
 
-        switch(choice) {
-            case "":
-                return
-            case "n":
-                name := ch.session.getUserInput(RawUserInput, "Area name: ")
+		switch choice {
+		case "":
+			return
+		case "n":
+			name := ch.session.getUserInput(RawUserInput, "Area name: ")
 
-                if name != "" {
-                    model.CreateArea(name, ch.session.currentZone())
-                }
-            default:
-                area := model.GetArea(areaId)
+			if name != "" {
+				model.CreateArea(name, ch.session.currentZone())
+			}
+		default:
+			area := model.GetArea(areaId)
 
-                if area != nil  {
-                    areaMenu := utils.NewMenu(area.GetName())
-                    areaMenu.AddAction("r", "Rename")
-                    areaMenu.AddAction("d", "Delete")
+			if area != nil {
+				areaMenu := utils.NewMenu(area.GetName())
+				areaMenu.AddAction("r", "Rename")
+				areaMenu.AddAction("d", "Delete")
 
-                    choice, _ = ch.session.execMenu(areaMenu)
+				choice, _ = ch.session.execMenu(areaMenu)
 
-                    switch(choice) {
-                        case "":
-                            break
-                        case "r":
-                            newName := ch.session.getUserInput(RawUserInput, "New name: ")
+				switch choice {
+				case "":
+					break
+				case "r":
+					newName := ch.session.getUserInput(RawUserInput, "New name: ")
 
-                            if newName != "" {
-                                area.SetName(newName)
-                            }
-                        case "d":
-                            answer := ch.session.getUserInput(RawUserInput, "Are you sure? ")
+					if newName != "" {
+						area.SetName(newName)
+					}
+				case "d":
+					answer := ch.session.getUserInput(RawUserInput, "Are you sure? ")
 
-                            if(strings.ToLower(answer) == "y") {
-                                model.DeleteArea(area)
-                            }
-                    }
-                } else {
-                    ch.session.printError("That area doesn't exist")
-                }
-        }
-    }
+					if strings.ToLower(answer) == "y" {
+						model.DeleteArea(area)
+					}
+				}
+			} else {
+				ch.session.printError("That area doesn't exist")
+			}
+		}
+	}
 }
 
 // vim: nocindent
