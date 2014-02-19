@@ -4,18 +4,12 @@ import (
 	"fmt"
 	"io"
 	"labix.org/v2/mgo/bson"
-	"regexp"
 	"strconv"
+	"strings"
 )
 
-type menuAction struct {
-	key  string
-	text string
-	data bson.ObjectId
-}
-
 type Menu struct {
-	actions []menuAction
+	actions []action
 	title   string
 	prompt  string
 }
@@ -27,13 +21,23 @@ func NewMenu(text string) *Menu {
 	return &menu
 }
 
+type action struct {
+	key  string
+	text string
+	data bson.ObjectId
+}
+
 func (self *Menu) AddAction(key string, text string) {
-	self.actions = append(self.actions, menuAction{key: key, text: text})
+	self.addAction(key, text, "")
 }
 
 func (self *Menu) AddActionData(key int, text string, data bson.ObjectId) {
 	keyStr := strconv.Itoa(key)
-	self.actions = append(self.actions, menuAction{key: keyStr, text: text, data: data})
+	self.addAction(keyStr, text, data)
+}
+
+func (self *Menu) addAction(key string, text string, data bson.ObjectId) {
+	self.actions = append(self.actions, action{key: strings.ToLower(key), text: text, data: data})
 }
 
 func (self *Menu) GetData(choice string) bson.ObjectId {
@@ -50,13 +54,15 @@ func (self *Menu) GetPrompt() string {
 	return self.prompt
 }
 
-func (self *Menu) getAction(key string) menuAction {
+func (self *Menu) getAction(key string) action {
+    key = strings.ToLower(key)
+
 	for _, action := range self.actions {
 		if action.key == key {
 			return action
 		}
 	}
-	return menuAction{}
+	return action{}
 }
 
 func (self *Menu) HasAction(key string) bool {
@@ -86,15 +92,31 @@ func (self *Menu) Print(conn io.Writer, cm ColorMode) {
 	WriteLine(conn, fmt.Sprintf("%s %s %s", border, title, border), cm)
 
 	for _, action := range self.actions {
-		regex := regexp.MustCompile("\\[([^\\]]*)\\]")
-		replace := func(str string) string {
-			return fmt.Sprintf("%s[%s"+str[1:len(str)-1]+"%s]%s",
-				ColorDarkBlue, ColorBlue, ColorDarkBlue, ColorWhite)
+		index := strings.Index(strings.ToLower(action.text), action.key)
+
+		actionText := ""
+
+		if index == -1 {
+			actionText = fmt.Sprintf("%s[%s%s%s]%s%s",
+				ColorDarkBlue,
+				ColorBlue,
+				strings.ToUpper(action.key),
+				ColorDarkBlue,
+				ColorWhite,
+				action.text)
+		} else {
+			keyLength := len(action.key)
+			actionText = fmt.Sprintf("%s%s[%s%s%s]%s%s",
+				action.text[:index],
+				ColorDarkBlue,
+				ColorBlue,
+				action.text[index:index+keyLength],
+				ColorDarkBlue,
+				ColorWhite,
+				action.text[index+keyLength:])
 		}
 
-		actionText := regex.ReplaceAllStringFunc(action.text, replace)
-
-		WriteLine(conn, "  "+actionText, cm)
+		WriteLine(conn, fmt.Sprintf("  %s", actionText), cm)
 	}
 }
 

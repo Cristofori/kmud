@@ -26,12 +26,11 @@ func npcMenu(room *database.Room) *utils.Menu {
 
 	menu := utils.NewMenu("NPCs")
 
-	menu.AddAction("n", "[N]ew")
+	menu.AddAction("n", "New")
 
 	for i, npc := range npcs {
 		index := i + 1
-		actionText := fmt.Sprintf("[%v]%v", index, npc.GetName())
-		menu.AddActionData(index, actionText, npc.GetId())
+		menu.AddActionData(index, npc.GetName(), npc.GetId())
 	}
 
 	return menu
@@ -40,30 +39,29 @@ func npcMenu(room *database.Room) *utils.Menu {
 func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
 	npc := model.GetCharacter(npcId)
 	menu := utils.NewMenu(npc.GetName())
-	menu.AddAction("r", "[R]ename")
-	menu.AddAction("d", "[D]elete")
-	menu.AddAction("c", "[C]onversation")
+	menu.AddAction("r", "Rename")
+	menu.AddAction("d", "Delete")
+	menu.AddAction("c", "Conversation")
 
 	roamingState := "Off"
 	if npc.GetProperty(engine.RoamingProperty) == "true" {
 		roamingState = "On"
 	}
 
-	menu.AddAction("o", fmt.Sprintf("R[o]aming - %s", roamingState))
+	menu.AddAction("o", fmt.Sprintf("Roaming - %s", roamingState))
 	return menu
 }
 
 func spawnMenu() *utils.Menu {
 	menu := utils.NewMenu("Spawn")
 
-	menu.AddAction("n", "[N]ew")
+	menu.AddAction("n", "New")
 
 	templates := model.GetAllNpcTemplates()
 
 	for i, template := range templates {
 		index := i + 1
-		actionText := fmt.Sprintf("[%v]%v", index, template.GetName())
-		menu.AddActionData(index, actionText, template.GetId())
+		menu.AddActionData(index, template.GetName(), template.GetId())
 	}
 
 	return menu
@@ -73,8 +71,33 @@ func specificSpawnMenu(templateId bson.ObjectId) *utils.Menu {
 	template := model.GetCharacter(templateId)
 	menu := utils.NewMenu(template.GetName())
 
-	menu.AddAction("r", "[R]ename")
-	menu.AddAction("d", "[D]elete")
+	menu.AddAction("r", "Rename")
+	menu.AddAction("d", "Delete")
+
+	return menu
+}
+
+func toggleExitMenu(room *database.Room) *utils.Menu {
+	onOrOff := func(direction database.Direction) string {
+		text := "Off"
+		if room.HasExit(direction) {
+			text = "On"
+		}
+		return utils.Colorize(utils.ColorBlue, text)
+	}
+
+	menu := utils.NewMenu("Edit Exits")
+
+	menu.AddAction("n", "North: "+onOrOff(database.DirectionNorth))
+	menu.AddAction("ne", "North East: "+onOrOff(database.DirectionNorthEast))
+	menu.AddAction("e", "East: "+onOrOff(database.DirectionEast))
+	menu.AddAction("se", "South East: "+onOrOff(database.DirectionSouthEast))
+	menu.AddAction("s", "South: "+onOrOff(database.DirectionSouth))
+	menu.AddAction("sw", "South West: "+onOrOff(database.DirectionSouthWest))
+	menu.AddAction("w", "West: "+onOrOff(database.DirectionWest))
+	menu.AddAction("nw", "North West: "+onOrOff(database.DirectionNorthWest))
+	menu.AddAction("u", "Up: "+onOrOff(database.DirectionUp))
+	menu.AddAction("d", "Down: "+onOrOff(database.DirectionDown))
 
 	return menu
 }
@@ -115,10 +138,10 @@ func (ch *commandHandler) Location(args []string) {
 func (ch *commandHandler) Room(args []string) {
 	menu := utils.NewMenu("Room")
 
-	menu.AddAction("t", "[T]itle")
-	menu.AddAction("d", "[D]escription")
-	menu.AddAction("e", "[E]xits")
-	menu.AddAction("a", "[A]rea")
+	menu.AddAction("t", "Title")
+	menu.AddAction("d", "Description")
+	menu.AddAction("e", "Exits")
+	menu.AddAction("a", "Area")
 
 	for {
 		choice, _ := ch.session.execMenu(menu)
@@ -167,10 +190,10 @@ func (ch *commandHandler) Room(args []string) {
 			}
         case "a":
             menu := utils.NewMenu("Change Area")
-            menu.AddAction("n", "[N]one")
+            menu.AddAction("n", "None")
             for i, area := range model.GetAreas(ch.session.currentZone()) {
                 index := i + 1
-                actionText := fmt.Sprintf("[%v]%v", index, area.GetName())
+                actionText := area.GetName()
                 if area.GetId() == ch.session.room.GetAreaId() {
                     actionText += "*"
                 }
@@ -798,12 +821,11 @@ func (ch *commandHandler) Area(args []string) {
     for {
         menu := utils.NewMenu("Areas")
 
-        menu.AddAction("n", "[N]ew")
+        menu.AddAction("n", "New")
 
         for i, area := range model.GetAreas(ch.session.currentZone()) {
             index := i + 1
-            actionText := fmt.Sprintf("[%v]%v", index, area.GetName())
-            menu.AddActionData(index, actionText, area.GetId())
+            menu.AddActionData(index, area.GetName(), area.GetId())
         }
 
         choice, areaId := ch.session.execMenu(menu)
@@ -822,8 +844,8 @@ func (ch *commandHandler) Area(args []string) {
 
                 if area != nil  {
                     areaMenu := utils.NewMenu(area.GetName())
-                    areaMenu.AddAction("r", "[R]ename")
-                    areaMenu.AddAction("d", "[D]elete")
+                    areaMenu.AddAction("r", "Rename")
+                    areaMenu.AddAction("d", "Delete")
 
                     choice, _ = ch.session.execMenu(areaMenu)
 

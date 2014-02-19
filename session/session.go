@@ -76,31 +76,6 @@ const (
 	RawUserInput   userInputMode = iota
 )
 
-func toggleExitMenu(room *database.Room) *utils.Menu {
-	onOrOff := func(direction database.Direction) string {
-		text := "Off"
-		if room.HasExit(direction) {
-			text = "On"
-		}
-		return utils.Colorize(utils.ColorBlue, text)
-	}
-
-	menu := utils.NewMenu("Edit Exits")
-
-	menu.AddAction("n", "[N]orth: "+onOrOff(database.DirectionNorth))
-	menu.AddAction("ne", "[NE]North East: "+onOrOff(database.DirectionNorthEast))
-	menu.AddAction("e", "[E]ast: "+onOrOff(database.DirectionEast))
-	menu.AddAction("se", "[SE]South East: "+onOrOff(database.DirectionSouthEast))
-	menu.AddAction("s", "[S]outh: "+onOrOff(database.DirectionSouth))
-	menu.AddAction("sw", "[SW]South West: "+onOrOff(database.DirectionSouthWest))
-	menu.AddAction("w", "[W]est: "+onOrOff(database.DirectionWest))
-	menu.AddAction("nw", "[NW]North West: "+onOrOff(database.DirectionNorthWest))
-	menu.AddAction("u", "[U]p: "+onOrOff(database.DirectionUp))
-	menu.AddAction("d", "[D]own: "+onOrOff(database.DirectionDown))
-
-	return menu
-}
-
 func (session *Session) Exec() {
 	defer model.Unregister(session.eventChannel)
 

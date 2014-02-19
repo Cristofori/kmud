@@ -169,9 +169,9 @@ func newPlayer(conn *wrappedConnection, user *database.User) *database.Character
 func mainMenu() *utils.Menu {
 	menu := utils.NewMenu("MUD")
 
-	menu.AddAction("l", "[L]ogin")
-	menu.AddAction("n", "[N]ew user")
-	menu.AddAction("q", "[Q]uit")
+	menu.AddAction("l", "Login")
+	menu.AddAction("n", "New user")
+	menu.AddAction("q", "Quit")
 
 	return menu
 }
@@ -180,19 +180,18 @@ func userMenu(user *database.User) *utils.Menu {
 	chars := model.GetUserCharacters(user)
 
 	menu := utils.NewMenu(user.GetName())
-	menu.AddAction("l", "[L]ogout")
-	menu.AddAction("a", "[A]dmin")
-	menu.AddAction("n", "[N]ew character")
+	menu.AddAction("l", "Logout")
+	menu.AddAction("a", "Admin")
+	menu.AddAction("n", "New character")
 	if len(chars) > 0 {
-		menu.AddAction("d", "[D]elete character")
+		menu.AddAction("d", "Delete character")
 	}
 
 	// TODO: Sort character list
 
 	for i, char := range chars {
 		index := i + 1
-		actionText := fmt.Sprintf("[%v]%v", index, char.GetName())
-		menu.AddActionData(index, actionText, char.GetId())
+		menu.AddActionData(index, char.GetName(), char.GetId())
 	}
 
 	return menu
@@ -203,14 +202,13 @@ func deleteMenu(user *database.User) *utils.Menu {
 
 	menu := utils.NewMenu("Delete character")
 
-	menu.AddAction("c", "[C]ancel")
+	menu.AddAction("c", "Cancel")
 
 	// TODO: Sort character list
 
 	for i, char := range chars {
 		index := i + 1
-		actionText := fmt.Sprintf("[%v]%v", index, char.GetName())
-		menu.AddActionData(index, actionText, char.GetId())
+		menu.AddActionData(index, char.GetName(), char.GetId())
 	}
 
 	return menu
@@ -218,7 +216,7 @@ func deleteMenu(user *database.User) *utils.Menu {
 
 func adminMenu() *utils.Menu {
 	menu := utils.NewMenu("Admin")
-	menu.AddAction("u", "[U]sers")
+	menu.AddAction("u", "Users")
 	return menu
 }
 
@@ -236,8 +234,7 @@ func userAdminMenu() *utils.Menu {
 			online = "*"
 		}
 
-		actionText := fmt.Sprintf("[%v]%v", index, user.GetName()+online)
-		menu.AddActionData(index, actionText, user.GetId())
+		menu.AddActionData(index, user.GetName()+online, user.GetId())
 	}
 
 	return menu
@@ -252,10 +249,10 @@ func userSpecificMenu(user *database.User) *utils.Menu {
 	}
 
 	menu := utils.NewMenu("User: " + user.GetName() + " " + suffix)
-	menu.AddAction("d", "[D]elete")
+	menu.AddAction("d", "Delete")
 
 	if user.Online() {
-		menu.AddAction("w", "[W]atch")
+		menu.AddAction("w", "Watch")
 	}
 
 	return menu
