@@ -10,21 +10,12 @@ import (
 
 // import "fmt"
 
-func NewTestWriter(writeString *string) *TestWriter {
-	var writer TestWriter
-	writer.wrote = writeString
-	return &writer
-}
-
 type TestWriter struct {
-	wrote *string
+	Wrote string
 }
 
-func (self TestWriter) Write(p []byte) (n int, err error) {
-	if self.wrote != nil {
-		*self.wrote = string(p)
-	}
-
+func (self *TestWriter) Write(p []byte) (n int, err error) {
+	self.Wrote += string(p)
 	return len(p), nil
 }
 

@@ -11,16 +11,15 @@ import (
 )
 
 func Test_WriteLine(t *testing.T) {
-	var wrote string
-	writer := testutils.NewTestWriter(&wrote)
+	writer := &testutils.TestWriter{}
 
 	line := "This is a line"
 	want := line + "\r\n"
 
 	WriteLine(writer, line, ColorModeNone)
 
-	if wrote != want {
-		t.Errorf("WriteLine(%q) == %q, want %q", line, wrote, want)
+	if writer.Wrote != want {
+		t.Errorf("WriteLine(%q) == %q, want %q", line, writer.Wrote, want)
 	}
 }
 
