@@ -3,7 +3,6 @@ package session
 import (
 	"fmt"
 	"kmud/database"
-	"kmud/engine"
 	"kmud/model"
 	"kmud/utils"
 	"labix.org/v2/mgo/bson"
@@ -44,7 +43,7 @@ func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
 	menu.AddAction("c", "Conversation")
 
 	roamingState := "Off"
-	if npc.GetProperty(engine.RoamingProperty) == "true" {
+	if npc.GetRoaming() {
 		roamingState = "On"
 	}
 
@@ -602,13 +601,7 @@ func (ch *commandHandler) Npc(args []string) {
 						npc.SetConversation(newConversation)
 					}
 				} else if choice == "o" {
-					currentVal := npc.GetProperty(engine.RoamingProperty)
-					newVal := "true"
-					if currentVal == "true" {
-						newVal = "false"
-					}
-
-					npc.SetProperty(engine.RoamingProperty, newVal)
+					npc.SetRoaming(!npc.GetRoaming())
 				} else if choice == "" {
 					break
 				}

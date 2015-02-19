@@ -161,7 +161,7 @@ func Test_EventLoop(t *testing.T) {
 	user := CreateUser("user", "password")
 	char := CreatePlayer("char", user, room)
 
-	eventChannel := Register(char)
+	eventChannel := Register()
 
 	message := "hey how are yah"
 	queueEvent(TellEvent{char, char, message})
@@ -195,7 +195,7 @@ func Test_CombatLoop(t *testing.T) {
 	char1 := CreatePlayer("char1", user, room)
 	char2 := CreatePlayer("char2", user, room)
 
-	eventChannel1 := Register(char1)
+	eventChannel1 := Register()
 	// eventChannel2 := Register(char2)
 
 	StartFight(char1, char2)

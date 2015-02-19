@@ -9,47 +9,44 @@ import (
 	"time"
 )
 
-var _listeners map[chan Event]*database.Character
-
+var _listeners []chan Event
 var _mutex sync.Mutex
+var _eventQueueChannel chan Event
 
-var eventQueueChannel chan Event
+func Login(character *database.Character) {
+	character.SetOnline(true)
+	queueEvent(LoginEvent{character})
+}
 
-func Register(character *database.Character) chan Event {
-	_mutex.Lock()
-	if _listeners == nil {
-		_listeners = map[chan Event]*database.Character{}
-	}
-	_mutex.Unlock()
+func Logout(character *database.Character) {
+	character.SetOnline(false)
+	queueEvent(LogoutEvent{character})
+}
 
+func Register() chan Event {
 	listener := make(chan Event, 100)
 
 	_mutex.Lock()
-	_listeners[listener] = character
+	_listeners = append(_listeners, listener)
 	_mutex.Unlock()
-
-	character.SetOnline(true)
-
-	queueEvent(LoginEvent{character})
 
 	return listener
 }
 
-func Unregister(listener chan Event) {
+func Unregister(listenerToUnregsiter chan Event) {
 	_mutex.Lock()
-	character := _listeners[listener]
-	_mutex.Unlock()
-
-	character.SetOnline(false)
-
-	queueEvent(LogoutEvent{character})
-
-	_mutex.Lock()
-	delete(_listeners, listener)
+	for i, listener := range _listeners {
+		if listener == listenerToUnregsiter {
+			_listeners = append(_listeners[:i], _listeners[i+1:]...)
+			break
+		}
+	}
 	_mutex.Unlock()
 }
 
 func eventLoop() {
+	_eventQueueChannel = make(chan Event, 100)
+
 	var m sync.Mutex
 	cond := sync.NewCond(&m)
 
@@ -57,7 +54,7 @@ func eventLoop() {
 
 	go func() {
 		for {
-			event := <-eventQueueChannel
+			event := <-_eventQueueChannel
 
 			cond.L.Lock()
 			eventQueue.PushBack(event)
@@ -89,15 +86,13 @@ func eventLoop() {
 }
 
 func queueEvent(event Event) {
-	eventQueueChannel <- event
+	_eventQueueChannel <- event
 }
 
 func broadcast(event Event) {
 	_mutex.Lock()
-	for listener := range _listeners {
-		if event.IsFor(_listeners[listener]) {
-			listener <- event
-		}
+	for _, listener := range _listeners {
+		listener <- event
 	}
 	_mutex.Unlock()
 }
@@ -105,6 +100,8 @@ func broadcast(event Event) {
 type EventType int
 
 const (
+	CreateEventType      EventType = iota
+	DestroyEventType     EventType = iota
 	BroadcastEventType   EventType = iota
 	SayEventType         EventType = iota
 	EmoteEventType       EventType = iota
@@ -124,6 +121,14 @@ type Event interface {
 	Type() EventType
 	ToString(receiver *database.Character) string
 	IsFor(receiver *database.Character) bool
+}
+
+type CreateEvent struct {
+	Object *database.DbObject
+}
+
+type DestroyEvent struct {
+	Object *database.DbObject
 }
 
 type BroadcastEvent struct {
@@ -394,7 +399,6 @@ func (self CombatEvent) IsFor(receiver *database.Character) bool {
 }
 
 // Timer
-
 func (self TimerEvent) Type() EventType {
 	return TimerEventType
 }
@@ -404,6 +408,32 @@ func (self TimerEvent) ToString(receiver *database.Character) string {
 }
 
 func (self TimerEvent) IsFor(receiver *database.Character) bool {
+	return true
+}
+
+// Create
+func (self CreateEvent) Type() EventType {
+	return CreateEventType
+}
+
+func (self CreateEvent) ToString(receiver *database.Character) string {
+	return ""
+}
+
+func (self CreateEvent) IsFor(receiver *database.Character) bool {
+	return true
+}
+
+// Destroy
+func (self DestroyEvent) Type() EventType {
+	return DestroyEventType
+}
+
+func (self DestroyEvent) ToString(receiver *database.Character) string {
+	return ""
+}
+
+func (self DestroyEvent) IsFor(receiver *database.Character) bool {
 	return true
 }
 

@@ -9,13 +9,6 @@ import (
 	"sync"
 )
 
-type UpdateType int
-
-const (
-	NewNpcUpdate          UpdateType = iota
-	CharacterDeleteUpdate UpdateType = iota
-)
-
 var _users map[bson.ObjectId]*database.User
 var _chars map[bson.ObjectId]*database.Character
 var _zones map[bson.ObjectId]*database.Zone
@@ -24,8 +17,6 @@ var _rooms map[bson.ObjectId]*database.Room
 var _items map[bson.ObjectId]*database.Item
 
 var mutex sync.RWMutex
-
-var eventListeners map[UpdateType][]chan interface{}
 
 // CreateUser creates a new User object in the database and adds it to the model.
 // A pointer to the new User object is returned.
@@ -272,8 +263,6 @@ func CreateNpc(name string, room *database.Room) *database.Character {
 	npc := database.NewNpc(name, room.GetId())
 	_chars[npc.GetId()] = npc
 
-	emit(NewNpcUpdate, npc)
-
 	return npc
 }
 
@@ -296,8 +285,6 @@ func DeleteCharacterId(id bson.ObjectId) {
 func DeleteCharacter(character *database.Character) {
 	mutex.Lock()
 	defer mutex.Unlock()
-
-	emit(CharacterDeleteUpdate, character)
 
 	delete(_chars, character.GetId())
 	utils.HandleError(database.DeleteObject(character))
@@ -589,8 +576,6 @@ func DeleteItem(item *database.Item) {
 func Init(session database.Session) error {
 	database.Init(session)
 
-	eventListeners = map[UpdateType][]chan interface{}{}
-
 	_users = map[bson.ObjectId]*database.User{}
 	_chars = map[bson.ObjectId]*database.Character{}
 	_zones = map[bson.ObjectId]*database.Zone{}
@@ -647,7 +632,6 @@ func Init(session database.Session) error {
 	}
 
 	// Start the event loop
-	eventQueueChannel = make(chan Event, 100)
 	go eventLoop()
 
 	fights = map[*database.Character]*database.Character{}
@@ -825,30 +809,6 @@ func DirectionBetween(from, to *database.Room) database.Direction {
 	}
 
 	return database.DirectionNone
-}
-
-func emit(updateType UpdateType, data interface{}) {
-	for _, channel := range eventListeners[updateType] {
-		channel <- data
-	}
-}
-
-func Watch(updateType UpdateType) chan interface{} {
-	channel := make(chan interface{})
-	eventListeners[updateType] = append(eventListeners[updateType], channel)
-	return channel
-}
-
-func Unwatch(updateType UpdateType, channel chan interface{}) bool {
-	for i, myChannel := range eventListeners[updateType] {
-		if myChannel == channel {
-			// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
-			eventListeners[updateType] = append(eventListeners[updateType][:i], eventListeners[updateType][i+1:]...)
-			return true
-		}
-	}
-
-	return false
 }
 
 // vim: nocindent

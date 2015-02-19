@@ -15,10 +15,10 @@ type Character struct {
 	Name         string
 	Cash         int
 	Inventory    []bson.ObjectId
-	Conversation string
 	Health       int
 	HitPoints    int
-	Properties   map[string]string
+	Conversation string
+	Roaming      bool
 
 	online bool
 }
@@ -283,6 +283,21 @@ func (self *Character) Heal(hitpoints int) {
 	self.SetHitPoints(self.GetHitPoints() + hitpoints)
 }
 
+func (self *Character) GetRoaming() bool {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Roaming
+}
+
+func (self *Character) SetRoaming(roaming bool) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	self.Roaming = roaming
+	modified(self)
+}
+
 func CharacterNames(characters []*Character) []string {
 	names := make([]string, len(characters))
 
@@ -291,42 +306,6 @@ func CharacterNames(characters []*Character) []string {
 	}
 
 	return names
-}
-
-func (self *Character) SetProperty(name, value string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if self.Properties == nil {
-		self.Properties = map[string]string{}
-	}
-
-	if self.Properties[name] != value {
-		self.Properties[name] = value
-		modified(self)
-	}
-}
-
-func (self *Character) GetProperty(name string) string {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	return self.Properties[name]
-}
-
-func (self *Character) GetProperties() map[string]string {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	return self.Properties
-}
-
-func (self *Character) RemoveProperty(key string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	delete(self.Properties, key)
-	modified(self)
 }
 
 // vim: nocindent

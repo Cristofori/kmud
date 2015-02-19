@@ -55,7 +55,7 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 	session.inputModeChannel = make(chan userInputMode)
 	session.prompterChannel = make(chan utils.Prompter)
 	session.panicChannel = make(chan interface{})
-	session.eventChannel = model.Register(session.player)
+	session.eventChannel = model.Register()
 
 	session.silentMode = false
 	session.commander.session = &session
@@ -65,6 +65,8 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Charac
 	// utils.PanicIfError(err)
 
 	// session.logger = log.New(file, player.GetName()+" ", log.LstdFlags)
+
+	model.Login(player)
 
 	return &session
 }
@@ -78,6 +80,7 @@ const (
 
 func (session *Session) Exec() {
 	defer model.Unregister(session.eventChannel)
+	defer model.Logout(session.player)
 
 	session.printLineColor(utils.ColorWhite, "Welcome, "+session.player.GetName())
 	session.printRoom()
@@ -190,7 +193,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 		case input := <-session.userInputChannel:
 			return input
 		case event := <-session.eventChannel:
-			if session.silentMode {
+			if session.silentMode || !event.IsFor(session.player) {
 				continue
 			}
 

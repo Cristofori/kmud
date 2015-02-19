@@ -16,14 +16,22 @@ func Start() {
 		manage(npc)
 	}
 
-	npcChannel := model.Watch(model.NewNpcUpdate)
+	eventChannel := model.Register()
 
-	go func() {
-		for {
-			npc := (<-npcChannel).(*database.Character)
-			manage(npc)
-		}
-	}()
+	event := <-eventChannel
+
+	if event.Type() == model.CreateEventType {
+		/*
+		   createEvent := event.(model.CreateEvent)
+
+		   go func() {
+		       for {
+		           npc := (<-npcChannel).(*database.Character)
+		           manage(npc)
+		       }
+		   }()
+		*/
+	}
 }
 
 func manage(npc *database.Character) {
@@ -31,11 +39,7 @@ func manage(npc *database.Character) {
 		throttler := utils.NewThrottler(1 * time.Second)
 
 		for {
-			if npc.IsDestroyed() {
-				return
-			}
-
-			if npc.GetProperty(RoamingProperty) == "true" {
+			if npc.GetRoaming() {
 				room := model.GetRoom(npc.GetRoomId())
 				exits := room.GetExits()
 				exitToTake := utils.Random(0, len(exits)-1)
