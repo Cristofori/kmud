@@ -8,7 +8,6 @@ import (
 type DbObject struct {
 	Id bson.ObjectId `bson:"_id"`
 
-	objType   objectType
 	mutex     sync.RWMutex
 	destroyed bool
 }

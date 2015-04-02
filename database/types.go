@@ -35,7 +35,8 @@ type Identifiable interface {
 type objectType int
 
 const (
-	CharType objectType = iota
+	NpcType  objectType = iota
+	PcType   objectType = iota
 	UserType objectType = iota
 	ZoneType objectType = iota
 	AreaType objectType = iota

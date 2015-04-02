@@ -17,7 +17,7 @@ func (ah *actionHandler) handleAction(action string, args []string) {
 
 		if direction != database.DirectionNone {
 			if ah.session.room.HasExit(direction) {
-				newRoom, err := model.MoveCharacter(ah.session.player, direction)
+				newRoom, err := model.MoveCharacter(&ah.session.player.Character, direction)
 				if err == nil {
 					ah.session.room = newRoom
 					ah.session.printRoom()
@@ -51,8 +51,8 @@ func (ah *actionHandler) Look(args []string) {
 		arg := database.StringToDirection(args[0])
 
 		if arg == database.DirectionNone {
-			charList := model.CharactersIn(ah.session.room)
-			index := utils.BestMatch(args[0], database.CharacterNames(charList))
+			charList := model.PlayerCharactersIn(ah.session.room, nil)
+			index := utils.BestMatch(args[0], charList.Characters().Names())
 
 			if index == -2 {
 				ah.session.printError("Which one do you mean?")
@@ -76,7 +76,7 @@ func (ah *actionHandler) Look(args []string) {
 				roomToSee := model.GetRoomByLocation(loc, ah.session.currentZone())
 				if roomToSee != nil {
 					area := model.GetArea(roomToSee.GetAreaId())
-					ah.session.printLine(roomToSee.ToString(model.PlayersIn(roomToSee, nil),
+					ah.session.printLine(roomToSee.ToString(model.PlayerCharactersIn(roomToSee, nil),
 						model.NpcsIn(roomToSee), nil, area))
 				} else {
 					ah.session.printLine("Nothing to see")
@@ -94,7 +94,7 @@ func (ah *actionHandler) A(args []string) {
 
 func (ah *actionHandler) Attack(args []string) {
 	charList := model.CharactersIn(ah.session.room)
-	index := utils.BestMatch(args[0], database.CharacterNames(charList))
+	index := utils.BestMatch(args[0], charList.Names())
 
 	if index == -1 {
 		ah.session.printError("Not found")
@@ -105,7 +105,7 @@ func (ah *actionHandler) Attack(args []string) {
 		if defender.GetId() == ah.session.player.GetId() {
 			ah.session.printError("You can't attack yourself")
 		} else {
-			model.StartFight(ah.session.player, defender)
+			model.StartFight(&ah.session.player.Character, defender)
 		}
 	}
 }
@@ -122,7 +122,7 @@ func (ah *actionHandler) Talk(args []string) {
 	}
 
 	npcList := model.NpcsIn(ah.session.room)
-	index := utils.BestMatch(args[0], database.CharacterNames(npcList))
+	index := utils.BestMatch(args[0], npcList.Characters().Names())
 
 	if index == -1 {
 		ah.session.printError("Not found")
@@ -233,7 +233,7 @@ func (ah *actionHandler) Ls(args []string) {
 }
 
 func (ah *actionHandler) Stop(args []string) {
-	model.StopFight(ah.session.player)
+	model.StopFight(&ah.session.player.Character)
 }
 
 // vim: nocindent

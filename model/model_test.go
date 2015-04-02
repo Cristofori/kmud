@@ -16,9 +16,14 @@ func _cleanup(t *testing.T) {
 	tu.Assert(len(_items) == 0, t, "Failed to cleanup all items")
 
 	for _, char := range _chars {
-		DeleteCharacter(char)
+		DeletePlayerCharacter(char)
 	}
-	tu.Assert(len(_chars) == 0, t, "Failed to cleanup all characters")
+	tu.Assert(len(_chars) == 0, t, "Failed to cleanup all player characters")
+
+	for _, npc := range _npcs {
+		DeleteNpc(npc)
+	}
+	tu.Assert(len(_npcs) == 0, t, "Failed to cleanup all nps")
 
 	for _, user := range _users {
 		DeleteUser(user)
@@ -40,7 +45,8 @@ func Test_Init(t *testing.T) {
 	Init(&dbtest.TestSession{})
 
 	tu.Assert(_users != nil, t, "Init() failed to initialize users")
-	tu.Assert(_chars != nil, t, "Init() failed to initialize chars")
+	tu.Assert(_chars != nil, t, "Init() failed to initialize player chars")
+	tu.Assert(_npcs != nil, t, "Init() failed to initialize npcs")
 	tu.Assert(_rooms != nil, t, "Init() failed to initialize rooms")
 	tu.Assert(_zones != nil, t, "Init() failed to initialize zones")
 	tu.Assert(_items != nil, t, "Init() failed to initialize items")
@@ -84,7 +90,7 @@ func Test_UserFunctions(t *testing.T) {
 
 	zone, _ := CreateZone("testZone")
 	room, _ := CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
-	CreatePlayer("testPlayer", user1, room)
+	CreatePlayerCharacter("testPlayer", user1, room)
 
 	DeleteUser(user1)
 	tu.Assert(len(_chars) == 0, t, "Deleting a user should have deleted its characters")
@@ -159,12 +165,12 @@ func Test_EventLoop(t *testing.T) {
 	zone, _ := CreateZone("zone")
 	room, _ := CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
 	user := CreateUser("user", "password")
-	char := CreatePlayer("char", user, room)
+	char := CreatePlayerCharacter("char", user, room)
 
 	eventChannel := Register()
 
 	message := "hey how are yah"
-	queueEvent(TellEvent{char, char, message})
+	queueEvent(TellEvent{&char.Character, &char.Character, message})
 
 	timeout := testutils.Timeout(3 * time.Second)
 
@@ -192,13 +198,13 @@ func Test_CombatLoop(t *testing.T) {
 	room, _ := CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
 	user := CreateUser("user", "password")
 
-	char1 := CreatePlayer("char1", user, room)
-	char2 := CreatePlayer("char2", user, room)
+	char1 := CreatePlayerCharacter("char1", user, room)
+	char2 := CreatePlayerCharacter("char2", user, room)
 
 	eventChannel1 := Register()
 	// eventChannel2 := Register(char2)
 
-	StartFight(char1, char2)
+	StartFight(&char1.Character, &char2.Character)
 	// StartFight(char2, char1)
 
 	verifyEvents := func(eventChannel chan Event) {

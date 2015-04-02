@@ -10,7 +10,8 @@ import (
 )
 
 var _users map[bson.ObjectId]*database.User
-var _chars map[bson.ObjectId]*database.Character
+var _chars map[bson.ObjectId]*database.PlayerChar
+var _npcs map[bson.ObjectId]*database.NonPlayerChar
 var _zones map[bson.ObjectId]*database.Zone
 var _areas map[bson.ObjectId]*database.Area
 var _rooms map[bson.ObjectId]*database.Room
@@ -78,7 +79,7 @@ func DeleteUserId(userId bson.ObjectId) {
 // Removes the given User from the model. Removes it from the database as well.
 func DeleteUser(user *database.User) {
 	for _, character := range GetUserCharacters(user) {
-		DeleteCharacter(character)
+		DeletePlayerCharacter(character)
 	}
 
 	mutex.Lock()
@@ -88,17 +89,40 @@ func DeleteUser(user *database.User) {
 	utils.HandleError(database.DeleteObject(user))
 }
 
-// GetCharacter returns the Character object associated the given Id
-func GetCharacter(id bson.ObjectId) *database.Character {
+// GetPlayerCharacter returns the Character object associated the given Id
+func GetPlayerCharacter(id bson.ObjectId) *database.PlayerChar {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
 	return _chars[id]
 }
 
-// GetCharacaterByName searches for a character with the given name. Returns a
-// character object, or nil if it wasn't found.
+func GetNpc(id bson.ObjectId) *database.NonPlayerChar {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	return _npcs[id]
+}
+
 func GetCharacterByName(name string) *database.Character {
+	char := GetPlayerCharacterByName(name)
+
+	if char != nil {
+		return &char.Character
+	}
+
+	npc := GetNpcByName(name)
+
+	if npc != nil {
+		return &npc.Character
+	}
+
+	return nil
+}
+
+// GetPlayerCharacaterByName searches for a character with the given name. Returns a
+// character object, or nil if it wasn't found.
+func GetPlayerCharacterByName(name string) *database.PlayerChar {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
@@ -113,21 +137,35 @@ func GetCharacterByName(name string) *database.Character {
 	return nil
 }
 
-func GetAllNpcs() []*database.Character {
+func GetNpcByName(name string) *database.NonPlayerChar {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	npcs := []*database.Character{}
+	name = utils.Simplify(name)
 
-	for _, character := range _chars {
-		if character.IsNpc() {
-			npcs = append(npcs, character)
+	for _, npc := range _npcs {
+		if npc.GetName() == name {
+			return npc
 		}
+	}
+
+	return nil
+}
+
+func GetNpcs() []*database.NonPlayerChar {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	npcs := []*database.NonPlayerChar{}
+
+	for _, npc := range _npcs {
+		npcs = append(npcs, npc)
 	}
 
 	return npcs
 }
 
+/*
 func GetAllNpcTemplates() []*database.Character {
 	mutex.RLock()
 	defer mutex.RUnlock()
@@ -142,14 +180,15 @@ func GetAllNpcTemplates() []*database.Character {
 
 	return templates
 }
+*/
 
 // GetUserCharacters returns all of the Character objects associated with the
 // given user id
-func GetUserCharacters(user *database.User) []*database.Character {
+func GetUserCharacters(user *database.User) []*database.PlayerChar {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	var characters []*database.Character
+	var characters []*database.PlayerChar
 
 	for _, character := range _chars {
 		if character.GetUserId() == user.GetId() {
@@ -160,65 +199,27 @@ func GetUserCharacters(user *database.User) []*database.Character {
 	return characters
 }
 
-// CharactersIn returns a list of characters that are in the given room (NPC or
-// player), excluding the character passed in as the "except" parameter.
-// Returns all character type objects, including players, NPCs and MOBs
-func CharactersIn(room *database.Room) []*database.Character {
+func CharactersIn(room *database.Room) database.CharacterList {
+	var characters database.CharacterList
+
+	players := PlayerCharactersIn(room, nil)
+	npcs := NpcsIn(room)
+
+	characters = append(characters, players.Characters()...)
+	characters = append(characters, npcs.Characters()...)
+
+	return characters
+}
+
+// PlayerCharactersIn returns a list of player characters that are in the given room
+func PlayerCharactersIn(room *database.Room, except *database.PlayerChar) database.PlayerCharList {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	var charList []*database.Character
+	var characters []*database.PlayerChar
 
 	for _, char := range _chars {
 		if char.GetRoomId() == room.GetId() && char.IsOnline() {
-			charList = append(charList, char)
-		}
-	}
-
-	return charList
-}
-
-// PlayersIn returns all of the player characters that are in the given room
-func PlayersIn(room *database.Room, except *database.Character) []*database.Character {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	var playerList []*database.Character
-
-	for _, char := range _chars {
-		if char.GetRoomId() == room.GetId() && char.IsPlayer() && char.IsOnline() && char != except {
-			playerList = append(playerList, char)
-		}
-	}
-
-	return playerList
-}
-
-// NpcsIn returns all of the NPC characters that are in the given room
-func NpcsIn(room *database.Room) []*database.Character {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	var npcList []*database.Character
-
-	for _, char := range _chars {
-		if char.GetRoomId() == room.GetId() && char.IsNpc() {
-			npcList = append(npcList, char)
-		}
-	}
-
-	return npcList
-}
-
-// GetOnlineCharacters returns a list of all of the characters who are online
-func GetOnlineCharacters() []*database.Character {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	var characters []*database.Character
-
-	for _, char := range _chars {
-		if char.IsPlayer() && char.IsOnline() {
 			characters = append(characters, char)
 		}
 	}
@@ -226,28 +227,61 @@ func GetOnlineCharacters() []*database.Character {
 	return characters
 }
 
-// CreatePlayer creates a new player-controlled Character object in the
+// NpcsIn returns all of the NPC characters that are in the given room
+func NpcsIn(room *database.Room) database.NonPlayerCharList {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	var npcs []*database.NonPlayerChar
+
+	for _, npc := range _npcs {
+		if npc.GetRoomId() == room.GetId() {
+			npcs = append(npcs, npc)
+		}
+	}
+
+	return npcs
+}
+
+// GetOnlinePlayerCharacters returns a list of all of the characters who are online
+func GetOnlinePlayerCharacters() []*database.PlayerChar {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	var characters []*database.PlayerChar
+
+	for _, char := range _chars {
+		if char.IsOnline() {
+			characters = append(characters, char)
+		}
+	}
+
+	return characters
+}
+
+// CreatePlayerCharacter creates a new player-controlled Character object in the
 // database and adds it to the model.  A pointer to the new character object is
 // returned.
-func CreatePlayer(name string, parentUser *database.User, startingRoom *database.Room) *database.Character {
+func CreatePlayerCharacter(name string, parentUser *database.User, startingRoom *database.Room) *database.PlayerChar {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	character := database.NewCharacter(name, parentUser.GetId(), startingRoom.GetId())
+	character := database.NewPlayerChar(name, parentUser.GetId(), startingRoom.GetId())
 	_chars[character.GetId()] = character
 
 	return character
 }
 
-// GetOrCreatePlayer attempts to retrieve the existing user from the model by the given name.
+// GetOrCreatePlayerCharacter attempts to retrieve the existing user from the model by the given name.
 // if none exists, then a new one is created. If the name matches an NPC (rather than a player)
 // then nil will be returned.
-func GetOrCreatePlayer(name string, parentUser *database.User, startingRoom *database.Room) *database.Character {
-	player := GetCharacterByName(name)
+func GetOrCreatePlayerCharacter(name string, parentUser *database.User, startingRoom *database.Room) *database.PlayerChar {
+	player := GetPlayerCharacterByName(name)
+	npc := GetNpcByName(name)
 
-	if player == nil {
-		player = CreatePlayer(name, parentUser, startingRoom)
-	} else if player.IsNpc() {
+	if player == nil && npc == nil {
+		player = CreatePlayerCharacter(name, parentUser, startingRoom)
+	} else if npc != nil {
 		return nil
 	}
 
@@ -256,16 +290,17 @@ func GetOrCreatePlayer(name string, parentUser *database.User, startingRoom *dat
 
 // CreateNpc is a convenience function for creating a new character object that
 // is an NPC (as opposed to an actual player-controlled character)
-func CreateNpc(name string, room *database.Room) *database.Character {
+func CreateNpc(name string, room *database.Room) *database.NonPlayerChar {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	npc := database.NewNpc(name, room.GetId())
-	_chars[npc.GetId()] = npc
+	npc := database.NewNonPlayerChar(name, room.GetId())
+	_npcs[npc.GetId()] = npc
 
 	return npc
 }
 
+/*
 func CreateNpcTemplate(name string) *database.Character {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -275,19 +310,32 @@ func CreateNpcTemplate(name string) *database.Character {
 
 	return template
 }
+*/
 
-func DeleteCharacterId(id bson.ObjectId) {
-	DeleteCharacter(GetCharacter(id))
+func DeletePlayerCharacterId(id bson.ObjectId) {
+	DeletePlayerCharacter(GetPlayerCharacter(id))
 }
 
-// DeleteCharacter removes the character (either NPC or player-controlled)
+func DeleteNpcId(id bson.ObjectId) {
+	DeleteNpc(GetNpc(id))
+}
+
+// DeletePlayerCharacter removes the character (either NPC or player-controlled)
 // associated with the given id from the model and from the database
-func DeleteCharacter(character *database.Character) {
+func DeletePlayerCharacter(character *database.PlayerChar) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	delete(_chars, character.GetId())
 	utils.HandleError(database.DeleteObject(character))
+}
+
+func DeleteNpc(npc *database.NonPlayerChar) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	delete(_npcs, npc.GetId())
+	utils.HandleError(database.DeleteObject(npc))
 }
 
 // CreateRoom creates a new Room object in the database and adds it to the model.
@@ -577,7 +625,8 @@ func Init(session database.Session) error {
 	database.Init(session)
 
 	_users = map[bson.ObjectId]*database.User{}
-	_chars = map[bson.ObjectId]*database.Character{}
+	_chars = map[bson.ObjectId]*database.PlayerChar{}
+	_npcs = map[bson.ObjectId]*database.NonPlayerChar{}
 	_zones = map[bson.ObjectId]*database.Zone{}
 	_areas = map[bson.ObjectId]*database.Area{}
 	_rooms = map[bson.ObjectId]*database.Room{}
@@ -591,12 +640,20 @@ func Init(session database.Session) error {
 		_users[user.GetId()] = user
 	}
 
-	characters := []*database.Character{}
-	err = database.RetrieveObjects(database.CharType, &characters)
+	characters := []*database.PlayerChar{}
+	err = database.RetrieveObjects(database.PcType, &characters)
 	utils.HandleError(err)
 
 	for _, character := range characters {
 		_chars[character.GetId()] = character
+	}
+
+	npcs := []*database.NonPlayerChar{}
+	err = database.RetrieveObjects(database.NpcType, &npcs)
+	utils.HandleError(err)
+
+	for _, npc := range npcs {
+		_npcs[npc.GetId()] = npc
 	}
 
 	zones := []*database.Zone{}

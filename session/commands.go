@@ -15,12 +15,12 @@ type commandHandler struct {
 }
 
 func npcMenu(room *database.Room) *utils.Menu {
-	var npcs []*database.Character
+	var npcs database.NonPlayerCharList
 
 	if room != nil {
 		npcs = model.NpcsIn(room)
 	} else {
-		npcs = model.GetAllNpcs()
+		npcs = model.GetNpcs()
 	}
 
 	menu := utils.NewMenu("NPCs")
@@ -36,7 +36,7 @@ func npcMenu(room *database.Room) *utils.Menu {
 }
 
 func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
-	npc := model.GetCharacter(npcId)
+	npc := model.GetNpc(npcId)
 	menu := utils.NewMenu(npc.GetName())
 	menu.AddAction("r", "Rename")
 	menu.AddAction("d", "Delete")
@@ -51,6 +51,7 @@ func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
 	return menu
 }
 
+/*
 func spawnMenu() *utils.Menu {
 	menu := utils.NewMenu("Spawn")
 
@@ -65,7 +66,9 @@ func spawnMenu() *utils.Menu {
 
 	return menu
 }
+*/
 
+/*
 func specificSpawnMenu(templateId bson.ObjectId) *utils.Menu {
 	template := model.GetCharacter(templateId)
 	menu := utils.NewMenu(template.GetName())
@@ -75,6 +78,7 @@ func specificSpawnMenu(templateId bson.ObjectId) *utils.Menu {
 
 	return menu
 }
+*/
 
 func toggleExitMenu(room *database.Room) *utils.Menu {
 	onOrOff := func(direction database.Direction) string {
@@ -313,7 +317,7 @@ func (ch *commandHandler) Zone(args []string) {
 			newRoom, err := model.CreateRoom(newZone, database.Coordinate{X: 0, Y: 0, Z: 0})
 			utils.PanicIfError(err)
 
-			model.MoveCharacterToRoom(ch.session.player, newRoom)
+			model.MoveCharacterToRoom(&ch.session.player.Character, newRoom)
 
 			ch.session.room = newRoom
 
@@ -330,7 +334,7 @@ func (ch *commandHandler) Broadcast(args []string) {
 	if len(args) == 0 {
 		ch.session.printError("Nothing to say")
 	} else {
-		model.BroadcastMessage(ch.session.player, strings.Join(args, " "))
+		model.BroadcastMessage(&ch.session.player.Character, strings.Join(args, " "))
 	}
 }
 
@@ -342,12 +346,12 @@ func (ch *commandHandler) Say(args []string) {
 	if len(args) == 0 {
 		ch.session.printError("Nothing to say")
 	} else {
-		model.Say(ch.session.player, strings.Join(args, " "))
+		model.Say(&ch.session.player.Character, strings.Join(args, " "))
 	}
 }
 
 func (ch *commandHandler) Me(args []string) {
-	model.Emote(ch.session.player, strings.Join(args, " "))
+	model.Emote(&ch.session.player.Character, strings.Join(args, " "))
 }
 
 func (ch *commandHandler) W(args []string) {
@@ -365,20 +369,15 @@ func (ch *commandHandler) Whisper(args []string) {
 	}
 
 	name := string(args[0])
-	targetChar := model.GetCharacterByName(name)
+	targetChar := model.GetPlayerCharacterByName(name)
 
-	if targetChar == nil {
+	if targetChar == nil || !targetChar.IsOnline() {
 		ch.session.printError("Player '%s' not found", name)
 		return
 	}
 
-	if !targetChar.IsOnline() {
-		ch.session.printError("Player '%s' is not online", targetChar.GetName())
-		return
-	}
-
 	message := strings.Join(args[1:], " ")
-	model.Tell(ch.session.player, targetChar, message)
+	model.Tell(&ch.session.player.Character, &targetChar.Character, message)
 }
 
 func (ch *commandHandler) Tel(args []string) {
@@ -444,7 +443,7 @@ func (ch *commandHandler) Teleport(args []string) {
 		return
 	}
 
-	newRoom, err := model.MoveCharacterToLocation(ch.session.player, newZone, database.Coordinate{X: x, Y: y, Z: z})
+	newRoom, err := model.MoveCharacterToLocation(&ch.session.player.Character, newZone, database.Coordinate{X: x, Y: y, Z: z})
 
 	if err == nil {
 		ch.session.room = newRoom
@@ -455,7 +454,7 @@ func (ch *commandHandler) Teleport(args []string) {
 }
 
 func (ch *commandHandler) Who(args []string) {
-	chars := model.GetOnlineCharacters()
+	chars := model.GetOnlinePlayerCharacters()
 
 	ch.session.printLine("")
 	ch.session.printLine("Online Players")
@@ -549,7 +548,7 @@ func getNpcName(ch *commandHandler) string {
 	name := ""
 	for {
 		name = ch.session.getUserInput(CleanUserInput, "Desired NPC name: ")
-		char := model.GetCharacterByName(name)
+		char := model.GetNpcByName(name)
 
 		if name == "" {
 			return ""
@@ -578,10 +577,10 @@ func (ch *commandHandler) Npc(args []string) {
 			for {
 				specificMenu := specificNpcMenu(npcId)
 				choice, _ := ch.session.execMenu(specificMenu)
-				npc := model.GetCharacter(npcId)
+				npc := model.GetNpc(npcId)
 
 				if choice == "d" {
-					model.DeleteCharacterId(npcId)
+					model.DeleteNpcId(npcId)
 				} else if choice == "r" {
 					name := getNpcName(ch)
 					if name != "" {
@@ -612,6 +611,7 @@ func (ch *commandHandler) Npc(args []string) {
 	ch.session.printRoom()
 }
 
+/*
 func (ch *commandHandler) Spawn(args []string) {
 	for {
 		menu := spawnMenu()
@@ -645,6 +645,7 @@ func (ch *commandHandler) Spawn(args []string) {
 		}
 	}
 }
+*/
 
 func (ch *commandHandler) Create(args []string) {
 	createUsage := func() {
@@ -757,7 +758,7 @@ func (ch *commandHandler) Silent(args []string) {
 }
 
 func (ch *commandHandler) R(args []string) { // Reply
-	targetChar := model.GetCharacter(ch.session.replyId)
+	targetChar := model.GetPlayerCharacter(ch.session.replyId)
 
 	if targetChar == nil {
 		ch.session.asyncMessage("No one to reply to")

@@ -33,7 +33,6 @@ type Room struct {
 
 func NewRoom(zoneId bson.ObjectId, location Coordinate) *Room {
 	var room Room
-	room.initDbObject()
 
 	room.Title = "The Void"
 	room.Description = "You are floating in the blackness of space. Complete darkness surrounds " +
@@ -54,7 +53,8 @@ func NewRoom(zoneId bson.ObjectId, location Coordinate) *Room {
 	room.Location = location
 	room.ZoneId = zoneId
 
-	modified(&room)
+	room.initDbObject()
+    objectModified(&room)
 	return &room
 }
 
@@ -62,7 +62,7 @@ func (self *Room) GetType() objectType {
 	return RoomType
 }
 
-func (self *Room) ToString(players []*Character, npcs []*Character, items []*Item, area *Area) string {
+func (self *Room) ToString(players []*PlayerChar, npcs []*NonPlayerChar, items []*Item, area *Area) string {
 	var str string
 
 	areaStr := ""
@@ -211,7 +211,7 @@ func (self *Room) SetExitEnabled(dir Direction, enabled bool) {
 		self.ExitDown = enabled
 	}
 
-	modified(self)
+	objectModified(self)
 }
 
 func (self *Room) AddItem(item *Item) {
@@ -220,7 +220,7 @@ func (self *Room) AddItem(item *Item) {
 		defer self.WriteUnlock()
 
 		self.Items = append(self.Items, item.GetId())
-		modified(self)
+		objectModified(self)
 	}
 }
 
@@ -237,7 +237,7 @@ func (self *Room) RemoveItem(item *Item) {
 			}
 		}
 
-		modified(self)
+		objectModified(self)
 	}
 }
 
@@ -267,7 +267,7 @@ func (self *Room) SetTitle(title string) {
 
 	if title != self.Title {
 		self.Title = title
-		modified(self)
+		objectModified(self)
 	}
 }
 
@@ -284,7 +284,7 @@ func (self *Room) SetDescription(description string) {
 
 	if self.Description != description {
 		self.Description = description
-		modified(self)
+		objectModified(self)
 	}
 }
 
@@ -301,7 +301,7 @@ func (self *Room) SetLocation(location Coordinate) {
 
 	if location != self.Location {
 		self.Location = location
-		modified(self)
+		objectModified(self)
 	}
 }
 
@@ -318,7 +318,7 @@ func (self *Room) SetZoneId(zoneId bson.ObjectId) {
 
 	if zoneId != self.ZoneId {
 		self.ZoneId = zoneId
-		modified(self)
+		objectModified(self)
 	}
 }
 
@@ -335,7 +335,7 @@ func (self *Room) SetAreaId(areaId bson.ObjectId) {
 
 	if areaId != self.AreaId {
 		self.AreaId = areaId
-		modified(self)
+		objectModified(self)
 	}
 }
 
@@ -384,7 +384,7 @@ func (self *Room) SetProperty(name, value string) {
 
 	if self.Properties[name] != value {
 		self.Properties[name] = value
-		modified(self)
+		objectModified(self)
 	}
 }
 
@@ -407,7 +407,7 @@ func (self *Room) RemoveProperty(key string) {
 	defer self.WriteUnlock()
 
 	delete(self.Properties, key)
-	modified(self)
+	objectModified(self)
 }
 
 // vim: nocindent

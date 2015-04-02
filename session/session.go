@@ -17,7 +17,7 @@ import (
 type Session struct {
 	conn   io.ReadWriter
 	user   *database.User
-	player *database.Character
+	player *database.PlayerChar
 	room   *database.Room
 
 	prompt string
@@ -42,7 +42,7 @@ type Session struct {
 	// logger *log.Logger
 }
 
-func NewSession(conn io.ReadWriter, user *database.User, player *database.Character) *Session {
+func NewSession(conn io.ReadWriter, user *database.User, player *database.PlayerChar) *Session {
 	var session Session
 	session.conn = conn
 	session.user = user
@@ -144,7 +144,7 @@ func (session *Session) printError(err string, a ...interface{}) {
 }
 
 func (session *Session) printRoom() {
-	playerList := model.PlayersIn(session.room, session.player)
+	playerList := model.PlayerCharactersIn(session.room, session.player)
 	npcList := model.NpcsIn(session.room)
 	area := model.GetArea(session.room.GetAreaId())
 	session.printLine(session.room.ToString(playerList, npcList,
@@ -203,7 +203,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 			} else if event.Type() == model.CombatEventType {
 				combatEvent := event.(model.CombatEvent)
 
-				if combatEvent.Defender == session.player {
+				if combatEvent.Defender == &session.player.Character {
 					session.player.Hit(combatEvent.Damage)
 					if session.player.GetHitPoints() <= 0 {
 						session.asyncMessage(">> You're dead <<")
@@ -212,7 +212,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 					}
 				}
 			} else if event.Type() == model.TimerEventType {
-				if !model.InCombat(session.player) {
+				if !model.InCombat(&session.player.Character) {
 					oldHps := session.player.GetHitPoints()
 					session.player.Heal(5)
 					newHps := session.player.GetHitPoints()
@@ -224,7 +224,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 				}
 			}
 
-			message := event.ToString(session.player)
+			message := event.ToString(&session.player.Character)
 			if message != "" {
 				session.asyncMessage(message)
 				session.user.Write(prompter.GetPrompt())

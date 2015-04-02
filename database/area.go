@@ -15,12 +15,13 @@ type Areas []*Area
 
 func NewArea(name string, zone bson.ObjectId) *Area {
 	var area Area
-	area.initDbObject()
 
 	area.ZoneId = zone
 	area.Name = name
 
-	modified(&area)
+	area.initDbObject()
+    objectModified(&area);
+
 	return &area
 }
 
@@ -41,7 +42,7 @@ func (self *Area) SetName(name string) {
 
 	if name != self.Name {
 		self.Name = name
-		modified(self)
+		objectModified(self)
 	}
 }
 

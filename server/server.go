@@ -143,7 +143,7 @@ func newUser(conn *wrappedConnection) *database.User {
 	}
 }
 
-func newPlayer(conn *wrappedConnection, user *database.User) *database.Character {
+func newPlayer(conn *wrappedConnection, user *database.User) *database.PlayerChar {
 	// TODO: character slot limit
 	const SizeLimit = 12
 	for {
@@ -161,7 +161,7 @@ func newPlayer(conn *wrappedConnection, user *database.User) *database.Character
 			user.WriteLine(err.Error())
 		} else {
 			room := model.GetRooms()[0] // TODO: Better way to pick an initial character location
-			return model.CreatePlayer(name, user, room)
+			return model.CreatePlayerCharacter(name, user, room)
 		}
 	}
 }
@@ -262,7 +262,7 @@ func handleConnection(conn *wrappedConnection) {
 	defer conn.Close()
 
 	var user *database.User
-	var player *database.Character
+	var player *database.PlayerChar
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -399,7 +399,7 @@ func handleConnection(conn *wrappedConnection) {
 
 					if err == nil {
 						// TODO: Delete confirmation
-						model.DeleteCharacterId(deleteCharId)
+						model.DeletePlayerCharacterId(deleteCharId)
 					}
 				}
 
@@ -407,7 +407,7 @@ func handleConnection(conn *wrappedConnection) {
 				_, err := strconv.Atoi(choice)
 
 				if err == nil {
-					player = model.GetCharacter(charId)
+					player = model.GetPlayerCharacter(charId)
 				}
 			}
 		} else {

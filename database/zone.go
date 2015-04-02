@@ -12,11 +12,11 @@ type Zone struct {
 
 func NewZone(name string) *Zone {
 	var zone Zone
-	zone.initDbObject()
 
 	zone.Name = utils.FormatName(name)
 
-	modified(&zone)
+	zone.initDbObject()
+    objectModified(&zone)
 	return &zone
 }
 
@@ -37,7 +37,7 @@ func (self *Zone) SetName(name string) {
 
 	if name != self.Name {
 		self.Name = utils.FormatName(name)
-		modified(self)
+		objectModified(self)
 	}
 }
 

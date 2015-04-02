@@ -80,7 +80,7 @@ func Test_ThreadSafety(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 	database.Init(&TestSession{})
 
-	char := database.NewCharacter("test", "", "")
+	char := database.NewPlayerChar("test", "", "")
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -140,19 +140,11 @@ func Test_User(t *testing.T) {
 	testutils.Assert(terminalType == user.TerminalType(), t, "Call to SetTerminalType() failed")
 }
 
-func Test_Character(t *testing.T) {
-	character := database.NewCharacter("testcharacter", "", "")
+func Test_PlayerCharacter(t *testing.T) {
 	fakeId := bson.ObjectId("12345")
-
-	testutils.Assert(character.IsNpc(), t, "Character with no userId should be an NPC")
-	testutils.Assert(!character.IsPlayer(), t, "Character with no userId should NOT be a Player")
-	testutils.Assert(character.IsOnline(), t, "NPCs should always be considered as online")
-
-	character.SetUserId(fakeId)
+	character := database.NewPlayerChar("testcharacter", fakeId, fakeId)
 
 	testutils.Assert(character.GetUserId() == fakeId, t, "Call to character.SetUser() failed", fakeId, character.GetUserId())
-	testutils.Assert(!character.IsNpc(), t, "Character with a userId should NOT be an NPC")
-	testutils.Assert(character.IsPlayer(), t, "Character with a userId should be a Player")
 	testutils.Assert(!character.IsOnline(), t, "Player-Characters should be offline by default")
 
 	character.SetOnline(true)
@@ -184,11 +176,11 @@ func Test_Character(t *testing.T) {
 	testutils.Assert(character.HasItem(item2), t, "Call to character.AddItem()/HasItem() failed - item2")
 	testutils.Assert(character.HasItem(item1), t, "Lost item1 after adding item2")
 
-	conversation := "this is a fake conversation that is made up for the unit test"
+	// conversation := "this is a fake conversation that is made up for the unit test"
 
-	character.SetConversation(conversation)
+	// character.SetConversation(conversation)
 
-	testutils.Assert(character.GetConversation() == conversation, t, "Call to character.SetConversation() failed")
+	// testutils.Assert(character.GetConversation() == conversation, t, "Call to character.SetConversation() failed")
 
 	health := 123
 

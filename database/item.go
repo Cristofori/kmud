@@ -12,11 +12,10 @@ type Item struct {
 
 func NewItem(name string) *Item {
 	var item Item
-	item.initDbObject()
-
 	item.Name = utils.FormatName(name)
 
-	modified(&item)
+	item.initDbObject()
+
 	return &item
 }
 

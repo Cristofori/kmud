@@ -1,8 +1,13 @@
 package database
 
 import (
+	"kmud/utils"
 	"fmt"
+	// "labix.org/v2/mgo/bson"
+	"sync"
 )
+
+var modifiedObjectsMutex sync.Mutex
 
 type Session interface {
 	DB(string) Database
@@ -41,18 +46,32 @@ func Init(s Session) {
 
 	modifiedObjects = make(map[Identifiable]bool)
 	modifiedObjectChannel = make(chan Identifiable, 10)
+
 	go watchModifiedObjects()
 }
 
-func modified(obj Identifiable) {
+func objectModified(obj Identifiable) {
 	modifiedObjectChannel <- obj
 }
 
 func watchModifiedObjects() {
 	for {
-		obj := <-modifiedObjectChannel
+		id := <-modifiedObjectChannel
+		modifiedObjectsMutex.Lock()
+		modifiedObjects[id] = true
+		modifiedObjectsMutex.Unlock()
+
+		// TODO FIXME - Periodically save in separate routine
+		saveModifiedObjects()
+	}
+}
+
+func saveModifiedObjects() {
+	modifiedObjectsMutex.Lock()
+	for obj := range modifiedObjects {
 		commitObject(obj)
 	}
+	modifiedObjectsMutex.Unlock()
 }
 
 func getCollection(collection collectionName) Collection {
@@ -65,8 +84,10 @@ func getCollectionOfObject(obj Identifiable) Collection {
 
 func getCollectionFromType(t objectType) Collection {
 	switch t {
-	case CharType:
-		return getCollection(cCharacters)
+	case PcType:
+		return getCollection(cPlayerChars)
+	case NpcType:
+		return getCollection(cNonPlayerChars)
 	case UserType:
 		return getCollection(cUsers)
 	case ZoneType:
@@ -86,12 +107,13 @@ type collectionName string
 
 // Collection names
 const (
-	cUsers      = collectionName("users")
-	cCharacters = collectionName("characters")
-	cRooms      = collectionName("rooms")
-	cZones      = collectionName("zones")
-	cItems      = collectionName("items")
-	cAreas      = collectionName("areas")
+	cUsers          = collectionName("users")
+	cPlayerChars    = collectionName("player_characters")
+	cNonPlayerChars = collectionName("npcs")
+	cRooms          = collectionName("rooms")
+	cZones          = collectionName("zones")
+	cItems          = collectionName("items")
+	cAreas          = collectionName("areas")
 )
 
 // Field names
@@ -111,12 +133,6 @@ const (
 	PULL = "$pull"
 )
 
-func printError(err error) {
-	if err != nil {
-		fmt.Println("Error:", err)
-	}
-}
-
 func RetrieveObjects(t objectType, objects interface{}) error {
 	c := getCollectionFromType(t)
 	return c.Find(nil).Iter().All(objects)
@@ -134,10 +150,16 @@ func commitObject(object Identifiable) error {
 	}
 
 	c := getCollectionFromType(object.GetType())
+
 	object.ReadLock()
 	err := c.UpsertId(object.GetId(), object)
 	object.ReadUnlock()
-	printError(err)
+
+	if err != nil {
+		fmt.Println("Update failed", object.GetId())
+	}
+
+	utils.HandleError(err)
 	return err
 }
 

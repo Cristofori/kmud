@@ -8,40 +8,66 @@ import (
 
 type Character struct {
 	DbObject `bson:",inline"`
+	RoomId   bson.ObjectId `bson:",omitempty"`
 
-	RoomId bson.ObjectId `bson:",omitempty"`
-	UserId bson.ObjectId `bson:",omitempty"`
+	Name      string
+	Cash      int
+	Inventory []bson.ObjectId
+	Health    int
+	HitPoints int
 
-	Name         string
-	Cash         int
-	Inventory    []bson.ObjectId
-	Health       int
-	HitPoints    int
-	Conversation string
+	objType objectType
+}
+
+type NonPlayerChar struct {
+	Character `bson:",inline"`
+
 	Roaming      bool
+	Conversation string
+}
 
+type PlayerChar struct {
+	Character `bson:",inline"`
+
+	UserId bson.ObjectId
 	online bool
 }
 
-func NewCharacter(name string, userId bson.ObjectId, roomId bson.ObjectId) *Character {
-	var character Character
+type CharacterList []*Character
+type PlayerCharList []*PlayerChar
+type NonPlayerCharList []*NonPlayerChar
+
+func initCharacter(character *Character, name string, objType objectType, roomId bson.ObjectId) {
+	character.SetRoomId(roomId)
+	character.SetCash(0)
+	character.SetHealth(100)
+	character.SetHitPoints(100)
+	character.SetName(utils.FormatName(name))
+	character.objType = objType
+
 	character.initDbObject()
+}
 
-	character.UserId = userId
-	character.RoomId = roomId
-	character.Cash = 0
-	character.Health = 100
-	character.HitPoints = 100
-	character.Name = utils.FormatName(name)
+func NewPlayerChar(name string, userId bson.ObjectId, roomId bson.ObjectId) *PlayerChar {
+	var player PlayerChar
 
-	character.online = false
+	player.UserId = userId
+	player.online = false
 
-	modified(&character)
-	return &character
+	initCharacter(&player.Character, name, PcType, roomId)
+    objectModified(&player)
+	return &player
+}
+
+func NewNonPlayerChar(name string, roomId bson.ObjectId) *NonPlayerChar {
+	var npc NonPlayerChar
+	initCharacter(&npc.Character, name, NpcType, roomId)
+    objectModified(&npc)
+	return &npc
 }
 
 func (self *Character) GetType() objectType {
-	return CharType
+	return self.objType
 }
 
 func (self *Character) GetName() string {
@@ -56,14 +82,11 @@ func (self *Character) SetName(name string) {
 		self.WriteLock()
 		self.Name = utils.FormatName(name)
 		self.WriteUnlock()
-		modified(self)
+		objectModified(self)
 	}
 }
 
-func NewNpc(name string, roomId bson.ObjectId) *Character {
-	return NewCharacter(name, "", roomId)
-}
-
+/*
 func NewNpcTemplate(name string) *Character {
 	return NewCharacter(name, "", "")
 }
@@ -71,37 +94,29 @@ func NewNpcTemplate(name string) *Character {
 func NewNpcFromTemplate(template *Character, roomId bson.ObjectId) *Character {
 	return NewNpc(template.GetName(), template.GetRoomId())
 }
+*/
 
-func (self *Character) SetOnline(online bool) {
+func (self *PlayerChar) SetOnline(online bool) {
 	self.WriteLock()
 	self.online = online
 	self.WriteUnlock()
 }
 
-func (self *Character) IsOnline() bool {
+func (self *PlayerChar) IsOnline() bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
-	return self.online || self.IsNpc()
+	return self.online
 }
 
-func (self *Character) IsNpc() bool {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	return self.UserId == "" && self.RoomId != ""
-}
-
+/*
 func (self *Character) IsNpcTemplate() bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
 	return self.UserId == "" && self.RoomId == ""
 }
-
-func (self *Character) IsPlayer() bool {
-	return !self.IsNpc()
-}
+*/
 
 func (self *Character) SetRoomId(id bson.ObjectId) {
 	self.WriteLock()
@@ -109,7 +124,7 @@ func (self *Character) SetRoomId(id bson.ObjectId) {
 
 	if id != self.RoomId {
 		self.RoomId = id
-		modified(self)
+		objectModified(self)
 	}
 }
 
@@ -120,17 +135,17 @@ func (self *Character) GetRoomId() bson.ObjectId {
 	return self.RoomId
 }
 
-func (self *Character) SetUserId(id bson.ObjectId) {
+func (self *PlayerChar) SetUserId(id bson.ObjectId) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
 	if id != self.UserId {
 		self.UserId = id
-		modified(self)
+		objectModified(self)
 	}
 }
 
-func (self *Character) GetUserId() bson.ObjectId {
+func (self *PlayerChar) GetUserId() bson.ObjectId {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
@@ -143,7 +158,7 @@ func (self *Character) SetCash(cash int) {
 
 	if cash != self.Cash {
 		self.Cash = cash
-		modified(self)
+        objectModified(self)
 	}
 }
 
@@ -164,7 +179,7 @@ func (self *Character) AddItem(item *Item) {
 		defer self.WriteUnlock()
 
 		self.Inventory = append(self.Inventory, item.GetId())
-		modified(self)
+        objectModified(self)
 	}
 }
 
@@ -181,7 +196,7 @@ func (self *Character) RemoveItem(item *Item) {
 			}
 		}
 
-		modified(self)
+        objectModified(self)
 	}
 }
 
@@ -204,23 +219,23 @@ func (self *Character) GetItemIds() []bson.ObjectId {
 	return self.Inventory
 }
 
-func (self *Character) SetConversation(conversation string) {
+func (self *NonPlayerChar) SetConversation(conversation string) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
 	if self.Conversation != conversation {
 		self.Conversation = conversation
-		modified(self)
+        objectModified(self)
 	}
 }
 
-func (self *Character) GetConversation() string {
+func (self *NonPlayerChar) GetConversation() string {
 	self.ReadLock()
 	defer self.ReadUnlock()
 	return self.Conversation
 }
 
-func (self *Character) PrettyConversation() string {
+func (self *NonPlayerChar) PrettyConversation() string {
 	conv := self.GetConversation()
 
 	if conv == "" {
@@ -243,7 +258,7 @@ func (self *Character) SetHealth(health int) {
 			self.HitPoints = self.Health
 		}
 
-		modified(self)
+        objectModified(self)
 	}
 }
 
@@ -264,7 +279,7 @@ func (self *Character) SetHitPoints(hitpoints int) {
 
 	if hitpoints != self.HitPoints {
 		self.HitPoints = hitpoints
-		modified(self)
+        objectModified(self)
 	}
 }
 
@@ -283,25 +298,45 @@ func (self *Character) Heal(hitpoints int) {
 	self.SetHitPoints(self.GetHitPoints() + hitpoints)
 }
 
-func (self *Character) GetRoaming() bool {
+func (self *NonPlayerChar) GetRoaming() bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
 	return self.Roaming
 }
 
-func (self *Character) SetRoaming(roaming bool) {
+func (self *NonPlayerChar) SetRoaming(roaming bool) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
 	self.Roaming = roaming
-	modified(self)
+    objectModified(self)
 }
 
-func CharacterNames(characters []*Character) []string {
-	names := make([]string, len(characters))
+func (self PlayerCharList) Characters() CharacterList {
+	chars := make([]*Character, len(self))
 
-	for i, char := range characters {
+	for i, char := range self {
+		chars[i] = &char.Character
+	}
+
+	return chars
+}
+
+func (self NonPlayerCharList) Characters() CharacterList {
+	chars := make([]*Character, len(self))
+
+	for i, npc := range self {
+		chars[i] = &npc.Character
+	}
+
+	return chars
+}
+
+func (self CharacterList) Names() []string {
+	names := make([]string, len(self))
+
+	for i, char := range self {
 		names[i] = char.GetName()
 	}
 

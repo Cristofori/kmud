@@ -12,7 +12,7 @@ const (
 )
 
 func Start() {
-	for _, npc := range model.GetAllNpcs() {
+	for _, npc := range model.GetNpcs() {
 		manage(npc)
 	}
 
@@ -34,7 +34,7 @@ func Start() {
 	}
 }
 
-func manage(npc *database.Character) {
+func manage(npc *database.NonPlayerChar) {
 	go func() {
 		throttler := utils.NewThrottler(1 * time.Second)
 
@@ -43,7 +43,7 @@ func manage(npc *database.Character) {
 				room := model.GetRoom(npc.GetRoomId())
 				exits := room.GetExits()
 				exitToTake := utils.Random(0, len(exits)-1)
-				model.MoveCharacter(npc, exits[exitToTake])
+				model.MoveCharacter(&npc.Character, exits[exitToTake])
 			}
 
 			throttler.Sync()

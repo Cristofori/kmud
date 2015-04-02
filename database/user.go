@@ -24,7 +24,6 @@ type User struct {
 
 func NewUser(name string, password string) *User {
 	var user User
-	user.initDbObject()
 
 	user.Name = utils.FormatName(name)
 	user.Password = hash(password)
@@ -34,7 +33,8 @@ func NewUser(name string, password string) *User {
 	user.windowWidth = 80
 	user.windowHeight = 40
 
-	modified(&user)
+	user.initDbObject()
+    objectModified(&user)
 	return &user
 }
 
@@ -67,7 +67,7 @@ func (self *User) SetColorMode(cm utils.ColorMode) {
 		self.ColorMode = cm
 		self.WriteUnlock()
 
-		modified(self)
+		objectModified(self)
 	}
 }
 
@@ -93,7 +93,7 @@ func (self *User) SetPassword(password string) {
 		self.Password = hashed
 		self.WriteUnlock()
 
-		modified(self)
+		objectModified(self)
 	}
 }
 
