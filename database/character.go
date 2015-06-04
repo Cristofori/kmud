@@ -2,8 +2,8 @@ package database
 
 import (
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 	"kmud/utils"
-	"labix.org/v2/mgo/bson"
 )
 
 type Character struct {

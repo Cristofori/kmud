@@ -2,11 +2,11 @@ package session
 
 import (
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 	"io"
 	"kmud/database"
 	"kmud/model"
 	"kmud/utils"
-	"labix.org/v2/mgo/bson"
 	"strconv"
 	// "log"
 	// "os"

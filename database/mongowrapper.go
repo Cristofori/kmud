@@ -1,7 +1,7 @@
 package database
 
 import (
-	"labix.org/v2/mgo"
+	"gopkg.in/mgo.v2"
 )
 
 func NewMongoSession(session *mgo.Session) *MongoSession {
