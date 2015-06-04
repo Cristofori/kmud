@@ -9,4 +9,4 @@ Google Go v1.2
 MongoDB: www.mongodb.org 
 
 mgo: http://labix.org/mgo
-go get labix.org/v2/mgo
+go get gopkg.in/mgo.v2

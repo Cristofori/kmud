@@ -6,7 +6,7 @@ import (
 	"kmud/database"
 	"kmud/model"
 	"kmud/utils"
-	"labix.org/v2/mgo/bson"
+	"gopkg.in/mgo.v2/bson"
 	"strconv"
 	// "log"
 	// "os"

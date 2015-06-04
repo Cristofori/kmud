@@ -8,7 +8,7 @@ import (
 	"kmud/session"
 	"kmud/telnet"
 	"kmud/utils"
-	"labix.org/v2/mgo"
+	"gopkg.in/mgo.v2"
 	"net"
 	"sort"
 	"strconv"
