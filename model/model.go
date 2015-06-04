@@ -11,7 +11,6 @@ import (
 
 var _objects map[bson.ObjectId]interface{}
 
-var _chars map[bson.ObjectId]*db.PlayerChar
 var _npcs map[bson.ObjectId]*db.NonPlayerChar
 var _zones map[bson.ObjectId]*db.Zone
 var _areas map[bson.ObjectId]*db.Area
@@ -93,7 +92,7 @@ func GetPlayerCharacter(id bson.ObjectId) *db.PlayerChar {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	return _chars[id]
+	return _objects[id].(*db.PlayerChar)
 }
 
 func GetNpc(id bson.ObjectId) *db.NonPlayerChar {
@@ -125,12 +124,8 @@ func GetPlayerCharacterByName(name string) *db.PlayerChar {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	name = utils.Simplify(name)
-
-	for _, character := range _chars {
-		if character.GetName() == name {
-			return character
-		}
+	for _, id := range db.Find(db.PcType, "name", utils.FormatName(name)) {
+		return _objects[id].(*db.PlayerChar)
 	}
 
 	return nil
@@ -189,10 +184,12 @@ func GetUserCharacters(user *db.User) []*db.PlayerChar {
 
 	var characters []*db.PlayerChar
 
-	for _, character := range _chars {
-		if character.GetUserId() == user.GetId() {
-			characters = append(characters, character)
-		}
+	id := user.GetId()
+
+	tmp := db.Find(db.PcType, "userid", id)
+
+	for _, id := range db.Find(db.PcType, "userid", id) {
+		characters = append(characters, _objects[id].(*db.PlayerChar))
 	}
 
 	return characters
@@ -215,15 +212,17 @@ func PlayerCharactersIn(room *db.Room, except *db.PlayerChar) db.PlayerCharList 
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	var characters []*db.PlayerChar
+	var pcs []*db.PlayerChar
 
-	for _, char := range _chars {
-		if char.GetRoomId() == room.GetId() && char.IsOnline() {
-			characters = append(characters, char)
+	for _, id := range db.Find(db.PcType, "roomid", room.GetId()) {
+		pc := _objects[id].(*db.PlayerChar)
+
+		if pc.IsOnline() && pc != except {
+			pcs = append(pcs, pc)
 		}
 	}
 
-	return characters
+	return pcs
 }
 
 // NpcsIn returns all of the NPC characters that are in the given room
@@ -247,15 +246,16 @@ func GetOnlinePlayerCharacters() []*db.PlayerChar {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	var characters []*db.PlayerChar
+	var pcs []*db.PlayerChar
 
-	for _, char := range _chars {
-		if char.IsOnline() {
-			characters = append(characters, char)
+	for _, id := range db.FindAll(db.PcType) {
+		pc := _objects[id].(*db.PlayerChar)
+		if pc.IsOnline() {
+			pcs = append(pcs, pc)
 		}
 	}
 
-	return characters
+	return pcs
 }
 
 // CreatePlayerCharacter creates a new player-controlled Character object in the
@@ -265,10 +265,10 @@ func CreatePlayerCharacter(name string, parentUser *db.User, startingRoom *db.Ro
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	character := db.NewPlayerChar(name, parentUser.GetId(), startingRoom.GetId())
-	_chars[character.GetId()] = character
+	pc := db.NewPlayerChar(name, parentUser.GetId(), startingRoom.GetId())
+	_objects[pc.GetId()] = pc
 
-	return character
+	return pc
 }
 
 // GetOrCreatePlayerCharacter attempts to retrieve the existing user from the model by the given name.
@@ -321,12 +321,12 @@ func DeleteNpcId(id bson.ObjectId) {
 
 // DeletePlayerCharacter removes the character (either NPC or player-controlled)
 // associated with the given id from the model and from the database
-func DeletePlayerCharacter(character *db.PlayerChar) {
+func DeletePlayerCharacter(pc *db.PlayerChar) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	delete(_chars, character.GetId())
-	utils.HandleError(db.DeleteObject(character))
+	delete(_objects, pc.GetId())
+	utils.HandleError(db.DeleteObject(pc))
 }
 
 func DeleteNpc(npc *db.NonPlayerChar) {
@@ -625,7 +625,6 @@ func Init(session db.Session) error {
 
 	_objects = map[bson.ObjectId]interface{}{}
 
-	_chars = map[bson.ObjectId]*db.PlayerChar{}
 	_npcs = map[bson.ObjectId]*db.NonPlayerChar{}
 	_zones = map[bson.ObjectId]*db.Zone{}
 	_areas = map[bson.ObjectId]*db.Area{}
@@ -645,7 +644,7 @@ func Init(session db.Session) error {
 	utils.HandleError(err)
 
 	for _, character := range characters {
-		_chars[character.GetId()] = character
+		_objects[character.GetId()] = character
 	}
 
 	npcs := []*db.NonPlayerChar{}

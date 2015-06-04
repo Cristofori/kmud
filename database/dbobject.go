@@ -17,7 +17,7 @@ func (self *DbObject) initDbObject() {
 }
 
 func (self *DbObject) GetId() bson.ObjectId {
-	// Not mutex-protected since thd ID should never change
+	// Not mutex-protected since the ID should never change
 	return self.Id
 }
 
