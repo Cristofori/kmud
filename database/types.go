@@ -2,8 +2,8 @@ package database
 
 import (
 	"fmt"
-	"kmud/utils"
 	"gopkg.in/mgo.v2/bson"
+	"kmud/utils"
 	"strings"
 )
 

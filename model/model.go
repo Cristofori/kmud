@@ -3,9 +3,9 @@ package model
 import (
 	"errors"
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 	"kmud/database"
 	"kmud/utils"
-	"gopkg.in/mgo.v2/bson"
 	"sync"
 )
 

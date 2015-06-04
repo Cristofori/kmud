@@ -2,10 +2,10 @@ package session
 
 import (
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 	"kmud/database"
 	"kmud/model"
 	"kmud/utils"
-	"gopkg.in/mgo.v2/bson"
 	"strconv"
 	"strings"
 )
