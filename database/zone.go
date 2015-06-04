@@ -16,11 +16,11 @@ func NewZone(name string) *Zone {
 	zone.Name = utils.FormatName(name)
 
 	zone.initDbObject()
-    objectModified(&zone)
+	objectModified(&zone)
 	return &zone
 }
 
-func (self *Zone) GetType() objectType {
+func (self *Zone) GetType() ObjectType {
 	return ZoneType
 }
 

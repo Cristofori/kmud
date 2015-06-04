@@ -20,12 +20,12 @@ func NewArea(name string, zone bson.ObjectId) *Area {
 	area.Name = name
 
 	area.initDbObject()
-    objectModified(&area);
+	objectModified(&area)
 
 	return &area
 }
 
-func (self *Area) GetType() objectType {
+func (self *Area) GetType() ObjectType {
 	return AreaType
 }
 

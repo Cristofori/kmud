@@ -54,11 +54,11 @@ func NewRoom(zoneId bson.ObjectId, location Coordinate) *Room {
 	room.ZoneId = zoneId
 
 	room.initDbObject()
-    objectModified(&room)
+	objectModified(&room)
 	return &room
 }
 
-func (self *Room) GetType() objectType {
+func (self *Room) GetType() ObjectType {
 	return RoomType
 }
 

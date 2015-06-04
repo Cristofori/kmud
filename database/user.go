@@ -34,11 +34,11 @@ func NewUser(name string, password string) *User {
 	user.windowHeight = 40
 
 	user.initDbObject()
-    objectModified(&user)
+	objectModified(&user)
 	return &user
 }
 
-func (self *User) GetType() objectType {
+func (self *User) GetType() ObjectType {
 	return UserType
 }
 

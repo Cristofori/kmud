@@ -19,7 +19,7 @@ func NewItem(name string) *Item {
 	return &item
 }
 
-func (self *Item) GetType() objectType {
+func (self *Item) GetType() ObjectType {
 	return ItemType
 }
 

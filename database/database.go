@@ -1,9 +1,9 @@
 package database
 
 import (
-	"kmud/utils"
 	"fmt"
-	// "labix.org/v2/mgo/bson"
+	"gopkg.in/mgo.v2/bson"
+	"kmud/utils"
 	"sync"
 )
 
@@ -82,7 +82,7 @@ func getCollectionOfObject(obj Identifiable) Collection {
 	return getCollectionFromType(obj.GetType())
 }
 
-func getCollectionFromType(t objectType) Collection {
+func getCollectionFromType(t ObjectType) Collection {
 	switch t {
 	case PcType:
 		return getCollection(cPlayerChars)
@@ -133,9 +133,32 @@ const (
 	PULL = "$pull"
 )
 
-func RetrieveObjects(t objectType, objects interface{}) error {
+func RetrieveObjects(t ObjectType, objects interface{}) error {
 	c := getCollectionFromType(t)
 	return c.Find(nil).Iter().All(objects)
+}
+
+func Find(t ObjectType, key string, value interface{}) []bson.ObjectId {
+	return find(t, bson.M{key: value})
+}
+
+func FindAll(t ObjectType) []bson.ObjectId {
+	return find(t, nil)
+}
+
+func find(t ObjectType, query interface{}) []bson.ObjectId {
+	c := getCollectionFromType(t)
+
+	var results []interface{}
+	c.Find(query).Iter().All(&results)
+
+	var ids []bson.ObjectId
+
+	for _, result := range results {
+		ids = append(ids, result.(bson.M)["_id"].(bson.ObjectId))
+	}
+
+	return ids
 }
 
 func DeleteObject(obj Identifiable) error {

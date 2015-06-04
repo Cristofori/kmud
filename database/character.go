@@ -16,7 +16,7 @@ type Character struct {
 	Health    int
 	HitPoints int
 
-	objType objectType
+	objType ObjectType
 }
 
 type NonPlayerChar struct {
@@ -37,7 +37,7 @@ type CharacterList []*Character
 type PlayerCharList []*PlayerChar
 type NonPlayerCharList []*NonPlayerChar
 
-func initCharacter(character *Character, name string, objType objectType, roomId bson.ObjectId) {
+func initCharacter(character *Character, name string, objType ObjectType, roomId bson.ObjectId) {
 	character.SetRoomId(roomId)
 	character.SetCash(0)
 	character.SetHealth(100)
@@ -55,18 +55,18 @@ func NewPlayerChar(name string, userId bson.ObjectId, roomId bson.ObjectId) *Pla
 	player.online = false
 
 	initCharacter(&player.Character, name, PcType, roomId)
-    objectModified(&player)
+	objectModified(&player)
 	return &player
 }
 
 func NewNonPlayerChar(name string, roomId bson.ObjectId) *NonPlayerChar {
 	var npc NonPlayerChar
 	initCharacter(&npc.Character, name, NpcType, roomId)
-    objectModified(&npc)
+	objectModified(&npc)
 	return &npc
 }
 
-func (self *Character) GetType() objectType {
+func (self *Character) GetType() ObjectType {
 	return self.objType
 }
 
@@ -158,7 +158,7 @@ func (self *Character) SetCash(cash int) {
 
 	if cash != self.Cash {
 		self.Cash = cash
-        objectModified(self)
+		objectModified(self)
 	}
 }
 
@@ -179,7 +179,7 @@ func (self *Character) AddItem(item *Item) {
 		defer self.WriteUnlock()
 
 		self.Inventory = append(self.Inventory, item.GetId())
-        objectModified(self)
+		objectModified(self)
 	}
 }
 
@@ -196,7 +196,7 @@ func (self *Character) RemoveItem(item *Item) {
 			}
 		}
 
-        objectModified(self)
+		objectModified(self)
 	}
 }
 
@@ -225,7 +225,7 @@ func (self *NonPlayerChar) SetConversation(conversation string) {
 
 	if self.Conversation != conversation {
 		self.Conversation = conversation
-        objectModified(self)
+		objectModified(self)
 	}
 }
 
@@ -258,7 +258,7 @@ func (self *Character) SetHealth(health int) {
 			self.HitPoints = self.Health
 		}
 
-        objectModified(self)
+		objectModified(self)
 	}
 }
 
@@ -279,7 +279,7 @@ func (self *Character) SetHitPoints(hitpoints int) {
 
 	if hitpoints != self.HitPoints {
 		self.HitPoints = hitpoints
-        objectModified(self)
+		objectModified(self)
 	}
 }
 
@@ -310,7 +310,7 @@ func (self *NonPlayerChar) SetRoaming(roaming bool) {
 	defer self.WriteUnlock()
 
 	self.Roaming = roaming
-    objectModified(self)
+	objectModified(self)
 }
 
 func (self PlayerCharList) Characters() CharacterList {

@@ -25,23 +25,23 @@ const (
 
 type Identifiable interface {
 	GetId() bson.ObjectId
-	GetType() objectType
+	GetType() ObjectType
 	ReadLock()
 	ReadUnlock()
 	Destroy()
 	IsDestroyed() bool
 }
 
-type objectType int
+type ObjectType int
 
 const (
-	NpcType  objectType = iota
-	PcType   objectType = iota
-	UserType objectType = iota
-	ZoneType objectType = iota
-	AreaType objectType = iota
-	RoomType objectType = iota
-	ItemType objectType = iota
+	NpcType  ObjectType = iota
+	PcType   ObjectType = iota
+	UserType ObjectType = iota
+	ZoneType ObjectType = iota
+	AreaType ObjectType = iota
+	RoomType ObjectType = iota
+	ItemType ObjectType = iota
 )
 
 type Coordinate struct {
