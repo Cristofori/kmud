@@ -11,7 +11,6 @@ import (
 
 var _objects map[bson.ObjectId]db.Identifiable
 
-var _rooms map[bson.ObjectId]*db.Room
 var _items map[bson.ObjectId]*db.Item
 
 var mutex sync.RWMutex
@@ -175,15 +174,15 @@ func GetUserCharacters(user *db.User) []*db.PlayerChar {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	var characters []*db.PlayerChar
+	var pcs []*db.PlayerChar
 
 	id := user.GetId()
 
 	for _, id := range db.Find(db.PcType, "userid", id) {
-		characters = append(characters, _objects[id].(*db.PlayerChar))
+		pcs = append(pcs, _objects[id].(*db.PlayerChar))
 	}
 
-	return characters
+	return pcs
 }
 
 func CharactersIn(room *db.Room) db.CharacterList {
@@ -338,7 +337,7 @@ func CreateRoom(zone *db.Zone, location db.Coordinate) (*db.Room, error) {
 	defer mutex.Unlock()
 
 	room := db.NewRoom(zone.GetId(), location)
-	_rooms[room.GetId()] = room
+	_objects[room.GetId()] = room
 
 	return room, nil
 }
@@ -348,18 +347,17 @@ func GetRoom(id bson.ObjectId) *db.Room {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	return _rooms[id]
+	return _objects[id].(*db.Room)
 }
 
 // GetRooms returns a list of all of the rooms in the entire model
-func GetRooms() []*db.Room {
+func GetRooms() db.Rooms {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
 	var rooms []*db.Room
-
-	for _, room := range _rooms {
-		rooms = append(rooms, room)
+	for _, id := range db.FindAll(db.RoomType) {
+		rooms = append(rooms, _objects[id].(*db.Room))
 	}
 
 	return rooms
@@ -387,8 +385,10 @@ func GetRoomByLocation(coordinate db.Coordinate, zone *db.Zone) *db.Room {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	for _, room := range _rooms {
-		if room.GetLocation() == coordinate && room.GetZoneId() == zone.GetId() {
+	for _, id := range db.Find(db.RoomType, "zoneid", zone.GetId()) {
+		// TODO move this check into the DB query
+		room := _objects[id].(*db.Room)
+		if room.GetLocation() == coordinate {
 			return room
 		}
 	}
@@ -471,7 +471,13 @@ func GetArea(areaId bson.ObjectId) *db.Area {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	return _objects[areaId].(*db.Area)
+	area, found := _objects[areaId]
+
+	if found {
+		return area.(*db.Area)
+	}
+
+	return nil
 }
 
 func CreateArea(name string, zone *db.Zone) (*db.Area, error) {
@@ -511,7 +517,7 @@ func DeleteArea(area *db.Area) {
 // also disables all exits in neighboring rooms that lead to the given room.
 func DeleteRoom(room *db.Room) {
 	mutex.Lock()
-	delete(_rooms, room.GetId())
+	delete(_objects, room.GetId())
 
 	utils.HandleError(db.DeleteObject(room))
 	mutex.Unlock()
@@ -614,7 +620,6 @@ func Init(session db.Session, dbName string) error {
 
 	_objects = map[bson.ObjectId]db.Identifiable{}
 
-	_rooms = map[bson.ObjectId]*db.Room{}
 	_items = map[bson.ObjectId]*db.Item{}
 
 	users := []*db.User{}
@@ -662,7 +667,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, room := range rooms {
-		_rooms[room.GetId()] = room
+		_objects[room.GetId()] = room
 	}
 
 	items := []*db.Item{}

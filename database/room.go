@@ -410,4 +410,6 @@ func (self *Room) RemoveProperty(key string) {
 	objectModified(self)
 }
 
+type Rooms []*Room
+
 // vim: nocindent

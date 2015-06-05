@@ -10,6 +10,7 @@ import (
 	"kmud/telnet"
 	"kmud/utils"
 	"net"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"time"
@@ -277,6 +278,8 @@ func handleConnection(conn *wrappedConnection) {
 			if player != nil {
 				charname = player.GetName()
 			}
+
+			debug.PrintStack()
 
 			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
 				username,
