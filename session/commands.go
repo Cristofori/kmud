@@ -266,11 +266,18 @@ func (ch *commandHandler) Map(args []string) {
 	builder := newMapBuilder(width, height, depth)
 	builder.setUserRoom(ch.session.room)
 
+    zoneRooms := model.GetRoomsInZone(ch.session.currentZone())
+    roomsByLocation := map[database.Coordinate]*database.Room{}
+
+    for _, room := range zoneRooms {
+        roomsByLocation[room.GetLocation()] = room
+    }
+
 	for z := startZ; z <= endZ; z++ {
 		for y := startY; y <= endY; y++ {
 			for x := startX; x <= endX; x++ {
 				loc := database.Coordinate{X: x, Y: y, Z: z}
-				room := model.GetRoomByLocation(loc, ch.session.currentZone())
+				room := roomsByLocation[loc]
 
 				if room != nil {
 					// Translate to 0-based coordinates
