@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
+	"kmud/datastore"
 	"kmud/utils"
 )
 
@@ -16,7 +17,7 @@ type Character struct {
 	Health    int
 	HitPoints int
 
-	objType ObjectType
+	objType datastore.ObjectType
 }
 
 type NonPlayerChar struct {
@@ -37,7 +38,7 @@ type CharacterList []*Character
 type PlayerCharList []*PlayerChar
 type NonPlayerCharList []*NonPlayerChar
 
-func initCharacter(character *Character, name string, objType ObjectType, roomId bson.ObjectId) {
+func initCharacter(character *Character, name string, objType datastore.ObjectType, roomId bson.ObjectId) {
 	character.SetRoomId(roomId)
 	character.SetCash(0)
 	character.SetHealth(100)
@@ -66,7 +67,7 @@ func NewNonPlayerChar(name string, roomId bson.ObjectId) *NonPlayerChar {
 	return &npc
 }
 
-func (self *Character) GetType() ObjectType {
+func (self *Character) GetType() datastore.ObjectType {
 	return self.objType
 }
 

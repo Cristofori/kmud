@@ -1,6 +1,7 @@
 package database
 
 import (
+	"kmud/datastore"
 	"kmud/utils"
 )
 
@@ -20,7 +21,7 @@ func NewZone(name string) *Zone {
 	return &zone
 }
 
-func (self *Zone) GetType() ObjectType {
+func (self *Zone) GetType() datastore.ObjectType {
 	return ZoneType
 }
 

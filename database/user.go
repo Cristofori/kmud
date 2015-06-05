@@ -3,6 +3,7 @@ package database
 import (
 	"crypto/sha1"
 	"io"
+	"kmud/datastore"
 	"kmud/utils"
 	"net"
 	"reflect"
@@ -38,7 +39,7 @@ func NewUser(name string, password string) *User {
 	return &user
 }
 
-func (self *User) GetType() ObjectType {
+func (self *User) GetType() datastore.ObjectType {
 	return UserType
 }
 

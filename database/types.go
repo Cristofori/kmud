@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
+	"kmud/datastore"
 	"kmud/utils"
 	"strings"
 )
@@ -23,25 +23,14 @@ const (
 	DirectionNone      Direction = iota
 )
 
-type Identifiable interface {
-	GetId() bson.ObjectId
-	GetType() ObjectType
-	ReadLock()
-	ReadUnlock()
-	Destroy()
-	IsDestroyed() bool
-}
-
-type ObjectType int
-
 const (
-	NpcType  ObjectType = iota
-	PcType   ObjectType = iota
-	UserType ObjectType = iota
-	ZoneType ObjectType = iota
-	AreaType ObjectType = iota
-	RoomType ObjectType = iota
-	ItemType ObjectType = iota
+	NpcType  datastore.ObjectType = iota
+	PcType   datastore.ObjectType = iota
+	UserType datastore.ObjectType = iota
+	ZoneType datastore.ObjectType = iota
+	AreaType datastore.ObjectType = iota
+	RoomType datastore.ObjectType = iota
+	ItemType datastore.ObjectType = iota
 )
 
 type Coordinate struct {

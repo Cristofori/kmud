@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
+	"kmud/datastore"
 	"kmud/utils"
 	"sort"
 	"strings"
@@ -58,7 +59,7 @@ func NewRoom(zoneId bson.ObjectId, location Coordinate) *Room {
 	return &room
 }
 
-func (self *Room) GetType() ObjectType {
+func (self *Room) GetType() datastore.ObjectType {
 	return RoomType
 }
 

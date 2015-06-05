@@ -5,22 +5,15 @@ import (
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
 	db "kmud/database"
+	ds "kmud/datastore"
 	"kmud/utils"
-	"sync"
 )
-
-var _objects map[bson.ObjectId]db.Identifiable
-
-var mutex sync.RWMutex
 
 // CreateUser creates a new User object in the database and adds it to the model.
 // A pointer to the new User object is returned.
 func CreateUser(name string, password string) *db.User {
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	user := db.NewUser(name, password)
-	_objects[user.GetId()] = user
+	ds.Set(user)
 
 	return user
 }
@@ -39,13 +32,10 @@ func GetOrCreateUser(name string, password string) *db.User {
 
 // GetUsers returns all of the User objects in the model
 func GetUsers() db.Users {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	var users db.Users
 
 	for _, id := range db.FindAll(db.UserType) {
-		users = append(users, _objects[id].(*db.User))
+		users = append(users, ds.Get(id).(*db.User))
 	}
 
 	return users
@@ -54,11 +44,8 @@ func GetUsers() db.Users {
 // GetUserByName searches for the User object with the given name. Returns a
 // nil User if one was not found.
 func GetUserByName(username string) *db.User {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	for _, id := range db.Find(db.UserType, "name", utils.FormatName(username)) {
-		return _objects[id].(*db.User)
+		return ds.Get(id).(*db.User)
 	}
 
 	return nil
@@ -74,26 +61,17 @@ func DeleteUser(user *db.User) {
 		DeletePlayerCharacter(character)
 	}
 
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	delete(_objects, user.GetId())
+	ds.Remove(user)
 	utils.HandleError(db.DeleteObject(user))
 }
 
 // GetPlayerCharacter returns the Character object associated the given Id
 func GetPlayerCharacter(id bson.ObjectId) *db.PlayerChar {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	return _objects[id].(*db.PlayerChar)
+	return ds.Get(id).(*db.PlayerChar)
 }
 
 func GetNpc(id bson.ObjectId) *db.NonPlayerChar {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	return _objects[id].(*db.NonPlayerChar)
+	return ds.Get(id).(*db.NonPlayerChar)
 }
 
 func GetCharacterByName(name string) *db.Character {
@@ -115,35 +93,26 @@ func GetCharacterByName(name string) *db.Character {
 // GetPlayerCharacaterByName searches for a character with the given name. Returns a
 // character object, or nil if it wasn't found.
 func GetPlayerCharacterByName(name string) *db.PlayerChar {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	for _, id := range db.Find(db.PcType, "name", utils.FormatName(name)) {
-		return _objects[id].(*db.PlayerChar)
+		return ds.Get(id).(*db.PlayerChar)
 	}
 
 	return nil
 }
 
 func GetNpcByName(name string) *db.NonPlayerChar {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	for _, id := range db.Find(db.NpcType, "name", utils.FormatName(name)) {
-		return _objects[id].(*db.NonPlayerChar)
+		return ds.Get(id).(*db.NonPlayerChar)
 	}
 
 	return nil
 }
 
 func GetNpcs() db.NonPlayerCharList {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	var npcs db.NonPlayerCharList
 
 	for _, id := range db.FindAll(db.NpcType) {
-		npcs = append(npcs, _objects[id].(*db.NonPlayerChar))
+		npcs = append(npcs, ds.Get(id).(*db.NonPlayerChar))
 	}
 
 	return npcs
@@ -151,9 +120,6 @@ func GetNpcs() db.NonPlayerCharList {
 
 /*
 func GetAllNpcTemplates() []*db.Character {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	templates := []*db.Character{}
 
 	for _, character := range _chars {
@@ -169,15 +135,12 @@ func GetAllNpcTemplates() []*db.Character {
 // GetUserCharacters returns all of the Character objects associated with the
 // given user id
 func GetUserCharacters(user *db.User) []*db.PlayerChar {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	var pcs []*db.PlayerChar
 
 	id := user.GetId()
 
 	for _, id := range db.Find(db.PcType, "userid", id) {
-		pcs = append(pcs, _objects[id].(*db.PlayerChar))
+		pcs = append(pcs, ds.Get(id).(*db.PlayerChar))
 	}
 
 	return pcs
@@ -197,13 +160,10 @@ func CharactersIn(room *db.Room) db.CharacterList {
 
 // PlayerCharactersIn returns a list of player characters that are in the given room
 func PlayerCharactersIn(room *db.Room, except *db.PlayerChar) db.PlayerCharList {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	var pcs []*db.PlayerChar
 
 	for _, id := range db.Find(db.PcType, "roomid", room.GetId()) {
-		pc := _objects[id].(*db.PlayerChar)
+		pc := ds.Get(id).(*db.PlayerChar)
 
 		if pc.IsOnline() && pc != except {
 			pcs = append(pcs, pc)
@@ -215,13 +175,10 @@ func PlayerCharactersIn(room *db.Room, except *db.PlayerChar) db.PlayerCharList 
 
 // NpcsIn returns all of the NPC characters that are in the given room
 func NpcsIn(room *db.Room) db.NonPlayerCharList {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	var npcs db.NonPlayerCharList
 
 	for _, id := range db.Find(db.NpcType, "roomid", room.GetId()) {
-		npcs = append(npcs, _objects[id].(*db.NonPlayerChar))
+		npcs = append(npcs, ds.Get(id).(*db.NonPlayerChar))
 	}
 
 	return npcs
@@ -229,13 +186,10 @@ func NpcsIn(room *db.Room) db.NonPlayerCharList {
 
 // GetOnlinePlayerCharacters returns a list of all of the characters who are online
 func GetOnlinePlayerCharacters() []*db.PlayerChar {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	var pcs []*db.PlayerChar
 
 	for _, id := range db.FindAll(db.PcType) {
-		pc := _objects[id].(*db.PlayerChar)
+		pc := ds.Get(id).(*db.PlayerChar)
 		if pc.IsOnline() {
 			pcs = append(pcs, pc)
 		}
@@ -248,11 +202,8 @@ func GetOnlinePlayerCharacters() []*db.PlayerChar {
 // database and adds it to the model.  A pointer to the new character object is
 // returned.
 func CreatePlayerCharacter(name string, parentUser *db.User, startingRoom *db.Room) *db.PlayerChar {
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	pc := db.NewPlayerChar(name, parentUser.GetId(), startingRoom.GetId())
-	_objects[pc.GetId()] = pc
+	ds.Set(pc)
 
 	return pc
 }
@@ -276,20 +227,14 @@ func GetOrCreatePlayerCharacter(name string, parentUser *db.User, startingRoom *
 // CreateNpc is a convenience function for creating a new character object that
 // is an NPC (as opposed to an actual player-controlled character)
 func CreateNpc(name string, room *db.Room) *db.NonPlayerChar {
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	npc := db.NewNonPlayerChar(name, room.GetId())
-	_objects[npc.GetId()] = npc
+	ds.Set(npc)
 
 	return npc
 }
 
 /*
 func CreateNpcTemplate(name string) *db.Character {
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	template := db.NewNpcTemplate(name)
 	_chars[template.GetId()] = template
 
@@ -308,18 +253,12 @@ func DeleteNpcId(id bson.ObjectId) {
 // DeletePlayerCharacter removes the character (either NPC or player-controlled)
 // associated with the given id from the model and from the database
 func DeletePlayerCharacter(pc *db.PlayerChar) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	delete(_objects, pc.GetId())
+	ds.Remove(pc)
 	utils.HandleError(db.DeleteObject(pc))
 }
 
 func DeleteNpc(npc *db.NonPlayerChar) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	delete(_objects, npc.GetId())
+	ds.Remove(npc)
 	utils.HandleError(db.DeleteObject(npc))
 }
 
@@ -331,31 +270,22 @@ func CreateRoom(zone *db.Zone, location db.Coordinate) (*db.Room, error) {
 		return nil, errors.New("A room already exists at that location")
 	}
 
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	room := db.NewRoom(zone.GetId(), location)
-	_objects[room.GetId()] = room
+	ds.Set(room)
 
 	return room, nil
 }
 
 // GetRoom returns the room object associated with the given id
 func GetRoom(id bson.ObjectId) *db.Room {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	return _objects[id].(*db.Room)
+	return ds.Get(id).(*db.Room)
 }
 
 // GetRooms returns a list of all of the rooms in the entire model
 func GetRooms() db.Rooms {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	var rooms []*db.Room
 	for _, id := range db.FindAll(db.RoomType) {
-		rooms = append(rooms, _objects[id].(*db.Room))
+		rooms = append(rooms, ds.Get(id).(*db.Room))
 	}
 
 	return rooms
@@ -380,12 +310,9 @@ func GetRoomsInZone(zone *db.Zone) []*db.Room {
 // GetRoomByLocation searches for the room associated with the given coordinate
 // in the given zone. Returns a nil room object if it was not found.
 func GetRoomByLocation(coordinate db.Coordinate, zone *db.Zone) *db.Room {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	for _, id := range db.Find(db.RoomType, "zoneid", zone.GetId()) {
 		// TODO move this check into the DB query
-		room := _objects[id].(*db.Room)
+		room := ds.Get(id).(*db.Room)
 		if room.GetLocation() == coordinate {
 			return room
 		}
@@ -396,21 +323,15 @@ func GetRoomByLocation(coordinate db.Coordinate, zone *db.Zone) *db.Room {
 
 // GetZone returns the zone object associated with the given id
 func GetZone(zoneId bson.ObjectId) *db.Zone {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	return _objects[zoneId].(*db.Zone)
+	return ds.Get(zoneId).(*db.Zone)
 }
 
 // GetZones returns all of the zones in the model
 func GetZones() db.Zones {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	var zones db.Zones
 
 	for _, id := range db.FindAll(db.ZoneType) {
-		zones = append(zones, _objects[id].(*db.Zone))
+		zones = append(zones, ds.Get(id).(*db.Zone))
 	}
 
 	return zones
@@ -423,56 +344,39 @@ func CreateZone(name string) (*db.Zone, error) {
 		return nil, errors.New("A zone with that name already exists")
 	}
 
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	zone := db.NewZone(name)
-	_objects[zone.GetId()] = zone
+	ds.Set(zone)
 
 	return zone, nil
 }
 
 // Removes the given Zone from the model and the database
 func DeleteZone(zone *db.Zone) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	delete(_objects, zone.GetId())
+	ds.Remove(zone)
 	utils.HandleError(db.DeleteObject(zone))
 }
 
 // GetZoneByName name searches for a zone with the given name
 func GetZoneByName(name string) *db.Zone {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	for _, id := range db.Find(db.ZoneType, "name", utils.FormatName(name)) {
-		return _objects[id].(*db.Zone)
+		return ds.Get(id).(*db.Zone)
 	}
 
 	return nil
 }
 
 func GetAreas(zone *db.Zone) db.Areas {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	var areas db.Areas
 	for _, id := range db.FindAll(db.AreaType) {
-		areas = append(areas, _objects[id].(*db.Area))
+		areas = append(areas, ds.Get(id).(*db.Area))
 	}
 
 	return areas
 }
 
 func GetArea(areaId bson.ObjectId) *db.Area {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	area, found := _objects[areaId]
-
-	if found {
-		return area.(*db.Area)
+	if ds.ContainsId(areaId) {
+		return ds.Get(areaId).(*db.Area)
 	}
 
 	return nil
@@ -483,42 +387,31 @@ func CreateArea(name string, zone *db.Zone) (*db.Area, error) {
 		return nil, errors.New("An area with that name already exists")
 	}
 
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	area := db.NewArea(name, zone.GetId())
-	_objects[area.GetId()] = area
+	ds.Set(area)
 
 	return area, nil
 }
 
 func GetAreaByName(name string) *db.Area {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
 	for _, id := range db.Find(db.AreaType, "name", utils.FormatName(name)) {
-		return _objects[id].(*db.Area)
+		return ds.Get(id).(*db.Area)
 	}
 
 	return nil
 }
 
 func DeleteArea(area *db.Area) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	delete(_objects, area.GetId())
+	ds.Remove(area)
 	utils.HandleError(db.DeleteObject(area))
 }
 
 // DeleteRoom removes the given room object from the model and the database. It
 // also disables all exits in neighboring rooms that lead to the given room.
 func DeleteRoom(room *db.Room) {
-	mutex.Lock()
-	delete(_objects, room.GetId())
+	ds.Remove(room)
 
 	utils.HandleError(db.DeleteObject(room))
-	mutex.Unlock()
 
 	// Disconnect all exits leading to this room
 	loc := room.GetLocation()
@@ -546,31 +439,22 @@ func DeleteRoom(room *db.Room) {
 
 // GetUser returns the User object associated with the given id
 func GetUser(id bson.ObjectId) *db.User {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	return _objects[id].(*db.User)
+	return ds.Get(id).(*db.User)
 }
 
 // CreateItem creates an item object in the database with the given name and
 // adds it to the model. It's up to the caller to ensure that the item actually
 // gets put somewhere meaningful.
 func CreateItem(name string) *db.Item {
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	item := db.NewItem(name)
-	_objects[item.GetId()] = item
+	ds.Set(item)
 
 	return item
 }
 
 // GetItem returns the Item object associated the given id
 func GetItem(id bson.ObjectId) *db.Item {
-	mutex.RLock()
-	defer mutex.RUnlock()
-
-	return _objects[id].(*db.Item)
+	return ds.Get(id).(*db.Item)
 }
 
 // GetItems returns the Items object associated the given ids
@@ -596,34 +480,27 @@ func DeleteItemId(itemId bson.ObjectId) {
 // DeleteItem removes the item associated with the given id from the
 // model and from the database
 func DeleteItem(item *db.Item) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	delete(_objects, item.GetId())
+	ds.Remove(item)
 
 	utils.HandleError(db.DeleteObject(item))
 }
 
-func DeleteObject(obj db.Identifiable) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	delete(_objects, obj.GetId())
+func DeleteObject(obj ds.Identifiable) {
+	ds.Remove(obj)
 	utils.HandleError(db.DeleteObject(obj))
 }
 
 // Initializes the global model object and starts up the main event loop
 func Init(session db.Session, dbName string) error {
+	ds.Init()
 	db.Init(session, dbName)
-
-	_objects = map[bson.ObjectId]db.Identifiable{}
 
 	users := []*db.User{}
 	err := db.RetrieveObjects(db.UserType, &users)
 	utils.HandleError(err)
 
 	for _, user := range users {
-		_objects[user.GetId()] = user
+		ds.Set(user)
 	}
 
 	characters := []*db.PlayerChar{}
@@ -631,7 +508,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, character := range characters {
-		_objects[character.GetId()] = character
+		ds.Set(character)
 	}
 
 	npcs := []*db.NonPlayerChar{}
@@ -639,7 +516,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, npc := range npcs {
-		_objects[npc.GetId()] = npc
+		ds.Set(npc)
 	}
 
 	zones := []*db.Zone{}
@@ -647,7 +524,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, zone := range zones {
-		_objects[zone.GetId()] = zone
+		ds.Set(zone)
 	}
 
 	areas := []*db.Area{}
@@ -655,7 +532,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, area := range areas {
-		_objects[area.GetId()] = area
+		ds.Set(area)
 	}
 
 	rooms := []*db.Room{}
@@ -663,7 +540,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, room := range rooms {
-		_objects[room.GetId()] = room
+		ds.Set(room)
 	}
 
 	items := []*db.Item{}
@@ -671,7 +548,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, item := range items {
-		_objects[item.GetId()] = item
+		ds.Set(item)
 	}
 
 	// Start the event loop
