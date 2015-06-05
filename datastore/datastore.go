@@ -59,3 +59,10 @@ func Remove(obj Identifiable) {
 
 	delete(_data, obj.GetId())
 }
+
+func ClearAll() {
+	_mutex.Lock()
+	defer _mutex.Unlock()
+
+	Init()
+}

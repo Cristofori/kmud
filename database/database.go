@@ -180,7 +180,7 @@ func DeleteObject(obj datastore.Identifiable) error {
 func commitObject(id bson.ObjectId) error {
 	object := datastore.Get(id)
 
-	if object.IsDestroyed() {
+	if object == nil || object.IsDestroyed() {
 		return nil
 	}
 

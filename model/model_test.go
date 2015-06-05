@@ -3,17 +3,18 @@ package model
 import (
 	"gopkg.in/mgo.v2"
 	"kmud/database"
+	"kmud/datastore"
 	"kmud/testutils"
 	tu "kmud/testutils"
 	"testing"
 	"time"
 )
 
+var _db *mgo.Database
+
 func _cleanup(t *testing.T) {
-	for _, object := range _objects {
-		DeleteObject(object.(database.Identifiable))
-	}
-	tu.Assert(len(_objects) == 0, t, "Failed to cleanup all objects")
+	_db.DropDatabase()
+	datastore.ClearAll()
 }
 
 func Test_Init(t *testing.T) {
@@ -26,10 +27,10 @@ func Test_Init(t *testing.T) {
 
 	dbName := "unit_model_test"
 
+	_db = session.DB(dbName)
+
 	session.DB(dbName).DropDatabase()
 	Init(database.NewMongoSession(session), dbName)
-
-	tu.Assert(_objects != nil, t, "Init() failed to initialize objects")
 }
 
 func Test_UserFunctions(t *testing.T) {
