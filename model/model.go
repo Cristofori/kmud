@@ -11,7 +11,6 @@ import (
 
 var _objects map[bson.ObjectId]db.Identifiable
 
-var _areas map[bson.ObjectId]*db.Area
 var _rooms map[bson.ObjectId]*db.Room
 var _items map[bson.ObjectId]*db.Item
 
@@ -461,11 +460,8 @@ func GetAreas(zone *db.Zone) db.Areas {
 	defer mutex.RUnlock()
 
 	var areas db.Areas
-
-	for _, area := range _areas {
-		if area.GetZoneId() == zone.GetId() {
-			areas = append(areas, area)
-		}
+	for _, id := range db.FindAll(db.AreaType) {
+		areas = append(areas, _objects[id].(*db.Area))
 	}
 
 	return areas
@@ -475,7 +471,7 @@ func GetArea(areaId bson.ObjectId) *db.Area {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	return _areas[areaId]
+	return _objects[areaId].(*db.Area)
 }
 
 func CreateArea(name string, zone *db.Zone) (*db.Area, error) {
@@ -487,7 +483,7 @@ func CreateArea(name string, zone *db.Zone) (*db.Area, error) {
 	defer mutex.Unlock()
 
 	area := db.NewArea(name, zone.GetId())
-	_areas[area.GetId()] = area
+	_objects[area.GetId()] = area
 
 	return area, nil
 }
@@ -496,10 +492,8 @@ func GetAreaByName(name string) *db.Area {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	for _, area := range _areas {
-		if utils.Compare(area.GetName(), name) {
-			return area
-		}
+	for _, id := range db.Find(db.AreaType, "name", utils.FormatName(name)) {
+		return _objects[id].(*db.Area)
 	}
 
 	return nil
@@ -509,7 +503,7 @@ func DeleteArea(area *db.Area) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	delete(_areas, area.GetId())
+	delete(_objects, area.GetId())
 	utils.HandleError(db.DeleteObject(area))
 }
 
@@ -620,7 +614,6 @@ func Init(session db.Session, dbName string) error {
 
 	_objects = map[bson.ObjectId]db.Identifiable{}
 
-	_areas = map[bson.ObjectId]*db.Area{}
 	_rooms = map[bson.ObjectId]*db.Room{}
 	_items = map[bson.ObjectId]*db.Item{}
 
@@ -661,7 +654,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, area := range areas {
-		_areas[area.GetId()] = area
+		_objects[area.GetId()] = area
 	}
 
 	rooms := []*db.Room{}

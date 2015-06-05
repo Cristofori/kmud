@@ -2,6 +2,7 @@ package database
 
 import (
 	"gopkg.in/mgo.v2/bson"
+	"kmud/utils"
 )
 
 type Area struct {
@@ -17,7 +18,7 @@ func NewArea(name string, zone bson.ObjectId) *Area {
 	var area Area
 
 	area.ZoneId = zone
-	area.Name = name
+	area.Name = utils.FormatName(name)
 
 	area.initDbObject()
 	commitObject(&area)
