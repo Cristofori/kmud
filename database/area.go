@@ -21,8 +21,7 @@ func NewArea(name string, zone bson.ObjectId) *Area {
 	area.ZoneId = zone
 	area.Name = utils.FormatName(name)
 
-	area.initDbObject()
-	commitObject(&area)
+	area.initDbObject(&area)
 
 	return &area
 }

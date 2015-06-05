@@ -14,11 +14,7 @@ type Item struct {
 func NewItem(name string) *Item {
 	var item Item
 	item.Name = utils.FormatName(name)
-
-	item.initDbObject()
-
-	commitObject(&item)
-
+	item.initDbObject(&item)
 	return &item
 }
 

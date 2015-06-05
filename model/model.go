@@ -12,10 +12,7 @@ import (
 // CreateUser creates a new User object in the database and adds it to the model.
 // A pointer to the new User object is returned.
 func CreateUser(name string, password string) *db.User {
-	user := db.NewUser(name, password)
-	ds.Set(user)
-
-	return user
+	return db.NewUser(name, password)
 }
 
 // GetOrCreateUser attempts to retrieve the existing user from the model by the given name.
@@ -202,10 +199,7 @@ func GetOnlinePlayerCharacters() []*db.PlayerChar {
 // database and adds it to the model.  A pointer to the new character object is
 // returned.
 func CreatePlayerCharacter(name string, parentUser *db.User, startingRoom *db.Room) *db.PlayerChar {
-	pc := db.NewPlayerChar(name, parentUser.GetId(), startingRoom.GetId())
-	ds.Set(pc)
-
-	return pc
+	return db.NewPlayerChar(name, parentUser.GetId(), startingRoom.GetId())
 }
 
 // GetOrCreatePlayerCharacter attempts to retrieve the existing user from the model by the given name.
@@ -227,10 +221,7 @@ func GetOrCreatePlayerCharacter(name string, parentUser *db.User, startingRoom *
 // CreateNpc is a convenience function for creating a new character object that
 // is an NPC (as opposed to an actual player-controlled character)
 func CreateNpc(name string, room *db.Room) *db.NonPlayerChar {
-	npc := db.NewNonPlayerChar(name, room.GetId())
-	ds.Set(npc)
-
-	return npc
+	return db.NewNonPlayerChar(name, room.GetId())
 }
 
 /*
@@ -270,10 +261,7 @@ func CreateRoom(zone *db.Zone, location db.Coordinate) (*db.Room, error) {
 		return nil, errors.New("A room already exists at that location")
 	}
 
-	room := db.NewRoom(zone.GetId(), location)
-	ds.Set(room)
-
-	return room, nil
+	return db.NewRoom(zone.GetId(), location), nil
 }
 
 // GetRoom returns the room object associated with the given id
@@ -344,10 +332,7 @@ func CreateZone(name string) (*db.Zone, error) {
 		return nil, errors.New("A zone with that name already exists")
 	}
 
-	zone := db.NewZone(name)
-	ds.Set(zone)
-
-	return zone, nil
+	return db.NewZone(name), nil
 }
 
 // Removes the given Zone from the model and the database
@@ -387,10 +372,7 @@ func CreateArea(name string, zone *db.Zone) (*db.Area, error) {
 		return nil, errors.New("An area with that name already exists")
 	}
 
-	area := db.NewArea(name, zone.GetId())
-	ds.Set(area)
-
-	return area, nil
+	return db.NewArea(name, zone.GetId()), nil
 }
 
 func GetAreaByName(name string) *db.Area {
@@ -446,10 +428,7 @@ func GetUser(id bson.ObjectId) *db.User {
 // adds it to the model. It's up to the caller to ensure that the item actually
 // gets put somewhere meaningful.
 func CreateItem(name string) *db.Item {
-	item := db.NewItem(name)
-	ds.Set(item)
-
-	return item
+	return db.NewItem(name)
 }
 
 // GetItem returns the Item object associated the given id
@@ -503,12 +482,13 @@ func Init(session db.Session, dbName string) error {
 		ds.Set(user)
 	}
 
-	characters := []*db.PlayerChar{}
-	err = db.RetrieveObjects(db.PcType, &characters)
+	pcs := []*db.PlayerChar{}
+	err = db.RetrieveObjects(db.PcType, &pcs)
 	utils.HandleError(err)
 
-	for _, character := range characters {
-		ds.Set(character)
+	for _, pc := range pcs {
+		pc.SetObjectType(db.PcType)
+		ds.Set(pc)
 	}
 
 	npcs := []*db.NonPlayerChar{}
@@ -516,6 +496,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, npc := range npcs {
+		npc.SetObjectType(db.NpcType)
 		ds.Set(npc)
 	}
 

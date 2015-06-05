@@ -2,6 +2,7 @@ package database
 
 import (
 	"gopkg.in/mgo.v2/bson"
+	"kmud/datastore"
 	"sync"
 )
 
@@ -12,8 +13,10 @@ type DbObject struct {
 	destroyed bool
 }
 
-func (self *DbObject) initDbObject() {
+func (self *DbObject) initDbObject(i datastore.Identifiable) {
 	self.Id = bson.NewObjectId()
+	datastore.Set(i)
+	commitObject(self.Id)
 }
 
 func (self *DbObject) GetId() bson.ObjectId {

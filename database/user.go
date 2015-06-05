@@ -34,8 +34,7 @@ func NewUser(name string, password string) *User {
 	user.windowWidth = 80
 	user.windowHeight = 40
 
-	user.initDbObject()
-	commitObject(&user)
+	user.initDbObject(&user)
 	return &user
 }
 

@@ -37,8 +37,8 @@ type Iterator interface {
 	All(interface{}) error
 }
 
-var modifiedObjects map[datastore.Identifiable]bool
-var modifiedObjectChannel chan datastore.Identifiable
+var modifiedObjects map[bson.ObjectId]bool
+var modifiedObjectChannel chan bson.ObjectId
 
 var _session Session
 var _dbName string
@@ -47,14 +47,14 @@ func Init(session Session, dbName string) {
 	_session = session
 	_dbName = dbName
 
-	modifiedObjects = make(map[datastore.Identifiable]bool)
-	modifiedObjectChannel = make(chan datastore.Identifiable, 10)
+	modifiedObjects = make(map[bson.ObjectId]bool)
+	modifiedObjectChannel = make(chan bson.ObjectId, 10)
 
 	go watchModifiedObjects()
 }
 
 func objectModified(obj datastore.Identifiable) {
-	modifiedObjectChannel <- obj
+	modifiedObjectChannel <- obj.GetId()
 }
 
 func watchModifiedObjects() {
@@ -71,8 +71,8 @@ func watchModifiedObjects() {
 
 func saveModifiedObjects() {
 	modifiedObjectsMutex.Lock()
-	for obj := range modifiedObjects {
-		commitObject(obj)
+	for id := range modifiedObjects {
+		commitObject(id)
 	}
 	modifiedObjectsMutex.Unlock()
 }
@@ -177,7 +177,9 @@ func DeleteObject(obj datastore.Identifiable) error {
 	return err
 }
 
-func commitObject(object datastore.Identifiable) error {
+func commitObject(id bson.ObjectId) error {
+	object := datastore.Get(id)
+
 	if object.IsDestroyed() {
 		return nil
 	}

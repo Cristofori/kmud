@@ -39,31 +39,29 @@ type PlayerCharList []*PlayerChar
 type NonPlayerCharList []*NonPlayerChar
 
 func initCharacter(character *Character, name string, objType datastore.ObjectType, roomId bson.ObjectId) {
-	character.SetRoomId(roomId)
-	character.SetCash(0)
-	character.SetHealth(100)
-	character.SetHitPoints(100)
-	character.SetName(utils.FormatName(name))
+	character.RoomId = roomId
+	character.Cash = 0
+	character.Health = 100
+	character.HitPoints = 100
+	character.Name = utils.FormatName(name)
 	character.objType = objType
-
-	character.initDbObject()
 }
 
 func NewPlayerChar(name string, userId bson.ObjectId, roomId bson.ObjectId) *PlayerChar {
-	var player PlayerChar
+	var pc PlayerChar
 
-	player.UserId = userId
-	player.online = false
+	pc.UserId = userId
+	pc.online = false
 
-	initCharacter(&player.Character, name, PcType, roomId)
-	commitObject(&player)
-	return &player
+	initCharacter(&pc.Character, name, PcType, roomId)
+	pc.initDbObject(&pc)
+	return &pc
 }
 
 func NewNonPlayerChar(name string, roomId bson.ObjectId) *NonPlayerChar {
 	var npc NonPlayerChar
 	initCharacter(&npc.Character, name, NpcType, roomId)
-	commitObject(&npc)
+	npc.initDbObject(&npc)
 	return &npc
 }
 
@@ -85,6 +83,11 @@ func (self *Character) SetName(name string) {
 		self.WriteUnlock()
 		objectModified(self)
 	}
+}
+
+// Used when loading existing characters from the DB
+func (self *Character) SetObjectType(t datastore.ObjectType) {
+	self.objType = t
 }
 
 /*

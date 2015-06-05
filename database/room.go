@@ -54,8 +54,7 @@ func NewRoom(zoneId bson.ObjectId, location Coordinate) *Room {
 	room.Location = location
 	room.ZoneId = zoneId
 
-	room.initDbObject()
-	commitObject(&room)
+	room.initDbObject(&room)
 	return &room
 }
 
