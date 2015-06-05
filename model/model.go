@@ -9,9 +9,8 @@ import (
 	"sync"
 )
 
-var _objects map[bson.ObjectId]interface{}
+var _objects map[bson.ObjectId]db.Identifiable
 
-var _npcs map[bson.ObjectId]*db.NonPlayerChar
 var _zones map[bson.ObjectId]*db.Zone
 var _areas map[bson.ObjectId]*db.Area
 var _rooms map[bson.ObjectId]*db.Room
@@ -99,7 +98,7 @@ func GetNpc(id bson.ObjectId) *db.NonPlayerChar {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	return _npcs[id]
+	return _objects[id].(*db.NonPlayerChar)
 }
 
 func GetCharacterByName(name string) *db.Character {
@@ -135,25 +134,21 @@ func GetNpcByName(name string) *db.NonPlayerChar {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	name = utils.Simplify(name)
-
-	for _, npc := range _npcs {
-		if npc.GetName() == name {
-			return npc
-		}
+	for _, id := range db.Find(db.NpcType, "name", utils.FormatName(name)) {
+		return _objects[id].(*db.NonPlayerChar)
 	}
 
 	return nil
 }
 
-func GetNpcs() []*db.NonPlayerChar {
+func GetNpcs() db.NonPlayerCharList {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	npcs := []*db.NonPlayerChar{}
+	var npcs db.NonPlayerCharList
 
-	for _, npc := range _npcs {
-		npcs = append(npcs, npc)
+	for _, id := range db.FindAll(db.NpcType) {
+		npcs = append(npcs, _objects[id].(*db.NonPlayerChar))
 	}
 
 	return npcs
@@ -228,12 +223,10 @@ func NpcsIn(room *db.Room) db.NonPlayerCharList {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	var npcs []*db.NonPlayerChar
+	var npcs db.NonPlayerCharList
 
-	for _, npc := range _npcs {
-		if npc.GetRoomId() == room.GetId() {
-			npcs = append(npcs, npc)
-		}
+	for _, id := range db.Find(db.NpcType, "roomid", room.GetId()) {
+		npcs = append(npcs, _objects[id].(*db.NonPlayerChar))
 	}
 
 	return npcs
@@ -292,7 +285,7 @@ func CreateNpc(name string, room *db.Room) *db.NonPlayerChar {
 	defer mutex.Unlock()
 
 	npc := db.NewNonPlayerChar(name, room.GetId())
-	_npcs[npc.GetId()] = npc
+	_objects[npc.GetId()] = npc
 
 	return npc
 }
@@ -331,7 +324,7 @@ func DeleteNpc(npc *db.NonPlayerChar) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	delete(_npcs, npc.GetId())
+	delete(_objects, npc.GetId())
 	utils.HandleError(db.DeleteObject(npc))
 }
 
@@ -629,9 +622,8 @@ func DeleteObject(obj db.Identifiable) {
 func Init(session db.Session, dbName string) error {
 	db.Init(session, dbName)
 
-	_objects = map[bson.ObjectId]interface{}{}
+	_objects = map[bson.ObjectId]db.Identifiable{}
 
-	_npcs = map[bson.ObjectId]*db.NonPlayerChar{}
 	_zones = map[bson.ObjectId]*db.Zone{}
 	_areas = map[bson.ObjectId]*db.Area{}
 	_rooms = map[bson.ObjectId]*db.Room{}
@@ -658,7 +650,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, npc := range npcs {
-		_npcs[npc.GetId()] = npc
+		_objects[npc.GetId()] = npc
 	}
 
 	zones := []*db.Zone{}

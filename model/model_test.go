@@ -15,11 +15,6 @@ func _cleanup(t *testing.T) {
 	}
 	tu.Assert(len(_items) == 0, t, "Failed to cleanup all items")
 
-	for _, npc := range _npcs {
-		DeleteNpc(npc)
-	}
-	tu.Assert(len(_npcs) == 0, t, "Failed to cleanup all nps")
-
 	for _, object := range _objects {
 		DeleteObject(object.(database.Identifiable))
 	}
@@ -47,11 +42,9 @@ func Test_Init(t *testing.T) {
 	dbName := "unit_model_test"
 
 	session.DB(dbName).DropDatabase()
-
 	Init(database.NewMongoSession(session), dbName)
 
 	tu.Assert(_objects != nil, t, "Init() failed to initialize objects")
-	tu.Assert(_npcs != nil, t, "Init() failed to initialize npcs")
 	tu.Assert(_rooms != nil, t, "Init() failed to initialize rooms")
 	tu.Assert(_zones != nil, t, "Init() failed to initialize zones")
 	tu.Assert(_items != nil, t, "Init() failed to initialize items")
