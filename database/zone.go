@@ -16,7 +16,7 @@ func NewZone(name string) *Zone {
 	zone.Name = utils.FormatName(name)
 
 	zone.initDbObject()
-	objectModified(&zone)
+	commitObject(&zone)
 	return &zone
 }
 

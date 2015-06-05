@@ -39,10 +39,12 @@ type Iterator interface {
 var modifiedObjects map[Identifiable]bool
 var modifiedObjectChannel chan Identifiable
 
-var session Session
+var _session Session
+var _dbName string
 
-func Init(s Session) {
-	session = s
+func Init(session Session, dbName string) {
+	_session = session
+	_dbName = dbName
 
 	modifiedObjects = make(map[Identifiable]bool)
 	modifiedObjectChannel = make(chan Identifiable, 10)
@@ -75,7 +77,7 @@ func saveModifiedObjects() {
 }
 
 func getCollection(collection collectionName) Collection {
-	return session.DB("mud").C(string(collection))
+	return _session.DB(_dbName).C(string(collection))
 }
 
 func getCollectionOfObject(obj Identifiable) Collection {
@@ -164,7 +166,14 @@ func find(t ObjectType, query interface{}) []bson.ObjectId {
 func DeleteObject(obj Identifiable) error {
 	obj.Destroy()
 	c := getCollectionOfObject(obj)
-	return c.RemoveId(obj.GetId())
+
+	err := c.RemoveId(obj.GetId())
+
+	if err != nil {
+		fmt.Println("Delete object failed", obj.GetId())
+	}
+
+	return err
 }
 
 func commitObject(object Identifiable) error {

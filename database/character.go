@@ -55,14 +55,14 @@ func NewPlayerChar(name string, userId bson.ObjectId, roomId bson.ObjectId) *Pla
 	player.online = false
 
 	initCharacter(&player.Character, name, PcType, roomId)
-	objectModified(&player)
+	commitObject(&player)
 	return &player
 }
 
 func NewNonPlayerChar(name string, roomId bson.ObjectId) *NonPlayerChar {
 	var npc NonPlayerChar
 	initCharacter(&npc.Character, name, NpcType, roomId)
-	objectModified(&npc)
+	commitObject(&npc)
 	return &npc
 }
 

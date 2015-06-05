@@ -20,7 +20,7 @@ func NewArea(name string, zone bson.ObjectId) *Area {
 	area.Name = name
 
 	area.initDbObject()
-	objectModified(&area)
+	commitObject(&area)
 
 	return &area
 }

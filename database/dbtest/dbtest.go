@@ -1,10 +1,10 @@
 package dbtest
 
 import (
+	"gopkg.in/mgo.v2/bson"
 	"kmud/database"
 	"kmud/testutils"
 	"kmud/utils"
-	"labix.org/v2/mgo/bson"
 	"runtime"
 	"strconv"
 	"sync"
@@ -78,7 +78,7 @@ func (mi TestIterator) All(result interface{}) error {
 
 func Test_ThreadSafety(t *testing.T) {
 	runtime.GOMAXPROCS(2)
-	database.Init(&TestSession{})
+	database.Init(&TestSession{}, "unit_dbtest")
 
 	char := database.NewPlayerChar("test", "", "")
 

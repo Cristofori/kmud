@@ -186,8 +186,6 @@ func GetUserCharacters(user *db.User) []*db.PlayerChar {
 
 	id := user.GetId()
 
-	tmp := db.Find(db.PcType, "userid", id)
-
 	for _, id := range db.Find(db.PcType, "userid", id) {
 		characters = append(characters, _objects[id].(*db.PlayerChar))
 	}
@@ -619,9 +617,17 @@ func DeleteItem(item *db.Item) {
 	utils.HandleError(db.DeleteObject(item))
 }
 
+func DeleteObject(obj db.Identifiable) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	delete(_objects, obj.GetId())
+	utils.HandleError(db.DeleteObject(obj))
+}
+
 // Initializes the global model object and starts up the main event loop
-func Init(session db.Session) error {
-	db.Init(session)
+func Init(session db.Session, dbName string) error {
+	db.Init(session, dbName)
 
 	_objects = map[bson.ObjectId]interface{}{}
 

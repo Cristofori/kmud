@@ -16,6 +16,8 @@ func NewItem(name string) *Item {
 
 	item.initDbObject()
 
+	commitObject(&item)
+
 	return &item
 }
 

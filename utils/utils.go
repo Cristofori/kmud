@@ -103,6 +103,7 @@ func GetUserInput(conn io.ReadWriter, prompt string, cm ColorMode) string {
 
 func HandleError(err error) {
 	if err != nil {
+		panic(err)
 		log.Fatalf("Error: %s", err)
 	}
 }

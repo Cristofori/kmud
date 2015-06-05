@@ -1,8 +1,8 @@
 package model
 
 import (
+	"gopkg.in/mgo.v2"
 	"kmud/database"
-	"kmud/database/dbtest"
 	"kmud/testutils"
 	tu "kmud/testutils"
 	"testing"
@@ -15,20 +15,15 @@ func _cleanup(t *testing.T) {
 	}
 	tu.Assert(len(_items) == 0, t, "Failed to cleanup all items")
 
-	for _, char := range _chars {
-		DeletePlayerCharacter(char)
-	}
-	tu.Assert(len(_chars) == 0, t, "Failed to cleanup all player characters")
-
 	for _, npc := range _npcs {
 		DeleteNpc(npc)
 	}
 	tu.Assert(len(_npcs) == 0, t, "Failed to cleanup all nps")
 
-	for _, user := range _users {
-		DeleteUser(user)
+	for _, object := range _objects {
+		DeleteObject(object.(database.Identifiable))
 	}
-	tu.Assert(len(_users) == 0, t, "Failed to cleanup all users")
+	tu.Assert(len(_objects) == 0, t, "Failed to cleanup all objects")
 
 	for _, room := range _rooms {
 		DeleteRoom(room)
@@ -42,10 +37,20 @@ func _cleanup(t *testing.T) {
 }
 
 func Test_Init(t *testing.T) {
-	Init(&dbtest.TestSession{})
+	session, err := mgo.Dial("localhost")
+	tu.Assert(err == nil, t, "Failed to connect to database")
 
-	tu.Assert(_users != nil, t, "Init() failed to initialize users")
-	tu.Assert(_chars != nil, t, "Init() failed to initialize player chars")
+	if err != nil {
+		return
+	}
+
+	dbName := "unit_model_test"
+
+	session.DB(dbName).DropDatabase()
+
+	Init(database.NewMongoSession(session), dbName)
+
+	tu.Assert(_objects != nil, t, "Init() failed to initialize objects")
 	tu.Assert(_npcs != nil, t, "Init() failed to initialize npcs")
 	tu.Assert(_rooms != nil, t, "Init() failed to initialize rooms")
 	tu.Assert(_zones != nil, t, "Init() failed to initialize zones")
@@ -62,13 +67,11 @@ func Test_UserFunctions(t *testing.T) {
 	tu.Assert(user1.VerifyPassword(password1), t, "User creation failed, bad password")
 
 	user2 := GetOrCreateUser(name1, password1)
-	tu.Assert(len(_users) == 1, t, "GetOrCreateUser() shouldn't have created a new user")
-	tu.Assert(user1 == user2, t, "GetOrCreateUser() should have returned the user we alreayd created")
+	tu.Assert(user1 == user2, t, "GetOrCreateUser() should have returned the user we already created")
 
 	name2 := "test_name2"
 	password2 := "test_password2"
 	user3 := GetOrCreateUser(name2, password2)
-	tu.Assert(len(_users) == 2, t, "GetOrCreateUser() should have created a new user")
 	tu.Assert(user3 != user2 && user3 != user1, t, "GetOrCreateUser() shouldn't have returned an already existing user")
 
 	userList := GetUsers()
@@ -82,18 +85,16 @@ func Test_UserFunctions(t *testing.T) {
 	userByName = GetUserByName("foobar")
 	tu.Assert(userByName == nil, t, "GetUserByName() should have returned nill")
 
-	DeleteUser(user1)
-	userByName = GetUserByName(name1)
-	tu.Assert(userByName == nil, t, "DeleteUser() failed to delete user1")
-	userList = GetUsers()
-	tu.Assert(!userList.Contains(user1), t, "GetUsers() shouldn't have user1 in it anymore")
-
 	zone, _ := CreateZone("testZone")
 	room, _ := CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
 	CreatePlayerCharacter("testPlayer", user1, room)
 
 	DeleteUser(user1)
-	tu.Assert(len(_chars) == 0, t, "Deleting a user should have deleted its characters")
+	userByName = GetUserByName(name1)
+	tu.Assert(userByName == nil, t, "DeleteUser() failed to delete user1")
+	userList = GetUsers()
+	tu.Assert(!userList.Contains(user1), t, "GetUsers() shouldn't have user1 in it anymore")
+	tu.Assert(len(GetUserCharacters(user1)) == 0, t, "Deleting a user should have deleted its characters")
 
 	_cleanup(t)
 }
