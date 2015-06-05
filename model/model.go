@@ -11,7 +11,6 @@ import (
 
 var _objects map[bson.ObjectId]db.Identifiable
 
-var _zones map[bson.ObjectId]*db.Zone
 var _areas map[bson.ObjectId]*db.Area
 var _rooms map[bson.ObjectId]*db.Room
 var _items map[bson.ObjectId]*db.Item
@@ -403,7 +402,7 @@ func GetZone(zoneId bson.ObjectId) *db.Zone {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	return _zones[zoneId]
+	return _objects[zoneId].(*db.Zone)
 }
 
 // GetZones returns all of the zones in the model
@@ -413,8 +412,8 @@ func GetZones() db.Zones {
 
 	var zones db.Zones
 
-	for _, zone := range _zones {
-		zones = append(zones, zone)
+	for _, id := range db.FindAll(db.ZoneType) {
+		zones = append(zones, _objects[id].(*db.Zone))
 	}
 
 	return zones
@@ -431,30 +430,27 @@ func CreateZone(name string) (*db.Zone, error) {
 	defer mutex.Unlock()
 
 	zone := db.NewZone(name)
-	_zones[zone.GetId()] = zone
+	_objects[zone.GetId()] = zone
 
 	return zone, nil
 }
 
-// Removes the given Zone from the model. Removes it from the database as well.
+// Removes the given Zone from the model and the database
 func DeleteZone(zone *db.Zone) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	delete(_zones, zone.GetId())
+	delete(_objects, zone.GetId())
 	utils.HandleError(db.DeleteObject(zone))
 }
 
-// GetZoneByName name searches for a zone with the given name, returns a zone
-// object and whether or not it was found
+// GetZoneByName name searches for a zone with the given name
 func GetZoneByName(name string) *db.Zone {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	for _, zone := range _zones {
-		if utils.Compare(zone.GetName(), name) {
-			return zone
-		}
+	for _, id := range db.Find(db.ZoneType, "name", utils.FormatName(name)) {
+		return _objects[id].(*db.Zone)
 	}
 
 	return nil
@@ -624,7 +620,6 @@ func Init(session db.Session, dbName string) error {
 
 	_objects = map[bson.ObjectId]db.Identifiable{}
 
-	_zones = map[bson.ObjectId]*db.Zone{}
 	_areas = map[bson.ObjectId]*db.Area{}
 	_rooms = map[bson.ObjectId]*db.Room{}
 	_items = map[bson.ObjectId]*db.Item{}
@@ -658,7 +653,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, zone := range zones {
-		_zones[zone.GetId()] = zone
+		_objects[zone.GetId()] = zone
 	}
 
 	areas := []*db.Area{}

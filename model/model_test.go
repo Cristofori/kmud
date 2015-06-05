@@ -15,20 +15,15 @@ func _cleanup(t *testing.T) {
 	}
 	tu.Assert(len(_items) == 0, t, "Failed to cleanup all items")
 
-	for _, object := range _objects {
-		DeleteObject(object.(database.Identifiable))
-	}
-	tu.Assert(len(_objects) == 0, t, "Failed to cleanup all objects")
-
 	for _, room := range _rooms {
 		DeleteRoom(room)
 	}
 	tu.Assert(len(_rooms) == 0, t, "Failed to cleanup all rooms")
 
-	for _, zone := range _zones {
-		DeleteZone(zone)
+	for _, object := range _objects {
+		DeleteObject(object.(database.Identifiable))
 	}
-	tu.Assert(len(_zones) == 0, t, "Failed to cleanup all zones")
+	tu.Assert(len(_objects) == 0, t, "Failed to cleanup all objects")
 }
 
 func Test_Init(t *testing.T) {
@@ -46,7 +41,6 @@ func Test_Init(t *testing.T) {
 
 	tu.Assert(_objects != nil, t, "Init() failed to initialize objects")
 	tu.Assert(_rooms != nil, t, "Init() failed to initialize rooms")
-	tu.Assert(_zones != nil, t, "Init() failed to initialize zones")
 	tu.Assert(_items != nil, t, "Init() failed to initialize items")
 }
 
@@ -99,7 +93,7 @@ func Test_ZoneFunctions(t *testing.T) {
 	tu.Assert(zone1 != nil && err1 == nil, t, "Zone creation failed")
 
 	zoneByName := GetZoneByName(name)
-	tu.Assert(zoneByName == zone1, t, "GetZoneByName() failed")
+	tu.Assert(zoneByName == zone1, t, "GetZoneByName() failed", zoneByName, zone1)
 
 	zone2, err2 := CreateZone("zone2")
 	tu.Assert(zone2 != nil && err2 == nil, t, "Failed to create zone2")
