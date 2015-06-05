@@ -11,8 +11,6 @@ import (
 
 var _objects map[bson.ObjectId]db.Identifiable
 
-var _items map[bson.ObjectId]*db.Item
-
 var mutex sync.RWMutex
 
 // CreateUser creates a new User object in the database and adds it to the model.
@@ -562,7 +560,7 @@ func CreateItem(name string) *db.Item {
 	defer mutex.Unlock()
 
 	item := db.NewItem(name)
-	_items[item.GetId()] = item
+	_objects[item.GetId()] = item
 
 	return item
 }
@@ -572,7 +570,7 @@ func GetItem(id bson.ObjectId) *db.Item {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
-	return _items[id]
+	return _objects[id].(*db.Item)
 }
 
 // GetItems returns the Items object associated the given ids
@@ -601,7 +599,7 @@ func DeleteItem(item *db.Item) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	delete(_items, item.GetId())
+	delete(_objects, item.GetId())
 
 	utils.HandleError(db.DeleteObject(item))
 }
@@ -619,8 +617,6 @@ func Init(session db.Session, dbName string) error {
 	db.Init(session, dbName)
 
 	_objects = map[bson.ObjectId]db.Identifiable{}
-
-	_items = map[bson.ObjectId]*db.Item{}
 
 	users := []*db.User{}
 	err := db.RetrieveObjects(db.UserType, &users)
@@ -675,7 +671,7 @@ func Init(session db.Session, dbName string) error {
 	utils.HandleError(err)
 
 	for _, item := range items {
-		_items[item.GetId()] = item
+		_objects[item.GetId()] = item
 	}
 
 	// Start the event loop

@@ -10,11 +10,6 @@ import (
 )
 
 func _cleanup(t *testing.T) {
-	for _, item := range _items {
-		DeleteItem(item)
-	}
-	tu.Assert(len(_items) == 0, t, "Failed to cleanup all items")
-
 	for _, object := range _objects {
 		DeleteObject(object.(database.Identifiable))
 	}
@@ -35,7 +30,6 @@ func Test_Init(t *testing.T) {
 	Init(database.NewMongoSession(session), dbName)
 
 	tu.Assert(_objects != nil, t, "Init() failed to initialize objects")
-	tu.Assert(_items != nil, t, "Init() failed to initialize items")
 }
 
 func Test_UserFunctions(t *testing.T) {
