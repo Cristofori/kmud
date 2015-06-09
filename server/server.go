@@ -263,7 +263,7 @@ func handleConnection(conn *wrappedConnection) {
 	defer conn.Close()
 
 	var user *database.User
-	var player *database.PlayerChar
+	var pc *database.PlayerChar
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -275,8 +275,9 @@ func handleConnection(conn *wrappedConnection) {
 				username = user.GetName()
 			}
 
-			if player != nil {
-				charname = player.GetName()
+			if pc != nil {
+				pc.SetOnline(false)
+				charname = pc.GetName()
 			}
 
 			debug.PrintStack()
@@ -334,7 +335,7 @@ func handleConnection(conn *wrappedConnection) {
 				}
 			})
 
-		} else if player == nil {
+		} else if pc == nil {
 			menu := userMenu(user)
 			choice, charId := menu.Exec(conn, user.GetColorMode())
 
@@ -388,7 +389,7 @@ func handleConnection(conn *wrappedConnection) {
 					}
 				}
 			case "n":
-				player = newPlayer(conn, user)
+				pc = newPlayer(conn, user)
 			case "d":
 				for {
 					deleteMenu := deleteMenu(user)
@@ -410,13 +411,13 @@ func handleConnection(conn *wrappedConnection) {
 				_, err := strconv.Atoi(choice)
 
 				if err == nil {
-					player = model.GetPlayerCharacter(charId)
+					pc = model.GetPlayerCharacter(charId)
 				}
 			}
 		} else {
-			session := session.NewSession(conn, user, player)
+			session := session.NewSession(conn, user, pc)
 			session.Exec()
-			player = nil
+			pc = nil
 		}
 	}
 }
