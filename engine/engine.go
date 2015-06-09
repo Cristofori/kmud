@@ -18,20 +18,24 @@ func Start() {
 
 	eventChannel := model.Register()
 
-	event := <-eventChannel
+	go func() {
+		for {
+			event := <-eventChannel
 
-	if event.Type() == model.CreateEventType {
-		/*
-		   createEvent := event.(model.CreateEvent)
+			if event.Type() == model.CreateEventType {
+				/*
+				   createEvent := event.(model.CreateEvent)
 
-		   go func() {
-		       for {
-		           npc := (<-npcChannel).(*database.Character)
-		           manage(npc)
-		       }
-		   }()
-		*/
-	}
+				   go func() {
+				       for {
+				           npc := (<-npcChannel).(*database.Character)
+				           manage(npc)
+				       }
+				   }()
+				*/
+			}
+		}
+	}()
 }
 
 func manage(npc *database.NonPlayerChar) {
