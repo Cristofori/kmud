@@ -4,8 +4,8 @@ import pexpect, sys, re, random, exceptions
 
 host = "localhost"
 port = 8945
-user = "unit"
-password = "unit"
+user = "unit1"
+password = "unit1"
 
 def usage():
     print "Usage: %s [host] [port] [username] [password]" % sys.argv[0]
