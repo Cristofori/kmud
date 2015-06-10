@@ -3,9 +3,9 @@ package session
 import (
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
-	"kmud/database"
-	"kmud/model"
-	"kmud/utils"
+	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/model"
+	"github.com/Cristofori/kmud/utils"
 	"strconv"
 	"strings"
 )

@@ -2,10 +2,10 @@ package model
 
 import (
 	"gopkg.in/mgo.v2"
-	"kmud/database"
-	"kmud/datastore"
-	"kmud/testutils"
-	tu "kmud/testutils"
+	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/datastore"
+	"github.com/Cristofori/kmud/testutils"
+	tu "github.com/Cristofori/kmud/testutils"
 	"testing"
 	"time"
 )

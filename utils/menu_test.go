@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"kmud/testutils"
+	"github.com/Cristofori/kmud/testutils"
 	"strings"
 	"testing"
 )

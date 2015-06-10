@@ -2,7 +2,7 @@ package database
 
 import (
 	"gopkg.in/mgo.v2/bson"
-	"kmud/datastore"
+	"github.com/Cristofori/kmud/datastore"
 	"sync"
 )
 

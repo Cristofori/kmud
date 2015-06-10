@@ -3,8 +3,8 @@ package model
 import (
 	"container/list"
 	"fmt"
-	"kmud/database"
-	"kmud/utils"
+	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/utils"
 	"sync"
 	"time"
 )

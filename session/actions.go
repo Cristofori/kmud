@@ -1,9 +1,9 @@
 package session
 
 import (
-	"kmud/database"
-	"kmud/model"
-	"kmud/utils"
+	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/model"
+	"github.com/Cristofori/kmud/utils"
 	"strings"
 )
 

@@ -2,8 +2,8 @@ package database
 
 import (
 	"fmt"
-	"kmud/datastore"
-	"kmud/utils"
+	"github.com/Cristofori/kmud/datastore"
+	"github.com/Cristofori/kmud/utils"
 	"strings"
 )
 
