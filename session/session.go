@@ -2,11 +2,11 @@ package session
 
 import (
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
-	"io"
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/utils"
+	"gopkg.in/mgo.v2/bson"
+	"io"
 	"strconv"
 	// "log"
 	// "os"

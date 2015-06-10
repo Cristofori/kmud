@@ -2,9 +2,9 @@ package database
 
 import (
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
 	"github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/utils"
+	"gopkg.in/mgo.v2/bson"
 	"sort"
 	"strings"
 )

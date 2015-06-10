@@ -1,11 +1,11 @@
 package model
 
 import (
-	"gopkg.in/mgo.v2"
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/testutils"
 	tu "github.com/Cristofori/kmud/testutils"
+	"gopkg.in/mgo.v2"
 	"testing"
 	"time"
 )

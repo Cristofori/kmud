@@ -2,13 +2,13 @@ package server
 
 import (
 	"fmt"
-	"gopkg.in/mgo.v2"
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/engine"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/session"
 	"github.com/Cristofori/kmud/telnet"
 	"github.com/Cristofori/kmud/utils"
+	"gopkg.in/mgo.v2"
 	"net"
 	"runtime/debug"
 	"sort"

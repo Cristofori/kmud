@@ -2,8 +2,8 @@ package utils
 
 import (
 	"errors"
-	"io"
 	"github.com/Cristofori/kmud/testutils"
+	"io"
 	"math/rand"
 	"reflect"
 	"strings"

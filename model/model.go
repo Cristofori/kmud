@@ -3,10 +3,10 @@ package model
 import (
 	"errors"
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
 	db "github.com/Cristofori/kmud/database"
 	ds "github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/utils"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // CreateUser creates a new User object in the database and adds it to the model.

@@ -2,9 +2,9 @@ package database
 
 import (
 	"crypto/sha1"
-	"io"
 	"github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/utils"
+	"io"
 	"net"
 	"reflect"
 )
