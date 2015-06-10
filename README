@@ -1,6 +1,5 @@
-clone into $GOROOT/src
-cd $GOROOT
-go install kmud
+go get github.com/Cristofori/kmud
+go install github.com/Cristofori/kmud
 
 
 Dependencies
