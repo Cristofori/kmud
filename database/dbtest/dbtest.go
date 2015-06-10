@@ -2,9 +2,9 @@ package dbtest
 
 import (
 	"gopkg.in/mgo.v2/bson"
-	"kmud/database"
-	"kmud/testutils"
-	"kmud/utils"
+	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/testutils"
+	"github.com/Cristofori/kmud/utils"
 	"runtime"
 	"strconv"
 	"sync"

@@ -1,8 +1,8 @@
 package database
 
 import (
-	"kmud/datastore"
-	"kmud/utils"
+	"github.com/Cristofori/kmud/datastore"
+	"github.com/Cristofori/kmud/utils"
 )
 
 type Item struct {

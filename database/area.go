@@ -2,8 +2,8 @@ package database
 
 import (
 	"gopkg.in/mgo.v2/bson"
-	"kmud/datastore"
-	"kmud/utils"
+	"github.com/Cristofori/kmud/datastore"
+	"github.com/Cristofori/kmud/utils"
 )
 
 type Area struct {

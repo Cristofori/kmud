@@ -1,7 +1,7 @@
 package model
 
 import (
-	"kmud/database"
+	"github.com/Cristofori/kmud/database"
 	"math/rand"
 	"sync"
 	"time"

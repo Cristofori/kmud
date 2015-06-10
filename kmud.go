@@ -1,7 +1,7 @@
 package main
 
 import (
-	"kmud/server"
+	"github.com/Cristofori/kmud/server"
 	"os"
 	"os/signal"
 	"runtime"
