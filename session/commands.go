@@ -2,12 +2,13 @@ package session
 
 import (
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
+	"strconv"
+	"strings"
+
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/utils"
-	"strconv"
-	"strings"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type commandHandler struct {
@@ -216,73 +217,39 @@ func (ch *commandHandler) Room(args []string) {
 }
 
 func (ch *commandHandler) Map(args []string) {
-	mapUsage := func() {
-		ch.session.printError("Usage: /map [all]")
+	zoneRooms := model.GetRoomsInZone(ch.session.currentZone())
+	roomsByLocation := map[database.Coordinate]*database.Room{}
+
+	for _, room := range zoneRooms {
+		roomsByLocation[room.GetLocation()] = room
 	}
 
-	startX := 0
-	startY := 0
-	startZ := 0
-	endX := 0
-	endY := 0
-	endZ := 0
+	width, height := ch.session.user.WindowSize()
+	height /= 2
+	width /= 2
 
-	if len(args) == 0 {
-		width, height := ch.session.user.WindowSize()
+	// width and height need to be odd numbers so that we keep the current location centered
+	// and we don't go off the edge of the available space
+	width += (width % 2) - 1
+	height += (height % 2) - 1
 
-		loc := ch.session.room.GetLocation()
-
-		startX = loc.X - (width / 4)
-		startY = loc.Y - (height / 4)
-		startZ = loc.Z
-
-		endX = loc.X + (width / 4)
-		endY = loc.Y + (height / 4)
-		endZ = loc.Z
-	} else if args[0] == "all" {
-		topLeft, bottomRight := model.ZoneCorners(ch.session.currentZone())
-
-		startX = topLeft.X
-		startY = topLeft.Y
-		startZ = topLeft.Z
-		endX = bottomRight.X
-		endY = bottomRight.Y
-		endZ = bottomRight.Z
-	} else {
-		mapUsage()
-		return
-	}
-
-	width := endX - startX + 1
-	height := endY - startY + 1
-
-	// Width and height need to be even numbers so that we don't go off
-	// the edge of the screen in either direction
-	width -= (width % 2)
-	height -= (height % 2)
-
-	depth := endZ - startZ + 1
-
-	builder := newMapBuilder(width, height, depth)
+	builder := newMapBuilder(width, height, 1)
 	builder.setUserRoom(ch.session.room)
+	center := ch.session.room.GetLocation()
 
-    zoneRooms := model.GetRoomsInZone(ch.session.currentZone())
-    roomsByLocation := map[database.Coordinate]*database.Room{}
+	startX := center.X - (width / 2)
+	endX := center.X + (width / 2)
+	startY := center.Y - (height / 2)
+	endY := center.Y + (height / 2)
 
-    for _, room := range zoneRooms {
-        roomsByLocation[room.GetLocation()] = room
-    }
+	for y := startY; y <= endY; y++ {
+		for x := startX; x <= endX; x++ {
+			loc := database.Coordinate{X: x, Y: y, Z: center.Z}
+			room := roomsByLocation[loc]
 
-	for z := startZ; z <= endZ; z++ {
-		for y := startY; y <= endY; y++ {
-			for x := startX; x <= endX; x++ {
-				loc := database.Coordinate{X: x, Y: y, Z: z}
-				room := roomsByLocation[loc]
-
-				if room != nil {
-					// Translate to 0-based coordinates
-					builder.addRoom(room, x-startX, y-startY, z-startZ)
-				}
+			if room != nil {
+				// Translate to 0-based coordinates
+				builder.addRoom(room, x-startX, y-startY, 0)
 			}
 		}
 	}
