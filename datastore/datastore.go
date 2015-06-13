@@ -1,36 +1,28 @@
 package datastore
 
 import (
-	"gopkg.in/mgo.v2/bson"
 	"sync"
+
+	"github.com/Cristofori/kmud/types"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
-type ObjectType int
-
-type Identifiable interface {
-	GetId() bson.ObjectId
-	GetType() ObjectType
-	ReadLock()
-	ReadUnlock()
-	Destroy()
-	IsDestroyed() bool
-}
-
-var _data map[bson.ObjectId]Identifiable
+var _data map[bson.ObjectId]types.Object
 var _mutex sync.RWMutex
 
 func Init() {
-	_data = map[bson.ObjectId]Identifiable{}
+	_data = map[bson.ObjectId]types.Object{}
 }
 
-func Get(id bson.ObjectId) Identifiable {
+func Get(id bson.ObjectId) types.Object {
 	_mutex.RLock()
 	defer _mutex.RUnlock()
 
 	return _data[id]
 }
 
-func Contains(obj Identifiable) bool {
+func Contains(obj types.Identifiable) bool {
 	_mutex.RLock()
 	defer _mutex.RUnlock()
 
@@ -46,14 +38,14 @@ func ContainsId(id bson.ObjectId) bool {
 	return found
 }
 
-func Set(obj Identifiable) {
+func Set(obj types.Object) {
 	_mutex.Lock()
 	defer _mutex.Unlock()
 
 	_data[obj.GetId()] = obj
 }
 
-func Remove(obj Identifiable) {
+func Remove(obj types.Identifiable) {
 	_mutex.Lock()
 	defer _mutex.Unlock()
 

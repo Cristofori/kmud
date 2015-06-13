@@ -2,10 +2,12 @@ package database
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/Cristofori/kmud/datastore"
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
-	"sync"
 )
 
 var modifiedObjectsMutex sync.Mutex
@@ -53,7 +55,7 @@ func Init(session Session, dbName string) {
 	go watchModifiedObjects()
 }
 
-func objectModified(obj datastore.Identifiable) {
+func objectModified(obj types.Identifiable) {
 	modifiedObjectChannel <- obj.GetId()
 }
 
@@ -81,25 +83,25 @@ func getCollection(collection collectionName) Collection {
 	return _session.DB(_dbName).C(string(collection))
 }
 
-func getCollectionOfObject(obj datastore.Identifiable) Collection {
+func getCollectionOfObject(obj types.Identifiable) Collection {
 	return getCollectionFromType(obj.GetType())
 }
 
-func getCollectionFromType(t datastore.ObjectType) Collection {
+func getCollectionFromType(t types.ObjectType) Collection {
 	switch t {
-	case PcType:
+	case types.PcType:
 		return getCollection(cPlayerChars)
-	case NpcType:
+	case types.NpcType:
 		return getCollection(cNonPlayerChars)
-	case UserType:
+	case types.UserType:
 		return getCollection(cUsers)
-	case ZoneType:
+	case types.ZoneType:
 		return getCollection(cZones)
-	case AreaType:
+	case types.AreaType:
 		return getCollection(cAreas)
-	case RoomType:
+	case types.RoomType:
 		return getCollection(cRooms)
-	case ItemType:
+	case types.ItemType:
 		return getCollection(cItems)
 	default:
 		panic("database.getCollectionFromType: Unhandled object type")
@@ -136,20 +138,20 @@ const (
 	PULL = "$pull"
 )
 
-func RetrieveObjects(t datastore.ObjectType, objects interface{}) error {
+func RetrieveObjects(t types.ObjectType, objects interface{}) error {
 	c := getCollectionFromType(t)
 	return c.Find(nil).Iter().All(objects)
 }
 
-func Find(t datastore.ObjectType, key string, value interface{}) []bson.ObjectId {
+func Find(t types.ObjectType, key string, value interface{}) []bson.ObjectId {
 	return find(t, bson.M{key: value})
 }
 
-func FindAll(t datastore.ObjectType) []bson.ObjectId {
+func FindAll(t types.ObjectType) []bson.ObjectId {
 	return find(t, nil)
 }
 
-func find(t datastore.ObjectType, query interface{}) []bson.ObjectId {
+func find(t types.ObjectType, query interface{}) []bson.ObjectId {
 	c := getCollectionFromType(t)
 
 	var results []interface{}
@@ -164,7 +166,7 @@ func find(t datastore.ObjectType, query interface{}) []bson.ObjectId {
 	return ids
 }
 
-func DeleteObject(obj datastore.Identifiable) error {
+func DeleteObject(obj types.Object) error {
 	obj.Destroy()
 	c := getCollectionOfObject(obj)
 

@@ -2,11 +2,12 @@ package database
 
 import (
 	"fmt"
-	"github.com/Cristofori/kmud/datastore"
-	"github.com/Cristofori/kmud/utils"
-	"gopkg.in/mgo.v2/bson"
 	"sort"
 	"strings"
+
+	"github.com/Cristofori/kmud/types"
+	"github.com/Cristofori/kmud/utils"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type Room struct {
@@ -58,8 +59,8 @@ func NewRoom(zoneId bson.ObjectId, location Coordinate) *Room {
 	return &room
 }
 
-func (self *Room) GetType() datastore.ObjectType {
-	return RoomType
+func (self *Room) GetType() types.ObjectType {
+	return types.RoomType
 }
 
 func (self *Room) ToString(players []*PlayerChar, npcs []*NonPlayerChar, items []*Item, area *Area) string {

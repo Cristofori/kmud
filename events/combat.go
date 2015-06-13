@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/types"
 )
 
 var fightsMutex sync.RWMutex
 
-var fights map[*database.Character]*database.Character // Maps the attacker to the defender
+var fights map[types.Character]types.Character // Maps the attacker to the defender
 
-func StartFight(attacker *database.Character, defender *database.Character) {
+func StartFight(attacker types.Character, defender types.Character) {
 	fightsMutex.Lock()
 	defer fightsMutex.Unlock()
 
@@ -33,7 +34,7 @@ func StartFight(attacker *database.Character, defender *database.Character) {
 	Broadcast(CombatStartEvent{Attacker: attacker, Defender: defender})
 }
 
-func StopFight(attacker *database.Character) {
+func StopFight(attacker types.Character) {
 	fightsMutex.Lock()
 	defer fightsMutex.Unlock()
 
@@ -61,7 +62,7 @@ func InCombat(character *database.Character) bool {
 }
 
 func StartCombatLoop() {
-	fights = map[*database.Character]*database.Character{}
+	fights = map[types.Character]types.Character{}
 
 	go func() {
 		for {

@@ -1,13 +1,12 @@
 package model
 
 import (
+	"testing"
+
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/datastore"
-	"github.com/Cristofori/kmud/testutils"
 	tu "github.com/Cristofori/kmud/testutils"
 	"gopkg.in/mgo.v2"
-	"testing"
-	"time"
 )
 
 var _db *mgo.Database
@@ -136,79 +135,6 @@ func Test_CharFunctions(t *testing.T) {
 	//user := CreateUser("user1", "")
 	//playerName1 := "player1"
 	//player1 := CreatePlayer(name1, user
-}
-
-func Test_EventLoop(t *testing.T) {
-	zone, _ := CreateZone("zone")
-	room, _ := CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
-	user := CreateUser("user", "password")
-	char := CreatePlayerCharacter("char", user, room)
-
-	eventChannel := Register()
-
-	message := "hey how are yah"
-	queueEvent(TellEvent{&char.Character, &char.Character, message})
-
-	timeout := testutils.Timeout(3 * time.Second)
-
-	select {
-	case event := <-eventChannel:
-		tu.Assert(event.Type() == TellEventType, t, "Didn't get a Tell event back")
-		tellEvent := event.(TellEvent)
-		tu.Assert(tellEvent.Message == message, t, "Didn't get the right message back:", tellEvent.Message, message)
-	case <-timeout:
-		tu.Assert(false, t, "Timed out waiting for tell event")
-	}
-
-	select {
-	case event := <-eventChannel:
-		tu.Assert(event.Type() == TimerEventType, t, "Expected to get a timer event")
-	case <-timeout:
-		tu.Assert(false, t, "Timed out waiting for timer event")
-	}
-
-	_cleanup(t)
-}
-
-func Test_CombatLoop(t *testing.T) {
-	zone, _ := CreateZone("zone")
-	room, _ := CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
-	user := CreateUser("user", "password")
-
-	char1 := CreatePlayerCharacter("char1", user, room)
-	char2 := CreatePlayerCharacter("char2", user, room)
-
-	eventChannel1 := Register()
-	// eventChannel2 := Register(char2)
-
-	StartFight(&char1.Character, &char2.Character)
-	// StartFight(char2, char1)
-
-	verifyEvents := func(eventChannel chan Event) {
-		timeout := testutils.Timeout(3 * time.Second)
-		expectedTypes := make(map[EventType]bool)
-		expectedTypes[CombatEventType] = true
-		expectedTypes[CombatStartEventType] = true
-
-		for {
-			select {
-			case event := <-eventChannel1:
-				if event.Type() != TimerEventType {
-					tu.Assert(expectedTypes[event.Type()] == true, t, "Unexpected event type:", event.Type())
-					delete(expectedTypes, event.Type())
-				}
-			case <-timeout:
-				tu.Assert(false, t, "Timed out waiting for combat event")
-			}
-
-			if len(expectedTypes) == 0 {
-				break
-			}
-		}
-	}
-
-	verifyEvents(eventChannel1)
-	// verifyEvents(eventChannel2)
 }
 
 // vim: nocindent

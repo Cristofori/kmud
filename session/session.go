@@ -213,7 +213,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 						events.StopFight(combatEvent.Attacker)
 					}
 				}
-			} else if event.Type() == events.TimerEventType {
+			} else if event.Type() == events.TickEventType {
 				if !events.InCombat(&session.player.Character) {
 					oldHps := session.player.GetHitPoints()
 					session.player.Heal(5)

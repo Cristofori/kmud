@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/Cristofori/kmud/datastore"
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -26,8 +26,8 @@ func NewArea(name string, zone bson.ObjectId) *Area {
 	return &area
 }
 
-func (self *Area) GetType() datastore.ObjectType {
-	return AreaType
+func (self *Area) GetType() types.ObjectType {
+	return types.AreaType
 }
 
 func (self *Area) GetName() string {

@@ -7,6 +7,7 @@ import (
 	db "github.com/Cristofori/kmud/database"
 	ds "github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/events"
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -33,7 +34,7 @@ func GetOrCreateUser(name string, password string) *db.User {
 func GetUsers() db.Users {
 	var users db.Users
 
-	for _, id := range db.FindAll(db.UserType) {
+	for _, id := range db.FindAll(types.UserType) {
 		users = append(users, ds.Get(id).(*db.User))
 	}
 
@@ -43,7 +44,7 @@ func GetUsers() db.Users {
 // GetUserByName searches for the User object with the given name. Returns a
 // nil User if one was not found.
 func GetUserByName(username string) *db.User {
-	for _, id := range db.Find(db.UserType, "name", utils.FormatName(username)) {
+	for _, id := range db.Find(types.UserType, "name", utils.FormatName(username)) {
 		return ds.Get(id).(*db.User)
 	}
 
@@ -92,7 +93,7 @@ func GetCharacterByName(name string) *db.Character {
 // GetPlayerCharacaterByName searches for a character with the given name. Returns a
 // character object, or nil if it wasn't found.
 func GetPlayerCharacterByName(name string) *db.PlayerChar {
-	for _, id := range db.Find(db.PcType, "name", utils.FormatName(name)) {
+	for _, id := range db.Find(types.PcType, "name", utils.FormatName(name)) {
 		return ds.Get(id).(*db.PlayerChar)
 	}
 
@@ -100,7 +101,7 @@ func GetPlayerCharacterByName(name string) *db.PlayerChar {
 }
 
 func GetNpcByName(name string) *db.NonPlayerChar {
-	for _, id := range db.Find(db.NpcType, "name", utils.FormatName(name)) {
+	for _, id := range db.Find(types.NpcType, "name", utils.FormatName(name)) {
 		return ds.Get(id).(*db.NonPlayerChar)
 	}
 
@@ -110,7 +111,7 @@ func GetNpcByName(name string) *db.NonPlayerChar {
 func GetNpcs() db.NonPlayerCharList {
 	var npcs db.NonPlayerCharList
 
-	for _, id := range db.FindAll(db.NpcType) {
+	for _, id := range db.FindAll(types.NpcType) {
 		npcs = append(npcs, ds.Get(id).(*db.NonPlayerChar))
 	}
 
@@ -138,7 +139,7 @@ func GetUserCharacters(user *db.User) []*db.PlayerChar {
 
 	id := user.GetId()
 
-	for _, id := range db.Find(db.PcType, "userid", id) {
+	for _, id := range db.Find(types.PcType, "userid", id) {
 		pcs = append(pcs, ds.Get(id).(*db.PlayerChar))
 	}
 
@@ -161,7 +162,7 @@ func CharactersIn(room *db.Room) db.CharacterList {
 func PlayerCharactersIn(room *db.Room, except *db.PlayerChar) db.PlayerCharList {
 	var pcs []*db.PlayerChar
 
-	for _, id := range db.Find(db.PcType, "roomid", room.GetId()) {
+	for _, id := range db.Find(types.PcType, "roomid", room.GetId()) {
 		pc := ds.Get(id).(*db.PlayerChar)
 
 		if pc.IsOnline() && pc != except {
@@ -176,7 +177,7 @@ func PlayerCharactersIn(room *db.Room, except *db.PlayerChar) db.PlayerCharList 
 func NpcsIn(room *db.Room) db.NonPlayerCharList {
 	var npcs db.NonPlayerCharList
 
-	for _, id := range db.Find(db.NpcType, "roomid", room.GetId()) {
+	for _, id := range db.Find(types.NpcType, "roomid", room.GetId()) {
 		npcs = append(npcs, ds.Get(id).(*db.NonPlayerChar))
 	}
 
@@ -187,7 +188,7 @@ func NpcsIn(room *db.Room) db.NonPlayerCharList {
 func GetOnlinePlayerCharacters() []*db.PlayerChar {
 	var pcs []*db.PlayerChar
 
-	for _, id := range db.FindAll(db.PcType) {
+	for _, id := range db.FindAll(types.PcType) {
 		pc := ds.Get(id).(*db.PlayerChar)
 		if pc.IsOnline() {
 			pcs = append(pcs, pc)
@@ -274,7 +275,7 @@ func GetRoom(id bson.ObjectId) *db.Room {
 // GetRooms returns a list of all of the rooms in the entire model
 func GetRooms() db.Rooms {
 	var rooms []*db.Room
-	for _, id := range db.FindAll(db.RoomType) {
+	for _, id := range db.FindAll(types.RoomType) {
 		rooms = append(rooms, ds.Get(id).(*db.Room))
 	}
 
@@ -300,7 +301,7 @@ func GetRoomsInZone(zone *db.Zone) []*db.Room {
 // GetRoomByLocation searches for the room associated with the given coordinate
 // in the given zone. Returns a nil room object if it was not found.
 func GetRoomByLocation(coordinate db.Coordinate, zone *db.Zone) *db.Room {
-	for _, id := range db.Find(db.RoomType, "zoneid", zone.GetId()) {
+	for _, id := range db.Find(types.RoomType, "zoneid", zone.GetId()) {
 		// TODO move this check into the DB query
 		room := ds.Get(id).(*db.Room)
 		if room.GetLocation() == coordinate {
@@ -320,7 +321,7 @@ func GetZone(zoneId bson.ObjectId) *db.Zone {
 func GetZones() db.Zones {
 	var zones db.Zones
 
-	for _, id := range db.FindAll(db.ZoneType) {
+	for _, id := range db.FindAll(types.ZoneType) {
 		zones = append(zones, ds.Get(id).(*db.Zone))
 	}
 
@@ -345,7 +346,7 @@ func DeleteZone(zone *db.Zone) {
 
 // GetZoneByName name searches for a zone with the given name
 func GetZoneByName(name string) *db.Zone {
-	for _, id := range db.Find(db.ZoneType, "name", utils.FormatName(name)) {
+	for _, id := range db.Find(types.ZoneType, "name", utils.FormatName(name)) {
 		return ds.Get(id).(*db.Zone)
 	}
 
@@ -354,7 +355,7 @@ func GetZoneByName(name string) *db.Zone {
 
 func GetAreas(zone *db.Zone) db.Areas {
 	var areas db.Areas
-	for _, id := range db.FindAll(db.AreaType) {
+	for _, id := range db.FindAll(types.AreaType) {
 		areas = append(areas, ds.Get(id).(*db.Area))
 	}
 
@@ -378,7 +379,7 @@ func CreateArea(name string, zone *db.Zone) (*db.Area, error) {
 }
 
 func GetAreaByName(name string) *db.Area {
-	for _, id := range db.Find(db.AreaType, "name", utils.FormatName(name)) {
+	for _, id := range db.Find(types.AreaType, "name", utils.FormatName(name)) {
 		return ds.Get(id).(*db.Area)
 	}
 
@@ -466,7 +467,7 @@ func DeleteItem(item *db.Item) {
 	utils.HandleError(db.DeleteObject(item))
 }
 
-func DeleteObject(obj ds.Identifiable) {
+func DeleteObject(obj types.Object) {
 	ds.Remove(obj)
 	utils.HandleError(db.DeleteObject(obj))
 }
@@ -477,7 +478,7 @@ func Init(session db.Session, dbName string) error {
 	db.Init(session, dbName)
 
 	users := []*db.User{}
-	err := db.RetrieveObjects(db.UserType, &users)
+	err := db.RetrieveObjects(types.UserType, &users)
 	utils.HandleError(err)
 
 	for _, user := range users {
@@ -485,25 +486,25 @@ func Init(session db.Session, dbName string) error {
 	}
 
 	pcs := []*db.PlayerChar{}
-	err = db.RetrieveObjects(db.PcType, &pcs)
+	err = db.RetrieveObjects(types.PcType, &pcs)
 	utils.HandleError(err)
 
 	for _, pc := range pcs {
-		pc.SetObjectType(db.PcType)
+		pc.SetObjectType(types.PcType)
 		ds.Set(pc)
 	}
 
 	npcs := []*db.NonPlayerChar{}
-	err = db.RetrieveObjects(db.NpcType, &npcs)
+	err = db.RetrieveObjects(types.NpcType, &npcs)
 	utils.HandleError(err)
 
 	for _, npc := range npcs {
-		npc.SetObjectType(db.NpcType)
+		npc.SetObjectType(types.NpcType)
 		ds.Set(npc)
 	}
 
 	zones := []*db.Zone{}
-	err = db.RetrieveObjects(db.ZoneType, &zones)
+	err = db.RetrieveObjects(types.ZoneType, &zones)
 	utils.HandleError(err)
 
 	for _, zone := range zones {
@@ -511,7 +512,7 @@ func Init(session db.Session, dbName string) error {
 	}
 
 	areas := []*db.Area{}
-	err = db.RetrieveObjects(db.AreaType, &areas)
+	err = db.RetrieveObjects(types.AreaType, &areas)
 	utils.HandleError(err)
 
 	for _, area := range areas {
@@ -519,7 +520,7 @@ func Init(session db.Session, dbName string) error {
 	}
 
 	rooms := []*db.Room{}
-	err = db.RetrieveObjects(db.RoomType, &rooms)
+	err = db.RetrieveObjects(types.RoomType, &rooms)
 	utils.HandleError(err)
 
 	for _, room := range rooms {
@@ -527,7 +528,7 @@ func Init(session db.Session, dbName string) error {
 	}
 
 	items := []*db.Item{}
-	err = db.RetrieveObjects(db.ItemType, &items)
+	err = db.RetrieveObjects(types.ItemType, &items)
 	utils.HandleError(err)
 
 	for _, item := range items {

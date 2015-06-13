@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/Cristofori/kmud/datastore"
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 )
 
@@ -18,8 +18,8 @@ func NewItem(name string) *Item {
 	return &item
 }
 
-func (self *Item) GetType() datastore.ObjectType {
-	return ItemType
+func (self *Item) GetType() types.ObjectType {
+	return types.ItemType
 }
 
 func (self *Item) GetName() string {

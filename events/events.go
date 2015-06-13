@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 )
 
@@ -87,12 +88,12 @@ const (
 	CombatStartEventType EventType = "CombatStart"
 	CombatStopEventType  EventType = "CombatStop"
 	CombatEventType      EventType = "Combat"
-	TimerEventType       EventType = "Timer"
+	TickEventType        EventType = "Tick"
 )
 
 type Event interface {
 	Type() EventType
-	ToString(receiver *database.Character) string
+	ToString(receiver types.Character) string
 	IsFor(receiver *database.PlayerChar) bool
 }
 
@@ -105,28 +106,28 @@ type DestroyEvent struct {
 }
 
 type BroadcastEvent struct {
-	Character *database.Character
+	Character types.Character
 	Message   string
 }
 
 type SayEvent struct {
-	Character *database.Character
+	Character types.Character
 	Message   string
 }
 
 type EmoteEvent struct {
-	Character *database.Character
+	Character types.Character
 	Emote     string
 }
 
 type TellEvent struct {
-	From    *database.Character
-	To      *database.Character
+	From    types.Character
+	To      types.Character
 	Message string
 }
 
 type MoveEvent struct {
-	Character *database.Character
+	Character types.Character
 	Room      *database.Room
 	Message   string
 }
@@ -136,26 +137,26 @@ type RoomUpdateEvent struct {
 }
 
 type LoginEvent struct {
-	Character *database.PlayerChar
+	Character types.Character
 }
 
 type LogoutEvent struct {
-	Character *database.PlayerChar
+	Character types.Character
 }
 
 type CombatStartEvent struct {
-	Attacker *database.Character
-	Defender *database.Character
+	Attacker types.Character
+	Defender types.Character
 }
 
 type CombatStopEvent struct {
-	Attacker *database.Character
-	Defender *database.Character
+	Attacker types.Character
+	Defender types.Character
 }
 
 type CombatEvent struct {
-	Attacker *database.Character
-	Defender *database.Character
+	Attacker types.Character
+	Defender types.Character
 	Damage   int
 }
 
@@ -166,7 +167,7 @@ func (self BroadcastEvent) Type() EventType {
 	return BroadcastEventType
 }
 
-func (self BroadcastEvent) ToString(receiver *database.Character) string {
+func (self BroadcastEvent) ToString(receiver types.Character) string {
 	return utils.Colorize(utils.ColorCyan, "Broadcast from "+self.Character.GetName()+": ") +
 		utils.Colorize(utils.ColorWhite, self.Message)
 }
@@ -180,7 +181,7 @@ func (self SayEvent) Type() EventType {
 	return SayEventType
 }
 
-func (self SayEvent) ToString(receiver *database.Character) string {
+func (self SayEvent) ToString(receiver types.Character) string {
 	who := ""
 	if receiver.GetId() == self.Character.GetId() {
 		who = "You say"
@@ -201,7 +202,7 @@ func (self EmoteEvent) Type() EventType {
 	return EmoteEventType
 }
 
-func (self EmoteEvent) ToString(receiver *database.Character) string {
+func (self EmoteEvent) ToString(receiver types.Character) string {
 	return utils.Colorize(utils.ColorYellow, self.Character.GetName()+" "+self.Emote)
 }
 
@@ -214,7 +215,7 @@ func (self TellEvent) Type() EventType {
 	return TellEventType
 }
 
-func (self TellEvent) ToString(receiver *database.Character) string {
+func (self TellEvent) ToString(receiver types.Character) string {
 	return utils.Colorize(utils.ColorMagenta, fmt.Sprintf("Message from %s: ", self.From.GetName())) +
 		utils.Colorize(utils.ColorWhite, self.Message)
 }
@@ -228,7 +229,7 @@ func (self MoveEvent) Type() EventType {
 	return MoveEventType
 }
 
-func (self MoveEvent) ToString(receiver *database.Character) string {
+func (self MoveEvent) ToString(receiver types.Character) string {
 	return self.Message
 }
 
@@ -242,7 +243,7 @@ func (self RoomUpdateEvent) Type() EventType {
 	return RoomUpdateEventType
 }
 
-func (self RoomUpdateEvent) ToString(receiver *database.Character) string {
+func (self RoomUpdateEvent) ToString(receiver types.Character) string {
 	return utils.Colorize(utils.ColorWhite, "This room has been modified")
 }
 
@@ -255,7 +256,7 @@ func (self LoginEvent) Type() EventType {
 	return LoginEventType
 }
 
-func (self LoginEvent) ToString(receiver *database.Character) string {
+func (self LoginEvent) ToString(receiver types.Character) string {
 	return utils.Colorize(utils.ColorBlue, self.Character.GetName()) +
 		utils.Colorize(utils.ColorWhite, " has connected")
 }
@@ -269,7 +270,7 @@ func (self LogoutEvent) Type() EventType {
 	return LogoutEventType
 }
 
-func (self LogoutEvent) ToString(receiver *database.Character) string {
+func (self LogoutEvent) ToString(receiver types.Character) string {
 	return fmt.Sprintf("%s has disconnected", self.Character.GetName())
 }
 
@@ -282,7 +283,7 @@ func (self CombatStartEvent) Type() EventType {
 	return CombatStartEventType
 }
 
-func (self CombatStartEvent) ToString(receiver *database.Character) string {
+func (self CombatStartEvent) ToString(receiver types.Character) string {
 	if receiver == self.Attacker {
 		return utils.Colorize(utils.ColorRed, fmt.Sprintf("You are attacking %s!", self.Defender.GetName()))
 	} else if receiver == self.Defender {
@@ -301,7 +302,7 @@ func (self CombatStopEvent) Type() EventType {
 	return CombatStopEventType
 }
 
-func (self CombatStopEvent) ToString(receiver *database.Character) string {
+func (self CombatStopEvent) ToString(receiver types.Character) string {
 	if receiver == self.Attacker {
 		return utils.Colorize(utils.ColorGreen, fmt.Sprintf("You stopped attacking %s", self.Defender.GetName()))
 	} else if receiver == self.Defender {
@@ -320,7 +321,7 @@ func (self CombatEvent) Type() EventType {
 	return CombatEventType
 }
 
-func (self CombatEvent) ToString(receiver *database.Character) string {
+func (self CombatEvent) ToString(receiver types.Character) string {
 	if receiver == self.Attacker {
 		return utils.Colorize(utils.ColorRed, fmt.Sprintf("You hit %s for %v damage", self.Defender.GetName(), self.Damage))
 	} else if receiver == self.Defender {
@@ -336,10 +337,10 @@ func (self CombatEvent) IsFor(receiver *database.PlayerChar) bool {
 
 // Timer
 func (self TickEvent) Type() EventType {
-	return TimerEventType
+	return TickEventType
 }
 
-func (self TickEvent) ToString(receiver *database.Character) string {
+func (self TickEvent) ToString(receiver types.Character) string {
 	return ""
 }
 
@@ -352,7 +353,7 @@ func (self CreateEvent) Type() EventType {
 	return CreateEventType
 }
 
-func (self CreateEvent) ToString(receiver *database.Character) string {
+func (self CreateEvent) ToString(receiver types.Character) string {
 	return ""
 }
 
@@ -365,7 +366,7 @@ func (self DestroyEvent) Type() EventType {
 	return DestroyEventType
 }
 
-func (self DestroyEvent) ToString(receiver *database.Character) string {
+func (self DestroyEvent) ToString(receiver types.Character) string {
 	return ""
 }
 

@@ -2,11 +2,12 @@ package database
 
 import (
 	"crypto/sha1"
-	"github.com/Cristofori/kmud/datastore"
-	"github.com/Cristofori/kmud/utils"
 	"io"
 	"net"
 	"reflect"
+
+	"github.com/Cristofori/kmud/types"
+	"github.com/Cristofori/kmud/utils"
 )
 
 type User struct {
@@ -38,8 +39,8 @@ func NewUser(name string, password string) *User {
 	return &user
 }
 
-func (self *User) GetType() datastore.ObjectType {
-	return UserType
+func (self *User) GetType() types.ObjectType {
+	return types.UserType
 }
 
 func (self *User) GetName() string {

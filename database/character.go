@@ -2,7 +2,8 @@ package database
 
 import (
 	"fmt"
-	"github.com/Cristofori/kmud/datastore"
+
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -17,7 +18,7 @@ type Character struct {
 	Health    int
 	HitPoints int
 
-	objType datastore.ObjectType
+	objType types.ObjectType
 }
 
 type NonPlayerChar struct {
@@ -38,7 +39,7 @@ type CharacterList []*Character
 type PlayerCharList []*PlayerChar
 type NonPlayerCharList []*NonPlayerChar
 
-func initCharacter(character *Character, name string, objType datastore.ObjectType, roomId bson.ObjectId) {
+func initCharacter(character *Character, name string, objType types.ObjectType, roomId bson.ObjectId) {
 	character.RoomId = roomId
 	character.Cash = 0
 	character.Health = 100
@@ -53,19 +54,19 @@ func NewPlayerChar(name string, userId bson.ObjectId, roomId bson.ObjectId) *Pla
 	pc.UserId = userId
 	pc.online = false
 
-	initCharacter(&pc.Character, name, PcType, roomId)
+	initCharacter(&pc.Character, name, types.PcType, roomId)
 	pc.initDbObject(&pc)
 	return &pc
 }
 
 func NewNonPlayerChar(name string, roomId bson.ObjectId) *NonPlayerChar {
 	var npc NonPlayerChar
-	initCharacter(&npc.Character, name, NpcType, roomId)
+	initCharacter(&npc.Character, name, types.NpcType, roomId)
 	npc.initDbObject(&npc)
 	return &npc
 }
 
-func (self *Character) GetType() datastore.ObjectType {
+func (self *Character) GetType() types.ObjectType {
 	return self.objType
 }
 
@@ -86,7 +87,7 @@ func (self *Character) SetName(name string) {
 }
 
 // Used when loading existing characters from the DB
-func (self *Character) SetObjectType(t datastore.ObjectType) {
+func (self *Character) SetObjectType(t types.ObjectType) {
 	self.objType = t
 }
 

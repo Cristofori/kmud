@@ -2,9 +2,9 @@ package database
 
 import (
 	"fmt"
-	"github.com/Cristofori/kmud/datastore"
-	"github.com/Cristofori/kmud/utils"
 	"strings"
+
+	"github.com/Cristofori/kmud/utils"
 )
 
 type Direction int
@@ -21,16 +21,6 @@ const (
 	DirectionUp        Direction = iota
 	DirectionDown      Direction = iota
 	DirectionNone      Direction = iota
-)
-
-const (
-	NpcType  datastore.ObjectType = iota
-	PcType   datastore.ObjectType = iota
-	UserType datastore.ObjectType = iota
-	ZoneType datastore.ObjectType = iota
-	AreaType datastore.ObjectType = iota
-	RoomType datastore.ObjectType = iota
-	ItemType datastore.ObjectType = iota
 )
 
 type Coordinate struct {
