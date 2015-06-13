@@ -2,18 +2,20 @@ package server
 
 import (
 	"fmt"
-	"github.com/Cristofori/kmud/database"
-	"github.com/Cristofori/kmud/engine"
-	"github.com/Cristofori/kmud/model"
-	"github.com/Cristofori/kmud/session"
-	"github.com/Cristofori/kmud/telnet"
-	"github.com/Cristofori/kmud/utils"
-	"gopkg.in/mgo.v2"
 	"net"
 	"runtime/debug"
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/engine"
+	"github.com/Cristofori/kmud/events"
+	"github.com/Cristofori/kmud/model"
+	"github.com/Cristofori/kmud/session"
+	"github.com/Cristofori/kmud/telnet"
+	"github.com/Cristofori/kmud/utils"
+	"gopkg.in/mgo.v2"
 )
 
 type Server struct {
@@ -433,7 +435,8 @@ func (self *Server) Start() {
 	self.listener, err = net.Listen("tcp", ":8945")
 	utils.HandleError(err)
 
-	err = model.Init(database.NewMongoSession(session.Copy()), "mud")
+	model.Init(database.NewMongoSession(session.Copy()), "mud")
+	events.StartEvents()
 
 	// If there are no rooms at all create one
 	rooms := model.GetRooms()

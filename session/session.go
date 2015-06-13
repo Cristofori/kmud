@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
@@ -27,7 +28,7 @@ type Session struct {
 	inputModeChannel chan userInputMode
 	prompterChannel  chan utils.Prompter
 	panicChannel     chan interface{}
-	eventListener    model.EventListener
+	eventListener    events.EventListener
 
 	silentMode bool
 
@@ -56,7 +57,7 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Player
 	session.inputModeChannel = make(chan userInputMode)
 	session.prompterChannel = make(chan utils.Prompter)
 	session.panicChannel = make(chan interface{})
-	session.eventListener = model.Register(player.GetName())
+	session.eventListener = events.Register(player.GetName())
 
 	session.silentMode = false
 	session.commander.session = &session
@@ -80,7 +81,7 @@ const (
 )
 
 func (session *Session) Exec() {
-	defer model.Unregister(session.eventListener)
+	defer events.Unregister(session.eventListener)
 	defer model.Logout(session.player)
 
 	session.printLineColor(utils.ColorWhite, "Welcome, "+session.player.GetName())
@@ -198,22 +199,22 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 				continue
 			}
 
-			if event.Type() == model.TellEventType {
-				tellEvent := event.(model.TellEvent)
+			if event.Type() == events.TellEventType {
+				tellEvent := event.(events.TellEvent)
 				session.replyId = tellEvent.From.GetId()
-			} else if event.Type() == model.CombatEventType {
-				combatEvent := event.(model.CombatEvent)
+			} else if event.Type() == events.CombatEventType {
+				combatEvent := event.(events.CombatEvent)
 
 				if combatEvent.Defender == &session.player.Character {
 					session.player.Hit(combatEvent.Damage)
 					if session.player.GetHitPoints() <= 0 {
 						session.asyncMessage(">> You're dead <<")
-						model.StopFight(combatEvent.Defender)
-						model.StopFight(combatEvent.Attacker)
+						events.StopFight(combatEvent.Defender)
+						events.StopFight(combatEvent.Attacker)
 					}
 				}
-			} else if event.Type() == model.TimerEventType {
-				if !model.InCombat(&session.player.Character) {
+			} else if event.Type() == events.TimerEventType {
+				if !events.InCombat(&session.player.Character) {
 					oldHps := session.player.GetHitPoints()
 					session.player.Heal(5)
 					newHps := session.player.GetHitPoints()

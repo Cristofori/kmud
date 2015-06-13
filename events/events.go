@@ -1,4 +1,4 @@
-package model
+package events
 
 import (
 	"fmt"
@@ -67,6 +67,8 @@ func StartEvents() {
 			Broadcast(TickEvent{})
 		}
 	}()
+
+	StartCombatLoop()
 }
 
 type EventType string
@@ -78,8 +80,7 @@ const (
 	SayEventType         EventType = "Say"
 	EmoteEventType       EventType = "Emote"
 	TellEventType        EventType = "Tell"
-	EnterEventType       EventType = "Enter"
-	LeaveEventType       EventType = "Leave"
+	MoveEventType        EventType = "Move"
 	RoomUpdateEventType  EventType = "RoomUpdate"
 	LoginEventType       EventType = "Login"
 	LogoutEventType      EventType = "Logout"
@@ -124,16 +125,10 @@ type TellEvent struct {
 	Message string
 }
 
-type EnterEvent struct {
-	Character  *database.Character
-	Room       *database.Room
-	SourceRoom *database.Room
-}
-
-type LeaveEvent struct {
+type MoveEvent struct {
 	Character *database.Character
 	Room      *database.Room
-	DestRoom  *database.Room
+	Message   string
 }
 
 type RoomUpdateEvent struct {
@@ -228,47 +223,16 @@ func (self TellEvent) IsFor(receiver *database.PlayerChar) bool {
 	return receiver.GetId() == self.To.GetId()
 }
 
-// Enter
-func (self EnterEvent) Type() EventType {
-	return EnterEventType
-}
-
-func (self EnterEvent) ToString(receiver *database.Character) string {
-	if receiver.GetId() == self.Character.GetId() {
-		return ""
-	}
-
-	str := fmt.Sprintf("%v%s %vhas entered the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
-
-	dir := DirectionBetween(self.Room, self.SourceRoom)
-	if dir != database.DirectionNone {
-		str = str + " from the " + database.DirectionToString(dir)
-	}
-
-	return str
-}
-
-func (self EnterEvent) IsFor(receiver *database.PlayerChar) bool {
-	return receiver.GetRoomId() == self.Room.GetId()
-}
-
 // Leave
-func (self LeaveEvent) Type() EventType {
-	return LeaveEventType
+func (self MoveEvent) Type() EventType {
+	return MoveEventType
 }
 
-func (self LeaveEvent) ToString(receiver *database.Character) string {
-	str := fmt.Sprintf("%v%s %vhas left the room", utils.ColorBlue, self.Character.GetName(), utils.ColorWhite)
-
-	dir := DirectionBetween(self.Room, self.DestRoom)
-	if dir != database.DirectionNone {
-		str = str + " to the " + database.DirectionToString(dir)
-	}
-
-	return str
+func (self MoveEvent) ToString(receiver *database.Character) string {
+	return self.Message
 }
 
-func (self LeaveEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self MoveEvent) IsFor(receiver *database.PlayerChar) bool {
 	return receiver.GetRoomId() == self.Room.GetId() &&
 		receiver.GetId() != self.Character.GetId()
 }

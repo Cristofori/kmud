@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/utils"
 )
@@ -17,13 +18,13 @@ func Start() {
 		manage(npc)
 	}
 
-	eventListener := model.Register("engine")
+	eventListener := events.Register("engine")
 
 	go func() {
 		for {
 			event := <-eventListener.Channel
 
-			if event.Type() == model.CreateEventType {
+			if event.Type() == events.CreateEventType {
 				/*
 				   createEvent := event.(model.CreateEvent)
 

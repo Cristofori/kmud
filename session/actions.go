@@ -1,10 +1,12 @@
 package session
 
 import (
+	"strings"
+
 	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/utils"
-	"strings"
 )
 
 type actionHandler struct {
@@ -105,7 +107,7 @@ func (ah *actionHandler) Attack(args []string) {
 		if defender.GetId() == ah.session.player.GetId() {
 			ah.session.printError("You can't attack yourself")
 		} else {
-			model.StartFight(&ah.session.player.Character, defender)
+			events.StartFight(&ah.session.player.Character, defender)
 		}
 	}
 }
@@ -233,7 +235,7 @@ func (ah *actionHandler) Ls(args []string) {
 }
 
 func (ah *actionHandler) Stop(args []string) {
-	model.StopFight(&ah.session.player.Character)
+	events.StopFight(&ah.session.player.Character)
 }
 
 // vim: nocindent

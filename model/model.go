@@ -6,6 +6,7 @@ import (
 
 	db "github.com/Cristofori/kmud/database"
 	ds "github.com/Cristofori/kmud/datastore"
+	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -533,12 +534,6 @@ func Init(session db.Session, dbName string) error {
 		ds.Set(item)
 	}
 
-	fights = map[*db.Character]*db.Character{}
-
-	StartEvents()
-
-	go combatLoop()
-
 	return err
 }
 
@@ -562,8 +557,22 @@ func MoveCharacterToRoom(character *db.Character, newRoom *db.Room) {
 
 	oldRoom := GetRoom(oldRoomId)
 
-	Broadcast(EnterEvent{Character: character, Room: newRoom, SourceRoom: oldRoom})
-	Broadcast(LeaveEvent{Character: character, Room: oldRoom, DestRoom: newRoom})
+	// Leave
+	message := fmt.Sprintf("%v%s %vhas left the room", utils.ColorBlue, character.GetName(), utils.ColorWhite)
+	dir := DirectionBetween(oldRoom, newRoom)
+	if dir != db.DirectionNone {
+		message = fmt.Sprintf("%s to the %s", message, db.DirectionToString(dir))
+	}
+
+	events.Broadcast(events.MoveEvent{Character: character, Room: oldRoom, Message: message})
+
+	// Enter
+	message = fmt.Sprintf("%v%s %vhas entered the room", utils.ColorBlue, character.GetName(), utils.ColorWhite)
+	if dir != db.DirectionNone {
+		message = fmt.Sprintf("%s to the %s", message, db.DirectionToString(dir))
+	}
+
+	events.Broadcast(events.MoveEvent{Character: character, Room: newRoom, Message: message})
 }
 
 // MoveCharacter moves the given character in the given direction. If there is
@@ -628,32 +637,32 @@ func MoveCharacter(character *db.Character, direction db.Direction) (*db.Room, e
 
 // BroadcastMessage sends a message to all users that are logged in
 func BroadcastMessage(from *db.Character, message string) {
-	Broadcast(BroadcastEvent{from, message})
+	events.Broadcast(events.BroadcastEvent{from, message})
 }
 
 // Tell sends a message to the specified character
 func Tell(from *db.Character, to *db.Character, message string) {
-	Broadcast(TellEvent{from, to, message})
+	events.Broadcast(events.TellEvent{from, to, message})
 }
 
 // Say sends a message to all characters in the given character's room
 func Say(from *db.Character, message string) {
-	Broadcast(SayEvent{from, message})
+	events.Broadcast(events.SayEvent{from, message})
 }
 
 // Emote sends an emote message to all characters in the given character's room
 func Emote(from *db.Character, message string) {
-	Broadcast(EmoteEvent{from, message})
+	events.Broadcast(events.EmoteEvent{from, message})
 }
 
 func Login(character *db.PlayerChar) {
 	character.SetOnline(true)
-	Broadcast(LoginEvent{character})
+	events.Broadcast(events.LoginEvent{character})
 }
 
 func Logout(character *db.PlayerChar) {
 	character.SetOnline(false)
-	Broadcast(LogoutEvent{character})
+	events.Broadcast(events.LogoutEvent{character})
 }
 
 // ZoneCorners returns cordinates that indiate the highest and lowest points of
@@ -708,7 +717,6 @@ func ZoneCorners(zone *db.Zone) (db.Coordinate, db.Coordinate) {
 		db.Coordinate{X: right, Y: bottom, Z: low}
 }
 
-// Returns the exit direction of the given room if it is adjacent, otherwise DirectionNone
 func DirectionBetween(from, to *db.Room) db.Direction {
 	zone := GetZone(from.GetZoneId())
 	for _, exit := range from.GetExits() {

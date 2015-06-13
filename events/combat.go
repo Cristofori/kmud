@@ -1,4 +1,4 @@
-package model
+package events
 
 import (
 	"math/rand"
@@ -60,23 +60,27 @@ func InCombat(character *database.Character) bool {
 	return false
 }
 
-func combatLoop() {
-	for {
-		time.Sleep(3 * time.Second)
+func StartCombatLoop() {
+	fights = map[*database.Character]*database.Character{}
 
-		fightsMutex.RLock()
-		for a, d := range fights {
-			if a.GetRoomId() == d.GetRoomId() {
-				dmg := rand.Int()%10 + 1
-				Broadcast(CombatEvent{Attacker: a, Defender: d, Damage: dmg})
-			} else {
-				fightsMutex.RUnlock()
-				StopFight(a)
-				fightsMutex.RLock()
+	go func() {
+		for {
+			time.Sleep(3 * time.Second)
+
+			fightsMutex.RLock()
+			for a, d := range fights {
+				if a.GetRoomId() == d.GetRoomId() {
+					dmg := rand.Int()%10 + 1
+					Broadcast(CombatEvent{Attacker: a, Defender: d, Damage: dmg})
+				} else {
+					fightsMutex.RUnlock()
+					StopFight(a)
+					fightsMutex.RLock()
+				}
 			}
+			fightsMutex.RUnlock()
 		}
-		fightsMutex.RUnlock()
-	}
+	}()
 }
 
 // vim: nocindent
