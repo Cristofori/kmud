@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+
 	db "github.com/Cristofori/kmud/database"
 	ds "github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/utils"
@@ -532,10 +533,10 @@ func Init(session db.Session, dbName string) error {
 		ds.Set(item)
 	}
 
-	// Start the event loop
-	go eventLoop()
-
 	fights = map[*db.Character]*db.Character{}
+
+	StartEvents()
+
 	go combatLoop()
 
 	return err
@@ -561,8 +562,8 @@ func MoveCharacterToRoom(character *db.Character, newRoom *db.Room) {
 
 	oldRoom := GetRoom(oldRoomId)
 
-	queueEvent(EnterEvent{Character: character, Room: newRoom, SourceRoom: oldRoom})
-	queueEvent(LeaveEvent{Character: character, Room: oldRoom, DestRoom: newRoom})
+	Broadcast(EnterEvent{Character: character, Room: newRoom, SourceRoom: oldRoom})
+	Broadcast(LeaveEvent{Character: character, Room: oldRoom, DestRoom: newRoom})
 }
 
 // MoveCharacter moves the given character in the given direction. If there is
@@ -627,22 +628,32 @@ func MoveCharacter(character *db.Character, direction db.Direction) (*db.Room, e
 
 // BroadcastMessage sends a message to all users that are logged in
 func BroadcastMessage(from *db.Character, message string) {
-	queueEvent(BroadcastEvent{from, message})
+	Broadcast(BroadcastEvent{from, message})
 }
 
 // Tell sends a message to the specified character
 func Tell(from *db.Character, to *db.Character, message string) {
-	queueEvent(TellEvent{from, to, message})
+	Broadcast(TellEvent{from, to, message})
 }
 
 // Say sends a message to all characters in the given character's room
 func Say(from *db.Character, message string) {
-	queueEvent(SayEvent{from, message})
+	Broadcast(SayEvent{from, message})
 }
 
 // Emote sends an emote message to all characters in the given character's room
 func Emote(from *db.Character, message string) {
-	queueEvent(EmoteEvent{from, message})
+	Broadcast(EmoteEvent{from, message})
+}
+
+func Login(character *db.PlayerChar) {
+	character.SetOnline(true)
+	Broadcast(LoginEvent{character})
+}
+
+func Logout(character *db.PlayerChar) {
+	character.SetOnline(false)
+	Broadcast(LogoutEvent{character})
 }
 
 // ZoneCorners returns cordinates that indiate the highest and lowest points of

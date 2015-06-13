@@ -1,10 +1,11 @@
 package model
 
 import (
-	"github.com/Cristofori/kmud/database"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/Cristofori/kmud/database"
 )
 
 var fightsMutex sync.RWMutex
@@ -29,7 +30,7 @@ func StartFight(attacker *database.Character, defender *database.Character) {
 
 	fights[attacker] = defender
 
-	queueEvent(CombatStartEvent{Attacker: attacker, Defender: defender})
+	Broadcast(CombatStartEvent{Attacker: attacker, Defender: defender})
 }
 
 func StopFight(attacker *database.Character) {
@@ -40,7 +41,7 @@ func StopFight(attacker *database.Character) {
 
 	if defender != nil {
 		delete(fights, attacker)
-		queueEvent(CombatStopEvent{Attacker: attacker, Defender: defender})
+		Broadcast(CombatStopEvent{Attacker: attacker, Defender: defender})
 	}
 }
 
@@ -67,7 +68,7 @@ func combatLoop() {
 		for a, d := range fights {
 			if a.GetRoomId() == d.GetRoomId() {
 				dmg := rand.Int()%10 + 1
-				queueEvent(CombatEvent{Attacker: a, Defender: d, Damage: dmg})
+				Broadcast(CombatEvent{Attacker: a, Defender: d, Damage: dmg})
 			} else {
 				fightsMutex.RUnlock()
 				StopFight(a)

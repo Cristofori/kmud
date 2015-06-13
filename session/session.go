@@ -2,12 +2,13 @@ package session
 
 import (
 	"fmt"
+	"io"
+	"strconv"
+
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
-	"io"
-	"strconv"
 	// "log"
 	// "os"
 	"strings"
@@ -26,7 +27,7 @@ type Session struct {
 	inputModeChannel chan userInputMode
 	prompterChannel  chan utils.Prompter
 	panicChannel     chan interface{}
-	eventChannel     chan model.Event
+	eventListener    model.EventListener
 
 	silentMode bool
 
@@ -55,7 +56,7 @@ func NewSession(conn io.ReadWriter, user *database.User, player *database.Player
 	session.inputModeChannel = make(chan userInputMode)
 	session.prompterChannel = make(chan utils.Prompter)
 	session.panicChannel = make(chan interface{})
-	session.eventChannel = model.Register()
+	session.eventListener = model.Register(player.GetName())
 
 	session.silentMode = false
 	session.commander.session = &session
@@ -79,7 +80,7 @@ const (
 )
 
 func (session *Session) Exec() {
-	defer model.Unregister(session.eventChannel)
+	defer model.Unregister(session.eventListener)
 	defer model.Logout(session.player)
 
 	session.printLineColor(utils.ColorWhite, "Welcome, "+session.player.GetName())
@@ -192,7 +193,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 		select {
 		case input := <-session.userInputChannel:
 			return input
-		case event := <-session.eventChannel:
+		case event := <-session.eventListener.Channel:
 			if session.silentMode || !event.IsFor(session.player) {
 				continue
 			}

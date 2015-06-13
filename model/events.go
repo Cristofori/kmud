@@ -1,65 +1,61 @@
 package model
 
 import (
-	"container/list"
 	"fmt"
+	"time"
+
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/utils"
-	"sync"
-	"time"
 )
 
-var _listeners []chan Event
-var _mutex sync.Mutex
-var _eventQueueChannel chan Event
-
-func Login(character *database.PlayerChar) {
-	character.SetOnline(true)
-	queueEvent(LoginEvent{character})
+type EventListener struct {
+	Channel chan Event
+	Name    string
 }
 
-func Logout(character *database.PlayerChar) {
-	character.SetOnline(false)
-	queueEvent(LogoutEvent{character})
-}
+var _listeners []EventListener
+var _register chan EventListener
+var _unregister chan EventListener
+var _broadcast chan Event
 
-func Register() chan Event {
-	listener := make(chan Event, 100)
-
-	_mutex.Lock()
-	_listeners = append(_listeners, listener)
-	_mutex.Unlock()
-
+func Register(name string) EventListener {
+	listener := EventListener{Name: name, Channel: make(chan Event)}
+	_register <- listener
 	return listener
 }
 
-func Unregister(listenerToUnregsiter chan Event) {
-	_mutex.Lock()
-	for i, listener := range _listeners {
-		if listener == listenerToUnregsiter {
-			_listeners = append(_listeners[:i], _listeners[i+1:]...)
-			break
-		}
-	}
-	_mutex.Unlock()
+func Unregister(l EventListener) {
+	_unregister <- l
 }
 
-func eventLoop() {
-	_eventQueueChannel = make(chan Event, 100)
+func Broadcast(event Event) {
+	_broadcast <- event
+}
 
-	var m sync.Mutex
-	cond := sync.NewCond(&m)
-
-	eventQueue := list.New()
+func StartEvents() {
+	_register = make(chan EventListener)
+	_unregister = make(chan EventListener)
+	_broadcast = make(chan Event)
 
 	go func() {
 		for {
-			event := <-_eventQueueChannel
-
-			cond.L.Lock()
-			eventQueue.PushBack(event)
-			cond.L.Unlock()
-			cond.Signal()
+			select {
+			case newListener := <-_register:
+				_listeners = append(_listeners, newListener)
+			case listenerToUnregsiter := <-_unregister:
+				for i, listener := range _listeners {
+					if listener == listenerToUnregsiter {
+						_listeners = append(_listeners[:i], _listeners[i+1:]...)
+						break
+					}
+				}
+			case event := <-_broadcast:
+				for _, listener := range _listeners {
+					go func(l EventListener) {
+						l.Channel <- event
+					}(listener)
+				}
+			}
 		}
 	}()
 
@@ -68,53 +64,29 @@ func eventLoop() {
 
 		for {
 			throttler.Sync()
-			queueEvent(TimerEvent{})
+			Broadcast(TickEvent{})
 		}
 	}()
-
-	for {
-		cond.L.Lock()
-		for eventQueue.Len() == 0 {
-			cond.Wait()
-		}
-
-		event := eventQueue.Remove(eventQueue.Front())
-		cond.L.Unlock()
-
-		broadcast(event.(Event))
-	}
 }
 
-func queueEvent(event Event) {
-	_eventQueueChannel <- event
-}
-
-func broadcast(event Event) {
-	_mutex.Lock()
-	for _, listener := range _listeners {
-		listener <- event
-	}
-	_mutex.Unlock()
-}
-
-type EventType int
+type EventType string
 
 const (
-	CreateEventType      EventType = iota
-	DestroyEventType     EventType = iota
-	BroadcastEventType   EventType = iota
-	SayEventType         EventType = iota
-	EmoteEventType       EventType = iota
-	TellEventType        EventType = iota
-	EnterEventType       EventType = iota
-	LeaveEventType       EventType = iota
-	RoomUpdateEventType  EventType = iota
-	LoginEventType       EventType = iota
-	LogoutEventType      EventType = iota
-	CombatStartEventType EventType = iota
-	CombatStopEventType  EventType = iota
-	CombatEventType      EventType = iota
-	TimerEventType       EventType = iota
+	CreateEventType      EventType = "Create"
+	DestroyEventType     EventType = "Destroy"
+	BroadcastEventType   EventType = "Broadcast"
+	SayEventType         EventType = "Say"
+	EmoteEventType       EventType = "Emote"
+	TellEventType        EventType = "Tell"
+	EnterEventType       EventType = "Enter"
+	LeaveEventType       EventType = "Leave"
+	RoomUpdateEventType  EventType = "RoomUpdate"
+	LoginEventType       EventType = "Login"
+	LogoutEventType      EventType = "Logout"
+	CombatStartEventType EventType = "CombatStart"
+	CombatStopEventType  EventType = "CombatStop"
+	CombatEventType      EventType = "Combat"
+	TimerEventType       EventType = "Timer"
 )
 
 type Event interface {
@@ -192,7 +164,7 @@ type CombatEvent struct {
 	Damage   int
 }
 
-type TimerEvent struct {
+type TickEvent struct {
 }
 
 func (self BroadcastEvent) Type() EventType {
@@ -399,15 +371,15 @@ func (self CombatEvent) IsFor(receiver *database.PlayerChar) bool {
 }
 
 // Timer
-func (self TimerEvent) Type() EventType {
+func (self TickEvent) Type() EventType {
 	return TimerEventType
 }
 
-func (self TimerEvent) ToString(receiver *database.Character) string {
+func (self TickEvent) ToString(receiver *database.Character) string {
 	return ""
 }
 
-func (self TimerEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self TickEvent) IsFor(receiver *database.PlayerChar) bool {
 	return true
 }
 

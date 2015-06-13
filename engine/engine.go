@@ -1,10 +1,11 @@
 package engine
 
 import (
+	"time"
+
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/utils"
-	"time"
 )
 
 const (
@@ -16,11 +17,11 @@ func Start() {
 		manage(npc)
 	}
 
-	eventChannel := model.Register()
+	eventListener := model.Register("engine")
 
 	go func() {
 		for {
-			event := <-eventChannel
+			event := <-eventListener.Channel
 
 			if event.Type() == model.CreateEventType {
 				/*
