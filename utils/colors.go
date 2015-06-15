@@ -67,6 +67,8 @@ func getAnsiCode(mode ColorMode, color Color) string {
 
 	var code colorCode
 	switch color {
+	case ColorNormal:
+		code = normal
 	case ColorRed:
 		code = red
 	case ColorGreen:
@@ -95,6 +97,8 @@ func getAnsiCode(mode ColorMode, color Color) string {
 		code = darkCyan
 	case ColorBlack:
 		code = black
+	case ColorGray:
+		code = gray
 	}
 
 	if mode == ColorModeDark {
