@@ -94,7 +94,7 @@ const (
 type Event interface {
 	Type() EventType
 	ToString(receiver types.Character) string
-	IsFor(receiver *database.PlayerChar) bool
+	IsFor(receiver types.Character) bool
 }
 
 type CreateEvent struct {
@@ -172,7 +172,7 @@ func (self BroadcastEvent) ToString(receiver types.Character) string {
 		utils.Colorize(utils.ColorWhite, self.Message)
 }
 
-func (self BroadcastEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self BroadcastEvent) IsFor(receiver types.Character) bool {
 	return true
 }
 
@@ -193,7 +193,7 @@ func (self SayEvent) ToString(receiver types.Character) string {
 		utils.Colorize(utils.ColorWhite, "\""+self.Message+"\"")
 }
 
-func (self SayEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self SayEvent) IsFor(receiver types.Character) bool {
 	return receiver.GetRoomId() == self.Character.GetRoomId()
 }
 
@@ -206,7 +206,7 @@ func (self EmoteEvent) ToString(receiver types.Character) string {
 	return utils.Colorize(utils.ColorYellow, self.Character.GetName()+" "+self.Emote)
 }
 
-func (self EmoteEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self EmoteEvent) IsFor(receiver types.Character) bool {
 	return receiver.GetRoomId() == self.Character.GetRoomId()
 }
 
@@ -220,7 +220,7 @@ func (self TellEvent) ToString(receiver types.Character) string {
 		utils.Colorize(utils.ColorWhite, self.Message)
 }
 
-func (self TellEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self TellEvent) IsFor(receiver types.Character) bool {
 	return receiver.GetId() == self.To.GetId()
 }
 
@@ -233,7 +233,7 @@ func (self MoveEvent) ToString(receiver types.Character) string {
 	return self.Message
 }
 
-func (self MoveEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self MoveEvent) IsFor(receiver types.Character) bool {
 	return receiver.GetRoomId() == self.Room.GetId() &&
 		receiver.GetId() != self.Character.GetId()
 }
@@ -247,7 +247,7 @@ func (self RoomUpdateEvent) ToString(receiver types.Character) string {
 	return utils.Colorize(utils.ColorWhite, "This room has been modified")
 }
 
-func (self RoomUpdateEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self RoomUpdateEvent) IsFor(receiver types.Character) bool {
 	return receiver.GetRoomId() == self.Room.GetId()
 }
 
@@ -261,7 +261,7 @@ func (self LoginEvent) ToString(receiver types.Character) string {
 		utils.Colorize(utils.ColorWhite, " has connected")
 }
 
-func (self LoginEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self LoginEvent) IsFor(receiver types.Character) bool {
 	return receiver.GetId() != self.Character.GetId()
 }
 
@@ -274,7 +274,7 @@ func (self LogoutEvent) ToString(receiver types.Character) string {
 	return fmt.Sprintf("%s has disconnected", self.Character.GetName())
 }
 
-func (self LogoutEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self LogoutEvent) IsFor(receiver types.Character) bool {
 	return true
 }
 
@@ -293,8 +293,8 @@ func (self CombatStartEvent) ToString(receiver types.Character) string {
 	return ""
 }
 
-func (self CombatStartEvent) IsFor(receiver *database.PlayerChar) bool {
-	return &receiver.Character == self.Attacker || &receiver.Character == self.Defender
+func (self CombatStartEvent) IsFor(receiver types.Character) bool {
+	return receiver == self.Attacker || receiver == self.Defender
 }
 
 // CombatStop
@@ -312,8 +312,8 @@ func (self CombatStopEvent) ToString(receiver types.Character) string {
 	return ""
 }
 
-func (self CombatStopEvent) IsFor(receiver *database.PlayerChar) bool {
-	return &receiver.Character == self.Attacker || &receiver.Character == self.Defender
+func (self CombatStopEvent) IsFor(receiver types.Character) bool {
+	return receiver == self.Attacker || receiver == self.Defender
 }
 
 // Combat
@@ -331,8 +331,8 @@ func (self CombatEvent) ToString(receiver types.Character) string {
 	return ""
 }
 
-func (self CombatEvent) IsFor(receiver *database.PlayerChar) bool {
-	return &receiver.Character == self.Attacker || &receiver.Character == self.Defender
+func (self CombatEvent) IsFor(receiver types.Character) bool {
+	return receiver == self.Attacker || receiver == self.Defender
 }
 
 // Timer
@@ -344,7 +344,7 @@ func (self TickEvent) ToString(receiver types.Character) string {
 	return ""
 }
 
-func (self TickEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self TickEvent) IsFor(receiver types.Character) bool {
 	return true
 }
 
@@ -357,7 +357,7 @@ func (self CreateEvent) ToString(receiver types.Character) string {
 	return ""
 }
 
-func (self CreateEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self CreateEvent) IsFor(receiver types.Character) bool {
 	return true
 }
 
@@ -370,7 +370,7 @@ func (self DestroyEvent) ToString(receiver types.Character) string {
 	return ""
 }
 
-func (self DestroyEvent) IsFor(receiver *database.PlayerChar) bool {
+func (self DestroyEvent) IsFor(receiver types.Character) bool {
 	return true
 }
 

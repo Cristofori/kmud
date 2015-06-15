@@ -35,10 +35,6 @@ type PlayerChar struct {
 	online bool
 }
 
-type CharacterList []*Character
-type PlayerCharList []*PlayerChar
-type NonPlayerCharList []*NonPlayerChar
-
 func initCharacter(character *Character, name string, objType types.ObjectType, roomId bson.ObjectId) {
 	character.RoomId = roomId
 	character.Cash = 0
@@ -316,36 +312,6 @@ func (self *NonPlayerChar) SetRoaming(roaming bool) {
 
 	self.Roaming = roaming
 	objectModified(self)
-}
-
-func (self PlayerCharList) Characters() CharacterList {
-	chars := make([]*Character, len(self))
-
-	for i, char := range self {
-		chars[i] = &char.Character
-	}
-
-	return chars
-}
-
-func (self NonPlayerCharList) Characters() CharacterList {
-	chars := make([]*Character, len(self))
-
-	for i, npc := range self {
-		chars[i] = &npc.Character
-	}
-
-	return chars
-}
-
-func (self CharacterList) Names() []string {
-	names := make([]string, len(self))
-
-	for i, char := range self {
-		names[i] = char.GetName()
-	}
-
-	return names
 }
 
 // vim: nocindent

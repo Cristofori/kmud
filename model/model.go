@@ -108,11 +108,12 @@ func GetNpcByName(name string) *db.NonPlayerChar {
 	return nil
 }
 
-func GetNpcs() db.NonPlayerCharList {
-	var npcs db.NonPlayerCharList
+func GetNpcs() types.NPCList {
+	ids := db.FindAll(types.NpcType)
+	npcs := make(types.NPCList, len(ids))
 
-	for _, id := range db.FindAll(types.NpcType) {
-		npcs = append(npcs, ds.Get(id).(*db.NonPlayerChar))
+	for i, id := range ids {
+		npcs[i] = ds.Get(id).(types.NPC)
 	}
 
 	return npcs
@@ -146,24 +147,25 @@ func GetUserCharacters(user *db.User) []*db.PlayerChar {
 	return pcs
 }
 
-func CharactersIn(room *db.Room) db.CharacterList {
-	var characters db.CharacterList
+func CharactersIn(room *db.Room) types.CharacterList {
+	var characters types.CharacterList
 
 	players := PlayerCharactersIn(room, nil)
 	npcs := NpcsIn(room)
 
-	characters = append(characters, players.Characters()...)
+	characters = append(characters, players...)
 	characters = append(characters, npcs.Characters()...)
 
 	return characters
 }
 
 // PlayerCharactersIn returns a list of player characters that are in the given room
-func PlayerCharactersIn(room *db.Room, except *db.PlayerChar) db.PlayerCharList {
-	var pcs []*db.PlayerChar
+func PlayerCharactersIn(room *db.Room, except types.Character) types.CharacterList {
+	ids := db.Find(types.PcType, "roomid", room.GetId())
+	var pcs types.CharacterList
 
-	for _, id := range db.Find(types.PcType, "roomid", room.GetId()) {
-		pc := ds.Get(id).(*db.PlayerChar)
+	for _, id := range ids {
+		pc := ds.Get(id).(types.Character)
 
 		if pc.IsOnline() && pc != except {
 			pcs = append(pcs, pc)
@@ -174,11 +176,12 @@ func PlayerCharactersIn(room *db.Room, except *db.PlayerChar) db.PlayerCharList 
 }
 
 // NpcsIn returns all of the NPC characters that are in the given room
-func NpcsIn(room *db.Room) db.NonPlayerCharList {
-	var npcs db.NonPlayerCharList
+func NpcsIn(room *db.Room) types.NPCList {
+	ids := db.Find(types.NpcType, "roomid", room.GetId())
+	npcs := make(types.NPCList, len(ids))
 
-	for _, id := range db.Find(types.NpcType, "roomid", room.GetId()) {
-		npcs = append(npcs, ds.Get(id).(*db.NonPlayerChar))
+	for i, id := range ids {
+		npcs[i] = ds.Get(id).(types.NPC)
 	}
 
 	return npcs
@@ -300,7 +303,7 @@ func GetRoomsInZone(zone *db.Zone) []*db.Room {
 
 // GetRoomByLocation searches for the room associated with the given coordinate
 // in the given zone. Returns a nil room object if it was not found.
-func GetRoomByLocation(coordinate db.Coordinate, zone *db.Zone) *db.Room {
+func GetRoomByLocation(coordinate db.Coordinate, zone types.Zone) *db.Room {
 	for _, id := range db.Find(types.RoomType, "zoneid", zone.GetId()) {
 		// TODO move this check into the DB query
 		room := ds.Get(id).(*db.Room)
@@ -540,7 +543,7 @@ func Init(session db.Session, dbName string) error {
 
 // MoveCharacter attempts to move the character to the given coordinates
 // specific by location. Returns an error if there is no room to move to.
-func MoveCharacterToLocation(character *db.Character, zone *db.Zone, location db.Coordinate) (*db.Room, error) {
+func MoveCharacterToLocation(character types.Character, zone types.Zone, location db.Coordinate) (*db.Room, error) {
 	newRoom := GetRoomByLocation(location, zone)
 
 	if newRoom == nil {
@@ -552,7 +555,7 @@ func MoveCharacterToLocation(character *db.Character, zone *db.Zone, location db
 }
 
 // MoveCharacterTo room moves the character to the given room
-func MoveCharacterToRoom(character *db.Character, newRoom *db.Room) {
+func MoveCharacterToRoom(character types.Character, newRoom *db.Room) {
 	oldRoomId := character.GetRoomId()
 	character.SetRoomId(newRoom.GetId())
 
@@ -580,7 +583,7 @@ func MoveCharacterToRoom(character *db.Character, newRoom *db.Room) {
 // no exit in that direction, and error is returned. If there is an exit, but no
 // room connected to it, then a room is automatically created for the character
 // to move in to.
-func MoveCharacter(character *db.Character, direction db.Direction) (*db.Room, error) {
+func MoveCharacter(character types.Character, direction db.Direction) (*db.Room, error) {
 	room := GetRoom(character.GetRoomId())
 
 	if room == nil {
@@ -637,22 +640,22 @@ func MoveCharacter(character *db.Character, direction db.Direction) (*db.Room, e
 }
 
 // BroadcastMessage sends a message to all users that are logged in
-func BroadcastMessage(from *db.Character, message string) {
+func BroadcastMessage(from types.Character, message string) {
 	events.Broadcast(events.BroadcastEvent{from, message})
 }
 
 // Tell sends a message to the specified character
-func Tell(from *db.Character, to *db.Character, message string) {
+func Tell(from types.Character, to types.Character, message string) {
 	events.Broadcast(events.TellEvent{from, to, message})
 }
 
 // Say sends a message to all characters in the given character's room
-func Say(from *db.Character, message string) {
+func Say(from types.Character, message string) {
 	events.Broadcast(events.SayEvent{from, message})
 }
 
 // Emote sends an emote message to all characters in the given character's room
-func Emote(from *db.Character, message string) {
+func Emote(from types.Character, message string) {
 	events.Broadcast(events.EmoteEvent{from, message})
 }
 

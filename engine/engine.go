@@ -3,9 +3,9 @@ package engine
 import (
 	"time"
 
-	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 )
 
@@ -40,7 +40,7 @@ func Start() {
 	}()
 }
 
-func manage(npc *database.NonPlayerChar) {
+func manage(npc types.NPC) {
 	go func() {
 		throttler := utils.NewThrottler(1 * time.Second)
 
@@ -49,7 +49,7 @@ func manage(npc *database.NonPlayerChar) {
 				room := model.GetRoom(npc.GetRoomId())
 				exits := room.GetExits()
 				exitToTake := utils.Random(0, len(exits)-1)
-				model.MoveCharacter(&npc.Character, exits[exitToTake])
+				model.MoveCharacter(npc, exits[exitToTake])
 			}
 
 			throttler.Sync()

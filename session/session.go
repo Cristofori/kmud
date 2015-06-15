@@ -149,6 +149,7 @@ func (session *Session) printRoom() {
 	playerList := model.PlayerCharactersIn(session.room, session.player)
 	npcList := model.NpcsIn(session.room)
 	area := model.GetArea(session.room.GetAreaId())
+
 	session.printLine(session.room.ToString(playerList, npcList,
 		model.GetItems(session.room.GetItemIds()), area))
 }
@@ -205,7 +206,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 			} else if event.Type() == events.CombatEventType {
 				combatEvent := event.(events.CombatEvent)
 
-				if combatEvent.Defender == &session.player.Character {
+				if combatEvent.Defender == session.player {
 					session.player.Hit(combatEvent.Damage)
 					if session.player.GetHitPoints() <= 0 {
 						session.asyncMessage(">> You're dead <<")
@@ -214,7 +215,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 					}
 				}
 			} else if event.Type() == events.TickEventType {
-				if !events.InCombat(&session.player.Character) {
+				if !events.InCombat(session.player) {
 					oldHps := session.player.GetHitPoints()
 					session.player.Heal(5)
 					newHps := session.player.GetHitPoints()
@@ -226,7 +227,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 				}
 			}
 
-			message := event.ToString(&session.player.Character)
+			message := event.ToString(session.player)
 			if message != "" {
 				session.asyncMessage(message)
 				session.user.Write(prompter.GetPrompt())

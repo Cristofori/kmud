@@ -63,7 +63,7 @@ func (self *Room) GetType() types.ObjectType {
 	return types.RoomType
 }
 
-func (self *Room) ToString(players []*PlayerChar, npcs []*NonPlayerChar, items []*Item, area *Area) string {
+func (self *Room) ToString(players types.CharacterList, npcs types.NPCList, items []*Item, area *Area) string {
 	var str string
 
 	areaStr := ""
@@ -84,23 +84,23 @@ func (self *Room) ToString(players []*PlayerChar, npcs []*NonPlayerChar, items [
 	if len(players) > 0 {
 		str = fmt.Sprintf("%s %sAlso here:", str, utils.ColorBlue)
 
-		var names []string
-		for _, char := range players {
-			names = append(names, utils.Colorize(utils.ColorWhite, char.GetName()))
+		names := make([]string, len(players))
+		for i, char := range players {
+			names[i] = utils.Colorize(utils.ColorWhite, char.GetName())
 		}
-		str = str + strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")) + "\n"
+		str = fmt.Sprintf("%s %s \r\n", str, strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")))
 
 		extraNewLine = "\r\n"
 	}
 
 	if len(npcs) > 0 {
-		str = str + " " + utils.Colorize(utils.ColorBlue, "NPCs: ")
+		str = fmt.Sprintf("%s %s", str, utils.Colorize(utils.ColorBlue, "NPCs: "))
 
-		var names []string
-		for _, npc := range npcs {
-			names = append(names, utils.Colorize(utils.ColorWhite, npc.GetName()))
+		names := make([]string, len(npcs))
+		for i, npc := range npcs {
+			names[i] = utils.Colorize(utils.ColorWhite, npc.GetName())
 		}
-		str = str + strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")) + "\r\n"
+		str = fmt.Sprintf("%s %s \r\n", str, strings.Join(names, utils.Colorize(utils.ColorBlue, ", ")))
 
 		extraNewLine = "\r\n"
 	}

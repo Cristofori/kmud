@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/types"
 )
 
@@ -46,7 +45,7 @@ func StopFight(attacker types.Character) {
 	}
 }
 
-func InCombat(character *database.Character) bool {
+func InCombat(character types.Character) bool {
 	_, found := fights[character]
 
 	if found {

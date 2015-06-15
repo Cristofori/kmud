@@ -45,6 +45,46 @@ type Character interface {
 	Identifiable
 	Nameable
 	GetRoomId() bson.ObjectId
+	SetRoomId(bson.ObjectId)
+	IsOnline() bool
+}
+
+type CharacterList []Character
+
+func (self CharacterList) Names() []string {
+	names := make([]string, len(self))
+
+	for i, char := range self {
+		names[i] = char.GetName()
+	}
+
+	return names
+}
+
+type NPC interface {
+	Character
+	GetRoaming() bool
+	PrettyConversation() string
+}
+
+type NPCList []NPC
+
+func (self NPCList) Characters() CharacterList {
+	chars := make(CharacterList, len(self))
+	for i, npc := range self {
+		chars[i] = npc
+	}
+	return chars
+}
+
+func (self NPCList) Names() []string {
+	names := make([]string, len(self))
+
+	for i, npc := range self {
+		names[i] = npc.GetName()
+	}
+
+	return names
 }
 
 type Zone interface {

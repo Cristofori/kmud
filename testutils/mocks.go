@@ -73,3 +73,10 @@ func PlayerCharacter() MockPlayerCharacter {
 func (self MockPlayerCharacter) GetRoomId() bson.ObjectId {
 	return self.RoomId
 }
+
+func (self MockPlayerCharacter) IsOnline() bool {
+	return true
+}
+
+func (self MockPlayerCharacter) SetRoomId(bson.ObjectId) {
+}

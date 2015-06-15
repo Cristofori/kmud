@@ -19,7 +19,7 @@ func (ah *actionHandler) handleAction(action string, args []string) {
 
 		if direction != database.DirectionNone {
 			if ah.session.room.HasExit(direction) {
-				newRoom, err := model.MoveCharacter(&ah.session.player.Character, direction)
+				newRoom, err := model.MoveCharacter(ah.session.player, direction)
 				if err == nil {
 					ah.session.room = newRoom
 					ah.session.printRoom()
@@ -54,7 +54,7 @@ func (ah *actionHandler) Look(args []string) {
 
 		if arg == database.DirectionNone {
 			charList := model.PlayerCharactersIn(ah.session.room, nil)
-			index := utils.BestMatch(args[0], charList.Characters().Names())
+			index := utils.BestMatch(args[0], charList.Names())
 
 			if index == -2 {
 				ah.session.printError("Which one do you mean?")
@@ -107,7 +107,7 @@ func (ah *actionHandler) Attack(args []string) {
 		if defender.GetId() == ah.session.player.GetId() {
 			ah.session.printError("You can't attack yourself")
 		} else {
-			events.StartFight(&ah.session.player.Character, defender)
+			events.StartFight(ah.session.player, defender)
 		}
 	}
 }
@@ -124,7 +124,7 @@ func (ah *actionHandler) Talk(args []string) {
 	}
 
 	npcList := model.NpcsIn(ah.session.room)
-	index := utils.BestMatch(args[0], npcList.Characters().Names())
+	index := utils.BestMatch(args[0], npcList.Names())
 
 	if index == -1 {
 		ah.session.printError("Not found")
@@ -235,7 +235,7 @@ func (ah *actionHandler) Ls(args []string) {
 }
 
 func (ah *actionHandler) Stop(args []string) {
-	events.StopFight(&ah.session.player.Character)
+	events.StopFight(ah.session.player)
 }
 
 // vim: nocindent

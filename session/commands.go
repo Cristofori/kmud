@@ -7,6 +7,7 @@ import (
 
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/model"
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -16,7 +17,7 @@ type commandHandler struct {
 }
 
 func npcMenu(room *database.Room) *utils.Menu {
-	var npcs database.NonPlayerCharList
+	var npcs types.NPCList
 
 	if room != nil {
 		npcs = model.NpcsIn(room)
@@ -291,7 +292,7 @@ func (ch *commandHandler) Zone(args []string) {
 			newRoom, err := model.CreateRoom(newZone, database.Coordinate{X: 0, Y: 0, Z: 0})
 			utils.PanicIfError(err)
 
-			model.MoveCharacterToRoom(&ch.session.player.Character, newRoom)
+			model.MoveCharacterToRoom(ch.session.player, newRoom)
 
 			ch.session.room = newRoom
 
@@ -308,7 +309,7 @@ func (ch *commandHandler) Broadcast(args []string) {
 	if len(args) == 0 {
 		ch.session.printError("Nothing to say")
 	} else {
-		model.BroadcastMessage(&ch.session.player.Character, strings.Join(args, " "))
+		model.BroadcastMessage(ch.session.player, strings.Join(args, " "))
 	}
 }
 
@@ -320,12 +321,12 @@ func (ch *commandHandler) Say(args []string) {
 	if len(args) == 0 {
 		ch.session.printError("Nothing to say")
 	} else {
-		model.Say(&ch.session.player.Character, strings.Join(args, " "))
+		model.Say(ch.session.player, strings.Join(args, " "))
 	}
 }
 
 func (ch *commandHandler) Me(args []string) {
-	model.Emote(&ch.session.player.Character, strings.Join(args, " "))
+	model.Emote(ch.session.player, strings.Join(args, " "))
 }
 
 func (ch *commandHandler) W(args []string) {
@@ -351,7 +352,7 @@ func (ch *commandHandler) Whisper(args []string) {
 	}
 
 	message := strings.Join(args[1:], " ")
-	model.Tell(&ch.session.player.Character, &targetChar.Character, message)
+	model.Tell(ch.session.player, targetChar, message)
 }
 
 func (ch *commandHandler) Tel(args []string) {
@@ -417,7 +418,7 @@ func (ch *commandHandler) Teleport(args []string) {
 		return
 	}
 
-	newRoom, err := model.MoveCharacterToLocation(&ch.session.player.Character, newZone, database.Coordinate{X: x, Y: y, Z: z})
+	newRoom, err := model.MoveCharacterToLocation(ch.session.player, newZone, database.Coordinate{X: x, Y: y, Z: z})
 
 	if err == nil {
 		ch.session.room = newRoom
