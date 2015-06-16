@@ -137,6 +137,10 @@ type Room interface {
 	GetProperties() map[string]string
 	SetProperty(string, string)
 	RemoveProperty(string)
+	SetLink(string, Id)
+	RemoveLink(string)
+	GetLinks() map[string]Id
+	LinkNames() []string
 }
 
 type RoomList []Room

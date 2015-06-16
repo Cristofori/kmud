@@ -28,7 +28,7 @@ type action struct {
 }
 
 func (self *Menu) AddAction(key string, text string) {
-	self.addAction(key, text, "")
+	self.addAction(key, text, nil)
 }
 
 func (self *Menu) AddActionData(key int, text string, data types.Id) {
@@ -47,7 +47,7 @@ func (self *Menu) GetData(choice string) types.Id {
 		}
 	}
 
-	return ""
+	return nil
 }
 
 func (self *Menu) GetPrompt() string {
@@ -76,7 +76,7 @@ func (self *Menu) Exec(conn io.ReadWriter, cm types.ColorMode) (string, types.Id
 		input := GetUserInput(conn, types.Colorize(types.ColorWhite, self.prompt), cm)
 
 		if input == "" {
-			return "", ""
+			return "", nil
 		}
 
 		action := self.getAction(input)

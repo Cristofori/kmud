@@ -207,7 +207,7 @@ func (ch *commandHandler) Room(args []string) {
 
 			switch choice {
 			case "n":
-				ch.session.room.SetAreaId("")
+				ch.session.room.SetAreaId(nil)
 			default:
 				ch.session.room.SetAreaId(areaId)
 			}
@@ -293,7 +293,6 @@ func (ch *commandHandler) Zone(args []string) {
 			model.MoveCharacterToRoom(ch.session.player, newRoom)
 
 			ch.session.room = newRoom
-
 			ch.session.printRoom()
 		}
 	}
@@ -547,7 +546,7 @@ func (ch *commandHandler) Npc(args []string) {
 			if name != "" {
 				model.CreateNpc(name, ch.session.room)
 			}
-		} else if npcId != "" {
+		} else if npcId != nil {
 			for {
 				specificMenu := specificNpcMenu(npcId)
 				choice, _ := ch.session.execMenu(specificMenu)
@@ -836,6 +835,104 @@ func (ch *commandHandler) Area(args []string) {
 			} else {
 				ch.session.printError("That area doesn't exist")
 			}
+		}
+	}
+}
+
+var linkData struct {
+	source types.Id
+	mode   string
+}
+
+const LinkSingle = "Single"
+const LinkDouble = "Double"
+
+func (ch *commandHandler) Link(args []string) {
+	StateName := "Linking"
+
+	usage := func() {
+		ch.session.printError("Usage: /link <name> [single|double*] to start, /link to finish, /link remove <name> [single|double*], /link rename <old name> <new name>, /link cancel")
+	}
+
+	linkName, linking := ch.session.states[StateName]
+
+	if linking {
+		if len(args) == 1 && args[0] == "cancel" {
+			linkData.source = nil
+			delete(ch.session.states, StateName)
+		} else if len(args) != 0 {
+			usage()
+		} else {
+			sourceRoom := model.GetRoom(linkData.source)
+
+			sourceRoom.SetLink(linkName, ch.session.room.GetId())
+			if linkData.mode == LinkDouble {
+				ch.session.room.SetLink(linkName, linkData.source)
+			}
+
+			linkData.source = nil
+			delete(ch.session.states, StateName)
+
+			ch.session.printRoom()
+		}
+	} else {
+		if len(args) == 0 {
+			usage()
+			return
+		}
+
+		if args[0] == "remove" {
+			mode := "double"
+			if len(args) == 3 {
+				if args[2] == "single" || args[2] == "double" {
+					mode = args[2]
+				} else {
+					usage()
+					return
+				}
+			}
+
+			if len(args) != 2 {
+				usage()
+				return
+			}
+
+			linkNames := ch.session.room.LinkNames()
+			index := utils.BestMatch(args[1], linkNames)
+
+			if index == -2 {
+				ch.session.printError("Which one do you mean?")
+			} else if index == -1 {
+				ch.session.printError("Link not found")
+			} else {
+				linkName := linkNames[index]
+
+				if mode == "double" {
+					links := ch.session.room.GetLinks()
+					linkedRoom := model.GetRoom(links[linkName])
+					linkedRoom.RemoveLink(linkName)
+				}
+
+				ch.session.room.RemoveLink(linkName)
+				ch.session.printRoom()
+			}
+		} else if args[0] == "rename" {
+
+		} else {
+			if len(args) == 2 {
+				if args[1] == LinkSingle || args[1] == LinkDouble {
+					linkData.mode = args[1]
+				} else {
+					usage()
+					return
+				}
+			} else {
+				linkData.mode = LinkDouble
+			}
+
+			// New link
+			ch.session.states[StateName] = utils.FormatName(args[0])
+			linkData.source = ch.session.room.GetId()
 		}
 	}
 }

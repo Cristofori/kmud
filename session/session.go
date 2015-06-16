@@ -22,6 +22,7 @@ type Session struct {
 	room   types.Room
 
 	prompt string
+	states map[string]string
 
 	userInputChannel chan string
 	inputModeChannel chan userInputMode
@@ -51,6 +52,7 @@ func NewSession(conn io.ReadWriter, user types.User, player types.PC) *Session {
 	session.room = model.GetRoom(player.GetRoomId())
 
 	session.prompt = "%h/%H> "
+	session.states = map[string]string{}
 
 	session.userInputChannel = make(chan string)
 	session.inputModeChannel = make(chan userInputMode)
@@ -246,6 +248,18 @@ func (session *Session) GetPrompt() string {
 	prompt := session.prompt
 	prompt = strings.Replace(prompt, "%h", strconv.Itoa(session.player.GetHitPoints()), -1)
 	prompt = strings.Replace(prompt, "%H", strconv.Itoa(session.player.GetHealth()), -1)
+
+	if len(session.states) > 0 {
+		states := make([]string, len(session.states))
+
+		i := 0
+		for key, value := range session.states {
+			states[i] = fmt.Sprintf("%s:%s", key, value)
+			i++
+		}
+
+		prompt = fmt.Sprintf("%s %s", states, prompt)
+	}
 
 	return types.Colorize(types.ColorWhite, prompt)
 }

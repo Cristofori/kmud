@@ -238,4 +238,29 @@ func (ah *actionHandler) Stop(args []string) {
 	events.StopFight(ah.session.player)
 }
 
+func (ah *actionHandler) Go(args []string) {
+	if len(args) != 1 {
+		ah.session.printError("Usage: go <name>")
+		return
+	}
+
+	links := ah.session.room.GetLinks()
+	linkNames := ah.session.room.LinkNames()
+	index := utils.BestMatch(args[0], linkNames)
+
+	if index == -2 {
+		ah.session.printError("Which one do you mean?")
+	} else if index == -1 {
+		ah.session.printError("Exit %s not found", args[0])
+	} else {
+		destId := links[linkNames[index]]
+		newRoom := model.GetRoom(destId)
+
+		model.MoveCharacterToRoom(ah.session.player, newRoom)
+
+		ah.session.room = newRoom
+		ah.session.printRoom()
+	}
+}
+
 // vim: nocindent

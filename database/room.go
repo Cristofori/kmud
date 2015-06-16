@@ -17,6 +17,7 @@ type Room struct {
 	Title         string
 	Description   string
 	Items         []types.Id
+	Links         map[string]types.Id
 	Location      types.Coordinate
 	ExitNorth     bool
 	ExitNorthEast bool
@@ -149,6 +150,14 @@ func (self *Room) ToString(players types.PCList, npcs types.NPCList, items types
 		str = str + strings.Join(exitList, " ")
 	}
 
+	if len(self.Links) > 0 {
+		str = fmt.Sprintf("%s\r\n\r\n %s %s",
+			str,
+			types.Colorize(types.ColorBlue, "Other exits:"),
+			types.Colorize(types.ColorWhite, strings.Join(self.LinkNames(), ", ")),
+		)
+	}
+
 	str = str + "\r\n"
 
 	return str
@@ -239,6 +248,44 @@ func (self *Room) RemoveItem(id types.Id) {
 
 		objectModified(self)
 	}
+}
+
+func (self *Room) SetLink(name string, roomId types.Id) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	if self.Links == nil {
+		self.Links = map[string]types.Id{}
+	}
+
+	self.Links[name] = roomId
+
+	objectModified(self)
+}
+
+func (self *Room) RemoveLink(name string) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	delete(self.Links, name)
+	objectModified(self)
+}
+
+func (self *Room) GetLinks() map[string]types.Id {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Links
+}
+
+func (self *Room) LinkNames() []string {
+	names := make([]string, len(self.Links))
+	i := 0
+	for name := range self.Links {
+		names[i] = name
+		i++
+	}
+	return names
 }
 
 func (self *Room) HasItem(id types.Id) bool {
