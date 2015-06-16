@@ -6,6 +6,8 @@ import (
 	"net"
 )
 
+type Id interface{}
+
 type ObjectType int
 
 const (

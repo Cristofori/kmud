@@ -143,8 +143,18 @@ func RetrieveObjects(t types.ObjectType, objects interface{}) error {
 	return c.Find(nil).Iter().All(objects)
 }
 
-func Find(t types.ObjectType, key string, value interface{}) []bson.ObjectId {
-	return find(t, bson.M{key: value})
+func Find(t types.ObjectType, query bson.M) []bson.ObjectId {
+	return find(t, query)
+}
+
+func FindOne(t types.ObjectType, query bson.M) types.Id {
+	var result bson.M
+	find_helper(t, query).One(&result)
+	id, found := result["_id"]
+	if found {
+		return id.(bson.ObjectId)
+	}
+	return nil
 }
 
 func FindAll(t types.ObjectType) []bson.ObjectId {
@@ -152,18 +162,20 @@ func FindAll(t types.ObjectType) []bson.ObjectId {
 }
 
 func find(t types.ObjectType, query interface{}) []bson.ObjectId {
-	c := getCollectionFromType(t)
-
-	var results []interface{}
-	c.Find(query).Iter().All(&results)
+	var results []bson.M
+	find_helper(t, query).Iter().All(&results)
 
 	var ids []bson.ObjectId
-
 	for _, result := range results {
-		ids = append(ids, result.(bson.M)["_id"].(bson.ObjectId))
+		ids = append(ids, result["_id"].(bson.ObjectId))
 	}
 
 	return ids
+}
+
+func find_helper(t types.ObjectType, query interface{}) Query {
+	c := getCollectionFromType(t)
+	return c.Find(query)
 }
 
 func DeleteObject(obj types.Object) error {

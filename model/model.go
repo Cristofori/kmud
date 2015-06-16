@@ -45,10 +45,10 @@ func GetUsers() types.UserList {
 // GetUserByName searches for the User object with the given name. Returns a
 // nil User if one was not found.
 func GetUserByName(username string) types.User {
-	for _, id := range db.Find(types.UserType, "name", utils.FormatName(username)) {
+	id := db.FindOne(types.UserType, bson.M{"name": utils.FormatName(username)})
+	if id != nil {
 		return ds.Get(id).(types.User)
 	}
-
 	return nil
 }
 
@@ -94,18 +94,18 @@ func GetCharacterByName(name string) types.Character {
 // GetPlayerCharacaterByName searches for a character with the given name. Returns a
 // character object, or nil if it wasn't found.
 func GetPlayerCharacterByName(name string) types.PC {
-	for _, id := range db.Find(types.PcType, "name", utils.FormatName(name)) {
+	id := db.FindOne(types.PcType, bson.M{"name": utils.FormatName(name)})
+	if id != nil {
 		return ds.Get(id).(types.PC)
 	}
-
 	return nil
 }
 
 func GetNpcByName(name string) types.NPC {
-	for _, id := range db.Find(types.NpcType, "name", utils.FormatName(name)) {
+	id := db.FindOne(types.NpcType, bson.M{"name": utils.FormatName(name)})
+	if id != nil {
 		return ds.Get(id).(types.NPC)
 	}
-
 	return nil
 }
 
@@ -137,7 +137,7 @@ func GetAllNpcTemplates() []*db.Character {
 // GetUserCharacters returns all of the Character objects associated with the
 // given user id
 func GetUserCharacters(user types.User) types.PCList {
-	ids := db.Find(types.PcType, "userid", user.GetId())
+	ids := db.Find(types.PcType, bson.M{"userid": user.GetId()})
 	pcs := make(types.PCList, len(ids))
 
 	for i, id := range ids {
@@ -161,7 +161,7 @@ func CharactersIn(room types.Room) types.CharacterList {
 
 // PlayerCharactersIn returns a list of player characters that are in the given room
 func PlayerCharactersIn(room types.Room, except types.Character) types.PCList {
-	ids := db.Find(types.PcType, "roomid", room.GetId())
+	ids := db.Find(types.PcType, bson.M{"roomid": room.GetId()})
 	var pcs types.PCList
 
 	for _, id := range ids {
@@ -177,7 +177,7 @@ func PlayerCharactersIn(room types.Room, except types.Character) types.PCList {
 
 // NpcsIn returns all of the NPC characters that are in the given room
 func NpcsIn(room types.Room) types.NPCList {
-	ids := db.Find(types.NpcType, "roomid", room.GetId())
+	ids := db.Find(types.NpcType, bson.M{"roomid": room.GetId()})
 	npcs := make(types.NPCList, len(ids))
 
 	for i, id := range ids {
@@ -271,15 +271,11 @@ func GetRooms() types.RoomList {
 // GetRoomsInZone returns a slice containing all of the rooms that belong to
 // the given zone
 func GetRoomsInZone(zone types.Zone) types.RoomList {
-	allRooms := GetRooms()
+	ids := db.Find(types.RoomType, bson.M{"zoneid": zone.GetId()})
+	rooms := make(types.RoomList, len(ids))
 
-	var rooms types.RoomList
-
-	for _, room := range allRooms {
-		// TODO move this check into the DB query
-		if room.GetZoneId() == zone.GetId() {
-			rooms = append(rooms, room)
-		}
+	for i, id := range ids {
+		rooms[i] = ds.Get(id).(types.Room)
 	}
 
 	return rooms
@@ -288,14 +284,13 @@ func GetRoomsInZone(zone types.Zone) types.RoomList {
 // GetRoomByLocation searches for the room associated with the given coordinate
 // in the given zone. Returns a nil room object if it was not found.
 func GetRoomByLocation(coordinate types.Coordinate, zone types.Zone) types.Room {
-	for _, id := range db.Find(types.RoomType, "zoneid", zone.GetId()) {
-		// TODO move this check into the DB query
-		room := ds.Get(id).(types.Room)
-		if room.GetLocation() == coordinate {
-			return room
-		}
+	id := db.FindOne(types.RoomType, bson.M{
+		"zoneid":   zone.GetId(),
+		"location": coordinate,
+	})
+	if id != nil {
+		return ds.Get(id).(types.Room)
 	}
-
 	return nil
 }
 
@@ -334,7 +329,7 @@ func DeleteZone(zone types.Zone) {
 
 // GetZoneByName name searches for a zone with the given name
 func GetZoneByName(name string) types.Zone {
-	for _, id := range db.Find(types.ZoneType, "name", utils.FormatName(name)) {
+	for _, id := range db.Find(types.ZoneType, bson.M{"name": utils.FormatName(name)}) {
 		return ds.Get(id).(types.Zone)
 	}
 
@@ -368,10 +363,10 @@ func CreateArea(name string, zone types.Zone) (types.Area, error) {
 }
 
 func GetAreaByName(name string) types.Area {
-	for _, id := range db.Find(types.AreaType, "name", utils.FormatName(name)) {
+	id := db.FindOne(types.AreaType, bson.M{"name": utils.FormatName(name)})
+	if id != nil {
 		return ds.Get(id).(types.Area)
 	}
-
 	return nil
 }
 

@@ -4,18 +4,16 @@ import (
 	"sync"
 
 	"github.com/Cristofori/kmud/types"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
-var _data map[bson.ObjectId]types.Object
+var _data map[types.Id]types.Object
 var _mutex sync.RWMutex
 
 func Init() {
-	_data = map[bson.ObjectId]types.Object{}
+	_data = map[types.Id]types.Object{}
 }
 
-func Get(id bson.ObjectId) types.Object {
+func Get(id types.Id) types.Object {
 	_mutex.RLock()
 	defer _mutex.RUnlock()
 
@@ -30,7 +28,7 @@ func Contains(obj types.Identifiable) bool {
 	return found
 }
 
-func ContainsId(id bson.ObjectId) bool {
+func ContainsId(id types.Id) bool {
 	_mutex.RLock()
 	defer _mutex.RUnlock()
 
