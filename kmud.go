@@ -22,9 +22,9 @@ func signalHandler() {
 
 	for {
 		<-c
-		stack := make([]byte, 1024*10)
-		runtime.Stack(stack, true)
-		os.Stderr.Write(stack)
+		// stack := make([]byte, 1024*10)
+		// runtime.Stack(stack, true)
+		// os.Stderr.Write(stack)
 		os.Exit(0)
 	}
 }

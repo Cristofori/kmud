@@ -174,23 +174,23 @@ func (self *Character) GetCash() int {
 	return self.Cash
 }
 
-func (self *Character) AddItem(item *Item) {
-	if !self.HasItem(item) {
+func (self *Character) AddItem(id bson.ObjectId) {
+	if !self.HasItem(id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
 
-		self.Inventory = append(self.Inventory, item.GetId())
+		self.Inventory = append(self.Inventory, id)
 		objectModified(self)
 	}
 }
 
-func (self *Character) RemoveItem(item *Item) {
-	if self.HasItem(item) {
+func (self *Character) RemoveItem(id bson.ObjectId) {
+	if self.HasItem(id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
 
 		for i, itemId := range self.Inventory {
-			if itemId == item.GetId() {
+			if itemId == id {
 				// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
 				self.Inventory = append(self.Inventory[:i], self.Inventory[i+1:]...)
 				break
@@ -201,12 +201,12 @@ func (self *Character) RemoveItem(item *Item) {
 	}
 }
 
-func (self *Character) HasItem(item *Item) bool {
+func (self *Character) HasItem(id bson.ObjectId) bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
 	for _, itemId := range self.Inventory {
-		if itemId == item.GetId() {
+		if itemId == id {
 			return true
 		}
 	}
@@ -244,8 +244,8 @@ func (self *NonPlayerChar) PrettyConversation() string {
 	}
 
 	return fmt.Sprintf("%s%s",
-		utils.Colorize(utils.ColorBlue, self.GetName()),
-		utils.Colorize(utils.ColorWhite, ": "+conv))
+		types.Colorize(types.ColorBlue, self.GetName()),
+		types.Colorize(types.ColorWhite, ": "+conv))
 }
 
 func (self *Character) SetHealth(health int) {

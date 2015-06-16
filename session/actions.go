@@ -3,9 +3,9 @@ package session
 import (
 	"strings"
 
-	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 )
 
@@ -15,9 +15,9 @@ type actionHandler struct {
 
 func (ah *actionHandler) handleAction(action string, args []string) {
 	if len(args) == 0 {
-		direction := database.StringToDirection(action)
+		direction := types.StringToDirection(action)
 
-		if direction != database.DirectionNone {
+		if direction != types.DirectionNone {
 			if ah.session.room.HasExit(direction) {
 				newRoom, err := model.MoveCharacter(ah.session.player, direction)
 				if err == nil {
@@ -50,10 +50,10 @@ func (ah *actionHandler) Look(args []string) {
 	if len(args) == 0 {
 		ah.session.printRoom()
 	} else if len(args) == 1 {
-		arg := database.StringToDirection(args[0])
+		arg := types.StringToDirection(args[0])
 
-		if arg == database.DirectionNone {
-			charList := model.PlayerCharactersIn(ah.session.room, nil)
+		if arg == types.DirectionNone {
+			charList := model.CharactersIn(ah.session.room)
 			index := utils.BestMatch(args[0], charList.Names())
 
 			if index == -2 {
@@ -62,7 +62,7 @@ func (ah *actionHandler) Look(args []string) {
 				ah.session.printLine("Looking at: %s", charList[index].GetName())
 			} else {
 				itemList := model.ItemsIn(ah.session.room)
-				index = utils.BestMatch(args[0], database.ItemNames(itemList))
+				index = utils.BestMatch(args[0], itemList.Names())
 
 				if index == -1 {
 					ah.session.printLine("Nothing to see")
@@ -124,7 +124,7 @@ func (ah *actionHandler) Talk(args []string) {
 	}
 
 	npcList := model.NpcsIn(ah.session.room)
-	index := utils.BestMatch(args[0], npcList.Names())
+	index := utils.BestMatch(args[0], npcList.Characters().Names())
 
 	if index == -1 {
 		ah.session.printError("Not found")
@@ -147,7 +147,7 @@ func (ah *actionHandler) Drop(args []string) {
 	}
 
 	characterItems := model.GetItems(ah.session.player.GetItemIds())
-	index := utils.BestMatch(args[0], database.ItemNames(characterItems))
+	index := utils.BestMatch(args[0], characterItems.Names())
 
 	if index == -1 {
 		ah.session.printError("Not found")
@@ -155,8 +155,8 @@ func (ah *actionHandler) Drop(args []string) {
 		ah.session.printError("Which one do you mean?")
 	} else {
 		item := characterItems[index]
-		ah.session.player.RemoveItem(item)
-		ah.session.room.AddItem(item)
+		ah.session.player.RemoveItem(item.GetId())
+		ah.session.room.AddItem(item.GetId())
 		ah.session.printLine("Dropped %s", item.GetName())
 	}
 }
@@ -188,7 +188,7 @@ func (ah *actionHandler) Pickup(args []string) {
 	}
 
 	itemsInRoom := model.GetItems(ah.session.room.GetItemIds())
-	index := utils.BestMatch(args[0], database.ItemNames(itemsInRoom))
+	index := utils.BestMatch(args[0], itemsInRoom.Names())
 
 	if index == -2 {
 		ah.session.printError("Which one do you mean?")
@@ -196,8 +196,8 @@ func (ah *actionHandler) Pickup(args []string) {
 		ah.session.printError("Item %s not found", args[0])
 	} else {
 		item := itemsInRoom[index]
-		ah.session.player.AddItem(item)
-		ah.session.room.RemoveItem(item)
+		ah.session.player.AddItem(item.GetId())
+		ah.session.room.RemoveItem(item.GetId())
 		ah.session.printLine("Picked up %s", item.GetName())
 	}
 }

@@ -1,11 +1,12 @@
-package database
+package types
 
-import (
-	"fmt"
-	"strings"
+import "strings"
 
-	"github.com/Cristofori/kmud/utils"
-)
+type Coordinate struct {
+	X int
+	Y int
+	Z int
+}
 
 type Direction int
 
@@ -22,84 +23,6 @@ const (
 	DirectionDown      Direction = iota
 	DirectionNone      Direction = iota
 )
-
-type Coordinate struct {
-	X int
-	Y int
-	Z int
-}
-
-func directionToExitString(direction Direction) string {
-	letterColor := utils.ColorBlue
-	bracketColor := utils.ColorDarkBlue
-	textColor := utils.ColorWhite
-
-	colorize := func(letters string, text string) string {
-		return fmt.Sprintf("%s%s%s%s",
-			utils.Colorize(bracketColor, "["),
-			utils.Colorize(letterColor, letters),
-			utils.Colorize(bracketColor, "]"),
-			utils.Colorize(textColor, text))
-	}
-
-	switch direction {
-	case DirectionNorth:
-		return colorize("N", "orth")
-	case DirectionNorthEast:
-		return colorize("NE", "North East")
-	case DirectionEast:
-		return colorize("E", "ast")
-	case DirectionSouthEast:
-		return colorize("SE", "South East")
-	case DirectionSouth:
-		return colorize("S", "outh")
-	case DirectionSouthWest:
-		return colorize("SW", "South West")
-	case DirectionWest:
-		return colorize("W", "est")
-	case DirectionNorthWest:
-		return colorize("NW", "North West")
-	case DirectionUp:
-		return colorize("U", "p")
-	case DirectionDown:
-		return colorize("D", "own")
-	case DirectionNone:
-		return utils.Colorize(utils.ColorWhite, "None")
-	}
-
-	panic("Unexpected code path")
-}
-
-func (self *Coordinate) Next(direction Direction) Coordinate {
-	newCoord := *self
-	switch direction {
-	case DirectionNorth:
-		newCoord.Y -= 1
-	case DirectionNorthEast:
-		newCoord.Y -= 1
-		newCoord.X += 1
-	case DirectionEast:
-		newCoord.X += 1
-	case DirectionSouthEast:
-		newCoord.Y += 1
-		newCoord.X += 1
-	case DirectionSouth:
-		newCoord.Y += 1
-	case DirectionSouthWest:
-		newCoord.Y += 1
-		newCoord.X -= 1
-	case DirectionWest:
-		newCoord.X -= 1
-	case DirectionNorthWest:
-		newCoord.Y -= 1
-		newCoord.X -= 1
-	case DirectionUp:
-		newCoord.Z -= 1
-	case DirectionDown:
-		newCoord.Z += 1
-	}
-	return newCoord
-}
 
 func StringToDirection(str string) Direction {
 	dirStr := strings.ToLower(str)
@@ -141,7 +64,7 @@ func StringToDirection(str string) Direction {
 	return DirectionNone
 }
 
-func DirectionToString(dir Direction) string {
+func (dir Direction) ToString() string {
 	switch dir {
 	case DirectionNorth:
 		return "North"
@@ -197,4 +120,33 @@ func (self Direction) Opposite() Direction {
 	return DirectionNone
 }
 
-// vim: nocindent
+func (self *Coordinate) Next(direction Direction) Coordinate {
+	newCoord := *self
+	switch direction {
+	case DirectionNorth:
+		newCoord.Y -= 1
+	case DirectionNorthEast:
+		newCoord.Y -= 1
+		newCoord.X += 1
+	case DirectionEast:
+		newCoord.X += 1
+	case DirectionSouthEast:
+		newCoord.Y += 1
+		newCoord.X += 1
+	case DirectionSouth:
+		newCoord.Y += 1
+	case DirectionSouthWest:
+		newCoord.Y += 1
+		newCoord.X -= 1
+	case DirectionWest:
+		newCoord.X -= 1
+	case DirectionNorthWest:
+		newCoord.Y -= 1
+		newCoord.X -= 1
+	case DirectionUp:
+		newCoord.Z -= 1
+	case DirectionDown:
+		newCoord.Z += 1
+	}
+	return newCoord
+}

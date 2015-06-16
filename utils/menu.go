@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/Cristofori/kmud/types"
 	"gopkg.in/mgo.v2/bson"
 	"io"
 	"strconv"
@@ -70,10 +71,10 @@ func (self *Menu) HasAction(key string) bool {
 	return action.key != ""
 }
 
-func (self *Menu) Exec(conn io.ReadWriter, cm ColorMode) (string, bson.ObjectId) {
+func (self *Menu) Exec(conn io.ReadWriter, cm types.ColorMode) (string, bson.ObjectId) {
 	for {
 		self.Print(conn, cm)
-		input := GetUserInput(conn, Colorize(ColorWhite, self.prompt), cm)
+		input := GetUserInput(conn, types.Colorize(types.ColorWhite, self.prompt), cm)
 
 		if input == "" {
 			return "", ""
@@ -86,9 +87,9 @@ func (self *Menu) Exec(conn io.ReadWriter, cm ColorMode) (string, bson.ObjectId)
 	}
 }
 
-func (self *Menu) Print(conn io.Writer, cm ColorMode) {
-	border := Colorize(ColorWhite, "-=-=-")
-	title := Colorize(ColorBlue, self.title)
+func (self *Menu) Print(conn io.Writer, cm types.ColorMode) {
+	border := types.Colorize(types.ColorWhite, "-=-=-")
+	title := types.Colorize(types.ColorBlue, self.title)
 	WriteLine(conn, fmt.Sprintf("%s %s %s", border, title, border), cm)
 
 	for _, action := range self.actions {
@@ -98,21 +99,21 @@ func (self *Menu) Print(conn io.Writer, cm ColorMode) {
 
 		if index == -1 {
 			actionText = fmt.Sprintf("%s[%s%s%s]%s%s",
-				ColorDarkBlue,
-				ColorBlue,
+				types.ColorDarkBlue,
+				types.ColorBlue,
 				strings.ToUpper(action.key),
-				ColorDarkBlue,
-				ColorWhite,
+				types.ColorDarkBlue,
+				types.ColorWhite,
 				action.text)
 		} else {
 			keyLength := len(action.key)
 			actionText = fmt.Sprintf("%s%s[%s%s%s]%s%s",
 				action.text[:index],
-				ColorDarkBlue,
-				ColorBlue,
+				types.ColorDarkBlue,
+				types.ColorBlue,
 				action.text[index:index+keyLength],
-				ColorDarkBlue,
-				ColorWhite,
+				types.ColorDarkBlue,
+				types.ColorWhite,
 				action.text[index+keyLength:])
 		}
 

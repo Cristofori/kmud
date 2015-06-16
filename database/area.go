@@ -13,8 +13,6 @@ type Area struct {
 	ZoneId bson.ObjectId
 }
 
-type Areas []*Area
-
 func NewArea(name string, zone bson.ObjectId) *Area {
 	var area Area
 

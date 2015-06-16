@@ -14,7 +14,7 @@ type User struct {
 	DbObject `bson:",inline"`
 
 	Name      string
-	ColorMode utils.ColorMode
+	ColorMode types.ColorMode
 	Password  []byte
 
 	online       bool
@@ -29,7 +29,7 @@ func NewUser(name string, password string) *User {
 
 	user.Name = utils.FormatName(name)
 	user.Password = hash(password)
-	user.ColorMode = utils.ColorModeNone
+	user.ColorMode = types.ColorModeNone
 	user.online = false
 
 	user.windowWidth = 80
@@ -50,6 +50,15 @@ func (self *User) GetName() string {
 	return self.Name
 }
 
+func (self *User) SetName(name string) {
+	if name != self.GetName() {
+		self.WriteLock()
+		self.Name = utils.FormatName(name)
+		self.WriteUnlock()
+		objectModified(self)
+	}
+}
+
 func (self *User) SetOnline(online bool) {
 	self.online = online
 
@@ -58,11 +67,11 @@ func (self *User) SetOnline(online bool) {
 	}
 }
 
-func (self *User) Online() bool {
+func (self *User) IsOnline() bool {
 	return self.online
 }
 
-func (self *User) SetColorMode(cm utils.ColorMode) {
+func (self *User) SetColorMode(cm types.ColorMode) {
 	if cm != self.GetColorMode() {
 		self.WriteLock()
 		self.ColorMode = cm
@@ -72,7 +81,7 @@ func (self *User) SetColorMode(cm utils.ColorMode) {
 	}
 }
 
-func (self *User) GetColorMode() utils.ColorMode {
+func (self *User) GetColorMode() types.ColorMode {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
@@ -124,7 +133,7 @@ func (self *User) SetWindowSize(width int, height int) {
 	self.windowHeight = height
 }
 
-func (self *User) WindowSize() (width int, height int) {
+func (self *User) GetWindowSize() (width int, height int) {
 	return self.windowWidth, self.windowHeight
 }
 
@@ -132,12 +141,12 @@ func (self *User) SetTerminalType(tt string) {
 	self.terminalType = tt
 }
 
-func (self *User) TerminalType() string {
+func (self *User) GetTerminalType() string {
 	return self.terminalType
 }
 
-func (self *User) GetInput(text string) string {
-	return utils.GetUserInput(self.conn, text, self.GetColorMode())
+func (self *User) GetInput(prompt string) string {
+	return utils.GetUserInput(self.conn, prompt, self.GetColorMode())
 }
 
 func (self *User) WriteLine(line string) (int, error) {
@@ -156,29 +165,6 @@ func UserNames(users []*User) []string {
 	}
 
 	return names
-}
-
-type Users []*User
-
-func (self Users) Len() int {
-	return len(self)
-}
-
-func (self Users) Less(i, j int) bool {
-	return utils.NaturalLessThan(self[i].GetName(), self[j].GetName())
-}
-
-func (self Users) Swap(i, j int) {
-	self[i], self[j] = self[j], self[i]
-}
-
-func (self Users) Contains(u *User) bool {
-	for _, user := range self {
-		if u == user {
-			return true
-		}
-	}
-	return false
 }
 
 // vim: nocindent

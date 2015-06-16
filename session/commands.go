@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
@@ -16,7 +15,7 @@ type commandHandler struct {
 	session *Session
 }
 
-func npcMenu(room *database.Room) *utils.Menu {
+func npcMenu(room types.Room) *utils.Menu {
 	var npcs types.NPCList
 
 	if room != nil {
@@ -82,27 +81,27 @@ func specificSpawnMenu(templateId bson.ObjectId) *utils.Menu {
 }
 */
 
-func toggleExitMenu(room *database.Room) *utils.Menu {
-	onOrOff := func(direction database.Direction) string {
+func toggleExitMenu(room types.Room) *utils.Menu {
+	onOrOff := func(direction types.Direction) string {
 		text := "Off"
 		if room.HasExit(direction) {
 			text = "On"
 		}
-		return utils.Colorize(utils.ColorBlue, text)
+		return types.Colorize(types.ColorBlue, text)
 	}
 
 	menu := utils.NewMenu("Edit Exits")
 
-	menu.AddAction("n", "North: "+onOrOff(database.DirectionNorth))
-	menu.AddAction("ne", "North East: "+onOrOff(database.DirectionNorthEast))
-	menu.AddAction("e", "East: "+onOrOff(database.DirectionEast))
-	menu.AddAction("se", "South East: "+onOrOff(database.DirectionSouthEast))
-	menu.AddAction("s", "South: "+onOrOff(database.DirectionSouth))
-	menu.AddAction("sw", "South West: "+onOrOff(database.DirectionSouthWest))
-	menu.AddAction("w", "West: "+onOrOff(database.DirectionWest))
-	menu.AddAction("nw", "North West: "+onOrOff(database.DirectionNorthWest))
-	menu.AddAction("u", "Up: "+onOrOff(database.DirectionUp))
-	menu.AddAction("d", "Down: "+onOrOff(database.DirectionDown))
+	menu.AddAction("n", "North: "+onOrOff(types.DirectionNorth))
+	menu.AddAction("ne", "North East: "+onOrOff(types.DirectionNorthEast))
+	menu.AddAction("e", "East: "+onOrOff(types.DirectionEast))
+	menu.AddAction("se", "South East: "+onOrOff(types.DirectionSouthEast))
+	menu.AddAction("s", "South: "+onOrOff(types.DirectionSouth))
+	menu.AddAction("sw", "South West: "+onOrOff(types.DirectionSouthWest))
+	menu.AddAction("w", "West: "+onOrOff(types.DirectionWest))
+	menu.AddAction("nw", "North West: "+onOrOff(types.DirectionNorthWest))
+	menu.AddAction("u", "Up: "+onOrOff(types.DirectionUp))
+	menu.AddAction("d", "Down: "+onOrOff(types.DirectionDown))
 
 	return menu
 }
@@ -121,9 +120,9 @@ func (ch *commandHandler) handleCommand(command string, args []string) {
 }
 
 func (ch *commandHandler) quickRoom(command string) {
-	dir := database.StringToDirection(command)
+	dir := types.StringToDirection(command)
 
-	if dir == database.DirectionNone {
+	if dir == types.DirectionNone {
 		return
 	}
 
@@ -180,8 +179,8 @@ func (ch *commandHandler) Room(args []string) {
 					break
 				}
 
-				direction := database.StringToDirection(choice)
-				if direction != database.DirectionNone {
+				direction := types.StringToDirection(choice)
+				if direction != types.DirectionNone {
 					enable := !ch.session.room.HasExit(direction)
 					ch.session.room.SetExitEnabled(direction, enable)
 
@@ -219,13 +218,13 @@ func (ch *commandHandler) Room(args []string) {
 
 func (ch *commandHandler) Map(args []string) {
 	zoneRooms := model.GetRoomsInZone(ch.session.currentZone())
-	roomsByLocation := map[database.Coordinate]*database.Room{}
+	roomsByLocation := map[types.Coordinate]types.Room{}
 
 	for _, room := range zoneRooms {
 		roomsByLocation[room.GetLocation()] = room
 	}
 
-	width, height := ch.session.user.WindowSize()
+	width, height := ch.session.user.GetWindowSize()
 	height /= 2
 	width /= 2
 
@@ -245,7 +244,7 @@ func (ch *commandHandler) Map(args []string) {
 
 	for y := startY; y <= endY; y++ {
 		for x := startX; x <= endX; x++ {
-			loc := database.Coordinate{X: x, Y: y, Z: center.Z}
+			loc := types.Coordinate{X: x, Y: y, Z: center.Z}
 			room := roomsByLocation[loc]
 
 			if room != nil {
@@ -260,11 +259,11 @@ func (ch *commandHandler) Map(args []string) {
 
 func (ch *commandHandler) Zone(args []string) {
 	if len(args) == 0 {
-		ch.session.printLine("Current zone: " + utils.Colorize(utils.ColorBlue, ch.session.currentZone().GetName()))
+		ch.session.printLine("Current zone: " + types.Colorize(types.ColorBlue, ch.session.currentZone().GetName()))
 	} else if len(args) == 1 {
 		if args[0] == "list" {
-			ch.session.printLineColor(utils.ColorBlue, "Zones")
-			ch.session.printLineColor(utils.ColorBlue, "-----")
+			ch.session.printLineColor(types.ColorBlue, "Zones")
+			ch.session.printLineColor(types.ColorBlue, "-----")
 			for _, zone := range model.GetZones() {
 				ch.session.printLine(zone.GetName())
 			}
@@ -289,7 +288,7 @@ func (ch *commandHandler) Zone(args []string) {
 				return
 			}
 
-			newRoom, err := model.CreateRoom(newZone, database.Coordinate{X: 0, Y: 0, Z: 0})
+			newRoom, err := model.CreateRoom(newZone, types.Coordinate{X: 0, Y: 0, Z: 0})
 			utils.PanicIfError(err)
 
 			model.MoveCharacterToRoom(ch.session.player, newRoom)
@@ -418,7 +417,7 @@ func (ch *commandHandler) Teleport(args []string) {
 		return
 	}
 
-	newRoom, err := model.MoveCharacterToLocation(ch.session.player, newZone, database.Coordinate{X: x, Y: y, Z: z})
+	newRoom, err := model.MoveCharacterToLocation(ch.session.player, newZone, types.Coordinate{X: x, Y: y, Z: z})
 
 	if err == nil {
 		ch.session.room = newRoom
@@ -442,22 +441,22 @@ func (ch *commandHandler) Who(args []string) {
 }
 
 func (ch *commandHandler) Colors(args []string) {
-	ch.session.printLineColor(utils.ColorNormal, "Normal")
-	ch.session.printLineColor(utils.ColorRed, "Red")
-	ch.session.printLineColor(utils.ColorDarkRed, "Dark Red")
-	ch.session.printLineColor(utils.ColorGreen, "Green")
-	ch.session.printLineColor(utils.ColorDarkGreen, "Dark Green")
-	ch.session.printLineColor(utils.ColorBlue, "Blue")
-	ch.session.printLineColor(utils.ColorDarkBlue, "Dark Blue")
-	ch.session.printLineColor(utils.ColorYellow, "Yellow")
-	ch.session.printLineColor(utils.ColorDarkYellow, "Dark Yellow")
-	ch.session.printLineColor(utils.ColorMagenta, "Magenta")
-	ch.session.printLineColor(utils.ColorDarkMagenta, "Dark Magenta")
-	ch.session.printLineColor(utils.ColorCyan, "Cyan")
-	ch.session.printLineColor(utils.ColorDarkCyan, "Dark Cyan")
-	ch.session.printLineColor(utils.ColorBlack, "Black")
-	ch.session.printLineColor(utils.ColorWhite, "White")
-	ch.session.printLineColor(utils.ColorGray, "Gray")
+	ch.session.printLineColor(types.ColorNormal, "Normal")
+	ch.session.printLineColor(types.ColorRed, "Red")
+	ch.session.printLineColor(types.ColorDarkRed, "Dark Red")
+	ch.session.printLineColor(types.ColorGreen, "Green")
+	ch.session.printLineColor(types.ColorDarkGreen, "Dark Green")
+	ch.session.printLineColor(types.ColorBlue, "Blue")
+	ch.session.printLineColor(types.ColorDarkBlue, "Dark Blue")
+	ch.session.printLineColor(types.ColorYellow, "Yellow")
+	ch.session.printLineColor(types.ColorDarkYellow, "Dark Yellow")
+	ch.session.printLineColor(types.ColorMagenta, "Magenta")
+	ch.session.printLineColor(types.ColorDarkMagenta, "Dark Magenta")
+	ch.session.printLineColor(types.ColorCyan, "Cyan")
+	ch.session.printLineColor(types.ColorDarkCyan, "Dark Cyan")
+	ch.session.printLineColor(types.ColorBlack, "Black")
+	ch.session.printLineColor(types.ColorWhite, "White")
+	ch.session.printLineColor(types.ColorGray, "Gray")
 }
 
 func (ch *commandHandler) CM(args []string) {
@@ -468,24 +467,24 @@ func (ch *commandHandler) ColorMode(args []string) {
 	if len(args) == 0 {
 		message := "Current color mode is: "
 		switch ch.session.user.GetColorMode() {
-		case utils.ColorModeNone:
+		case types.ColorModeNone:
 			message = message + "None"
-		case utils.ColorModeLight:
+		case types.ColorModeLight:
 			message = message + "Light"
-		case utils.ColorModeDark:
+		case types.ColorModeDark:
 			message = message + "Dark"
 		}
 		ch.session.printLine(message)
 	} else if len(args) == 1 {
 		switch strings.ToLower(args[0]) {
 		case "none":
-			ch.session.user.SetColorMode(utils.ColorModeNone)
+			ch.session.user.SetColorMode(types.ColorModeNone)
 			ch.session.printLine("Color mode set to: None")
 		case "light":
-			ch.session.user.SetColorMode(utils.ColorModeLight)
+			ch.session.user.SetColorMode(types.ColorModeLight)
 			ch.session.printLine("Color mode set to: Light")
 		case "dark":
-			ch.session.user.SetColorMode(utils.ColorModeDark)
+			ch.session.user.SetColorMode(types.ColorModeDark)
 			ch.session.printLine("Color mode set to: Dark")
 		default:
 			ch.session.printLine("Valid color modes are: None, Light, Dark")
@@ -501,9 +500,9 @@ func (ch *commandHandler) DR(args []string) {
 
 func (ch *commandHandler) DestroyRoom(args []string) {
 	if len(args) == 1 {
-		direction := database.StringToDirection(args[0])
+		direction := types.StringToDirection(args[0])
 
-		if direction == database.DirectionNone {
+		if direction == types.DirectionNone {
 			ch.session.printError("Not a valid direction")
 		} else {
 			loc := ch.session.room.NextLocation(direction)
@@ -556,7 +555,7 @@ func (ch *commandHandler) Npc(args []string) {
 				npc := model.GetNpc(npcId)
 
 				if choice == "d" {
-					model.DeleteNpcId(npcId)
+					model.DeleteCharacterId(npcId)
 				} else if choice == "r" {
 					name := getNpcName(ch)
 					if name != "" {
@@ -634,7 +633,7 @@ func (ch *commandHandler) Create(args []string) {
 	}
 
 	item := model.CreateItem(args[0])
-	ch.session.room.AddItem(item)
+	ch.session.room.AddItem(item.GetId())
 	ch.session.printLine("Item created")
 }
 
@@ -653,7 +652,7 @@ func (ch *commandHandler) DestroyItem(args []string) {
 
 	for _, item := range itemsInRoom {
 		if strings.ToLower(item.GetName()) == name {
-			ch.session.room.RemoveItem(item)
+			ch.session.room.RemoveItem(item.GetId())
 			model.DeleteItem(item)
 			ch.session.printLine("Item destroyed")
 			return
@@ -694,7 +693,7 @@ func (ch *commandHandler) Cash(args []string) {
 }
 
 func (ch *commandHandler) WS(args []string) { // WindowSize
-	width, height := ch.session.user.WindowSize()
+	width, height := ch.session.user.GetWindowSize()
 
 	header := fmt.Sprintf("Width: %v, Height: %v", width, height)
 
@@ -712,7 +711,7 @@ func (ch *commandHandler) WS(args []string) { // WindowSize
 }
 
 func (ch *commandHandler) TT(args []string) { // TerminalType
-	ch.session.printLine("Terminal type: %s", ch.session.user.TerminalType())
+	ch.session.printLine("Terminal type: %s", ch.session.user.GetTerminalType())
 }
 
 func (ch *commandHandler) Silent(args []string) {

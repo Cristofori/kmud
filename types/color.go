@@ -1,4 +1,4 @@
-package utils
+package types
 
 import (
 	"fmt"
@@ -122,7 +122,7 @@ func Colorize(color Color, text string) string {
 }
 
 // Strips MUD color codes and replaces them with ansi color codes
-func processColors(text string, cm ColorMode) string {
+func ProcessColors(text string, cm ColorMode) string {
 	regex := regexp.MustCompile("([@#][0-6]|@@|##)")
 
 	lookup := map[Color]bool{}

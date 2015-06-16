@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"github.com/Cristofori/kmud/testutils"
+	"github.com/Cristofori/kmud/types"
 	"io"
 	"math/rand"
 	"reflect"
@@ -16,7 +17,7 @@ func Test_WriteLine(t *testing.T) {
 	line := "This is a line"
 	want := line + "\r\n"
 
-	WriteLine(writer, line, ColorModeNone)
+	WriteLine(writer, line, types.ColorModeNone)
 
 	if writer.Wrote != want {
 		t.Errorf("WriteLine(%q) == %q, want %q", line, writer.Wrote, want)
@@ -59,7 +60,7 @@ func Test_GetRawUserInput(t *testing.T) {
 
 	for _, test := range tests {
 		readWriter.ToRead = test.input
-		line := GetRawUserInput(readWriter, ">", ColorModeNone)
+		line := GetRawUserInput(readWriter, ">", types.ColorModeNone)
 		if line != test.output {
 			t.Errorf("GetRawUserInput(%q) == %q, want %q", test.input, line, test.output)
 		}
@@ -83,7 +84,7 @@ func Test_GetUserInput(t *testing.T) {
 
 	for _, test := range tests {
 		readWriter.ToRead = test.input
-		line := GetUserInput(readWriter, ">", ColorModeNone)
+		line := GetUserInput(readWriter, ">", types.ColorModeNone)
 		if line != test.output {
 			t.Errorf("GetUserInput(%q) == %q, want %q", test.input, line, test.output)
 		}
@@ -101,7 +102,7 @@ func Test_GetUserInputPanicOnEOF(t *testing.T) {
 		}
 	}()
 
-	GetUserInput(readWriter, "", ColorModeNone)
+	GetUserInput(readWriter, "", types.ColorModeNone)
 }
 
 func Test_HandleError(t *testing.T) {

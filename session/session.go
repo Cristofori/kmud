@@ -5,9 +5,9 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
 	// "log"
@@ -18,9 +18,9 @@ import (
 
 type Session struct {
 	conn   io.ReadWriter
-	user   *database.User
-	player *database.PlayerChar
-	room   *database.Room
+	user   types.User
+	player types.PC
+	room   types.Room
 
 	prompt string
 
@@ -44,7 +44,7 @@ type Session struct {
 	// logger *log.Logger
 }
 
-func NewSession(conn io.ReadWriter, user *database.User, player *database.PlayerChar) *Session {
+func NewSession(conn io.ReadWriter, user types.User, player types.PC) *Session {
 	var session Session
 	session.conn = conn
 	session.user = user
@@ -84,7 +84,7 @@ func (session *Session) Exec() {
 	defer events.Unregister(session.eventListener)
 	defer model.Logout(session.player)
 
-	session.printLineColor(utils.ColorWhite, "Welcome, "+session.player.GetName())
+	session.printLineColor(types.ColorWhite, "Welcome, "+session.player.GetName())
 	session.printRoom()
 
 	// Main routine in charge of actually reading input from the connection object,
@@ -133,16 +133,16 @@ func (session *Session) Exec() {
 	}
 }
 
-func (session *Session) printLineColor(color utils.Color, line string, a ...interface{}) {
-	session.user.WriteLine(utils.Colorize(color, fmt.Sprintf(line, a...)))
+func (session *Session) printLineColor(color types.Color, line string, a ...interface{}) {
+	session.user.WriteLine(types.Colorize(color, fmt.Sprintf(line, a...)))
 }
 
 func (session *Session) printLine(line string, a ...interface{}) {
-	session.printLineColor(utils.ColorWhite, line, a...)
+	session.printLineColor(types.ColorWhite, line, a...)
 }
 
 func (session *Session) printError(err string, a ...interface{}) {
-	session.printLineColor(utils.ColorRed, err, a...)
+	session.printLineColor(types.ColorRed, err, a...)
 }
 
 func (session *Session) printRoom() {
@@ -248,10 +248,10 @@ func (session *Session) GetPrompt() string {
 	prompt = strings.Replace(prompt, "%h", strconv.Itoa(session.player.GetHitPoints()), -1)
 	prompt = strings.Replace(prompt, "%H", strconv.Itoa(session.player.GetHealth()), -1)
 
-	return utils.Colorize(utils.ColorWhite, prompt)
+	return types.Colorize(types.ColorWhite, prompt)
 }
 
-func (session *Session) currentZone() *database.Zone {
+func (session *Session) currentZone() types.Zone {
 	return model.GetZone(session.room.GetZoneId())
 }
 

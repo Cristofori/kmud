@@ -1,7 +1,7 @@
 package session
 
 import (
-	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 )
 
@@ -10,12 +10,12 @@ type mapBuilder struct {
 	height   int
 	depth    int
 	data     [][][]mapTile
-	userRoom *database.Room
+	userRoom types.Room
 }
 
 type mapTile struct {
 	char  rune
-	color utils.Color
+	color types.Color
 }
 
 func (self *mapTile) toString() string {
@@ -23,7 +23,7 @@ func (self *mapTile) toString() string {
 		return string(self.char)
 	}
 
-	return utils.Colorize(self.color, string(self.char))
+	return types.Colorize(self.color, string(self.char))
 }
 
 func newMapBuilder(width int, height int, depth int) mapBuilder {
@@ -57,15 +57,15 @@ func newMapBuilder(width int, height int, depth int) mapBuilder {
 	return builder
 }
 
-func (self *mapBuilder) setUserRoom(room *database.Room) {
+func (self *mapBuilder) setUserRoom(room types.Room) {
 	self.userRoom = room
 }
 
-func (self *mapBuilder) addRoom(room *database.Room, x int, y int, z int) {
+func (self *mapBuilder) addRoom(room types.Room, x int, y int, z int) {
 	x = x * 2
 	y = y * 2
 
-	addIfExists := func(dir database.Direction, x int, y int) {
+	addIfExists := func(dir types.Direction, x int, y int) {
 		if x < 0 || y < 0 {
 			return
 		}
@@ -77,29 +77,29 @@ func (self *mapBuilder) addRoom(room *database.Room, x int, y int, z int) {
 
 	if self.userRoom.GetId() == room.GetId() {
 		self.data[z][y][x].char = 'O'
-		self.data[z][y][x].color = utils.ColorRed
+		self.data[z][y][x].color = types.ColorRed
 	} else {
-		self.data[z][y][x].color = utils.ColorMagenta
-		if room.HasExit(database.DirectionUp) && room.HasExit(database.DirectionDown) {
+		self.data[z][y][x].color = types.ColorMagenta
+		if room.HasExit(types.DirectionUp) && room.HasExit(types.DirectionDown) {
 			self.data[z][y][x].char = '+'
-		} else if room.HasExit(database.DirectionUp) {
+		} else if room.HasExit(types.DirectionUp) {
 			self.data[z][y][x].char = '^'
-		} else if room.HasExit(database.DirectionDown) {
+		} else if room.HasExit(types.DirectionDown) {
 			self.data[z][y][x].char = 'v'
 		} else {
 			self.data[z][y][x].char = '#'
-			self.data[z][y][x].color = utils.ColorWhite
+			self.data[z][y][x].color = types.ColorWhite
 		}
 	}
 
-	addIfExists(database.DirectionNorth, x, y-1)
-	addIfExists(database.DirectionNorthEast, x+1, y-1)
-	addIfExists(database.DirectionEast, x+1, y)
-	addIfExists(database.DirectionSouthEast, x+1, y+1)
-	addIfExists(database.DirectionSouth, x, y+1)
-	addIfExists(database.DirectionSouthWest, x-1, y+1)
-	addIfExists(database.DirectionWest, x-1, y)
-	addIfExists(database.DirectionNorthWest, x-1, y-1)
+	addIfExists(types.DirectionNorth, x, y-1)
+	addIfExists(types.DirectionNorthEast, x+1, y-1)
+	addIfExists(types.DirectionEast, x+1, y)
+	addIfExists(types.DirectionSouthEast, x+1, y+1)
+	addIfExists(types.DirectionSouth, x, y+1)
+	addIfExists(types.DirectionSouthWest, x-1, y+1)
+	addIfExists(types.DirectionWest, x-1, y)
+	addIfExists(types.DirectionNorthWest, x-1, y-1)
 }
 
 func (self *mapBuilder) toString() string {
@@ -119,7 +119,7 @@ func (self *mapBuilder) toString() string {
 		rows = utils.TrimLowerRows(rows)
 
 		if self.depth > 1 {
-			divider := utils.Colorize(utils.ColorWhite, "================================================================================\r\n")
+			divider := types.Colorize(types.ColorWhite, "================================================================================\r\n")
 			rows = append(rows, divider)
 		}
 
@@ -131,7 +131,7 @@ func (self *mapBuilder) toString() string {
 	return str
 }
 
-func (self *mapTile) addExit(dir database.Direction) {
+func (self *mapTile) addExit(dir types.Direction) {
 	combineChars := func(r1 rune, r2 rune, r3 rune) {
 		if self.char == r1 {
 			self.char = r2
@@ -140,24 +140,24 @@ func (self *mapTile) addExit(dir database.Direction) {
 		}
 	}
 
-	self.color = utils.ColorBlue
+	self.color = types.ColorBlue
 
 	switch dir {
-	case database.DirectionNorth:
+	case types.DirectionNorth:
 		combineChars('|', '|', '|')
-	case database.DirectionNorthEast:
+	case types.DirectionNorthEast:
 		combineChars('\\', 'X', '/')
-	case database.DirectionEast:
+	case types.DirectionEast:
 		combineChars('-', '-', '-')
-	case database.DirectionSouthEast:
+	case types.DirectionSouthEast:
 		combineChars('/', 'X', '\\')
-	case database.DirectionSouth:
+	case types.DirectionSouth:
 		combineChars('|', '|', '|')
-	case database.DirectionSouthWest:
+	case types.DirectionSouthWest:
 		combineChars('\\', 'X', '/')
-	case database.DirectionWest:
+	case types.DirectionWest:
 		combineChars('-', '-', '-')
-	case database.DirectionNorthWest:
+	case types.DirectionNorthWest:
 		combineChars('/', 'X', '\\')
 	default:
 		panic("Unexpected direction given to mapTile::addExit()")

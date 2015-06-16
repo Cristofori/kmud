@@ -6,6 +6,7 @@ import (
 	"compress/zlib"
 	"errors"
 	"fmt"
+	"github.com/Cristofori/kmud/types"
 	"io"
 	"log"
 	"math/rand"
@@ -35,11 +36,11 @@ func SimplePrompter(prompt string) Prompter {
 	return &prompter
 }
 
-func Write(conn io.Writer, text string, cm ColorMode) (int, error) {
-	return conn.Write([]byte(processColors(text, cm)))
+func Write(conn io.Writer, text string, cm types.ColorMode) (int, error) {
+	return conn.Write([]byte(types.ProcessColors(text, cm)))
 }
 
-func WriteLine(conn io.Writer, line string, cm ColorMode) (int, error) {
+func WriteLine(conn io.Writer, line string, cm types.ColorMode) (int, error) {
 	return Write(conn, line+"\r\n", cm)
 }
 
@@ -47,7 +48,7 @@ func WriteLine(conn io.Writer, line string, cm ColorMode) (int, error) {
 // return to move the cursor back to the beginning of the line
 func ClearLine(conn io.Writer) {
 	clearline := "\x1B[2K"
-	Write(conn, clearline+"\r", ColorModeNone)
+	Write(conn, clearline+"\r", types.ColorModeNone)
 }
 
 func Simplify(str string) string {
@@ -56,11 +57,11 @@ func Simplify(str string) string {
 	return simpleStr
 }
 
-func GetRawUserInputSuffix(conn io.ReadWriter, prompt string, suffix string, cm ColorMode) string {
+func GetRawUserInputSuffix(conn io.ReadWriter, prompt string, suffix string, cm types.ColorMode) string {
 	return GetRawUserInputSuffixP(conn, SimplePrompter(prompt), suffix, cm)
 }
 
-func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string, cm ColorMode) string {
+func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string, cm types.ColorMode) string {
 	scanner := bufio.NewScanner(conn)
 
 	for {
@@ -83,20 +84,20 @@ func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string
 	}
 }
 
-func GetRawUserInputP(conn io.ReadWriter, prompter Prompter, cm ColorMode) string {
+func GetRawUserInputP(conn io.ReadWriter, prompter Prompter, cm types.ColorMode) string {
 	return GetRawUserInputSuffixP(conn, prompter, "", cm)
 }
 
-func GetRawUserInput(conn io.ReadWriter, prompt string, cm ColorMode) string {
+func GetRawUserInput(conn io.ReadWriter, prompt string, cm types.ColorMode) string {
 	return GetRawUserInputP(conn, SimplePrompter(prompt), cm)
 }
 
-func GetUserInputP(conn io.ReadWriter, prompter Prompter, cm ColorMode) string {
+func GetUserInputP(conn io.ReadWriter, prompter Prompter, cm types.ColorMode) string {
 	input := GetRawUserInputP(conn, prompter, cm)
 	return Simplify(input)
 }
 
-func GetUserInput(conn io.ReadWriter, prompt string, cm ColorMode) string {
+func GetUserInput(conn io.ReadWriter, prompt string, cm types.ColorMode) string {
 	input := GetUserInputP(conn, SimplePrompter(prompt), cm)
 	return Simplify(input)
 }
@@ -357,6 +358,47 @@ func Random(low, high int) int {
 	result += low
 
 	return result
+}
+
+func DirectionToExitString(direction types.Direction) string {
+	letterColor := types.ColorBlue
+	bracketColor := types.ColorDarkBlue
+	textColor := types.ColorWhite
+
+	colorize := func(letters string, text string) string {
+		return fmt.Sprintf("%s%s%s%s",
+			types.Colorize(bracketColor, "["),
+			types.Colorize(letterColor, letters),
+			types.Colorize(bracketColor, "]"),
+			types.Colorize(textColor, text))
+	}
+
+	switch direction {
+	case types.DirectionNorth:
+		return colorize("N", "orth")
+	case types.DirectionNorthEast:
+		return colorize("NE", "North East")
+	case types.DirectionEast:
+		return colorize("E", "ast")
+	case types.DirectionSouthEast:
+		return colorize("SE", "South East")
+	case types.DirectionSouth:
+		return colorize("S", "outh")
+	case types.DirectionSouthWest:
+		return colorize("SW", "South West")
+	case types.DirectionWest:
+		return colorize("W", "est")
+	case types.DirectionNorthWest:
+		return colorize("NW", "North West")
+	case types.DirectionUp:
+		return colorize("U", "p")
+	case types.DirectionDown:
+		return colorize("D", "own")
+	case types.DirectionNone:
+		return types.Colorize(types.ColorWhite, "None")
+	}
+
+	panic("Unexpected code path")
 }
 
 // vim: nocindent

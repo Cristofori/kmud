@@ -29,14 +29,13 @@ func (self *Item) GetName() string {
 	return self.Name
 }
 
-func ItemNames(items []*Item) []string {
-	names := make([]string, len(items))
-
-	for i, item := range items {
-		names[i] = item.GetName()
+func (self *Item) SetName(name string) {
+	if name != self.GetName() {
+		self.WriteLock()
+		self.Name = utils.FormatName(name)
+		self.WriteUnlock()
+		objectModified(self)
 	}
-
-	return names
 }
 
 // vim: nocindent

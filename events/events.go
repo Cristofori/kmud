@@ -128,7 +128,7 @@ type TellEvent struct {
 
 type MoveEvent struct {
 	Character types.Character
-	Room      *database.Room
+	Room      types.Room
 	Message   string
 }
 
@@ -168,8 +168,8 @@ func (self BroadcastEvent) Type() EventType {
 }
 
 func (self BroadcastEvent) ToString(receiver types.Character) string {
-	return utils.Colorize(utils.ColorCyan, "Broadcast from "+self.Character.GetName()+": ") +
-		utils.Colorize(utils.ColorWhite, self.Message)
+	return types.Colorize(types.ColorCyan, "Broadcast from "+self.Character.GetName()+": ") +
+		types.Colorize(types.ColorWhite, self.Message)
 }
 
 func (self BroadcastEvent) IsFor(receiver types.Character) bool {
@@ -189,8 +189,8 @@ func (self SayEvent) ToString(receiver types.Character) string {
 		who = self.Character.GetName() + " says"
 	}
 
-	return utils.Colorize(utils.ColorBlue, who+", ") +
-		utils.Colorize(utils.ColorWhite, "\""+self.Message+"\"")
+	return types.Colorize(types.ColorBlue, who+", ") +
+		types.Colorize(types.ColorWhite, "\""+self.Message+"\"")
 }
 
 func (self SayEvent) IsFor(receiver types.Character) bool {
@@ -203,7 +203,7 @@ func (self EmoteEvent) Type() EventType {
 }
 
 func (self EmoteEvent) ToString(receiver types.Character) string {
-	return utils.Colorize(utils.ColorYellow, self.Character.GetName()+" "+self.Emote)
+	return types.Colorize(types.ColorYellow, self.Character.GetName()+" "+self.Emote)
 }
 
 func (self EmoteEvent) IsFor(receiver types.Character) bool {
@@ -216,8 +216,8 @@ func (self TellEvent) Type() EventType {
 }
 
 func (self TellEvent) ToString(receiver types.Character) string {
-	return utils.Colorize(utils.ColorMagenta, fmt.Sprintf("Message from %s: ", self.From.GetName())) +
-		utils.Colorize(utils.ColorWhite, self.Message)
+	return types.Colorize(types.ColorMagenta, fmt.Sprintf("Message from %s: ", self.From.GetName())) +
+		types.Colorize(types.ColorWhite, self.Message)
 }
 
 func (self TellEvent) IsFor(receiver types.Character) bool {
@@ -244,7 +244,7 @@ func (self RoomUpdateEvent) Type() EventType {
 }
 
 func (self RoomUpdateEvent) ToString(receiver types.Character) string {
-	return utils.Colorize(utils.ColorWhite, "This room has been modified")
+	return types.Colorize(types.ColorWhite, "This room has been modified")
 }
 
 func (self RoomUpdateEvent) IsFor(receiver types.Character) bool {
@@ -257,8 +257,8 @@ func (self LoginEvent) Type() EventType {
 }
 
 func (self LoginEvent) ToString(receiver types.Character) string {
-	return utils.Colorize(utils.ColorBlue, self.Character.GetName()) +
-		utils.Colorize(utils.ColorWhite, " has connected")
+	return types.Colorize(types.ColorBlue, self.Character.GetName()) +
+		types.Colorize(types.ColorWhite, " has connected")
 }
 
 func (self LoginEvent) IsFor(receiver types.Character) bool {
@@ -285,9 +285,9 @@ func (self CombatStartEvent) Type() EventType {
 
 func (self CombatStartEvent) ToString(receiver types.Character) string {
 	if receiver == self.Attacker {
-		return utils.Colorize(utils.ColorRed, fmt.Sprintf("You are attacking %s!", self.Defender.GetName()))
+		return types.Colorize(types.ColorRed, fmt.Sprintf("You are attacking %s!", self.Defender.GetName()))
 	} else if receiver == self.Defender {
-		return utils.Colorize(utils.ColorRed, fmt.Sprintf("%s is attacking you!", self.Attacker.GetName()))
+		return types.Colorize(types.ColorRed, fmt.Sprintf("%s is attacking you!", self.Attacker.GetName()))
 	}
 
 	return ""
@@ -304,9 +304,9 @@ func (self CombatStopEvent) Type() EventType {
 
 func (self CombatStopEvent) ToString(receiver types.Character) string {
 	if receiver == self.Attacker {
-		return utils.Colorize(utils.ColorGreen, fmt.Sprintf("You stopped attacking %s", self.Defender.GetName()))
+		return types.Colorize(types.ColorGreen, fmt.Sprintf("You stopped attacking %s", self.Defender.GetName()))
 	} else if receiver == self.Defender {
-		return utils.Colorize(utils.ColorGreen, fmt.Sprintf("%s has stopped attacking you", self.Attacker.GetName()))
+		return types.Colorize(types.ColorGreen, fmt.Sprintf("%s has stopped attacking you", self.Attacker.GetName()))
 	}
 
 	return ""
@@ -323,9 +323,9 @@ func (self CombatEvent) Type() EventType {
 
 func (self CombatEvent) ToString(receiver types.Character) string {
 	if receiver == self.Attacker {
-		return utils.Colorize(utils.ColorRed, fmt.Sprintf("You hit %s for %v damage", self.Defender.GetName(), self.Damage))
+		return types.Colorize(types.ColorRed, fmt.Sprintf("You hit %s for %v damage", self.Defender.GetName(), self.Damage))
 	} else if receiver == self.Defender {
-		return utils.Colorize(utils.ColorRed, fmt.Sprintf("%s hits you for %v damage", self.Attacker.GetName(), self.Damage))
+		return types.Colorize(types.ColorRed, fmt.Sprintf("%s hits you for %v damage", self.Attacker.GetName(), self.Damage))
 	}
 
 	return ""

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"github.com/Cristofori/kmud/testutils"
+	"github.com/Cristofori/kmud/types"
 	"strings"
 	"testing"
 )
@@ -36,7 +37,7 @@ func Test_Exec(t *testing.T) {
 	expected := "a"
 	readWriter.ToRead = expected
 
-	choice, _ := menu.Exec(readWriter, ColorModeNone)
+	choice, _ := menu.Exec(readWriter, types.ColorModeNone)
 
 	testutils.Assert(choice == expected, t, "Expected choice to be %s", expected)
 }
@@ -50,7 +51,7 @@ func Test_Print(t *testing.T) {
 
 	writer := &testutils.TestWriter{}
 
-	menu.Print(writer, ColorModeNone)
+	menu.Print(writer, types.ColorModeNone)
 
 	testutils.Assert(strings.Contains(writer.Wrote, "[A]ction1"), t, "Didn't have Action1")
 	testutils.Assert(strings.Contains(writer.Wrote, "[1]Action2"), t, "Didn't have Action2")

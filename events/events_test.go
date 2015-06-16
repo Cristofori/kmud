@@ -5,13 +5,14 @@ import (
 	"time"
 
 	tu "github.com/Cristofori/kmud/testutils"
+	"github.com/Cristofori/kmud/types"
 )
 
 func Test_EventLoop(t *testing.T) {
 	StartEvents()
 	StartCombatLoop()
 
-	char := tu.PlayerCharacter()
+	char := types.NewMockPC()
 
 	eventListener := Register("Test_EventLoop()")
 
@@ -31,8 +32,8 @@ func Test_EventLoop(t *testing.T) {
 }
 
 func Test_CombatLoop(t *testing.T) {
-	char1 := tu.PlayerCharacter()
-	char2 := tu.PlayerCharacter()
+	char1 := types.NewMockPC()
+	char2 := types.NewMockPC()
 	char1.RoomId = char2.RoomId
 
 	eventListener1 := Register("Test_CombatLoop() - char1")

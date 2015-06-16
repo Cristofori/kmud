@@ -6,6 +6,7 @@ import (
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/datastore"
 	tu "github.com/Cristofori/kmud/testutils"
+	"github.com/Cristofori/kmud/types"
 	"gopkg.in/mgo.v2"
 )
 
@@ -49,11 +50,6 @@ func Test_UserFunctions(t *testing.T) {
 	user3 := GetOrCreateUser(name2, password2)
 	tu.Assert(user3 != user2 && user3 != user1, t, "GetOrCreateUser() shouldn't have returned an already existing user")
 
-	userList := GetUsers()
-	tu.Assert(userList.Contains(user1), t, "GetUsers() didn't return user1")
-	tu.Assert(userList.Contains(user2), t, "GetUsers() didn't return user2")
-	tu.Assert(userList.Contains(user3), t, "GetUsers() didn't return user3")
-
 	userByName := GetUserByName(name1)
 	tu.Assert(userByName == user1, t, "GetUserByName() failed to find user1", name1)
 
@@ -61,14 +57,12 @@ func Test_UserFunctions(t *testing.T) {
 	tu.Assert(userByName == nil, t, "GetUserByName() should have returned nill")
 
 	zone, _ := CreateZone("testZone")
-	room, _ := CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
+	room, _ := CreateRoom(zone, types.Coordinate{X: 0, Y: 0, Z: 0})
 	CreatePlayerCharacter("testPlayer", user1, room)
 
 	DeleteUser(user1)
 	userByName = GetUserByName(name1)
 	tu.Assert(userByName == nil, t, "DeleteUser() failed to delete user1")
-	userList = GetUsers()
-	tu.Assert(!userList.Contains(user1), t, "GetUsers() shouldn't have user1 in it anymore")
 	tu.Assert(len(GetUserCharacters(user1)) == 0, t, "Deleting a user should have deleted its characters")
 
 	_cleanup(t)
@@ -89,11 +83,6 @@ func Test_ZoneFunctions(t *testing.T) {
 	zone3, err3 := CreateZone("zone3")
 	tu.Assert(zone3 != nil && err3 == nil, t, "Failed to create zone3")
 
-	zoneList := GetZones()
-	tu.Assert(zoneList.Contains(zone1), t, "GetZones() didn't return zone1")
-	tu.Assert(zoneList.Contains(zone2), t, "GetZones() didn't return zone2")
-	tu.Assert(zoneList.Contains(zone3), t, "GetZones() didn't return zone3")
-
 	zoneById := GetZone(zone1.GetId())
 	tu.Assert(zoneById == zone1, t, "GetZoneById() failed")
 
@@ -107,21 +96,21 @@ func Test_RoomFunctions(t *testing.T) {
 	zone, err := CreateZone("zone")
 	tu.Assert(zone != nil && err == nil, t, "Zone creation failed")
 
-	room1, err1 := CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
+	room1, err1 := CreateRoom(zone, types.Coordinate{X: 0, Y: 0, Z: 0})
 	tu.Assert(room1 != nil && err1 == nil, t, "Room creation failed")
 
-	badRoom, shouldError := CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
+	badRoom, shouldError := CreateRoom(zone, types.Coordinate{X: 0, Y: 0, Z: 0})
 	tu.Assert(badRoom == nil && shouldError != nil, t, "Creating two rooms at the same location should have failed")
 
-	room2, err2 := CreateRoom(zone, database.Coordinate{X: 0, Y: 1, Z: 0})
+	room2, err2 := CreateRoom(zone, types.Coordinate{X: 0, Y: 1, Z: 0})
 	tu.Assert(room2 != nil && err2 == nil, t, "Second room creation failed")
 
-	room1.SetExitEnabled(database.DirectionSouth, true)
-	room2.SetExitEnabled(database.DirectionNorth, true)
+	room1.SetExitEnabled(types.DirectionSouth, true)
+	room2.SetExitEnabled(types.DirectionNorth, true)
 
-	tu.Assert(room2.HasExit(database.DirectionNorth), t, "Call to room.SetExitEnabled failed")
+	tu.Assert(room2.HasExit(types.DirectionNorth), t, "Call to room.SetExitEnabled failed")
 	DeleteRoom(room1)
-	tu.Assert(!room2.HasExit(database.DirectionNorth), t, "Deleting room1 should have removed corresponding exit from room2")
+	tu.Assert(!room2.HasExit(types.DirectionNorth), t, "Deleting room1 should have removed corresponding exit from room2")
 
 	_cleanup(t)
 }

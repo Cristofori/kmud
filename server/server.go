@@ -14,6 +14,7 @@ import (
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/session"
 	"github.com/Cristofori/kmud/telnet"
+	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2"
 )
@@ -59,9 +60,9 @@ func (s *wrappedConnection) SetWriteDeadline(dl time.Time) error {
 	return s.telnet.SetWriteDeadline(dl)
 }
 
-func login(conn *wrappedConnection) *database.User {
+func login(conn *wrappedConnection) types.User {
 	for {
-		username := utils.GetUserInput(conn, "Username: ", utils.ColorModeNone)
+		username := utils.GetUserInput(conn, "Username: ", types.ColorModeNone)
 
 		if username == "" {
 			return nil
@@ -70,14 +71,14 @@ func login(conn *wrappedConnection) *database.User {
 		user := model.GetUserByName(username)
 
 		if user == nil {
-			utils.WriteLine(conn, "User not found", utils.ColorModeNone)
-		} else if user.Online() {
-			utils.WriteLine(conn, "That user is already online", utils.ColorModeNone)
+			utils.WriteLine(conn, "User not found", types.ColorModeNone)
+		} else if user.IsOnline() {
+			utils.WriteLine(conn, "That user is already online", types.ColorModeNone)
 		} else {
 			attempts := 1
 			conn.telnet.WillEcho()
 			for {
-				password := utils.GetRawUserInputSuffix(conn, "Password: ", "\r\n", utils.ColorModeNone)
+				password := utils.GetRawUserInputSuffix(conn, "Password: ", "\r\n", types.ColorModeNone)
 
 				// TODO - Disabling password verification to make development easier
 				if user.VerifyPassword(password) || true {
@@ -85,7 +86,7 @@ func login(conn *wrappedConnection) *database.User {
 				}
 
 				if attempts >= 3 {
-					utils.WriteLine(conn, "Too many failed login attempts", utils.ColorModeNone)
+					utils.WriteLine(conn, "Too many failed login attempts", types.ColorModeNone)
 					conn.Close()
 					panic("Booted user due to too many failed logins (" + user.GetName() + ")")
 				}
@@ -93,7 +94,7 @@ func login(conn *wrappedConnection) *database.User {
 				attempts++
 
 				time.Sleep(2 * time.Second)
-				utils.WriteLine(conn, "Invalid password", utils.ColorModeNone)
+				utils.WriteLine(conn, "Invalid password", types.ColorModeNone)
 			}
 			conn.telnet.WontEcho()
 
@@ -102,9 +103,9 @@ func login(conn *wrappedConnection) *database.User {
 	}
 }
 
-func newUser(conn *wrappedConnection) *database.User {
+func newUser(conn *wrappedConnection) types.User {
 	for {
-		name := utils.GetUserInput(conn, "Desired username: ", utils.ColorModeNone)
+		name := utils.GetUserInput(conn, "Desired username: ", types.ColorModeNone)
 
 		if name == "" {
 			return nil
@@ -114,23 +115,23 @@ func newUser(conn *wrappedConnection) *database.User {
 		password := ""
 
 		if user != nil {
-			utils.WriteLine(conn, "That name is unavailable", utils.ColorModeNone)
+			utils.WriteLine(conn, "That name is unavailable", types.ColorModeNone)
 		} else if err := utils.ValidateName(name); err != nil {
-			utils.WriteLine(conn, err.Error(), utils.ColorModeNone)
+			utils.WriteLine(conn, err.Error(), types.ColorModeNone)
 		} else {
 			conn.telnet.WillEcho()
 			for {
-				pass1 := utils.GetRawUserInputSuffix(conn, "Desired password: ", "\r\n", utils.ColorModeNone)
+				pass1 := utils.GetRawUserInputSuffix(conn, "Desired password: ", "\r\n", types.ColorModeNone)
 
 				if len(pass1) < 7 {
-					utils.WriteLine(conn, "Passwords must be at least 7 letters in length", utils.ColorModeNone)
+					utils.WriteLine(conn, "Passwords must be at least 7 letters in length", types.ColorModeNone)
 					continue
 				}
 
-				pass2 := utils.GetRawUserInputSuffix(conn, "Confirm password: ", "\r\n", utils.ColorModeNone)
+				pass2 := utils.GetRawUserInputSuffix(conn, "Confirm password: ", "\r\n", types.ColorModeNone)
 
 				if pass1 != pass2 {
-					utils.WriteLine(conn, "Passwords do not match", utils.ColorModeNone)
+					utils.WriteLine(conn, "Passwords do not match", types.ColorModeNone)
 					continue
 				}
 
@@ -146,7 +147,7 @@ func newUser(conn *wrappedConnection) *database.User {
 	}
 }
 
-func newPlayer(conn *wrappedConnection, user *database.User) *database.PlayerChar {
+func newPlayer(conn *wrappedConnection, user types.User) types.PC {
 	// TODO: character slot limit
 	const SizeLimit = 12
 	for {
@@ -179,7 +180,7 @@ func mainMenu() *utils.Menu {
 	return menu
 }
 
-func userMenu(user *database.User) *utils.Menu {
+func userMenu(user types.User) *utils.Menu {
 	chars := model.GetUserCharacters(user)
 
 	menu := utils.NewMenu(user.GetName())
@@ -200,7 +201,7 @@ func userMenu(user *database.User) *utils.Menu {
 	return menu
 }
 
-func deleteMenu(user *database.User) *utils.Menu {
+func deleteMenu(user types.User) *utils.Menu {
 	chars := model.GetUserCharacters(user)
 
 	menu := utils.NewMenu("Delete character")
@@ -233,7 +234,7 @@ func userAdminMenu() *utils.Menu {
 		index := i + 1
 
 		online := ""
-		if user.Online() {
+		if user.IsOnline() {
 			online = "*"
 		}
 
@@ -243,9 +244,9 @@ func userAdminMenu() *utils.Menu {
 	return menu
 }
 
-func userSpecificMenu(user *database.User) *utils.Menu {
+func userSpecificMenu(user types.User) *utils.Menu {
 	suffix := ""
-	if user.Online() {
+	if user.IsOnline() {
 		suffix = "(Online)"
 	} else {
 		suffix = "(Offline)"
@@ -254,7 +255,7 @@ func userSpecificMenu(user *database.User) *utils.Menu {
 	menu := utils.NewMenu("User: " + user.GetName() + " " + suffix)
 	menu.AddAction("d", "Delete")
 
-	if user.Online() {
+	if user.IsOnline() {
 		menu.AddAction("w", "Watch")
 	}
 
@@ -264,8 +265,8 @@ func userSpecificMenu(user *database.User) *utils.Menu {
 func handleConnection(conn *wrappedConnection) {
 	defer conn.Close()
 
-	var user *database.User
-	var pc *database.PlayerChar
+	var user types.User
+	var pc types.PC
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -295,7 +296,7 @@ func handleConnection(conn *wrappedConnection) {
 	for {
 		if user == nil {
 			menu := mainMenu()
-			choice, _ := menu.Exec(conn, utils.ColorModeNone)
+			choice, _ := menu.Exec(conn, types.ColorModeNone)
 
 			switch choice {
 			case "l":
@@ -305,7 +306,7 @@ func handleConnection(conn *wrappedConnection) {
 			case "":
 				fallthrough
 			case "q":
-				utils.WriteLine(conn, "Take luck!", utils.ColorModeNone)
+				utils.WriteLine(conn, "Take luck!", types.ColorModeNone)
 				conn.Close()
 				return
 			}
@@ -405,7 +406,7 @@ func handleConnection(conn *wrappedConnection) {
 
 					if err == nil {
 						// TODO: Delete confirmation
-						model.DeletePlayerCharacterId(deleteCharId)
+						model.DeleteCharacterId(deleteCharId)
 					}
 				}
 
@@ -443,7 +444,7 @@ func (self *Server) Start() {
 	if len(rooms) == 0 {
 		zones := model.GetZones()
 
-		var zone *database.Zone
+		var zone types.Zone
 
 		if len(zones) == 0 {
 			zone, _ = model.CreateZone("Default")
@@ -451,7 +452,7 @@ func (self *Server) Start() {
 			zone = zones[0]
 		}
 
-		model.CreateRoom(zone, database.Coordinate{X: 0, Y: 0, Z: 0})
+		model.CreateRoom(zone, types.Coordinate{X: 0, Y: 0, Z: 0})
 	}
 
 	fmt.Println("Server listening on port 8945")

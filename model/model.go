@@ -14,13 +14,13 @@ import (
 
 // CreateUser creates a new User object in the database and adds it to the model.
 // A pointer to the new User object is returned.
-func CreateUser(name string, password string) *db.User {
+func CreateUser(name string, password string) types.User {
 	return db.NewUser(name, password)
 }
 
 // GetOrCreateUser attempts to retrieve the existing user from the model by the given name.
 // if none exists, then a new one is created with the given credentials.
-func GetOrCreateUser(name string, password string) *db.User {
+func GetOrCreateUser(name string, password string) types.User {
 	user := GetUserByName(name)
 
 	if user == nil {
@@ -31,11 +31,12 @@ func GetOrCreateUser(name string, password string) *db.User {
 }
 
 // GetUsers returns all of the User objects in the model
-func GetUsers() db.Users {
-	var users db.Users
+func GetUsers() types.UserList {
+	ids := db.FindAll(types.UserType)
+	users := make(types.UserList, len(ids))
 
-	for _, id := range db.FindAll(types.UserType) {
-		users = append(users, ds.Get(id).(*db.User))
+	for i, id := range ids {
+		users[i] = ds.Get(id).(types.User)
 	}
 
 	return users
@@ -43,9 +44,9 @@ func GetUsers() db.Users {
 
 // GetUserByName searches for the User object with the given name. Returns a
 // nil User if one was not found.
-func GetUserByName(username string) *db.User {
+func GetUserByName(username string) types.User {
 	for _, id := range db.Find(types.UserType, "name", utils.FormatName(username)) {
-		return ds.Get(id).(*db.User)
+		return ds.Get(id).(types.User)
 	}
 
 	return nil
@@ -56,9 +57,9 @@ func DeleteUserId(userId bson.ObjectId) {
 }
 
 // Removes the given User from the model. Removes it from the database as well.
-func DeleteUser(user *db.User) {
+func DeleteUser(user types.User) {
 	for _, character := range GetUserCharacters(user) {
-		DeletePlayerCharacter(character)
+		DeleteCharacter(character)
 	}
 
 	ds.Remove(user)
@@ -66,25 +67,25 @@ func DeleteUser(user *db.User) {
 }
 
 // GetPlayerCharacter returns the Character object associated the given Id
-func GetPlayerCharacter(id bson.ObjectId) *db.PlayerChar {
-	return ds.Get(id).(*db.PlayerChar)
+func GetPlayerCharacter(id bson.ObjectId) types.PC {
+	return ds.Get(id).(types.PC)
 }
 
-func GetNpc(id bson.ObjectId) *db.NonPlayerChar {
-	return ds.Get(id).(*db.NonPlayerChar)
+func GetNpc(id bson.ObjectId) types.NPC {
+	return ds.Get(id).(types.NPC)
 }
 
-func GetCharacterByName(name string) *db.Character {
+func GetCharacterByName(name string) types.Character {
 	char := GetPlayerCharacterByName(name)
 
 	if char != nil {
-		return &char.Character
+		return char
 	}
 
 	npc := GetNpcByName(name)
 
 	if npc != nil {
-		return &npc.Character
+		return npc
 	}
 
 	return nil
@@ -92,17 +93,17 @@ func GetCharacterByName(name string) *db.Character {
 
 // GetPlayerCharacaterByName searches for a character with the given name. Returns a
 // character object, or nil if it wasn't found.
-func GetPlayerCharacterByName(name string) *db.PlayerChar {
+func GetPlayerCharacterByName(name string) types.PC {
 	for _, id := range db.Find(types.PcType, "name", utils.FormatName(name)) {
-		return ds.Get(id).(*db.PlayerChar)
+		return ds.Get(id).(types.PC)
 	}
 
 	return nil
 }
 
-func GetNpcByName(name string) *db.NonPlayerChar {
+func GetNpcByName(name string) types.NPC {
 	for _, id := range db.Find(types.NpcType, "name", utils.FormatName(name)) {
-		return ds.Get(id).(*db.NonPlayerChar)
+		return ds.Get(id).(types.NPC)
 	}
 
 	return nil
@@ -135,37 +136,36 @@ func GetAllNpcTemplates() []*db.Character {
 
 // GetUserCharacters returns all of the Character objects associated with the
 // given user id
-func GetUserCharacters(user *db.User) []*db.PlayerChar {
-	var pcs []*db.PlayerChar
+func GetUserCharacters(user types.User) types.PCList {
+	ids := db.Find(types.PcType, "userid", user.GetId())
+	pcs := make(types.PCList, len(ids))
 
-	id := user.GetId()
-
-	for _, id := range db.Find(types.PcType, "userid", id) {
-		pcs = append(pcs, ds.Get(id).(*db.PlayerChar))
+	for i, id := range ids {
+		pcs[i] = ds.Get(id).(types.PC)
 	}
 
 	return pcs
 }
 
-func CharactersIn(room *db.Room) types.CharacterList {
+func CharactersIn(room types.Room) types.CharacterList {
 	var characters types.CharacterList
 
 	players := PlayerCharactersIn(room, nil)
 	npcs := NpcsIn(room)
 
-	characters = append(characters, players...)
+	characters = append(characters, players.Characters()...)
 	characters = append(characters, npcs.Characters()...)
 
 	return characters
 }
 
 // PlayerCharactersIn returns a list of player characters that are in the given room
-func PlayerCharactersIn(room *db.Room, except types.Character) types.CharacterList {
+func PlayerCharactersIn(room types.Room, except types.Character) types.PCList {
 	ids := db.Find(types.PcType, "roomid", room.GetId())
-	var pcs types.CharacterList
+	var pcs types.PCList
 
 	for _, id := range ids {
-		pc := ds.Get(id).(types.Character)
+		pc := ds.Get(id).(types.PC)
 
 		if pc.IsOnline() && pc != except {
 			pcs = append(pcs, pc)
@@ -176,7 +176,7 @@ func PlayerCharactersIn(room *db.Room, except types.Character) types.CharacterLi
 }
 
 // NpcsIn returns all of the NPC characters that are in the given room
-func NpcsIn(room *db.Room) types.NPCList {
+func NpcsIn(room types.Room) types.NPCList {
 	ids := db.Find(types.NpcType, "roomid", room.GetId())
 	npcs := make(types.NPCList, len(ids))
 
@@ -188,11 +188,11 @@ func NpcsIn(room *db.Room) types.NPCList {
 }
 
 // GetOnlinePlayerCharacters returns a list of all of the characters who are online
-func GetOnlinePlayerCharacters() []*db.PlayerChar {
-	var pcs []*db.PlayerChar
+func GetOnlinePlayerCharacters() []types.PC {
+	var pcs []types.PC
 
 	for _, id := range db.FindAll(types.PcType) {
-		pc := ds.Get(id).(*db.PlayerChar)
+		pc := ds.Get(id).(types.PC)
 		if pc.IsOnline() {
 			pcs = append(pcs, pc)
 		}
@@ -204,14 +204,14 @@ func GetOnlinePlayerCharacters() []*db.PlayerChar {
 // CreatePlayerCharacter creates a new player-controlled Character object in the
 // database and adds it to the model.  A pointer to the new character object is
 // returned.
-func CreatePlayerCharacter(name string, parentUser *db.User, startingRoom *db.Room) *db.PlayerChar {
+func CreatePlayerCharacter(name string, parentUser types.User, startingRoom types.Room) types.PC {
 	return db.NewPlayerChar(name, parentUser.GetId(), startingRoom.GetId())
 }
 
 // GetOrCreatePlayerCharacter attempts to retrieve the existing user from the model by the given name.
 // if none exists, then a new one is created. If the name matches an NPC (rather than a player)
 // then nil will be returned.
-func GetOrCreatePlayerCharacter(name string, parentUser *db.User, startingRoom *db.Room) *db.PlayerChar {
+func GetOrCreatePlayerCharacter(name string, parentUser types.User, startingRoom types.Room) types.PC {
 	player := GetPlayerCharacterByName(name)
 	npc := GetNpcByName(name)
 
@@ -226,42 +226,23 @@ func GetOrCreatePlayerCharacter(name string, parentUser *db.User, startingRoom *
 
 // CreateNpc is a convenience function for creating a new character object that
 // is an NPC (as opposed to an actual player-controlled character)
-func CreateNpc(name string, room *db.Room) *db.NonPlayerChar {
+func CreateNpc(name string, room types.Room) types.NPC {
 	return db.NewNonPlayerChar(name, room.GetId())
 }
 
-/*
-func CreateNpcTemplate(name string) *db.Character {
-	template := db.NewNpcTemplate(name)
-	_chars[template.GetId()] = template
-
-	return template
-}
-*/
-
-func DeletePlayerCharacterId(id bson.ObjectId) {
-	DeletePlayerCharacter(GetPlayerCharacter(id))
+func DeleteCharacterId(id bson.ObjectId) {
+	DeleteCharacter(ds.Get(id).(types.Character))
 }
 
-func DeleteNpcId(id bson.ObjectId) {
-	DeleteNpc(GetNpc(id))
-}
-
-// DeletePlayerCharacter removes the character (either NPC or player-controlled)
-// associated with the given id from the model and from the database
-func DeletePlayerCharacter(pc *db.PlayerChar) {
-	ds.Remove(pc)
-	utils.HandleError(db.DeleteObject(pc))
-}
-
-func DeleteNpc(npc *db.NonPlayerChar) {
-	ds.Remove(npc)
-	utils.HandleError(db.DeleteObject(npc))
+// DeleteCharacter removes the character associated with the given id from the model and from the database
+func DeleteCharacter(c types.Character) {
+	ds.Remove(c)
+	utils.HandleError(db.DeleteObject(c))
 }
 
 // CreateRoom creates a new Room object in the database and adds it to the model.
 // A pointer to the new Room object is returned.
-func CreateRoom(zone *db.Zone, location db.Coordinate) (*db.Room, error) {
+func CreateRoom(zone types.Zone, location types.Coordinate) (types.Room, error) {
 	existingRoom := GetRoomByLocation(location, zone)
 	if existingRoom != nil {
 		return nil, errors.New("A room already exists at that location")
@@ -271,15 +252,17 @@ func CreateRoom(zone *db.Zone, location db.Coordinate) (*db.Room, error) {
 }
 
 // GetRoom returns the room object associated with the given id
-func GetRoom(id bson.ObjectId) *db.Room {
-	return ds.Get(id).(*db.Room)
+func GetRoom(id bson.ObjectId) types.Room {
+	return ds.Get(id).(types.Room)
 }
 
 // GetRooms returns a list of all of the rooms in the entire model
-func GetRooms() db.Rooms {
-	var rooms []*db.Room
-	for _, id := range db.FindAll(types.RoomType) {
-		rooms = append(rooms, ds.Get(id).(*db.Room))
+func GetRooms() types.RoomList {
+	ids := db.FindAll(types.RoomType)
+	rooms := make(types.RoomList, len(ids))
+
+	for i, id := range ids {
+		rooms[i] = ds.Get(id).(types.Room)
 	}
 
 	return rooms
@@ -287,12 +270,13 @@ func GetRooms() db.Rooms {
 
 // GetRoomsInZone returns a slice containing all of the rooms that belong to
 // the given zone
-func GetRoomsInZone(zone *db.Zone) []*db.Room {
+func GetRoomsInZone(zone types.Zone) types.RoomList {
 	allRooms := GetRooms()
 
-	var rooms []*db.Room
+	var rooms types.RoomList
 
 	for _, room := range allRooms {
+		// TODO move this check into the DB query
 		if room.GetZoneId() == zone.GetId() {
 			rooms = append(rooms, room)
 		}
@@ -303,10 +287,10 @@ func GetRoomsInZone(zone *db.Zone) []*db.Room {
 
 // GetRoomByLocation searches for the room associated with the given coordinate
 // in the given zone. Returns a nil room object if it was not found.
-func GetRoomByLocation(coordinate db.Coordinate, zone types.Zone) *db.Room {
+func GetRoomByLocation(coordinate types.Coordinate, zone types.Zone) types.Room {
 	for _, id := range db.Find(types.RoomType, "zoneid", zone.GetId()) {
 		// TODO move this check into the DB query
-		room := ds.Get(id).(*db.Room)
+		room := ds.Get(id).(types.Room)
 		if room.GetLocation() == coordinate {
 			return room
 		}
@@ -316,16 +300,17 @@ func GetRoomByLocation(coordinate db.Coordinate, zone types.Zone) *db.Room {
 }
 
 // GetZone returns the zone object associated with the given id
-func GetZone(zoneId bson.ObjectId) *db.Zone {
-	return ds.Get(zoneId).(*db.Zone)
+func GetZone(zoneId bson.ObjectId) types.Zone {
+	return ds.Get(zoneId).(types.Zone)
 }
 
 // GetZones returns all of the zones in the model
-func GetZones() db.Zones {
-	var zones db.Zones
+func GetZones() types.ZoneList {
+	ids := db.FindAll(types.ZoneType)
+	zones := make(types.ZoneList, len(ids))
 
-	for _, id := range db.FindAll(types.ZoneType) {
-		zones = append(zones, ds.Get(id).(*db.Zone))
+	for i, id := range ids {
+		zones[i] = ds.Get(id).(types.Zone)
 	}
 
 	return zones
@@ -333,7 +318,7 @@ func GetZones() db.Zones {
 
 // CreateZone creates a new Zone object in the database and adds it to the model.
 // A pointer to the new Zone object is returned.
-func CreateZone(name string) (*db.Zone, error) {
+func CreateZone(name string) (types.Zone, error) {
 	if GetZoneByName(name) != nil {
 		return nil, errors.New("A zone with that name already exists")
 	}
@@ -342,38 +327,39 @@ func CreateZone(name string) (*db.Zone, error) {
 }
 
 // Removes the given Zone from the model and the database
-func DeleteZone(zone *db.Zone) {
+func DeleteZone(zone types.Zone) {
 	ds.Remove(zone)
 	utils.HandleError(db.DeleteObject(zone))
 }
 
 // GetZoneByName name searches for a zone with the given name
-func GetZoneByName(name string) *db.Zone {
+func GetZoneByName(name string) types.Zone {
 	for _, id := range db.Find(types.ZoneType, "name", utils.FormatName(name)) {
-		return ds.Get(id).(*db.Zone)
+		return ds.Get(id).(types.Zone)
 	}
 
 	return nil
 }
 
-func GetAreas(zone *db.Zone) db.Areas {
-	var areas db.Areas
-	for _, id := range db.FindAll(types.AreaType) {
-		areas = append(areas, ds.Get(id).(*db.Area))
+func GetAreas(zone types.Zone) types.AreaList {
+	ids := db.FindAll(types.AreaType)
+	areas := make(types.AreaList, len(ids))
+	for i, id := range ids {
+		areas[i] = ds.Get(id).(types.Area)
 	}
 
 	return areas
 }
 
-func GetArea(areaId bson.ObjectId) *db.Area {
+func GetArea(areaId bson.ObjectId) types.Area {
 	if ds.ContainsId(areaId) {
-		return ds.Get(areaId).(*db.Area)
+		return ds.Get(areaId).(types.Area)
 	}
 
 	return nil
 }
 
-func CreateArea(name string, zone *db.Zone) (*db.Area, error) {
+func CreateArea(name string, zone types.Zone) (types.Area, error) {
 	if GetAreaByName(name) != nil {
 		return nil, errors.New("An area with that name already exists")
 	}
@@ -381,22 +367,22 @@ func CreateArea(name string, zone *db.Zone) (*db.Area, error) {
 	return db.NewArea(name, zone.GetId()), nil
 }
 
-func GetAreaByName(name string) *db.Area {
+func GetAreaByName(name string) types.Area {
 	for _, id := range db.Find(types.AreaType, "name", utils.FormatName(name)) {
-		return ds.Get(id).(*db.Area)
+		return ds.Get(id).(types.Area)
 	}
 
 	return nil
 }
 
-func DeleteArea(area *db.Area) {
+func DeleteArea(area types.Area) {
 	ds.Remove(area)
 	utils.HandleError(db.DeleteObject(area))
 }
 
 // DeleteRoom removes the given room object from the model and the database. It
 // also disables all exits in neighboring rooms that lead to the given room.
-func DeleteRoom(room *db.Room) {
+func DeleteRoom(room types.Room) {
 	ds.Remove(room)
 
 	utils.HandleError(db.DeleteObject(room))
@@ -404,7 +390,7 @@ func DeleteRoom(room *db.Room) {
 	// Disconnect all exits leading to this room
 	loc := room.GetLocation()
 
-	updateRoom := func(dir db.Direction) {
+	updateRoom := func(dir types.Direction) {
 		next := loc.Next(dir)
 		room := GetRoomByLocation(next, GetZone(room.GetZoneId()))
 
@@ -413,48 +399,48 @@ func DeleteRoom(room *db.Room) {
 		}
 	}
 
-	updateRoom(db.DirectionNorth)
-	updateRoom(db.DirectionNorthEast)
-	updateRoom(db.DirectionEast)
-	updateRoom(db.DirectionSouthEast)
-	updateRoom(db.DirectionSouth)
-	updateRoom(db.DirectionSouthWest)
-	updateRoom(db.DirectionWest)
-	updateRoom(db.DirectionNorthWest)
-	updateRoom(db.DirectionUp)
-	updateRoom(db.DirectionDown)
+	updateRoom(types.DirectionNorth)
+	updateRoom(types.DirectionNorthEast)
+	updateRoom(types.DirectionEast)
+	updateRoom(types.DirectionSouthEast)
+	updateRoom(types.DirectionSouth)
+	updateRoom(types.DirectionSouthWest)
+	updateRoom(types.DirectionWest)
+	updateRoom(types.DirectionNorthWest)
+	updateRoom(types.DirectionUp)
+	updateRoom(types.DirectionDown)
 }
 
 // GetUser returns the User object associated with the given id
-func GetUser(id bson.ObjectId) *db.User {
-	return ds.Get(id).(*db.User)
+func GetUser(id bson.ObjectId) types.User {
+	return ds.Get(id).(types.User)
 }
 
 // CreateItem creates an item object in the database with the given name and
 // adds it to the model. It's up to the caller to ensure that the item actually
 // gets put somewhere meaningful.
-func CreateItem(name string) *db.Item {
+func CreateItem(name string) types.Item {
 	return db.NewItem(name)
 }
 
 // GetItem returns the Item object associated the given id
-func GetItem(id bson.ObjectId) *db.Item {
-	return ds.Get(id).(*db.Item)
+func GetItem(id bson.ObjectId) types.Item {
+	return ds.Get(id).(types.Item)
 }
 
 // GetItems returns the Items object associated the given ids
-func GetItems(itemIds []bson.ObjectId) []*db.Item {
-	var items []*db.Item
+func GetItems(itemIds []bson.ObjectId) types.ItemList {
+	items := make(types.ItemList, len(itemIds))
 
-	for _, itemId := range itemIds {
-		items = append(items, GetItem(itemId))
+	for i, itemId := range itemIds {
+		items[i] = GetItem(itemId)
 	}
 
 	return items
 }
 
 // ItemsIn returns a slice containing all of the items in the given room
-func ItemsIn(room *db.Room) []*db.Item {
+func ItemsIn(room types.Room) types.ItemList {
 	return GetItems(room.GetItemIds())
 }
 
@@ -464,7 +450,7 @@ func DeleteItemId(itemId bson.ObjectId) {
 
 // DeleteItem removes the item associated with the given id from the
 // model and from the database
-func DeleteItem(item *db.Item) {
+func DeleteItem(item types.Item) {
 	ds.Remove(item)
 
 	utils.HandleError(db.DeleteObject(item))
@@ -475,7 +461,6 @@ func DeleteObject(obj types.Object) {
 	utils.HandleError(db.DeleteObject(obj))
 }
 
-// Initializes the global model object and starts up the main event loop
 func Init(session db.Session, dbName string) error {
 	ds.Init()
 	db.Init(session, dbName)
@@ -543,7 +528,7 @@ func Init(session db.Session, dbName string) error {
 
 // MoveCharacter attempts to move the character to the given coordinates
 // specific by location. Returns an error if there is no room to move to.
-func MoveCharacterToLocation(character types.Character, zone types.Zone, location db.Coordinate) (*db.Room, error) {
+func MoveCharacterToLocation(character types.Character, zone types.Zone, location types.Coordinate) (types.Room, error) {
 	newRoom := GetRoomByLocation(location, zone)
 
 	if newRoom == nil {
@@ -555,25 +540,25 @@ func MoveCharacterToLocation(character types.Character, zone types.Zone, locatio
 }
 
 // MoveCharacterTo room moves the character to the given room
-func MoveCharacterToRoom(character types.Character, newRoom *db.Room) {
+func MoveCharacterToRoom(character types.Character, newRoom types.Room) {
 	oldRoomId := character.GetRoomId()
 	character.SetRoomId(newRoom.GetId())
 
 	oldRoom := GetRoom(oldRoomId)
 
 	// Leave
-	message := fmt.Sprintf("%v%s %vhas left the room", utils.ColorBlue, character.GetName(), utils.ColorWhite)
+	message := fmt.Sprintf("%v%s %vhas left the room", types.ColorBlue, character.GetName(), types.ColorWhite)
 	dir := DirectionBetween(oldRoom, newRoom)
-	if dir != db.DirectionNone {
-		message = fmt.Sprintf("%s to the %s", message, db.DirectionToString(dir))
+	if dir != types.DirectionNone {
+		message = fmt.Sprintf("%s to the %s", message, dir.ToString())
 	}
 
 	events.Broadcast(events.MoveEvent{Character: character, Room: oldRoom, Message: message})
 
 	// Enter
-	message = fmt.Sprintf("%v%s %vhas entered the room", utils.ColorBlue, character.GetName(), utils.ColorWhite)
-	if dir != db.DirectionNone {
-		message = fmt.Sprintf("%s to the %s", message, db.DirectionToString(dir))
+	message = fmt.Sprintf("%v%s %vhas entered the room", types.ColorBlue, character.GetName(), types.ColorWhite)
+	if dir != types.DirectionNone {
+		message = fmt.Sprintf("%s to the %s", message, dir.ToString())
 	}
 
 	events.Broadcast(events.MoveEvent{Character: character, Room: newRoom, Message: message})
@@ -583,7 +568,7 @@ func MoveCharacterToRoom(character types.Character, newRoom *db.Room) {
 // no exit in that direction, and error is returned. If there is an exit, but no
 // room connected to it, then a room is automatically created for the character
 // to move in to.
-func MoveCharacter(character types.Character, direction db.Direction) (*db.Room, error) {
+func MoveCharacter(character types.Character, direction types.Direction) (types.Room, error) {
 	room := GetRoom(character.GetRoomId())
 
 	if room == nil {
@@ -609,26 +594,26 @@ func MoveCharacter(character types.Character, direction db.Direction) (*db.Room,
 		}
 
 		switch direction {
-		case db.DirectionNorth:
-			room.SetExitEnabled(db.DirectionSouth, true)
-		case db.DirectionNorthEast:
-			room.SetExitEnabled(db.DirectionSouthWest, true)
-		case db.DirectionEast:
-			room.SetExitEnabled(db.DirectionWest, true)
-		case db.DirectionSouthEast:
-			room.SetExitEnabled(db.DirectionNorthWest, true)
-		case db.DirectionSouth:
-			room.SetExitEnabled(db.DirectionNorth, true)
-		case db.DirectionSouthWest:
-			room.SetExitEnabled(db.DirectionNorthEast, true)
-		case db.DirectionWest:
-			room.SetExitEnabled(db.DirectionEast, true)
-		case db.DirectionNorthWest:
-			room.SetExitEnabled(db.DirectionSouthEast, true)
-		case db.DirectionUp:
-			room.SetExitEnabled(db.DirectionDown, true)
-		case db.DirectionDown:
-			room.SetExitEnabled(db.DirectionUp, true)
+		case types.DirectionNorth:
+			room.SetExitEnabled(types.DirectionSouth, true)
+		case types.DirectionNorthEast:
+			room.SetExitEnabled(types.DirectionSouthWest, true)
+		case types.DirectionEast:
+			room.SetExitEnabled(types.DirectionWest, true)
+		case types.DirectionSouthEast:
+			room.SetExitEnabled(types.DirectionNorthWest, true)
+		case types.DirectionSouth:
+			room.SetExitEnabled(types.DirectionNorth, true)
+		case types.DirectionSouthWest:
+			room.SetExitEnabled(types.DirectionNorthEast, true)
+		case types.DirectionWest:
+			room.SetExitEnabled(types.DirectionEast, true)
+		case types.DirectionNorthWest:
+			room.SetExitEnabled(types.DirectionSouthEast, true)
+		case types.DirectionUp:
+			room.SetExitEnabled(types.DirectionDown, true)
+		case types.DirectionDown:
+			room.SetExitEnabled(types.DirectionUp, true)
 		default:
 			panic("Unexpected code path")
 		}
@@ -659,19 +644,19 @@ func Emote(from types.Character, message string) {
 	events.Broadcast(events.EmoteEvent{from, message})
 }
 
-func Login(character *db.PlayerChar) {
+func Login(character types.PC) {
 	character.SetOnline(true)
 	events.Broadcast(events.LoginEvent{character})
 }
 
-func Logout(character *db.PlayerChar) {
+func Logout(character types.PC) {
 	character.SetOnline(false)
 	events.Broadcast(events.LogoutEvent{character})
 }
 
 // ZoneCorners returns cordinates that indiate the highest and lowest points of
 // the map in 3 dimensions
-func ZoneCorners(zone *db.Zone) (db.Coordinate, db.Coordinate) {
+func ZoneCorners(zone types.Zone) (types.Coordinate, types.Coordinate) {
 	var top int
 	var bottom int
 	var left int
@@ -717,11 +702,11 @@ func ZoneCorners(zone *db.Zone) (db.Coordinate, db.Coordinate) {
 		}
 	}
 
-	return db.Coordinate{X: left, Y: top, Z: high},
-		db.Coordinate{X: right, Y: bottom, Z: low}
+	return types.Coordinate{X: left, Y: top, Z: high},
+		types.Coordinate{X: right, Y: bottom, Z: low}
 }
 
-func DirectionBetween(from, to *db.Room) db.Direction {
+func DirectionBetween(from, to types.Room) types.Direction {
 	zone := GetZone(from.GetZoneId())
 	for _, exit := range from.GetExits() {
 		nextLocation := from.NextLocation(exit)
@@ -732,7 +717,7 @@ func DirectionBetween(from, to *db.Room) db.Direction {
 		}
 	}
 
-	return db.DirectionNone
+	return types.DirectionNone
 }
 
 // vim: nocindent
