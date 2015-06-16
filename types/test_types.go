@@ -1,15 +1,13 @@
 package types
 
-import (
-	"gopkg.in/mgo.v2/bson"
-)
+import "gopkg.in/mgo.v2/bson"
 
 type MockIdentifiable struct {
-	Id   bson.ObjectId
+	Id   Id
 	Type ObjectType
 }
 
-func (self MockIdentifiable) GetId() bson.ObjectId {
+func (self MockIdentifiable) GetId() Id {
 	return self.Id
 }
 
@@ -110,19 +108,19 @@ func (*MockCharacter) Heal(int) {
 func (*MockCharacter) Hit(int) {
 }
 
-func (*MockCharacter) AddItem(bson.ObjectId) {
+func (*MockCharacter) AddItem(Id) {
 }
 
-func (*MockCharacter) RemoveItem(bson.ObjectId) {
+func (*MockCharacter) RemoveItem(Id) {
 }
 
-func (*MockCharacter) GetItemIds() []bson.ObjectId {
-	return []bson.ObjectId{}
+func (*MockCharacter) GetItemIds() []Id {
+	return []Id{}
 }
 
 type MockPC struct {
 	MockCharacter
-	RoomId bson.ObjectId
+	RoomId Id
 }
 
 func NewMockPC() *MockPC {
@@ -137,7 +135,7 @@ func NewMockPC() *MockPC {
 	}
 }
 
-func (self MockPC) GetRoomId() bson.ObjectId {
+func (self MockPC) GetRoomId() Id {
 	return self.RoomId
 }
 
@@ -145,5 +143,5 @@ func (self MockPC) IsOnline() bool {
 	return true
 }
 
-func (self MockPC) SetRoomId(bson.ObjectId) {
+func (self MockPC) SetRoomId(Id) {
 }

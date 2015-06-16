@@ -5,16 +5,15 @@ import (
 
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type Character struct {
 	DbObject `bson:",inline"`
-	RoomId   bson.ObjectId `bson:",omitempty"`
+	RoomId   types.Id `bson:",omitempty"`
 
 	Name      string
 	Cash      int
-	Inventory []bson.ObjectId
+	Inventory []types.Id
 	Health    int
 	HitPoints int
 
@@ -31,11 +30,11 @@ type NonPlayerChar struct {
 type PlayerChar struct {
 	Character `bson:",inline"`
 
-	UserId bson.ObjectId
+	UserId types.Id
 	online bool
 }
 
-func initCharacter(character *Character, name string, objType types.ObjectType, roomId bson.ObjectId) {
+func initCharacter(character *Character, name string, objType types.ObjectType, roomId types.Id) {
 	character.RoomId = roomId
 	character.Cash = 0
 	character.Health = 100
@@ -44,7 +43,7 @@ func initCharacter(character *Character, name string, objType types.ObjectType, 
 	character.objType = objType
 }
 
-func NewPlayerChar(name string, userId bson.ObjectId, roomId bson.ObjectId) *PlayerChar {
+func NewPlayerChar(name string, userId types.Id, roomId types.Id) *PlayerChar {
 	var pc PlayerChar
 
 	pc.UserId = userId
@@ -55,7 +54,7 @@ func NewPlayerChar(name string, userId bson.ObjectId, roomId bson.ObjectId) *Pla
 	return &pc
 }
 
-func NewNonPlayerChar(name string, roomId bson.ObjectId) *NonPlayerChar {
+func NewNonPlayerChar(name string, roomId types.Id) *NonPlayerChar {
 	var npc NonPlayerChar
 	initCharacter(&npc.Character, name, types.NpcType, roomId)
 	npc.initDbObject(&npc)
@@ -92,7 +91,7 @@ func NewNpcTemplate(name string) *Character {
 	return NewCharacter(name, "", "")
 }
 
-func NewNpcFromTemplate(template *Character, roomId bson.ObjectId) *Character {
+func NewNpcFromTemplate(template *Character, roomId types.Id) *Character {
 	return NewNpc(template.GetName(), template.GetRoomId())
 }
 */
@@ -119,7 +118,7 @@ func (self *Character) IsNpcTemplate() bool {
 }
 */
 
-func (self *Character) SetRoomId(id bson.ObjectId) {
+func (self *Character) SetRoomId(id types.Id) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
@@ -129,14 +128,14 @@ func (self *Character) SetRoomId(id bson.ObjectId) {
 	}
 }
 
-func (self *Character) GetRoomId() bson.ObjectId {
+func (self *Character) GetRoomId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
 	return self.RoomId
 }
 
-func (self *PlayerChar) SetUserId(id bson.ObjectId) {
+func (self *PlayerChar) SetUserId(id types.Id) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
@@ -146,7 +145,7 @@ func (self *PlayerChar) SetUserId(id bson.ObjectId) {
 	}
 }
 
-func (self *PlayerChar) GetUserId() bson.ObjectId {
+func (self *PlayerChar) GetUserId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
@@ -174,7 +173,7 @@ func (self *Character) GetCash() int {
 	return self.Cash
 }
 
-func (self *Character) AddItem(id bson.ObjectId) {
+func (self *Character) AddItem(id types.Id) {
 	if !self.HasItem(id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
@@ -184,7 +183,7 @@ func (self *Character) AddItem(id bson.ObjectId) {
 	}
 }
 
-func (self *Character) RemoveItem(id bson.ObjectId) {
+func (self *Character) RemoveItem(id types.Id) {
 	if self.HasItem(id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
@@ -201,7 +200,7 @@ func (self *Character) RemoveItem(id bson.ObjectId) {
 	}
 }
 
-func (self *Character) HasItem(id bson.ObjectId) bool {
+func (self *Character) HasItem(id types.Id) bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
@@ -214,7 +213,7 @@ func (self *Character) HasItem(id bson.ObjectId) bool {
 	return false
 }
 
-func (self *Character) GetItemIds() []bson.ObjectId {
+func (self *Character) GetItemIds() []types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
 	return self.Inventory

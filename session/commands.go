@@ -8,7 +8,6 @@ import (
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type commandHandler struct {
@@ -36,7 +35,7 @@ func npcMenu(room types.Room) *utils.Menu {
 	return menu
 }
 
-func specificNpcMenu(npcId bson.ObjectId) *utils.Menu {
+func specificNpcMenu(npcId types.Id) *utils.Menu {
 	npc := model.GetNpc(npcId)
 	menu := utils.NewMenu(npc.GetName())
 	menu.AddAction("r", "Rename")
@@ -70,7 +69,7 @@ func spawnMenu() *utils.Menu {
 */
 
 /*
-func specificSpawnMenu(templateId bson.ObjectId) *utils.Menu {
+func specificSpawnMenu(templateId types.Id) *utils.Menu {
 	template := model.GetCharacter(templateId)
 	menu := utils.NewMenu(template.GetName())
 

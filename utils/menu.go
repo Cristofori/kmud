@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 	"github.com/Cristofori/kmud/types"
-	"gopkg.in/mgo.v2/bson"
 	"io"
 	"strconv"
 	"strings"
@@ -25,23 +24,23 @@ func NewMenu(text string) *Menu {
 type action struct {
 	key  string
 	text string
-	data bson.ObjectId
+	data types.Id
 }
 
 func (self *Menu) AddAction(key string, text string) {
 	self.addAction(key, text, "")
 }
 
-func (self *Menu) AddActionData(key int, text string, data bson.ObjectId) {
+func (self *Menu) AddActionData(key int, text string, data types.Id) {
 	keyStr := strconv.Itoa(key)
 	self.addAction(keyStr, text, data)
 }
 
-func (self *Menu) addAction(key string, text string, data bson.ObjectId) {
+func (self *Menu) addAction(key string, text string, data types.Id) {
 	self.actions = append(self.actions, action{key: strings.ToLower(key), text: text, data: data})
 }
 
-func (self *Menu) GetData(choice string) bson.ObjectId {
+func (self *Menu) GetData(choice string) types.Id {
 	for _, action := range self.actions {
 		if action.key == choice {
 			return action.data
@@ -71,7 +70,7 @@ func (self *Menu) HasAction(key string) bool {
 	return action.key != ""
 }
 
-func (self *Menu) Exec(conn io.ReadWriter, cm types.ColorMode) (string, bson.ObjectId) {
+func (self *Menu) Exec(conn io.ReadWriter, cm types.ColorMode) (string, types.Id) {
 	for {
 		self.Print(conn, cm)
 		input := GetUserInput(conn, types.Colorize(types.ColorWhite, self.prompt), cm)

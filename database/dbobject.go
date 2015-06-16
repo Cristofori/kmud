@@ -9,7 +9,7 @@ import (
 )
 
 type DbObject struct {
-	Id bson.ObjectId `bson:"_id"`
+	Id types.Id `bson:"_id"`
 
 	mutex     sync.RWMutex
 	destroyed bool
@@ -21,7 +21,7 @@ func (self *DbObject) initDbObject(i types.Object) {
 	commitObject(self.Id)
 }
 
-func (self *DbObject) GetId() bson.ObjectId {
+func (self *DbObject) GetId() types.Id {
 	// Not mutex-protected since the ID should never change
 	return self.Id
 }

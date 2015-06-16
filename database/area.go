@@ -3,17 +3,16 @@ package database
 import (
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type Area struct {
 	DbObject `bson:",inline"`
 
 	Name   string
-	ZoneId bson.ObjectId
+	ZoneId types.Id
 }
 
-func NewArea(name string, zone bson.ObjectId) *Area {
+func NewArea(name string, zone types.Id) *Area {
 	var area Area
 
 	area.ZoneId = zone
@@ -45,7 +44,7 @@ func (self *Area) SetName(name string) {
 	}
 }
 
-func (self *Area) GetZoneId() bson.ObjectId {
+func (self *Area) GetZoneId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
 

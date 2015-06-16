@@ -9,7 +9,6 @@ import (
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
-	"gopkg.in/mgo.v2/bson"
 	// "log"
 	// "os"
 	"strings"
@@ -39,7 +38,7 @@ type Session struct {
 	commander commandHandler
 	actioner  actionHandler
 
-	replyId bson.ObjectId
+	replyId types.Id
 
 	// logger *log.Logger
 }
@@ -165,9 +164,9 @@ func (session *Session) asyncMessage(message string) {
 
 // Same behavior as menu.Exec(), except that it uses getUserInput
 // which doesn't block the event loop while waiting for input
-func (session *Session) execMenu(menu *utils.Menu) (string, bson.ObjectId) {
+func (session *Session) execMenu(menu *utils.Menu) (string, types.Id) {
 	choice := ""
-	var data bson.ObjectId
+	var data types.Id
 
 	for {
 		menu.Print(session.conn, session.user.GetColorMode())

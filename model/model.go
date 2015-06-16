@@ -52,7 +52,7 @@ func GetUserByName(username string) types.User {
 	return nil
 }
 
-func DeleteUserId(userId bson.ObjectId) {
+func DeleteUserId(userId types.Id) {
 	DeleteUser(GetUser(userId))
 }
 
@@ -67,11 +67,11 @@ func DeleteUser(user types.User) {
 }
 
 // GetPlayerCharacter returns the Character object associated the given Id
-func GetPlayerCharacter(id bson.ObjectId) types.PC {
+func GetPlayerCharacter(id types.Id) types.PC {
 	return ds.Get(id).(types.PC)
 }
 
-func GetNpc(id bson.ObjectId) types.NPC {
+func GetNpc(id types.Id) types.NPC {
 	return ds.Get(id).(types.NPC)
 }
 
@@ -230,7 +230,7 @@ func CreateNpc(name string, room types.Room) types.NPC {
 	return db.NewNonPlayerChar(name, room.GetId())
 }
 
-func DeleteCharacterId(id bson.ObjectId) {
+func DeleteCharacterId(id types.Id) {
 	DeleteCharacter(ds.Get(id).(types.Character))
 }
 
@@ -252,7 +252,7 @@ func CreateRoom(zone types.Zone, location types.Coordinate) (types.Room, error) 
 }
 
 // GetRoom returns the room object associated with the given id
-func GetRoom(id bson.ObjectId) types.Room {
+func GetRoom(id types.Id) types.Room {
 	return ds.Get(id).(types.Room)
 }
 
@@ -295,7 +295,7 @@ func GetRoomByLocation(coordinate types.Coordinate, zone types.Zone) types.Room 
 }
 
 // GetZone returns the zone object associated with the given id
-func GetZone(zoneId bson.ObjectId) types.Zone {
+func GetZone(zoneId types.Id) types.Zone {
 	return ds.Get(zoneId).(types.Zone)
 }
 
@@ -346,7 +346,7 @@ func GetAreas(zone types.Zone) types.AreaList {
 	return areas
 }
 
-func GetArea(areaId bson.ObjectId) types.Area {
+func GetArea(areaId types.Id) types.Area {
 	if ds.ContainsId(areaId) {
 		return ds.Get(areaId).(types.Area)
 	}
@@ -407,7 +407,7 @@ func DeleteRoom(room types.Room) {
 }
 
 // GetUser returns the User object associated with the given id
-func GetUser(id bson.ObjectId) types.User {
+func GetUser(id types.Id) types.User {
 	return ds.Get(id).(types.User)
 }
 
@@ -419,12 +419,12 @@ func CreateItem(name string) types.Item {
 }
 
 // GetItem returns the Item object associated the given id
-func GetItem(id bson.ObjectId) types.Item {
+func GetItem(id types.Id) types.Item {
 	return ds.Get(id).(types.Item)
 }
 
 // GetItems returns the Items object associated the given ids
-func GetItems(itemIds []bson.ObjectId) types.ItemList {
+func GetItems(itemIds []types.Id) types.ItemList {
 	items := make(types.ItemList, len(itemIds))
 
 	for i, itemId := range itemIds {
@@ -439,7 +439,7 @@ func ItemsIn(room types.Room) types.ItemList {
 	return GetItems(room.GetItemIds())
 }
 
-func DeleteItemId(itemId bson.ObjectId) {
+func DeleteItemId(itemId types.Id) {
 	DeleteItem(GetItem(itemId))
 }
 

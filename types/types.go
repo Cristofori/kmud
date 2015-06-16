@@ -2,7 +2,6 @@ package types
 
 import (
 	"github.com/Cristofori/kmud/utils/naturalsort"
-	"gopkg.in/mgo.v2/bson"
 	"net"
 )
 
@@ -21,7 +20,7 @@ const (
 )
 
 type Identifiable interface {
-	GetId() bson.ObjectId
+	GetId() Id
 	GetType() ObjectType
 }
 
@@ -36,7 +35,7 @@ type Destroyable interface {
 }
 
 type Locateable interface {
-	GetRoomId() bson.ObjectId
+	GetRoomId() Id
 }
 
 type Nameable interface {
@@ -50,9 +49,9 @@ type Loginable interface {
 }
 
 type Container interface {
-	AddItem(bson.ObjectId)
-	RemoveItem(bson.ObjectId)
-	GetItemIds() []bson.ObjectId
+	AddItem(Id)
+	RemoveItem(Id)
+	GetItemIds() []Id
 }
 
 type Object interface {
@@ -66,7 +65,7 @@ type Character interface {
 	Nameable
 	Locateable
 	Container
-	SetRoomId(bson.ObjectId)
+	SetRoomId(Id)
 	AddCash(int)
 	GetCash() int
 	Hit(int)
@@ -124,9 +123,9 @@ func (self NPCList) Characters() CharacterList {
 type Room interface {
 	Object
 	Container
-	GetZoneId() bson.ObjectId
-	GetAreaId() bson.ObjectId
-	SetAreaId(bson.ObjectId)
+	GetZoneId() Id
+	GetAreaId() Id
+	SetAreaId(Id)
 	GetLocation() Coordinate
 	SetExitEnabled(Direction, bool)
 	HasExit(Direction) bool

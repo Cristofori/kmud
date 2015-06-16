@@ -7,17 +7,16 @@ import (
 
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type Room struct {
 	DbObject `bson:",inline"`
 
-	ZoneId        bson.ObjectId
-	AreaId        bson.ObjectId `bson:",omitempty"`
+	ZoneId        types.Id
+	AreaId        types.Id `bson:",omitempty"`
 	Title         string
 	Description   string
-	Items         []bson.ObjectId
+	Items         []types.Id
 	Location      types.Coordinate
 	ExitNorth     bool
 	ExitNorthEast bool
@@ -33,7 +32,7 @@ type Room struct {
 	Properties map[string]string
 }
 
-func NewRoom(zoneId bson.ObjectId, location types.Coordinate) *Room {
+func NewRoom(zoneId types.Id, location types.Coordinate) *Room {
 	var room Room
 
 	room.Title = "The Void"
@@ -215,7 +214,7 @@ func (self *Room) SetExitEnabled(dir types.Direction, enabled bool) {
 	objectModified(self)
 }
 
-func (self *Room) AddItem(id bson.ObjectId) {
+func (self *Room) AddItem(id types.Id) {
 	if !self.HasItem(id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
@@ -225,7 +224,7 @@ func (self *Room) AddItem(id bson.ObjectId) {
 	}
 }
 
-func (self *Room) RemoveItem(id bson.ObjectId) {
+func (self *Room) RemoveItem(id types.Id) {
 	if self.HasItem(id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
@@ -242,7 +241,7 @@ func (self *Room) RemoveItem(id bson.ObjectId) {
 	}
 }
 
-func (self *Room) HasItem(id bson.ObjectId) bool {
+func (self *Room) HasItem(id types.Id) bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
@@ -255,7 +254,7 @@ func (self *Room) HasItem(id bson.ObjectId) bool {
 	return false
 }
 
-func (self *Room) GetItemIds() []bson.ObjectId {
+func (self *Room) GetItemIds() []types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
@@ -313,7 +312,7 @@ func (self *Room) GetLocation() types.Coordinate {
 	return self.Location
 }
 
-func (self *Room) SetZoneId(zoneId bson.ObjectId) {
+func (self *Room) SetZoneId(zoneId types.Id) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
@@ -323,14 +322,14 @@ func (self *Room) SetZoneId(zoneId bson.ObjectId) {
 	}
 }
 
-func (self *Room) GetZoneId() bson.ObjectId {
+func (self *Room) GetZoneId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
 	return self.ZoneId
 }
 
-func (self *Room) SetAreaId(areaId bson.ObjectId) {
+func (self *Room) SetAreaId(areaId types.Id) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
@@ -340,7 +339,7 @@ func (self *Room) SetAreaId(areaId bson.ObjectId) {
 	}
 }
 
-func (self *Room) GetAreaId() bson.ObjectId {
+func (self *Room) GetAreaId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
