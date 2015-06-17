@@ -150,7 +150,7 @@ func (self *Room) ToString(players types.PCList, npcs types.NPCList, items types
 		str = str + strings.Join(exitList, " ")
 	}
 
-	if len(self.Links) > 0 {
+	if len(self.GetLinks()) > 0 {
 		str = fmt.Sprintf("%s\r\n\r\n %s %s",
 			str,
 			types.Colorize(types.ColorBlue, "Other exits:"),
@@ -279,7 +279,8 @@ func (self *Room) GetLinks() map[string]types.Id {
 }
 
 func (self *Room) LinkNames() []string {
-	names := make([]string, len(self.Links))
+	names := make([]string, len(self.GetLinks()))
+
 	i := 0
 	for name := range self.Links {
 		names[i] = name
