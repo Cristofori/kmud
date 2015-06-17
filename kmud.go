@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/Cristofori/kmud/server"
 	"os"
 	"os/signal"
 	"runtime"
+
+	"github.com/Cristofori/kmud/server"
 )
 
 func main() {

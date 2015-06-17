@@ -2,15 +2,13 @@ package database
 
 import (
 	"fmt"
-	"sync"
+	"time"
 
 	"github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
 )
-
-var modifiedObjectsMutex sync.Mutex
 
 type Session interface {
 	DB(string) Database
@@ -50,9 +48,9 @@ func Init(session Session, dbName string) {
 	_dbName = dbName
 
 	modifiedObjects = make(map[types.Id]bool)
-	modifiedObjectChannel = make(chan types.Id, 10)
+	modifiedObjectChannel = make(chan types.Id, 1)
 
-	go watchModifiedObjects()
+	watchModifiedObjects()
 }
 
 func objectModified(obj types.Identifiable) {
@@ -60,23 +58,30 @@ func objectModified(obj types.Identifiable) {
 }
 
 func watchModifiedObjects() {
-	for {
-		id := <-modifiedObjectChannel
-		modifiedObjectsMutex.Lock()
-		modifiedObjects[id] = true
-		modifiedObjectsMutex.Unlock()
+	go func() {
+		timeout := make(chan bool)
 
-		// TODO FIXME - Periodically save in separate routine
-		saveModifiedObjects()
-	}
-}
+		startTimeout := func() {
+			go func() {
+				time.Sleep(1 * time.Second)
+				timeout <- true
+			}()
+		}
 
-func saveModifiedObjects() {
-	modifiedObjectsMutex.Lock()
-	for id := range modifiedObjects {
-		commitObject(id)
-	}
-	modifiedObjectsMutex.Unlock()
+		startTimeout()
+
+		for {
+			select {
+			case id := <-modifiedObjectChannel:
+				modifiedObjects[id] = true
+			case <-timeout:
+				for id := range modifiedObjects {
+					go commitObject(id)
+				}
+				startTimeout()
+			}
+		}
+	}()
 }
 
 func getCollection(collection collectionName) Collection {

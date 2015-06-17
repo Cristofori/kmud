@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"time"
-
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
@@ -17,42 +15,24 @@ func Start() {
 	for _, npc := range model.GetNpcs() {
 		manage(npc)
 	}
+}
 
-	eventListener := events.Register("engine")
+func manage(npc types.NPC) {
+	eventListener := events.Register(npc)
+	defer events.Unregister(eventListener)
 
 	go func() {
 		for {
 			event := <-eventListener.Channel
-
-			if event.Type() == events.CreateEventType {
-				/*
-				   createEvent := event.(model.CreateEvent)
-
-				   go func() {
-				       for {
-				           npc := (<-npcChannel).(*database.Character)
-				           manage(npc)
-				       }
-				   }()
-				*/
+			switch event.Type() {
+			case events.TickEventType:
+				if npc.GetRoaming() {
+					room := model.GetRoom(npc.GetRoomId())
+					exits := room.GetExits()
+					exitToTake := utils.Random(0, len(exits)-1)
+					model.MoveCharacter(npc, exits[exitToTake])
+				}
 			}
-		}
-	}()
-}
-
-func manage(npc types.NPC) {
-	go func() {
-		throttler := utils.NewThrottler(1 * time.Second)
-
-		for {
-			if npc.GetRoaming() {
-				room := model.GetRoom(npc.GetRoomId())
-				exits := room.GetExits()
-				exitToTake := utils.Random(0, len(exits)-1)
-				model.MoveCharacter(npc, exits[exitToTake])
-			}
-
-			throttler.Sync()
 		}
 	}()
 }
