@@ -14,7 +14,7 @@ func Test_EventLoop(t *testing.T) {
 
 	char := types.NewMockPC()
 
-	eventListener := Register("Test_EventLoop()")
+	eventListener := Register(char)
 
 	message := "hey how are yah"
 	Broadcast(TellEvent{char, char, message})
@@ -36,11 +36,11 @@ func Test_CombatLoop(t *testing.T) {
 	char2 := types.NewMockPC()
 	char1.RoomId = char2.RoomId
 
-	eventListener1 := Register("Test_CombatLoop() - char1")
+	eventListener1 := Register(char1)
 
 	StartFight(char1, char2)
 
-	verifyEvents := func(listener EventListener) {
+	verifyEvents := func(listener *EventListener) {
 		timeout := tu.Timeout(4 * time.Second)
 		expectedTypes := make(map[EventType]bool)
 		expectedTypes[CombatEventType] = true
