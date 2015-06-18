@@ -40,7 +40,7 @@ func (self *Area) SetName(name string) {
 
 	if name != self.Name {
 		self.Name = name
-		objectModified(self)
+		self.modified()
 	}
 }
 

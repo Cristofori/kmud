@@ -456,21 +456,19 @@ func DeleteObject(obj types.Object) {
 	utils.HandleError(db.DeleteObject(obj))
 }
 
-func Init(session db.Session, dbName string) error {
+func Init(session db.Session, dbName string) {
 	ds.Init()
 	db.Init(session, dbName)
 
 	users := []*db.User{}
-	err := db.RetrieveObjects(types.UserType, &users)
-	utils.HandleError(err)
+	db.RetrieveObjects(types.UserType, &users)
 
 	for _, user := range users {
 		ds.Set(user)
 	}
 
 	pcs := []*db.PlayerChar{}
-	err = db.RetrieveObjects(types.PcType, &pcs)
-	utils.HandleError(err)
+	db.RetrieveObjects(types.PcType, &pcs)
 
 	for _, pc := range pcs {
 		pc.SetObjectType(types.PcType)
@@ -478,8 +476,7 @@ func Init(session db.Session, dbName string) error {
 	}
 
 	npcs := []*db.NonPlayerChar{}
-	err = db.RetrieveObjects(types.NpcType, &npcs)
-	utils.HandleError(err)
+	db.RetrieveObjects(types.NpcType, &npcs)
 
 	for _, npc := range npcs {
 		npc.SetObjectType(types.NpcType)
@@ -487,38 +484,32 @@ func Init(session db.Session, dbName string) error {
 	}
 
 	zones := []*db.Zone{}
-	err = db.RetrieveObjects(types.ZoneType, &zones)
-	utils.HandleError(err)
+	db.RetrieveObjects(types.ZoneType, &zones)
 
 	for _, zone := range zones {
 		ds.Set(zone)
 	}
 
 	areas := []*db.Area{}
-	err = db.RetrieveObjects(types.AreaType, &areas)
-	utils.HandleError(err)
+	db.RetrieveObjects(types.AreaType, &areas)
 
 	for _, area := range areas {
 		ds.Set(area)
 	}
 
 	rooms := []*db.Room{}
-	err = db.RetrieveObjects(types.RoomType, &rooms)
-	utils.HandleError(err)
+	db.RetrieveObjects(types.RoomType, &rooms)
 
 	for _, room := range rooms {
 		ds.Set(room)
 	}
 
 	items := []*db.Item{}
-	err = db.RetrieveObjects(types.ItemType, &items)
-	utils.HandleError(err)
+	db.RetrieveObjects(types.ItemType, &items)
 
 	for _, item := range items {
 		ds.Set(item)
 	}
-
-	return err
 }
 
 // MoveCharacter attempts to move the character to the given coordinates

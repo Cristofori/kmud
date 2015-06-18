@@ -77,7 +77,7 @@ func (self *Character) SetName(name string) {
 		self.WriteLock()
 		self.Name = utils.FormatName(name)
 		self.WriteUnlock()
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -124,7 +124,7 @@ func (self *Character) SetRoomId(id types.Id) {
 
 	if id != self.RoomId {
 		self.RoomId = id
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -141,7 +141,7 @@ func (self *PlayerChar) SetUserId(id types.Id) {
 
 	if id != self.UserId {
 		self.UserId = id
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -158,7 +158,7 @@ func (self *Character) SetCash(cash int) {
 
 	if cash != self.Cash {
 		self.Cash = cash
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -179,7 +179,7 @@ func (self *Character) AddItem(id types.Id) {
 		defer self.WriteUnlock()
 
 		self.Inventory = append(self.Inventory, id)
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -196,7 +196,7 @@ func (self *Character) RemoveItem(id types.Id) {
 			}
 		}
 
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -225,7 +225,7 @@ func (self *NonPlayerChar) SetConversation(conversation string) {
 
 	if self.Conversation != conversation {
 		self.Conversation = conversation
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -258,7 +258,7 @@ func (self *Character) SetHealth(health int) {
 			self.HitPoints = self.Health
 		}
 
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -279,7 +279,7 @@ func (self *Character) SetHitPoints(hitpoints int) {
 
 	if hitpoints != self.HitPoints {
 		self.HitPoints = hitpoints
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -310,7 +310,7 @@ func (self *NonPlayerChar) SetRoaming(roaming bool) {
 	defer self.WriteUnlock()
 
 	self.Roaming = roaming
-	objectModified(self)
+	self.modified()
 }
 
 // vim: nocindent

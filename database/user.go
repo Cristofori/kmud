@@ -55,7 +55,7 @@ func (self *User) SetName(name string) {
 		self.WriteLock()
 		self.Name = utils.FormatName(name)
 		self.WriteUnlock()
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -77,7 +77,7 @@ func (self *User) SetColorMode(cm types.ColorMode) {
 		self.ColorMode = cm
 		self.WriteUnlock()
 
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -103,7 +103,7 @@ func (self *User) SetPassword(password string) {
 		self.Password = hashed
 		self.WriteUnlock()
 
-		objectModified(self)
+		self.modified()
 	}
 }
 

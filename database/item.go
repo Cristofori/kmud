@@ -34,7 +34,7 @@ func (self *Item) SetName(name string) {
 		self.WriteLock()
 		self.Name = utils.FormatName(name)
 		self.WriteUnlock()
-		objectModified(self)
+		self.modified()
 	}
 }
 

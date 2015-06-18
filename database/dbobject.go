@@ -56,4 +56,8 @@ func (self *DbObject) IsDestroyed() bool {
 	return self.destroyed
 }
 
+func (self *DbObject) modified() {
+	modifiedObjectChannel <- self.Id
+}
+
 // vim: nocindent

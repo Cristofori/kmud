@@ -220,7 +220,7 @@ func (self *Room) SetExitEnabled(dir types.Direction, enabled bool) {
 		self.ExitDown = enabled
 	}
 
-	objectModified(self)
+	self.modified()
 }
 
 func (self *Room) AddItem(id types.Id) {
@@ -229,7 +229,7 @@ func (self *Room) AddItem(id types.Id) {
 		defer self.WriteUnlock()
 
 		self.Items = append(self.Items, id)
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -246,7 +246,7 @@ func (self *Room) RemoveItem(id types.Id) {
 			}
 		}
 
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -260,7 +260,7 @@ func (self *Room) SetLink(name string, roomId types.Id) {
 
 	self.Links[name] = roomId
 
-	objectModified(self)
+	self.modified()
 }
 
 func (self *Room) RemoveLink(name string) {
@@ -268,7 +268,7 @@ func (self *Room) RemoveLink(name string) {
 	defer self.WriteUnlock()
 
 	delete(self.Links, name)
-	objectModified(self)
+	self.modified()
 }
 
 func (self *Room) GetLinks() map[string]types.Id {
@@ -315,7 +315,7 @@ func (self *Room) SetTitle(title string) {
 
 	if title != self.Title {
 		self.Title = title
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -332,7 +332,7 @@ func (self *Room) SetDescription(description string) {
 
 	if self.Description != description {
 		self.Description = description
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -349,7 +349,7 @@ func (self *Room) SetLocation(location types.Coordinate) {
 
 	if location != self.Location {
 		self.Location = location
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -366,7 +366,7 @@ func (self *Room) SetZoneId(zoneId types.Id) {
 
 	if zoneId != self.ZoneId {
 		self.ZoneId = zoneId
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -383,7 +383,7 @@ func (self *Room) SetAreaId(areaId types.Id) {
 
 	if areaId != self.AreaId {
 		self.AreaId = areaId
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -432,7 +432,7 @@ func (self *Room) SetProperty(name, value string) {
 
 	if self.Properties[name] != value {
 		self.Properties[name] = value
-		objectModified(self)
+		self.modified()
 	}
 }
 
@@ -455,7 +455,7 @@ func (self *Room) RemoveProperty(key string) {
 	defer self.WriteUnlock()
 
 	delete(self.Properties, key)
-	objectModified(self)
+	self.modified()
 }
 
 type Rooms []*Room

@@ -37,7 +37,7 @@ func (self *Zone) SetName(name string) {
 
 	if name != self.Name {
 		self.Name = utils.FormatName(name)
-		objectModified(self)
+		self.modified()
 	}
 }
 

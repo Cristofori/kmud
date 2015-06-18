@@ -53,10 +53,6 @@ func Init(session Session, dbName string) {
 	watchModifiedObjects()
 }
 
-func objectModified(obj types.Identifiable) {
-	modifiedObjectChannel <- obj.GetId()
-}
-
 func watchModifiedObjects() {
 	go func() {
 		timeout := make(chan bool)
@@ -143,9 +139,10 @@ const (
 	PULL = "$pull"
 )
 
-func RetrieveObjects(t types.ObjectType, objects interface{}) error {
+func RetrieveObjects(t types.ObjectType, objects interface{}) {
 	c := getCollectionFromType(t)
-	return c.Find(nil).Iter().All(objects)
+	err := c.Find(nil).Iter().All(objects)
+	utils.HandleError(err)
 }
 
 func Find(t types.ObjectType, query bson.M) []bson.ObjectId {
