@@ -9,24 +9,25 @@ import (
 	"github.com/Cristofori/kmud/utils"
 )
 
-type EventListener struct {
-	Channel  chan Event
-	Receiver types.Character
+type eventListener struct {
+	Channel   chan Event
+	Character types.Character
 }
 
-var _listeners []*EventListener
-var _register chan *EventListener
-var _unregister chan *EventListener
+var _listeners map[types.Character]chan Event
+
+var _register chan eventListener
+var _unregister chan types.Character
 var _broadcast chan Event
 
-func Register(receiver types.Character) *EventListener {
-	listener := EventListener{Receiver: receiver, Channel: make(chan Event, 20)}
-	_register <- &listener
-	return &listener
+func Register(receiver types.Character) chan Event {
+	listener := eventListener{Character: receiver, Channel: make(chan Event, 20)}
+	_register <- listener
+	return listener.Channel
 }
 
-func Unregister(l *EventListener) {
-	_unregister <- l
+func Unregister(char types.Character) {
+	_unregister <- char
 }
 
 func Broadcast(event Event) {
@@ -34,32 +35,29 @@ func Broadcast(event Event) {
 }
 
 func StartEvents() {
-	_register = make(chan *EventListener)
-	_unregister = make(chan *EventListener)
+	_listeners = map[types.Character]chan Event{}
+
+	_register = make(chan eventListener)
+	_unregister = make(chan types.Character)
 	_broadcast = make(chan Event)
 
 	go func() {
 		for {
 			select {
-			case newListener := <-_register:
-				_listeners = append(_listeners, newListener)
-			case listenerToUnregsiter := <-_unregister:
-				for i, listener := range _listeners {
-					if listener == listenerToUnregsiter {
-						_listeners = append(_listeners[:i], _listeners[i+1:]...)
-						break
-					}
-				}
+			case l := <-_register:
+				_listeners[l.Character] = l.Channel
+			case char := <-_unregister:
+				delete(_listeners, char)
 			case event := <-_broadcast:
-				for _, listener := range _listeners {
+				for char, channel := range _listeners {
 
-					if event.IsFor(listener.Receiver) {
-						if len(listener.Channel) == cap(listener.Channel) {
+					if event.IsFor(char) {
+						if len(channel) == cap(channel) {
 							// TODO - Kill the session rather than the whole server
-							panic("Buffer full!" + listener.Receiver.GetName() + " " + string(event.Type()))
+							panic("Buffer full!" + char.GetName() + " " + string(event.Type()))
 						}
 
-						listener.Channel <- event
+						channel <- event
 					}
 				}
 			}

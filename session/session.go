@@ -28,7 +28,7 @@ type Session struct {
 	inputModeChannel chan userInputMode
 	prompterChannel  chan utils.Prompter
 	panicChannel     chan interface{}
-	eventListener    *events.EventListener
+	eventChannel     chan events.Event
 
 	silentMode bool
 
@@ -58,7 +58,7 @@ func NewSession(conn io.ReadWriter, user types.User, player types.PC) *Session {
 	session.inputModeChannel = make(chan userInputMode)
 	session.prompterChannel = make(chan utils.Prompter)
 	session.panicChannel = make(chan interface{})
-	session.eventListener = events.Register(player)
+	session.eventChannel = events.Register(player)
 
 	session.silentMode = false
 	session.commander.session = &session
@@ -82,7 +82,7 @@ const (
 )
 
 func (session *Session) Exec() {
-	defer events.Unregister(session.eventListener)
+	defer events.Unregister(session.player)
 	defer model.Logout(session.player)
 
 	session.printLineColor(types.ColorWhite, "Welcome, "+session.player.GetName())
@@ -196,7 +196,7 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 		select {
 		case input := <-session.userInputChannel:
 			return input
-		case event := <-session.eventListener.Channel:
+		case event := <-session.eventChannel:
 			if session.silentMode {
 				continue
 			}

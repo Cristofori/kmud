@@ -18,12 +18,12 @@ func Start() {
 }
 
 func manage(npc types.NPC) {
-	eventListener := events.Register(npc)
-	defer events.Unregister(eventListener)
+	eventChannel := events.Register(npc)
+	defer events.Unregister(npc)
 
 	go func() {
 		for {
-			event := <-eventListener.Channel
+			event := <-eventChannel
 			switch event.Type() {
 			case events.TickEventType:
 				if npc.GetRoaming() {
