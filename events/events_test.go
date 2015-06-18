@@ -14,7 +14,7 @@ func Test_EventLoop(t *testing.T) {
 
 	char := types.NewMockPC()
 
-	eventListener := Register(char)
+	eventChannel := Register(char)
 
 	message := "hey how are yah"
 	Broadcast(TellEvent{char, char, message})
@@ -22,7 +22,7 @@ func Test_EventLoop(t *testing.T) {
 	timeout := tu.Timeout(3 * time.Second)
 
 	select {
-	case event := <-eventListener.Channel:
+	case event := <-eventChannel:
 		tu.Assert(event.Type() == TellEventType, t, "Didn't get a Tell event back")
 		tellEvent := event.(TellEvent)
 		tu.Assert(tellEvent.Message == message, t, "Didn't get the right message back:", tellEvent.Message, message)
@@ -36,11 +36,11 @@ func Test_CombatLoop(t *testing.T) {
 	char2 := types.NewMockPC()
 	char1.RoomId = char2.RoomId
 
-	eventListener1 := Register(char1)
+	eventChannel1 := Register(char1)
 
 	StartFight(char1, char2)
 
-	verifyEvents := func(listener *EventListener) {
+	verifyEvents := func(channel chan Event) {
 		timeout := tu.Timeout(4 * time.Second)
 		expectedTypes := make(map[EventType]bool)
 		expectedTypes[CombatEventType] = true
@@ -49,7 +49,7 @@ func Test_CombatLoop(t *testing.T) {
 	Loop:
 		for {
 			select {
-			case event := <-listener.Channel:
+			case event := <-channel:
 				if event.Type() != TickEventType {
 					tu.Assert(expectedTypes[event.Type()] == true, t, "Unexpected event type:", event.Type())
 					delete(expectedTypes, event.Type())
@@ -64,5 +64,5 @@ func Test_CombatLoop(t *testing.T) {
 			}
 		}
 	}
-	verifyEvents(eventListener1)
+	verifyEvents(eventChannel1)
 }
