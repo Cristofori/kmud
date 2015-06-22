@@ -6,7 +6,6 @@ import (
 	"compress/zlib"
 	"errors"
 	"fmt"
-	"github.com/Cristofori/kmud/types"
 	"io"
 	"log"
 	"math/rand"
@@ -15,6 +14,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/Cristofori/kmud/types"
 )
 
 type Prompter interface {
@@ -104,8 +105,8 @@ func GetUserInput(conn io.ReadWriter, prompt string, cm types.ColorMode) string 
 
 func HandleError(err error) {
 	if err != nil {
+		log.Printf("Error: %s", err)
 		panic(err)
-		log.Fatalf("Error: %s", err)
 	}
 }
 

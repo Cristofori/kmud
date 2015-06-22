@@ -612,32 +612,32 @@ func MoveCharacter(character types.Character, direction types.Direction) (types.
 
 // BroadcastMessage sends a message to all users that are logged in
 func BroadcastMessage(from types.Character, message string) {
-	events.Broadcast(events.BroadcastEvent{from, message})
+	events.Broadcast(events.BroadcastEvent{Character: from, Message: message})
 }
 
 // Tell sends a message to the specified character
 func Tell(from types.Character, to types.Character, message string) {
-	events.Broadcast(events.TellEvent{from, to, message})
+	events.Broadcast(events.TellEvent{From: from, To: to, Message: message})
 }
 
 // Say sends a message to all characters in the given character's room
 func Say(from types.Character, message string) {
-	events.Broadcast(events.SayEvent{from, message})
+	events.Broadcast(events.SayEvent{Character: from, Message: message})
 }
 
 // Emote sends an emote message to all characters in the given character's room
 func Emote(from types.Character, message string) {
-	events.Broadcast(events.EmoteEvent{from, message})
+	events.Broadcast(events.EmoteEvent{Character: from, Emote: message})
 }
 
 func Login(character types.PC) {
 	character.SetOnline(true)
-	events.Broadcast(events.LoginEvent{character})
+	events.Broadcast(events.LoginEvent{Character: character})
 }
 
 func Logout(character types.PC) {
 	character.SetOnline(false)
-	events.Broadcast(events.LogoutEvent{character})
+	events.Broadcast(events.LogoutEvent{Character: character})
 }
 
 // ZoneCorners returns cordinates that indiate the highest and lowest points of
