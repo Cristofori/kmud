@@ -1,0 +1,42 @@
+#!/bin/bash
+
+cd "$(dirname "$0")"/..
+mkdir -p coverage/html
+
+PROJECT="github.com/Cristofori/kmud"
+HTML_INDEX="coverage/index.html"
+
+PACKAGES="
+    database
+    datastore
+    engine
+    events
+    model
+    server
+    session
+    testutils
+    types
+    utils
+"
+
+for package in $PACKAGES; do
+    go test -coverprofile="coverage/$package.out" $PROJECT/$package
+    go tool cover -html="coverage/$package.out" -o coverage/html/$package.html
+done
+
+cat <<EOF > $HTML_INDEX
+<html>
+  <head><title>Code coverage report for kmud</title></head>
+  <body>
+    <ul>
+EOF
+
+for package in $PACKAGES; do
+    echo "<li><a href=\"html/$package.html\">$package</a></li>" >> $HTML_INDEX
+done
+
+cat <<EOF >> $HTML_INDEX
+    </ul>
+  </body>
+</html>
+EOF

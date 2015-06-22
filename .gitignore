@@ -3,3 +3,4 @@ kmud
 *.swp
 *.swo
 html
+coverage/
