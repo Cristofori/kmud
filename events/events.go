@@ -35,6 +35,10 @@ func Broadcast(event Event) {
 }
 
 func StartEvents() {
+	if _listeners != nil {
+		return
+	}
+
 	_listeners = map[types.Character]chan Event{}
 
 	_register = make(chan eventListener)

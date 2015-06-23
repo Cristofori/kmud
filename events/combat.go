@@ -2,84 +2,117 @@ package events
 
 import (
 	"math/rand"
-	"sync"
 	"time"
 
 	"github.com/Cristofori/kmud/types"
 )
 
-var fightsMutex sync.RWMutex
+var _combatInterval = 3 * time.Second
 
-var fights map[types.Character]types.Character // Maps the attacker to the defender
+var messageChannel chan interface{}
+var fights map[types.Character]types.Character
+
+type combatStart struct {
+	Attacker types.Character
+	Defender types.Character
+}
+
+type combatStop struct {
+	Attacker types.Character
+}
+
+type combatQuery struct {
+	Character types.Character
+	Ret       chan bool
+}
+
+type combatTick bool
 
 func StartFight(attacker types.Character, defender types.Character) {
-	fightsMutex.Lock()
-	defer fightsMutex.Unlock()
-
-	oldDefender, found := fights[attacker]
-
-	if defender == oldDefender {
-		return
-	}
-
-	if found {
-		fightsMutex.Unlock()
-		StopFight(attacker)
-		fightsMutex.Lock()
-	}
-
-	fights[attacker] = defender
-
-	Broadcast(CombatStartEvent{Attacker: attacker, Defender: defender})
+	messageChannel <- combatStart{Attacker: attacker, Defender: defender}
 }
 
 func StopFight(attacker types.Character) {
-	fightsMutex.Lock()
-	defer fightsMutex.Unlock()
-
-	defender := fights[attacker]
-
-	if defender != nil {
-		delete(fights, attacker)
-		Broadcast(CombatStopEvent{Attacker: attacker, Defender: defender})
-	}
+	messageChannel <- combatStop{Attacker: attacker}
 }
 
 func InCombat(character types.Character) bool {
-	_, found := fights[character]
+	query := combatQuery{Character: character, Ret: make(chan bool)}
+	messageChannel <- query
+	return <-query.Ret
+}
 
-	if found {
-		return true
-	}
-
-	for _, defender := range fights {
-		if defender == character {
-			return true
-		}
-	}
-	return false
+func StopCombatLoop() {
+	close(messageChannel)
 }
 
 func StartCombatLoop() {
+	if fights != nil {
+		return
+	}
+
 	fights = map[types.Character]types.Character{}
+	messageChannel = make(chan interface{}, 1)
 
 	go func() {
+		defer func() { recover() }()
 		for {
-			time.Sleep(3 * time.Second)
+			time.Sleep(_combatInterval)
+			messageChannel <- combatTick(true)
+		}
+	}()
 
-			fightsMutex.RLock()
-			for a, d := range fights {
-				if a.GetRoomId() == d.GetRoomId() {
-					dmg := rand.Int()%10 + 1
-					Broadcast(CombatEvent{Attacker: a, Defender: d, Damage: dmg})
+	go func() {
+		for message := range messageChannel {
+		Switch:
+			switch m := message.(type) {
+			case combatTick:
+				for a, d := range fights {
+					if a.GetRoomId() == d.GetRoomId() {
+						dmg := rand.Int()%10 + 1
+						Broadcast(CombatEvent{Attacker: a, Defender: d, Damage: dmg})
+					} else {
+						StopFight(a)
+					}
+				}
+			case combatStart:
+				oldDefender, found := fights[m.Attacker]
+
+				if m.Defender == oldDefender {
+					break
+				}
+
+				if found {
+					StopFight(m.Attacker)
+				}
+
+				fights[m.Attacker] = m.Defender
+
+				Broadcast(CombatStartEvent{Attacker: m.Attacker, Defender: m.Defender})
+			case combatStop:
+				defender := fights[m.Attacker]
+
+				if defender != nil {
+					delete(fights, m.Attacker)
+					Broadcast(CombatStopEvent{Attacker: m.Attacker, Defender: defender})
+				}
+			case combatQuery:
+				_, found := fights[m.Character]
+
+				if found {
+					m.Ret <- true
 				} else {
-					fightsMutex.RUnlock()
-					StopFight(a)
-					fightsMutex.RLock()
+					for _, defender := range fights {
+						if defender == m.Character {
+							m.Ret <- true
+							break Switch
+						}
+					}
+					m.Ret <- false
 				}
 			}
-			fightsMutex.RUnlock()
 		}
+		fights = nil
 	}()
 }
 
