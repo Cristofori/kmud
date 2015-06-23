@@ -1,14 +1,15 @@
 package dbtest
 
 import (
-	"github.com/Cristofori/kmud/database"
-	"github.com/Cristofori/kmud/testutils"
-	"github.com/Cristofori/kmud/utils"
-	"gopkg.in/mgo.v2/bson"
 	"runtime"
 	"strconv"
 	"sync"
 	"testing"
+
+	"github.com/Cristofori/kmud/database"
+	"github.com/Cristofori/kmud/testutils"
+	"github.com/Cristofori/kmud/types"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // import "fmt"
@@ -104,22 +105,22 @@ func Test_ThreadSafety(t *testing.T) {
 func Test_User(t *testing.T) {
 	user := database.NewUser("testuser", "")
 
-	if user.Online() {
+	if user.IsOnline() {
 		t.Errorf("Newly created user shouldn't be online")
 	}
 
 	user.SetOnline(true)
 
-	testutils.Assert(user.Online(), t, "Call to SetOnline(true) failed")
-	testutils.Assert(user.GetColorMode() == utils.ColorModeNone, t, "Newly created user should have a color mode of None")
+	testutils.Assert(user.IsOnline(), t, "Call to SetOnline(true) failed")
+	testutils.Assert(user.GetColorMode() == types.ColorModeNone, t, "Newly created user should have a color mode of None")
 
-	user.SetColorMode(utils.ColorModeLight)
+	user.SetColorMode(types.ColorModeLight)
 
-	testutils.Assert(user.GetColorMode() == utils.ColorModeLight, t, "Call to SetColorMode(utils.ColorModeLight) failed")
+	testutils.Assert(user.GetColorMode() == types.ColorModeLight, t, "Call to SetColorMode(types.ColorModeLight) failed")
 
-	user.SetColorMode(utils.ColorModeDark)
+	user.SetColorMode(types.ColorModeDark)
 
-	testutils.Assert(user.GetColorMode() == utils.ColorModeDark, t, "Call to SetColorMode(utils.ColorModeDark) failed")
+	testutils.Assert(user.GetColorMode() == types.ColorModeDark, t, "Call to SetColorMode(types.ColorModeDark) failed")
 
 	pw := "password"
 	user.SetPassword(pw)
@@ -130,14 +131,14 @@ func Test_User(t *testing.T) {
 	height := 12
 	user.SetWindowSize(width, height)
 
-	testWidth, testHeight := user.WindowSize()
+	testWidth, testHeight := user.GetWindowSize()
 
 	testutils.Assert(testWidth == width && testHeight == height, t, "Call to SetWindowSize() failed")
 
 	terminalType := "fake terminal type"
 	user.SetTerminalType(terminalType)
 
-	testutils.Assert(terminalType == user.TerminalType(), t, "Call to SetTerminalType() failed")
+	testutils.Assert(terminalType == user.GetTerminalType(), t, "Call to SetTerminalType() failed")
 }
 
 func Test_PlayerCharacter(t *testing.T) {
@@ -224,7 +225,7 @@ func Test_Zone(t *testing.T) {
 
 func Test_Room(t *testing.T) {
 	fakeZoneId := bson.ObjectId("!2345")
-	room := database.NewRoom(fakeZoneId, database.Coordinate{X: 0, Y: 0, Z: 0})
+	room := database.NewRoom(fakeZoneId, types.Coordinate{X: 0, Y: 0, Z: 0})
 
 	testutils.Assert(room.GetZoneId() == fakeZoneId, t, "Room didn't have correct zone ID upon creation", fakeZoneId, room.GetZoneId())
 
@@ -232,11 +233,11 @@ func Test_Room(t *testing.T) {
 	room.SetZoneId(fakeZoneId2)
 	testutils.Assert(room.GetZoneId() == fakeZoneId2, t, "Call to room.SetZoneId() failed")
 
-	directionList := make([]database.Direction, 10)
+	directionList := make([]types.Direction, 10)
 	directionCount := 10
 
 	for i := 0; i < directionCount; i++ {
-		directionList[i] = database.Direction(i)
+		directionList[i] = types.Direction(i)
 	}
 
 	for _, dir := range directionList {
@@ -274,7 +275,7 @@ func Test_Room(t *testing.T) {
 	room.SetDescription(description)
 	testutils.Assert(description == room.GetDescription(), t, "Call to room.SetDescription() failed", description, room.GetDescription())
 
-	coord := database.Coordinate{X: 1, Y: 2, Z: 3}
+	coord := types.Coordinate{X: 1, Y: 2, Z: 3}
 	room.SetLocation(coord)
 	testutils.Assert(coord == room.GetLocation(), t, "Call to room.SetLocation() failed", coord, room.GetLocation())
 }
