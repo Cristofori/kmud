@@ -22,9 +22,15 @@ func Test_EventLoop(t *testing.T) {
 
 	select {
 	case event := <-eventChannel:
-		tu.Assert(event.Type() == TellEventType, t, "Didn't get a Tell event back")
-		tellEvent := event.(TellEvent)
-		tu.Assert(tellEvent.Message == message, t, "Didn't get the right message back:", tellEvent.Message, message)
+		gotTellEvent := false
+
+		switch e := event.(type) {
+		case TellEvent:
+			gotTellEvent = true
+			tu.Assert(e.Message == message, t, "Didn't get the right message back:", e.Message, message)
+
+		}
+		tu.Assert(gotTellEvent, t, "Didn't get a Tell event back")
 	case <-timeout:
 		tu.Assert(false, t, "Timed out waiting for tell event")
 	}

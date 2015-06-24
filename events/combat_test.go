@@ -28,24 +28,29 @@ func Test_CombatLoop(t *testing.T) {
 
 	verifyEvents := func(channel chan Event) {
 		timeout := tu.Timeout(30 * time.Millisecond)
-		expectedTypes := make(map[EventType]bool)
-		expectedTypes[CombatEventType] = true
-		expectedTypes[CombatStartEventType] = true
+
+		gotCombatEvent := false
+		gotStartEvent := false
 
 	Loop:
 		for {
 			select {
 			case event := <-channel:
-				if event.Type() != TickEventType {
-					tu.Assert(expectedTypes[event.Type()] == true, t, "Unexpected event type:", event.Type())
-					delete(expectedTypes, event.Type())
+				switch event.(type) {
+				case TickEvent:
+				case CombatEvent:
+					gotCombatEvent = true
+				case CombatStartEvent:
+					gotStartEvent = true
+				default:
+					tu.Assert(false, t, "Unexpected event:", event)
 				}
 			case <-timeout:
 				tu.Assert(false, t, "Timed out waiting for combat event")
 				break Loop
 			}
 
-			if len(expectedTypes) == 0 {
+			if gotCombatEvent && gotStartEvent {
 				break
 			}
 		}

@@ -57,7 +57,7 @@ func StartEvents() {
 					if event.IsFor(char) {
 						if len(channel) == cap(channel) {
 							// TODO - Kill the session rather than the whole server
-							panic("Buffer full!" + char.GetName() + " " + string(event.Type()))
+							panic(fmt.Sprintf("Buffer full! %s %v", char.GetName(), event))
 						}
 
 						channel <- event
@@ -79,32 +79,12 @@ func StartEvents() {
 	StartCombatLoop()
 }
 
-type EventType string
-
-const (
-	CreateEventType      EventType = "Create"
-	DestroyEventType     EventType = "Destroy"
-	BroadcastEventType   EventType = "Broadcast"
-	SayEventType         EventType = "Say"
-	EmoteEventType       EventType = "Emote"
-	TellEventType        EventType = "Tell"
-	MoveEventType        EventType = "Move"
-	RoomUpdateEventType  EventType = "RoomUpdate"
-	LoginEventType       EventType = "Login"
-	LogoutEventType      EventType = "Logout"
-	CombatStartEventType EventType = "CombatStart"
-	CombatStopEventType  EventType = "CombatStop"
-	CombatEventType      EventType = "Combat"
-	TickEventType        EventType = "Tick"
-)
-
 type EventReceiver interface {
 	types.Identifiable
 	types.Locateable
 }
 
 type Event interface {
-	Type() EventType
 	ToString(receiver EventReceiver) string
 	IsFor(receiver EventReceiver) bool
 }
@@ -175,10 +155,6 @@ type CombatEvent struct {
 type TickEvent struct {
 }
 
-func (self BroadcastEvent) Type() EventType {
-	return BroadcastEventType
-}
-
 func (self BroadcastEvent) ToString(receiver EventReceiver) string {
 	return types.Colorize(types.ColorCyan, "Broadcast from "+self.Character.GetName()+": ") +
 		types.Colorize(types.ColorWhite, self.Message)
@@ -189,10 +165,6 @@ func (self BroadcastEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // Say
-func (self SayEvent) Type() EventType {
-	return SayEventType
-}
-
 func (self SayEvent) ToString(receiver EventReceiver) string {
 	who := ""
 	if receiver == self.Character {
@@ -210,10 +182,6 @@ func (self SayEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // Emote
-func (self EmoteEvent) Type() EventType {
-	return EmoteEventType
-}
-
 func (self EmoteEvent) ToString(receiver EventReceiver) string {
 	return types.Colorize(types.ColorYellow, self.Character.GetName()+" "+self.Emote)
 }
@@ -223,10 +191,6 @@ func (self EmoteEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // Tell
-func (self TellEvent) Type() EventType {
-	return TellEventType
-}
-
 func (self TellEvent) ToString(receiver EventReceiver) string {
 	return types.Colorize(types.ColorMagenta, fmt.Sprintf("Message from %s: ", self.From.GetName())) +
 		types.Colorize(types.ColorWhite, self.Message)
@@ -237,10 +201,6 @@ func (self TellEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // Move
-func (self MoveEvent) Type() EventType {
-	return MoveEventType
-}
-
 func (self MoveEvent) ToString(receiver EventReceiver) string {
 	return self.Message
 }
@@ -251,10 +211,6 @@ func (self MoveEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // RoomUpdate
-func (self RoomUpdateEvent) Type() EventType {
-	return RoomUpdateEventType
-}
-
 func (self RoomUpdateEvent) ToString(receiver EventReceiver) string {
 	return types.Colorize(types.ColorWhite, "This room has been modified")
 }
@@ -264,10 +220,6 @@ func (self RoomUpdateEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // Login
-func (self LoginEvent) Type() EventType {
-	return LoginEventType
-}
-
 func (self LoginEvent) ToString(receiver EventReceiver) string {
 	return types.Colorize(types.ColorBlue, self.Character.GetName()) +
 		types.Colorize(types.ColorWhite, " has connected")
@@ -278,10 +230,6 @@ func (self LoginEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // Logout
-func (self LogoutEvent) Type() EventType {
-	return LogoutEventType
-}
-
 func (self LogoutEvent) ToString(receiver EventReceiver) string {
 	return fmt.Sprintf("%s has disconnected", self.Character.GetName())
 }
@@ -291,10 +239,6 @@ func (self LogoutEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // CombatStart
-func (self CombatStartEvent) Type() EventType {
-	return CombatStartEventType
-}
-
 func (self CombatStartEvent) ToString(receiver EventReceiver) string {
 	if receiver == self.Attacker {
 		return types.Colorize(types.ColorRed, fmt.Sprintf("You are attacking %s!", self.Defender.GetName()))
@@ -310,10 +254,6 @@ func (self CombatStartEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // CombatStop
-func (self CombatStopEvent) Type() EventType {
-	return CombatStopEventType
-}
-
 func (self CombatStopEvent) ToString(receiver EventReceiver) string {
 	if receiver == self.Attacker {
 		return types.Colorize(types.ColorGreen, fmt.Sprintf("You stopped attacking %s", self.Defender.GetName()))
@@ -329,10 +269,6 @@ func (self CombatStopEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // Combat
-func (self CombatEvent) Type() EventType {
-	return CombatEventType
-}
-
 func (self CombatEvent) ToString(receiver EventReceiver) string {
 	if receiver == self.Attacker {
 		return types.Colorize(types.ColorRed, fmt.Sprintf("You hit %s for %v damage", self.Defender.GetName(), self.Damage))
@@ -348,10 +284,6 @@ func (self CombatEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // Timer
-func (self TickEvent) Type() EventType {
-	return TickEventType
-}
-
 func (self TickEvent) ToString(receiver EventReceiver) string {
 	return ""
 }
@@ -361,10 +293,6 @@ func (self TickEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // Create
-func (self CreateEvent) Type() EventType {
-	return CreateEventType
-}
-
 func (self CreateEvent) ToString(receiver EventReceiver) string {
 	return ""
 }
@@ -374,10 +302,6 @@ func (self CreateEvent) IsFor(receiver EventReceiver) bool {
 }
 
 // Destroy
-func (self DestroyEvent) Type() EventType {
-	return DestroyEventType
-}
-
 func (self DestroyEvent) ToString(receiver EventReceiver) string {
 	return ""
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Cristofori/kmud/types"
+	"github.com/Cristofori/kmud/utils"
 )
 
 var _combatInterval = 3 * time.Second
@@ -56,8 +57,9 @@ func StartCombatLoop() {
 
 	go func() {
 		defer func() { recover() }()
+		throttler := utils.NewThrottler(_combatInterval)
 		for {
-			time.Sleep(_combatInterval)
+			throttler.Sync()
 			messageChannel <- combatTick(true)
 		}
 	}()
