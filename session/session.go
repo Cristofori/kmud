@@ -201,21 +201,19 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 				continue
 			}
 
-			if event.Type() == events.TellEventType {
-				tellEvent := event.(events.TellEvent)
-				session.replyId = tellEvent.From.GetId()
-			} else if event.Type() == events.CombatEventType {
-				combatEvent := event.(events.CombatEvent)
-
-				if combatEvent.Defender == session.player {
-					session.player.Hit(combatEvent.Damage)
+			switch e := event.(type) {
+			case events.TellEvent:
+				session.replyId = e.From.GetId()
+			case events.CombatEvent:
+				if e.Defender == session.player {
+					session.player.Hit(e.Damage)
 					if session.player.GetHitPoints() <= 0 {
 						session.asyncMessage(">> You're dead <<")
-						events.StopFight(combatEvent.Defender)
-						events.StopFight(combatEvent.Attacker)
+						events.StopFight(e.Defender)
+						events.StopFight(e.Attacker)
 					}
 				}
-			} else if event.Type() == events.TickEventType {
+			case events.TickEvent:
 				if !events.InCombat(session.player) {
 					oldHps := session.player.GetHitPoints()
 					session.player.Heal(5)
