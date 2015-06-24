@@ -54,7 +54,6 @@ func StartEvents() {
 				delete(_listeners, char)
 			case event := <-_broadcast:
 				for char, channel := range _listeners {
-
 					if event.IsFor(char) {
 						if len(channel) == cap(channel) {
 							// TODO - Kill the session rather than the whole server
@@ -234,7 +233,7 @@ func (self TellEvent) ToString(receiver EventReceiver) string {
 }
 
 func (self TellEvent) IsFor(receiver EventReceiver) bool {
-	return receiver.GetId() == self.To.GetId()
+	return receiver == self.To
 }
 
 // Leave

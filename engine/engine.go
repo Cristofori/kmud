@@ -19,18 +19,27 @@ func Start() {
 
 func manage(npc types.NPC) {
 	eventChannel := events.Register(npc)
-	defer events.Unregister(npc)
 
 	go func() {
+		defer events.Unregister(npc)
+
 		for {
 			event := <-eventChannel
-			switch event.Type() {
-			case events.TickEventType:
+			switch e := event.(type) {
+			case events.TickEvent:
 				if npc.GetRoaming() {
 					room := model.GetRoom(npc.GetRoomId())
 					exits := room.GetExits()
 					exitToTake := utils.Random(0, len(exits)-1)
 					model.MoveCharacter(npc, exits[exitToTake])
+				}
+			case events.CombatStartEvent:
+				if npc == e.Defender {
+					events.StartFight(npc, e.Attacker)
+				}
+			case events.CombatStopEvent:
+				if npc == e.Defender {
+					events.StopFight(npc)
 				}
 			}
 		}
