@@ -195,7 +195,7 @@ func (self SayEvent) Type() EventType {
 
 func (self SayEvent) ToString(receiver EventReceiver) string {
 	who := ""
-	if receiver.GetId() == self.Character.GetId() {
+	if receiver == self.Character {
 		who = "You say"
 	} else {
 		who = self.Character.GetName() + " says"
@@ -236,7 +236,7 @@ func (self TellEvent) IsFor(receiver EventReceiver) bool {
 	return receiver == self.To
 }
 
-// Leave
+// Move
 func (self MoveEvent) Type() EventType {
 	return MoveEventType
 }
@@ -247,7 +247,7 @@ func (self MoveEvent) ToString(receiver EventReceiver) string {
 
 func (self MoveEvent) IsFor(receiver EventReceiver) bool {
 	return receiver.GetRoomId() == self.Room.GetId() &&
-		receiver.GetId() != self.Character.GetId()
+		receiver != self.Character
 }
 
 // RoomUpdate
@@ -274,7 +274,7 @@ func (self LoginEvent) ToString(receiver EventReceiver) string {
 }
 
 func (self LoginEvent) IsFor(receiver EventReceiver) bool {
-	return receiver.GetId() != self.Character.GetId()
+	return receiver != self.Character
 }
 
 // Logout
