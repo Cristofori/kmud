@@ -1,18 +1,34 @@
 package events
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	tu "github.com/Cristofori/kmud/testutils"
 	"github.com/Cristofori/kmud/types"
+	. "gopkg.in/check.v1"
 )
 
-func Test_CombatLoop(t *testing.T) {
-	_combatInterval = 10 * time.Millisecond
+func Test(t *testing.T) { TestingT(t) }
 
+type CombatSuite struct{}
+
+var _ = Suite(&CombatSuite{})
+
+func (s *CombatSuite) SetUpSuite(c *C) {
+	fmt.Println("Starting combat loop")
+	_combatInterval = 10 * time.Millisecond
 	StartEvents()
 	StartCombatLoop()
+}
+
+func (s *CombatSuite) TearDownSuite(c *C) {
+	// StopEvents()
+	StopCombatLoop()
+}
+
+func (s *CombatSuite) TestCombatLoop(c *C) {
 
 	char1 := types.NewMockPC()
 	char2 := types.NewMockPC()
@@ -23,8 +39,8 @@ func Test_CombatLoop(t *testing.T) {
 
 	StartFight(char1, char2)
 
-	tu.Assert(InCombat(char1) == true, t, "char1 did not get flagged as in combat")
-	tu.Assert(InCombat(char2) == true, t, "char2 did not get flagged as in combat")
+	c.Assert(InCombat(char1), Equals, true)
+	c.Assert(InCombat(char2), Equals, true)
 
 	verifyEvents := func(channel chan Event) {
 		timeout := tu.Timeout(30 * time.Millisecond)
@@ -38,15 +54,18 @@ func Test_CombatLoop(t *testing.T) {
 			case event := <-channel:
 				switch event.(type) {
 				case TickEvent:
+					fmt.Println("Tick event")
 				case CombatEvent:
+					fmt.Println("Combat event")
 					gotCombatEvent = true
 				case CombatStartEvent:
+					fmt.Println("Combat start event")
 					gotStartEvent = true
 				default:
-					tu.Assert(false, t, "Unexpected event:", event)
+					c.FailNow()
 				}
 			case <-timeout:
-				tu.Assert(false, t, "Timed out waiting for combat event")
+				c.Fatalf("Timed out waiting for combat event")
 				break Loop
 			}
 
@@ -58,15 +77,45 @@ func Test_CombatLoop(t *testing.T) {
 	verifyEvents(eventChannel1)
 	verifyEvents(eventChannel2)
 
-	StopCombatLoop()
+	StopFight(char1)
+
+	e := <-eventChannel1
+	switch e.(type) {
+	case CombatStopEvent:
+	default:
+		c.Fatalf("Didn't get a combat stop event (channel 1)")
+	}
+
+	e = <-eventChannel2
+	switch e.(type) {
+	case CombatStopEvent:
+	default:
+		c.Fatalf("Didn't get a combat stop event (channel 1)")
+	}
 
 	timeout := tu.Timeout(20 * time.Millisecond)
 
 	select {
 	case <-eventChannel1:
-		tu.Assert(false, t, "Shouldn't have gotten any combat events after stopping the combat loop (channel 1)")
+		c.Fatalf("Shouldn't have gotten any combat events after stopping combat (channel 1)")
 	case <-eventChannel2:
-		tu.Assert(false, t, "Shouldn't have gotten any combat events after stopping the combat loop (channel 2)")
+		c.Fatalf("Shouldn't have gotten any combat events after stopping combat (channel 2)")
+	case <-timeout:
+	}
+
+	StartFight(char1, char2)
+	<-eventChannel1
+	<-eventChannel2
+
+	StopCombatLoop()
+
+	timeout = tu.Timeout(20 * time.Millisecond)
+
+	select {
+	case <-eventChannel1:
+		c.Fatalf("Shouldn't have gotten any combat events after stopping the combat loop (channel 1)")
+	case <-eventChannel2:
+		c.Fatalf("Shouldn't have gotten any combat events after stopping the combat loop (channel 2)")
 	case <-timeout:
 	}
 }

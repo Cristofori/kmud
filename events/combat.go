@@ -44,6 +44,7 @@ func InCombat(character types.Character) bool {
 }
 
 func StopCombatLoop() {
+	defer func() { recover() }()
 	close(messageChannel)
 }
 

@@ -9,3 +9,6 @@ MongoDB: www.mongodb.org
 
 mgo: http://labix.org/mgo
 go get gopkg.in/mgo.v2
+
+go check: http://labix.org/gocheck
+go get gopkg.in/check.v1
