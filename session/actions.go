@@ -3,7 +3,7 @@ package session
 import (
 	"strings"
 
-	"github.com/Cristofori/kmud/events"
+	"github.com/Cristofori/kmud/combat"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
@@ -107,7 +107,7 @@ func (ah *actionHandler) Attack(args []string) {
 		if defender.GetId() == ah.session.player.GetId() {
 			ah.session.printError("You can't attack yourself")
 		} else {
-			events.StartFight(ah.session.player, defender)
+			combat.StartFight(ah.session.player, defender)
 		}
 	}
 }
@@ -235,7 +235,7 @@ func (ah *actionHandler) Ls(args []string) {
 }
 
 func (ah *actionHandler) Stop(args []string) {
-	events.StopFight(ah.session.player)
+	combat.StopFight(ah.session.player)
 }
 
 func (ah *actionHandler) Go(args []string) {

@@ -1,10 +1,10 @@
-package events
+package combat
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
+	"github.com/Cristofori/kmud/events"
 	tu "github.com/Cristofori/kmud/testutils"
 	"github.com/Cristofori/kmud/types"
 	. "gopkg.in/check.v1"
@@ -17,32 +17,30 @@ type CombatSuite struct{}
 var _ = Suite(&CombatSuite{})
 
 func (s *CombatSuite) SetUpSuite(c *C) {
-	fmt.Println("Starting combat loop")
 	_combatInterval = 10 * time.Millisecond
-	StartEvents()
+	events.StartEvents()
 	StartCombatLoop()
 }
 
 func (s *CombatSuite) TearDownSuite(c *C) {
-	// StopEvents()
 	StopCombatLoop()
+	events.StopEvents()
 }
 
 func (s *CombatSuite) TestCombatLoop(c *C) {
-
 	char1 := types.NewMockPC()
 	char2 := types.NewMockPC()
 	char1.RoomId = char2.RoomId
 
-	eventChannel1 := Register(char1)
-	eventChannel2 := Register(char2)
+	eventChannel1 := events.Register(char1)
+	eventChannel2 := events.Register(char2)
 
 	StartFight(char1, char2)
 
 	c.Assert(InCombat(char1), Equals, true)
 	c.Assert(InCombat(char2), Equals, true)
 
-	verifyEvents := func(channel chan Event) {
+	verifyEvents := func(channel chan events.Event) {
 		timeout := tu.Timeout(30 * time.Millisecond)
 
 		gotCombatEvent := false
@@ -53,13 +51,10 @@ func (s *CombatSuite) TestCombatLoop(c *C) {
 			select {
 			case event := <-channel:
 				switch event.(type) {
-				case TickEvent:
-					fmt.Println("Tick event")
-				case CombatEvent:
-					fmt.Println("Combat event")
+				case events.TickEvent:
+				case events.CombatEvent:
 					gotCombatEvent = true
-				case CombatStartEvent:
-					fmt.Println("Combat start event")
+				case events.CombatStartEvent:
 					gotStartEvent = true
 				default:
 					c.FailNow()
@@ -81,14 +76,14 @@ func (s *CombatSuite) TestCombatLoop(c *C) {
 
 	e := <-eventChannel1
 	switch e.(type) {
-	case CombatStopEvent:
+	case events.CombatStopEvent:
 	default:
 		c.Fatalf("Didn't get a combat stop event (channel 1)")
 	}
 
 	e = <-eventChannel2
 	switch e.(type) {
-	case CombatStopEvent:
+	case events.CombatStopEvent:
 	default:
 		c.Fatalf("Didn't get a combat stop event (channel 1)")
 	}

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/Cristofori/kmud/combat"
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
@@ -35,11 +36,11 @@ func manage(npc types.NPC) {
 				}
 			case events.CombatStartEvent:
 				if npc == e.Defender {
-					events.StartFight(npc, e.Attacker)
+					combat.StartFight(npc, e.Attacker)
 				}
 			case events.CombatStopEvent:
 				if npc == e.Defender {
-					events.StopFight(npc)
+					combat.StopFight(npc)
 				}
 			}
 		}

@@ -16,22 +16,34 @@ type eventListener struct {
 
 var _listeners map[types.Character]chan Event
 
-var _register chan eventListener
-var _unregister chan types.Character
-var _broadcast chan Event
+var eventMessages chan interface{}
+
+type register eventListener
+
+type unregister struct {
+	Character types.Character
+}
+
+type broadcast struct {
+	Event Event
+}
 
 func Register(receiver types.Character) chan Event {
 	listener := eventListener{Character: receiver, Channel: make(chan Event, 20)}
-	_register <- listener
+	eventMessages <- register(listener)
 	return listener.Channel
 }
 
 func Unregister(char types.Character) {
-	_unregister <- char
+	eventMessages <- unregister{char}
 }
 
 func Broadcast(event Event) {
-	_broadcast <- event
+	eventMessages <- broadcast{event}
+}
+
+func StopEvents() {
+	close(eventMessages)
 }
 
 func StartEvents() {
@@ -41,30 +53,32 @@ func StartEvents() {
 
 	_listeners = map[types.Character]chan Event{}
 
-	_register = make(chan eventListener)
-	_unregister = make(chan types.Character)
-	_broadcast = make(chan Event)
+	eventMessages = make(chan interface{}, 1)
 
 	go func() {
-		for {
-			select {
-			case l := <-_register:
-				_listeners[l.Character] = l.Channel
-			case char := <-_unregister:
-				delete(_listeners, char)
-			case event := <-_broadcast:
+		for message := range eventMessages {
+			switch m := message.(type) {
+			case register:
+				_listeners[m.Character] = m.Channel
+			case unregister:
+				delete(_listeners, m.Character)
+			case broadcast:
 				for char, channel := range _listeners {
-					if event.IsFor(char) {
+					if m.Event.IsFor(char) {
 						if len(channel) == cap(channel) {
 							// TODO - Kill the session rather than the whole server
-							panic(fmt.Sprintf("Buffer full! %s %v", char.GetName(), event))
+							panic(fmt.Sprintf("Buffer full! %s %v", char.GetName(), m.Event))
 						}
 
-						channel <- event
+						channel <- m.Event
 					}
 				}
+			default:
+				panic("Unhandled event message")
 			}
 		}
+
+		_listeners = nil
 	}()
 
 	go func() {
@@ -75,8 +89,6 @@ func StartEvents() {
 			Broadcast(TickEvent{})
 		}
 	}()
-
-	StartCombatLoop()
 }
 
 type EventReceiver interface {

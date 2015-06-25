@@ -1,16 +1,17 @@
-package events
+package combat
 
 import (
 	"math/rand"
 	"time"
 
+	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 )
 
 var _combatInterval = 3 * time.Second
 
-var messageChannel chan interface{}
+var combatMessages chan interface{}
 var fights map[types.Character]types.Character
 
 type combatStart struct {
@@ -30,22 +31,22 @@ type combatQuery struct {
 type combatTick bool
 
 func StartFight(attacker types.Character, defender types.Character) {
-	messageChannel <- combatStart{Attacker: attacker, Defender: defender}
+	combatMessages <- combatStart{Attacker: attacker, Defender: defender}
 }
 
 func StopFight(attacker types.Character) {
-	messageChannel <- combatStop{Attacker: attacker}
+	combatMessages <- combatStop{Attacker: attacker}
 }
 
 func InCombat(character types.Character) bool {
 	query := combatQuery{Character: character, Ret: make(chan bool)}
-	messageChannel <- query
+	combatMessages <- query
 	return <-query.Ret
 }
 
 func StopCombatLoop() {
 	defer func() { recover() }()
-	close(messageChannel)
+	close(combatMessages)
 }
 
 func StartCombatLoop() {
@@ -54,26 +55,26 @@ func StartCombatLoop() {
 	}
 
 	fights = map[types.Character]types.Character{}
-	messageChannel = make(chan interface{}, 1)
+	combatMessages = make(chan interface{}, 1)
 
 	go func() {
 		defer func() { recover() }()
 		throttler := utils.NewThrottler(_combatInterval)
 		for {
 			throttler.Sync()
-			messageChannel <- combatTick(true)
+			combatMessages <- combatTick(true)
 		}
 	}()
 
 	go func() {
-		for message := range messageChannel {
+		for message := range combatMessages {
 		Switch:
 			switch m := message.(type) {
 			case combatTick:
 				for a, d := range fights {
 					if a.GetRoomId() == d.GetRoomId() {
 						dmg := rand.Int()%10 + 1
-						Broadcast(CombatEvent{Attacker: a, Defender: d, Damage: dmg})
+						events.Broadcast(events.CombatEvent{Attacker: a, Defender: d, Damage: dmg})
 					} else {
 						StopFight(a)
 					}
@@ -91,13 +92,13 @@ func StartCombatLoop() {
 
 				fights[m.Attacker] = m.Defender
 
-				Broadcast(CombatStartEvent{Attacker: m.Attacker, Defender: m.Defender})
+				events.Broadcast(events.CombatStartEvent{Attacker: m.Attacker, Defender: m.Defender})
 			case combatStop:
 				defender := fights[m.Attacker]
 
 				if defender != nil {
 					delete(fights, m.Attacker)
-					Broadcast(CombatStopEvent{Attacker: m.Attacker, Defender: defender})
+					events.Broadcast(events.CombatStopEvent{Attacker: m.Attacker, Defender: defender})
 				}
 			case combatQuery:
 				_, found := fights[m.Character]
@@ -113,6 +114,8 @@ func StartCombatLoop() {
 					}
 					m.Ret <- false
 				}
+			default:
+				panic("Unhandled combat message")
 			}
 		}
 		fights = nil

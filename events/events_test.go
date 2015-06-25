@@ -6,10 +6,23 @@ import (
 
 	tu "github.com/Cristofori/kmud/testutils"
 	"github.com/Cristofori/kmud/types"
+	. "gopkg.in/check.v1"
 )
 
-func Test_EventLoop(t *testing.T) {
+func Test(t *testing.T) { TestingT(t) }
+
+type EventSuite struct{}
+
+var _ = Suite(&EventSuite{})
+
+func (s *EventSuite) SetUpSuite(c *C) {
 	StartEvents()
+}
+
+func (s *EventSuite) TearDownSuite(c *C) {
+}
+
+func (s *EventSuite) TestEventLoop(c *C) {
 
 	char := types.NewMockPC()
 
@@ -27,11 +40,14 @@ func Test_EventLoop(t *testing.T) {
 		switch e := event.(type) {
 		case TellEvent:
 			gotTellEvent = true
-			tu.Assert(e.Message == message, t, "Didn't get the right message back:", e.Message, message)
+			c.Assert(e.Message, Equals, message)
 
 		}
-		tu.Assert(gotTellEvent, t, "Didn't get a Tell event back")
+
+		if gotTellEvent == false {
+			c.Fatalf("Didn't get a Tell event back")
+		}
 	case <-timeout:
-		tu.Assert(false, t, "Timed out waiting for tell event")
+		c.Fatalf("Timed out waiting for tell event")
 	}
 }

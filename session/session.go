@@ -5,6 +5,7 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/Cristofori/kmud/combat"
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
@@ -209,12 +210,12 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 					session.player.Hit(e.Damage)
 					if session.player.GetHitPoints() <= 0 {
 						session.asyncMessage(">> You're dead <<")
-						events.StopFight(e.Defender)
-						events.StopFight(e.Attacker)
+						combat.StopFight(e.Defender)
+						combat.StopFight(e.Attacker)
 					}
 				}
 			case events.TickEvent:
-				if !events.InCombat(session.player) {
+				if !combat.InCombat(session.player) {
 					oldHps := session.player.GetHitPoints()
 					session.player.Heal(5)
 					newHps := session.player.GetHitPoints()
