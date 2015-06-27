@@ -191,7 +191,9 @@ func GetOnlinePlayerCharacters() []types.PC {
 // database and adds it to the model.  A pointer to the new character object is
 // returned.
 func CreatePlayerCharacter(name string, parentUser types.User, startingRoom types.Room) types.PC {
-	return db.NewPlayerChar(name, parentUser.GetId(), startingRoom.GetId())
+	pc := db.NewPlayerChar(name, parentUser.GetId(), startingRoom.GetId())
+	events.Broadcast(events.EnterEvent{Character: pc, RoomId: startingRoom.GetId(), Direction: types.DirectionNone})
+	return pc
 }
 
 // GetOrCreatePlayerCharacter attempts to retrieve the existing user from the model by the given name.
@@ -213,7 +215,9 @@ func GetOrCreatePlayerCharacter(name string, parentUser types.User, startingRoom
 // CreateNpc is a convenience function for creating a new character object that
 // is an NPC (as opposed to an actual player-controlled character)
 func CreateNpc(name string, roomId types.Id, spawnerId types.Id) types.NPC {
-	return db.NewNonPlayerChar(name, roomId, spawnerId)
+	npc := db.NewNonPlayerChar(name, roomId, spawnerId)
+	events.Broadcast(events.EnterEvent{Character: npc, RoomId: roomId, Direction: types.DirectionNone})
+	return npc
 }
 
 func DeleteCharacterId(id types.Id) {
@@ -538,11 +542,11 @@ func MoveCharacterToRoom(character types.Character, newRoom types.Room) {
 
 	// Leave
 	dir := DirectionBetween(oldRoom, newRoom)
-	events.Broadcast(events.LeaveEvent{Character: character, Room: oldRoom, Direction: dir})
+	events.Broadcast(events.LeaveEvent{Character: character, RoomId: oldRoomId, Direction: dir})
 
 	// Enter
 	dir = DirectionBetween(newRoom, oldRoom)
-	events.Broadcast(events.EnterEvent{Character: character, Room: newRoom, Direction: dir})
+	events.Broadcast(events.EnterEvent{Character: character, RoomId: newRoom.GetId(), Direction: dir})
 }
 
 // MoveCharacter moves the given character in the given direction. If there is

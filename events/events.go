@@ -136,13 +136,13 @@ type TellEvent struct {
 
 type EnterEvent struct {
 	Character types.Character
-	Room      types.Room
+	RoomId    types.Id
 	Direction types.Direction
 }
 
 type LeaveEvent struct {
 	Character types.Character
-	Room      types.Room
+	RoomId    types.Id
 	Direction types.Direction
 }
 
@@ -245,7 +245,7 @@ func (self LeaveEvent) ToString(receiver EventReceiver) string {
 }
 
 func (self LeaveEvent) IsFor(receiver EventReceiver) bool {
-	return self.Room.GetId() == receiver.GetRoomId()
+	return self.RoomId == receiver.GetRoomId()
 }
 
 // RoomUpdate

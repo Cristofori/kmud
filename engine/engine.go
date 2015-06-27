@@ -33,11 +33,6 @@ func manageNpc(npc types.NPC) {
 			event := <-eventChannel
 			switch e := event.(type) {
 			case events.TickEvent:
-				if npc.GetHitPoints() <= 0 {
-					combat.StopFight(npc)
-					model.DeleteCharacter(npc)
-					return
-				}
 				if npc.GetRoaming() {
 					room := model.GetRoom(npc.GetRoomId())
 					exits := room.GetExits()
@@ -51,6 +46,11 @@ func manageNpc(npc types.NPC) {
 			case events.CombatStopEvent:
 				if npc == e.Defender {
 					combat.StopFight(npc)
+				}
+			case events.DeathEvent:
+				if npc == e.Character {
+					model.DeleteCharacter(npc)
+					return
 				}
 			}
 		}
