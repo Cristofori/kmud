@@ -134,10 +134,16 @@ type TellEvent struct {
 	Message string
 }
 
-type MoveEvent struct {
+type EnterEvent struct {
 	Character types.Character
 	Room      types.Room
-	Message   string
+	Direction types.Direction
+}
+
+type LeaveEvent struct {
+	Character types.Character
+	Room      types.Room
+	Direction types.Direction
 }
 
 type RoomUpdateEvent struct {
@@ -216,14 +222,30 @@ func (self TellEvent) IsFor(receiver EventReceiver) bool {
 	return receiver == self.To
 }
 
-// Move
-func (self MoveEvent) ToString(receiver EventReceiver) string {
-	return self.Message
+// Enter
+func (self EnterEvent) ToString(receiver EventReceiver) string {
+	message := fmt.Sprintf("%v%s %vhas entered the room", types.ColorBlue, self.Character.GetName(), types.ColorWhite)
+	if self.Direction != types.DirectionNone {
+		message = fmt.Sprintf("%s from the %s", message, self.Direction.ToString())
+	}
+	return message
 }
 
-func (self MoveEvent) IsFor(receiver EventReceiver) bool {
-	return receiver.GetRoomId() == self.Room.GetId() &&
-		receiver != self.Character
+func (self EnterEvent) IsFor(receiver EventReceiver) bool {
+	return self.RoomId == receiver.GetRoomId() && receiver != self.Character
+}
+
+// Leave
+func (self LeaveEvent) ToString(receiver EventReceiver) string {
+	message := fmt.Sprintf("%v%s %vhas left the room", types.ColorBlue, self.Character.GetName(), types.ColorWhite)
+	if self.Direction != types.DirectionNone {
+		message = fmt.Sprintf("%s to the %s", message, self.Direction.ToString())
+	}
+	return message
+}
+
+func (self LeaveEvent) IsFor(receiver EventReceiver) bool {
+	return self.Room.GetId() == receiver.GetRoomId()
 }
 
 // RoomUpdate

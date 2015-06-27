@@ -981,8 +981,7 @@ func (ch *commandHandler) Inspect(args []string) {
 		char := characters[index]
 
 		ch.session.printLine(char.GetName())
-		ch.session.printLine("Health: %v", char.GetHealth())
-		ch.session.printLine("HPs: %v", char.GetHitPoints())
+		ch.session.printLine("Health: %v/%v", char.GetHitPoints(), char.GetHealth())
 	}
 }
 

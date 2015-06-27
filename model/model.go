@@ -537,21 +537,12 @@ func MoveCharacterToRoom(character types.Character, newRoom types.Room) {
 	oldRoom := GetRoom(oldRoomId)
 
 	// Leave
-	message := fmt.Sprintf("%v%s %vhas left the room", types.ColorBlue, character.GetName(), types.ColorWhite)
 	dir := DirectionBetween(oldRoom, newRoom)
-	if dir != types.DirectionNone {
-		message = fmt.Sprintf("%s to the %s", message, dir.ToString())
-	}
-
-	events.Broadcast(events.MoveEvent{Character: character, Room: oldRoom, Message: message})
+	events.Broadcast(events.LeaveEvent{Character: character, Room: oldRoom, Direction: dir})
 
 	// Enter
-	message = fmt.Sprintf("%v%s %vhas entered the room", types.ColorBlue, character.GetName(), types.ColorWhite)
-	if dir != types.DirectionNone {
-		message = fmt.Sprintf("%s to the %s", message, dir.ToString())
-	}
-
-	events.Broadcast(events.MoveEvent{Character: character, Room: newRoom, Message: message})
+	dir = DirectionBetween(newRoom, oldRoom)
+	events.Broadcast(events.EnterEvent{Character: character, Room: newRoom, Direction: dir})
 }
 
 // MoveCharacter moves the given character in the given direction. If there is
