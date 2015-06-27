@@ -51,35 +51,6 @@ func specificNpcMenu(npcId types.Id) *utils.Menu {
 	return menu
 }
 
-/*
-func spawnMenu() *utils.Menu {
-	menu := utils.NewMenu("Spawn")
-
-	menu.AddAction("n", "New")
-
-	templates := model.GetAllNpcTemplates()
-
-	for i, template := range templates {
-		index := i + 1
-		menu.AddActionData(index, template.GetName(), template.GetId())
-	}
-
-	return menu
-}
-*/
-
-/*
-func specificSpawnMenu(templateId types.Id) *utils.Menu {
-	template := model.GetCharacter(templateId)
-	menu := utils.NewMenu(template.GetName())
-
-	menu.AddAction("r", "Rename")
-	menu.AddAction("d", "Delete")
-
-	return menu
-}
-*/
-
 func toggleExitMenu(room types.Room) *utils.Menu {
 	onOrOff := func(direction types.Direction) string {
 		text := "Off"
@@ -352,7 +323,7 @@ func (ch *commandHandler) Whisper(args []string) {
 	model.Tell(ch.session.player, targetChar, message)
 }
 
-func (ch *commandHandler) Tel(args []string) {
+func (ch *commandHandler) Tp(args []string) {
 	ch.Teleport(args)
 }
 
@@ -584,42 +555,6 @@ func (ch *commandHandler) Npc(args []string) {
 	ch.session.printRoom()
 }
 
-/*
-func (ch *commandHandler) Spawn(args []string) {
-	for {
-		menu := spawnMenu()
-		choice, templateId := ch.session.execMenu(menu)
-
-		if choice == "" {
-			break
-		} else if choice == "n" {
-			name := getNpcName(ch)
-			if name != "" {
-				model.CreateNpcTemplate(name)
-			}
-		} else {
-			for {
-				specificMenu := specificSpawnMenu(templateId)
-				choice, _ := ch.session.execMenu(specificMenu)
-
-				if choice == "" {
-					break
-				} else if choice == "r" {
-					newName := getNpcName(ch)
-					if newName != "" {
-						template := model.GetCharacter(templateId)
-						template.SetName(newName)
-					}
-				} else if choice == "d" {
-					model.DeleteCharacterId(templateId)
-					break
-				}
-			}
-		}
-	}
-}
-*/
-
 func (ch *commandHandler) Create(args []string) {
 	createUsage := func() {
 		ch.session.printError("Usage: /create <item name>")
@@ -791,8 +726,7 @@ func (ch *commandHandler) Area(args []string) {
 		menu.AddAction("n", "New")
 
 		for i, area := range model.GetAreas(ch.session.currentZone()) {
-			index := i + 1
-			menu.AddActionData(index, area.GetName(), area.GetId())
+			menu.AddActionData(i+1, area.GetName(), area.GetId())
 		}
 
 		choice, areaId := ch.session.execMenu(menu)
@@ -801,7 +735,7 @@ func (ch *commandHandler) Area(args []string) {
 		case "":
 			return
 		case "n":
-			name := ch.session.getUserInput(RawUserInput, "Area name: ")
+			name := ch.session.getRawUserInput("Area name: ")
 
 			if name != "" {
 				model.CreateArea(name, ch.session.currentZone())
@@ -810,26 +744,87 @@ func (ch *commandHandler) Area(args []string) {
 			area := model.GetArea(areaId)
 
 			if area != nil {
-				areaMenu := utils.NewMenu(area.GetName())
-				areaMenu.AddAction("r", "Rename")
-				areaMenu.AddAction("d", "Delete")
+			AreaMenu:
+				for {
+					areaMenu := utils.NewMenu(area.GetName())
+					areaMenu.AddAction("r", "Rename")
+					areaMenu.AddAction("d", "Delete")
+					areaMenu.AddAction("s", "Spawners")
 
-				choice, _ = ch.session.execMenu(areaMenu)
+					choice, _ = ch.session.execMenu(areaMenu)
 
-				switch choice {
-				case "":
-					break
-				case "r":
-					newName := ch.session.getUserInput(RawUserInput, "New name: ")
+					switch choice {
+					case "":
+						break AreaMenu
+					case "r":
+						newName := ch.session.getRawUserInput("New name: ")
 
-					if newName != "" {
-						area.SetName(newName)
-					}
-				case "d":
-					answer := ch.session.getUserInput(RawUserInput, "Are you sure? ")
+						if newName != "" {
+							area.SetName(newName)
+						}
+					case "d":
+						answer := ch.session.getRawUserInput("Are you sure? ")
 
-					if strings.ToLower(answer) == "y" {
-						model.DeleteArea(area)
+						if strings.ToLower(answer) == "y" {
+							model.DeleteArea(area)
+						}
+					case "s":
+					SpawnerMenu:
+						for {
+							menu := utils.NewMenu("Spawners")
+
+							for i, spawner := range model.GetAreaSpawners(areaId) {
+								menu.AddActionData(i+1, spawner.GetName(), spawner.GetId())
+							}
+
+							menu.AddAction("n", "New")
+
+							choice, spawnerId := ch.session.execMenu(menu)
+
+							switch choice {
+							case "":
+								break SpawnerMenu
+							case "n":
+								name := ch.session.getRawUserInput("Name of spawned NPC: ")
+
+								if name != "" {
+									model.CreateSpawner(name, areaId)
+								}
+							default:
+								spawner := model.GetSpawner(spawnerId)
+
+							SingleSpawnerMenu:
+								for {
+									menu := utils.NewMenu(fmt.Sprintf("%s - %s", "Spawner", spawner.GetName()))
+
+									menu.AddAction("r", "Rename")
+									menu.AddAction("c", fmt.Sprintf("Count - %v", spawner.GetCount()))
+
+									choice, _ := ch.session.execMenu(menu)
+
+									switch choice {
+									case "":
+										break SingleSpawnerMenu
+									case "r":
+										newName := ch.session.getRawUserInput("New name: ")
+										if newName != "" {
+											spawner.SetName(newName)
+										}
+									case "c":
+										input := ch.session.getRawUserInput("New count: ")
+										if input != "" {
+											newCount, err := strconv.ParseInt(input, 10, 0)
+
+											if err != nil || newCount < 0 {
+												ch.session.printError("Invalid value")
+											} else {
+												spawner.SetCount(int(newCount))
+											}
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 			} else {

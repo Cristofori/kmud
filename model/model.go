@@ -483,6 +483,14 @@ func Init(session db.Session, dbName string) {
 		ds.Set(npc)
 	}
 
+	spawners := []*db.Spawner{}
+	db.RetrieveObjects(types.SpawnerType, &spawners)
+
+	for _, spawner := range spawners {
+		spawner.SetObjectType(types.SpawnerType)
+		ds.Set(spawner)
+	}
+
 	zones := []*db.Zone{}
 	db.RetrieveObjects(types.ZoneType, &zones)
 
@@ -704,6 +712,26 @@ func DirectionBetween(from, to types.Room) types.Direction {
 	}
 
 	return types.DirectionNone
+}
+
+func CreateSpawner(name string, areaId types.Id) types.Spawner {
+	return db.NewSpawner(name, areaId)
+}
+
+func GetSpawner(id types.Id) types.Spawner {
+	return ds.Get(id).(types.Spawner)
+}
+
+func GetAreaSpawners(areaId types.Id) types.SpawnerList {
+	ids := db.Find(types.SpawnerType, bson.M{"areaid": areaId})
+
+	spawners := make(types.SpawnerList, len(ids))
+
+	for i, id := range ids {
+		spawners[i] = ds.Get(id).(types.Spawner)
+	}
+
+	return spawners
 }
 
 // vim: nocindent

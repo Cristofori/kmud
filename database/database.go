@@ -94,6 +94,8 @@ func getCollectionFromType(t types.ObjectType) Collection {
 		return getCollection(cPlayerChars)
 	case types.NpcType:
 		return getCollection(cNonPlayerChars)
+	case types.SpawnerType:
+		return getCollection(cSpawners)
 	case types.UserType:
 		return getCollection(cUsers)
 	case types.ZoneType:
@@ -116,6 +118,7 @@ const (
 	cUsers          = collectionName("users")
 	cPlayerChars    = collectionName("player_characters")
 	cNonPlayerChars = collectionName("npcs")
+	cSpawners       = collectionName("spawners")
 	cRooms          = collectionName("rooms")
 	cZones          = collectionName("zones")
 	cItems          = collectionName("items")

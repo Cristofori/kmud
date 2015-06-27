@@ -243,6 +243,10 @@ func (session *Session) getUserInput(inputMode userInputMode, prompt string) str
 	return session.getUserInputP(inputMode, utils.SimplePrompter(prompt))
 }
 
+func (session *Session) getRawUserInput(prompt string) string {
+	return session.getUserInput(RawUserInput, prompt)
+}
+
 func (session *Session) GetPrompt() string {
 	prompt := session.prompt
 	prompt = strings.Replace(prompt, "%h", strconv.Itoa(session.player.GetHitPoints()), -1)

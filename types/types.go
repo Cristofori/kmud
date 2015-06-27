@@ -10,13 +10,14 @@ type Id interface{}
 type ObjectType int
 
 const (
-	NpcType  ObjectType = iota
-	PcType   ObjectType = iota
-	UserType ObjectType = iota
-	ZoneType ObjectType = iota
-	AreaType ObjectType = iota
-	RoomType ObjectType = iota
-	ItemType ObjectType = iota
+	NpcType     ObjectType = iota
+	PcType      ObjectType = iota
+	SpawnerType ObjectType = iota
+	UserType    ObjectType = iota
+	ZoneType    ObjectType = iota
+	AreaType    ObjectType = iota
+	RoomType    ObjectType = iota
+	ItemType    ObjectType = iota
 )
 
 type Identifiable interface {
@@ -111,6 +112,14 @@ type NPC interface {
 }
 
 type NPCList []NPC
+
+type Spawner interface {
+	Character
+	SetCount(int)
+	GetCount() int
+}
+
+type SpawnerList []Spawner
 
 func (self NPCList) Characters() CharacterList {
 	chars := make(CharacterList, len(self))

@@ -20,13 +20,6 @@ type Character struct {
 	objType types.ObjectType
 }
 
-type NonPlayerChar struct {
-	Character `bson:",inline"`
-
-	Roaming      bool
-	Conversation string
-}
-
 type PlayerChar struct {
 	Character `bson:",inline"`
 
@@ -34,13 +27,18 @@ type PlayerChar struct {
 	online bool
 }
 
-func initCharacter(character *Character, name string, objType types.ObjectType, roomId types.Id) {
-	character.RoomId = roomId
-	character.Cash = 0
-	character.Health = 100
-	character.HitPoints = 100
-	character.Name = utils.FormatName(name)
-	character.objType = objType
+type NonPlayerChar struct {
+	Character `bson:",inline"`
+
+	Roaming      bool
+	Conversation string
+}
+
+type Spawner struct {
+	Character `bson:",inline"`
+
+	AreaId types.Id
+	Count  int
 }
 
 func NewPlayerChar(name string, userId types.Id, roomId types.Id) *PlayerChar {
@@ -49,16 +47,36 @@ func NewPlayerChar(name string, userId types.Id, roomId types.Id) *PlayerChar {
 	pc.UserId = userId
 	pc.online = false
 
-	initCharacter(&pc.Character, name, types.PcType, roomId)
+	pc.initCharacter(name, types.PcType, roomId)
 	pc.initDbObject(&pc)
 	return &pc
 }
 
 func NewNonPlayerChar(name string, roomId types.Id) *NonPlayerChar {
 	var npc NonPlayerChar
-	initCharacter(&npc.Character, name, types.NpcType, roomId)
+	npc.initCharacter(name, types.NpcType, roomId)
 	npc.initDbObject(&npc)
 	return &npc
+}
+
+func NewSpawner(name string, areaId types.Id) *Spawner {
+	var spawner Spawner
+
+	spawner.AreaId = areaId
+	spawner.Count = 1
+
+	spawner.initCharacter(name, types.SpawnerType, nil)
+	spawner.initDbObject(&spawner)
+	return &spawner
+}
+
+func (self *Character) initCharacter(name string, objType types.ObjectType, roomId types.Id) {
+	self.RoomId = roomId
+	self.Cash = 0
+	self.Health = 100
+	self.HitPoints = 100
+	self.Name = utils.FormatName(name)
+	self.objType = objType
 }
 
 func (self *Character) GetType() types.ObjectType {
@@ -311,6 +329,21 @@ func (self *NonPlayerChar) SetRoaming(roaming bool) {
 
 	self.Roaming = roaming
 	self.modified()
+}
+
+func (self *Spawner) SetCount(count int) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	self.Count = count
+	self.modified()
+}
+
+func (self *Spawner) GetCount() int {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Count
 }
 
 // vim: nocindent
