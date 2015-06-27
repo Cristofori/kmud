@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"fmt"
 	"github.com/Cristofori/kmud/combat"
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
@@ -69,8 +68,8 @@ func manageSpawner(spawner types.Spawner) {
 				diff := spawner.GetCount() - len(npcs)
 
 				for diff > 0 && len(rooms) > 0 {
-					fmt.Println("Spawning", spawner.GetName())
 					npc := model.CreateNpc(spawner.GetName(), rooms[0].GetId(), spawner.GetId())
+					npc.SetHealth(spawner.GetHealth())
 					manageNpc(npc)
 					diff--
 				}

@@ -799,6 +799,7 @@ func (ch *commandHandler) Area(args []string) {
 
 									menu.AddAction("r", "Rename")
 									menu.AddAction("c", fmt.Sprintf("Count - %v", spawner.GetCount()))
+									menu.AddAction("h", fmt.Sprintf("Hitpoints - %v", spawner.GetHitPoints()))
 
 									choice, _ := ch.session.execMenu(menu)
 
@@ -819,6 +820,17 @@ func (ch *commandHandler) Area(args []string) {
 												ch.session.printError("Invalid value")
 											} else {
 												spawner.SetCount(int(newCount))
+											}
+										}
+									case "h":
+										input := ch.session.getRawUserInput("New hitpoint count: ")
+										if input != "" {
+											newCount, err := strconv.ParseInt(input, 10, 0)
+
+											if err != nil || newCount <= 0 {
+												ch.session.printError("Invalid value")
+											} else {
+												spawner.SetHealth(int(newCount))
 											}
 										}
 									}
@@ -944,11 +956,33 @@ func (ch *commandHandler) Kill(args []string) {
 	if index == -1 {
 		ch.session.printError("Not found")
 	} else if index == -2 {
-		ch.session.printError("Which one do you mean")
+		ch.session.printError("Which one do you mean?")
 	} else {
 		npc := npcs[index]
 		npc.SetHitPoints(0)
 		ch.session.printLine("Killed %s", npc.GetName())
+	}
+}
+
+func (ch *commandHandler) Inspect(args []string) {
+	if len(args) != 1 {
+		ch.session.printError("Usage: /inspect [name]")
+		return
+	}
+
+	characters := model.CharactersIn(ch.session.room)
+	index := utils.BestMatch(args[0], characters.Names())
+
+	if index == -1 {
+		ch.session.printError("Not found")
+	} else if index == -2 {
+		ch.session.printError("Which one do you mean?")
+	} else {
+		char := characters[index]
+
+		ch.session.printLine(char.GetName())
+		ch.session.printLine("Health: %v", char.GetHealth())
+		ch.session.printLine("HPs: %v", char.GetHitPoints())
 	}
 }
 

@@ -74,9 +74,18 @@ func StartCombatLoop() {
 				for a, d := range fights {
 					if a.GetRoomId() == d.GetRoomId() {
 						dmg := rand.Int()%10 + 1
+						d.Hit(dmg)
+
 						events.Broadcast(events.CombatEvent{Attacker: a, Defender: d, Damage: dmg})
+
+						if d.GetHitPoints() <= 0 {
+							doCombatStop(a)
+							doCombatStop(d)
+							events.Broadcast(events.DeathEvent{Character: d})
+						}
+
 					} else {
-						StopFight(a)
+						doCombatStop(a)
 					}
 				}
 			case combatStart:
@@ -87,19 +96,14 @@ func StartCombatLoop() {
 				}
 
 				if found {
-					StopFight(m.Attacker)
+					doCombatStop(m.Attacker)
 				}
 
 				fights[m.Attacker] = m.Defender
 
 				events.Broadcast(events.CombatStartEvent{Attacker: m.Attacker, Defender: m.Defender})
 			case combatStop:
-				defender := fights[m.Attacker]
-
-				if defender != nil {
-					delete(fights, m.Attacker)
-					events.Broadcast(events.CombatStopEvent{Attacker: m.Attacker, Defender: defender})
-				}
+				doCombatStop(m.Attacker)
 			case combatQuery:
 				_, found := fights[m.Character]
 
@@ -120,6 +124,15 @@ func StartCombatLoop() {
 		}
 		fights = nil
 	}()
+}
+
+func doCombatStop(attacker types.Character) {
+	defender := fights[attacker]
+
+	if defender != nil {
+		delete(fights, attacker)
+		events.Broadcast(events.CombatStopEvent{Attacker: attacker, Defender: defender})
+	}
 }
 
 // vim: nocindent

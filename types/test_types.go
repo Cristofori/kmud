@@ -95,11 +95,14 @@ func (*MockCharacter) GetCash() int {
 }
 
 func (*MockCharacter) GetHealth() int {
-	return 0
+	return 1
+}
+
+func (*MockCharacter) SetHealth(int) {
 }
 
 func (*MockCharacter) GetHitPoints() int {
-	return 0
+	return 1
 }
 
 func (*MockCharacter) Heal(int) {

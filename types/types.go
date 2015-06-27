@@ -74,6 +74,7 @@ type Character interface {
 	GetHitPoints() int
 	SetHitPoints(int)
 	GetHealth() int
+	SetHealth(int)
 }
 
 type CharacterList []Character

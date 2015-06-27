@@ -91,10 +91,10 @@ func (s *CombatSuite) TestCombatLoop(c *C) {
 	timeout := tu.Timeout(20 * time.Millisecond)
 
 	select {
-	case <-eventChannel1:
-		c.Fatalf("Shouldn't have gotten any combat events after stopping combat (channel 1)")
-	case <-eventChannel2:
-		c.Fatalf("Shouldn't have gotten any combat events after stopping combat (channel 2)")
+	case e := <-eventChannel1:
+		c.Fatalf("Shouldn't have gotten any combat events after stopping combat (channel 1) - %s", e)
+	case e := <-eventChannel2:
+		c.Fatalf("Shouldn't have gotten any combat events after stopping combat (channel 2) - %s", e)
 	case <-timeout:
 	}
 

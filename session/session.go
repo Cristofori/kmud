@@ -205,15 +205,6 @@ func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Pr
 			switch e := event.(type) {
 			case events.TellEvent:
 				session.replyId = e.From.GetId()
-			case events.CombatEvent:
-				if e.Defender == session.player {
-					session.player.Hit(e.Damage)
-					if session.player.GetHitPoints() <= 0 {
-						session.asyncMessage(">> You're dead <<")
-						combat.StopFight(e.Defender)
-						combat.StopFight(e.Attacker)
-					}
-				}
 			case events.TickEvent:
 				if !combat.InCombat(session.player) {
 					oldHps := session.player.GetHitPoints()

@@ -109,6 +109,10 @@ type DestroyEvent struct {
 	Object *database.DbObject
 }
 
+type DeathEvent struct {
+	Character types.Character
+}
+
 type BroadcastEvent struct {
 	Character types.Character
 	Message   string
@@ -322,4 +326,16 @@ func (self DestroyEvent) IsFor(receiver EventReceiver) bool {
 	return true
 }
 
-// vim: nocindent
+// Death
+func (self DeathEvent) IsFor(receiver EventReceiver) bool {
+	return receiver == self.Character ||
+		receiver.GetRoomId() == self.Character.GetRoomId()
+}
+
+func (self DeathEvent) ToString(receiver EventReceiver) string {
+	if receiver == self.Character {
+		return types.Colorize(types.ColorRed, ">> You have died")
+	}
+
+	return types.Colorize(types.ColorRed, fmt.Sprintf(">> %s has died", self.Character.GetName()))
+}
