@@ -68,12 +68,12 @@ func (self *Room) ToString(players types.PCList, npcs types.NPCList, items types
 
 	areaStr := ""
 	if area != nil {
-		areaStr = fmt.Sprintf(" - %s", area.GetName())
+		areaStr = fmt.Sprintf("%s - ", area.GetName())
 	}
 
 	str = fmt.Sprintf("\r\n %v>>> %v%s%s %v<<< %v(%v %v %v)\r\n\r\n %v%s\r\n\r\n",
 		types.ColorWhite, types.ColorBlue,
-		self.GetTitle(), areaStr,
+		areaStr, self.GetTitle(),
 		types.ColorWhite, types.ColorBlue,
 		self.GetLocation().X, self.GetLocation().Y, self.GetLocation().Z,
 		types.ColorWhite,

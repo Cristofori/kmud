@@ -118,6 +118,9 @@ func (*MockCharacter) GetItemIds() []Id {
 	return []Id{}
 }
 
+func (*MockCharacter) SetHitPoints(int) {
+}
+
 type MockPC struct {
 	MockCharacter
 	RoomId Id

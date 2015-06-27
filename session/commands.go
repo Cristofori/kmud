@@ -515,7 +515,7 @@ func (ch *commandHandler) Npc(args []string) {
 		} else if choice == "n" {
 			name := getNpcName(ch)
 			if name != "" {
-				model.CreateNpc(name, ch.session.room)
+				model.CreateNpc(name, ch.session.room, nil)
 			}
 		} else if npcId != nil {
 			for {
@@ -912,7 +912,7 @@ func (ch *commandHandler) Link(args []string) {
 				ch.session.printRoom()
 			}
 		} else if args[0] == "rename" {
-
+			// TODO
 		} else {
 			if len(args) == 2 {
 				if args[1] == LinkSingle || args[1] == LinkDouble {
@@ -929,6 +929,26 @@ func (ch *commandHandler) Link(args []string) {
 			ch.session.states[StateName] = utils.FormatName(args[0])
 			linkData.source = ch.session.room.GetId()
 		}
+	}
+}
+
+func (ch *commandHandler) Kill(args []string) {
+	if len(args) != 1 {
+		ch.session.printError("Usage: /kill [npc name]")
+		return
+	}
+
+	npcs := model.NpcsIn(ch.session.room)
+	index := utils.BestMatch(args[0], npcs.Characters().Names())
+
+	if index == -1 {
+		ch.session.printError("Not found")
+	} else if index == -2 {
+		ch.session.printError("Which one do you mean")
+	} else {
+		npc := npcs[index]
+		npc.SetHitPoints(0)
+		ch.session.printLine("Killed %s", npc.GetName())
 	}
 }
 

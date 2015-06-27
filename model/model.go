@@ -120,20 +120,6 @@ func GetNpcs() types.NPCList {
 	return npcs
 }
 
-/*
-func GetAllNpcTemplates() []*db.Character {
-	templates := []*db.Character{}
-
-	for _, character := range _chars {
-		if character.IsNpcTemplate() {
-			templates = append(templates, character)
-		}
-	}
-
-	return templates
-}
-*/
-
 // GetUserCharacters returns all of the Character objects associated with the
 // given user id
 func GetUserCharacters(user types.User) types.PCList {
@@ -226,8 +212,8 @@ func GetOrCreatePlayerCharacter(name string, parentUser types.User, startingRoom
 
 // CreateNpc is a convenience function for creating a new character object that
 // is an NPC (as opposed to an actual player-controlled character)
-func CreateNpc(name string, room types.Room) types.NPC {
-	return db.NewNonPlayerChar(name, room.GetId())
+func CreateNpc(name string, roomId types.Id, spawnerId types.Id) types.NPC {
+	return db.NewNonPlayerChar(name, roomId, spawnerId)
 }
 
 func DeleteCharacterId(id types.Id) {
@@ -373,6 +359,16 @@ func GetAreaByName(name string) types.Area {
 func DeleteArea(area types.Area) {
 	ds.Remove(area)
 	utils.HandleError(db.DeleteObject(area))
+}
+
+func GetAreaRooms(areaId types.Id) types.RoomList {
+	ids := db.Find(types.RoomType, bson.M{"areaid": areaId})
+	rooms := make(types.RoomList, len(ids))
+	for i, id := range ids {
+		rooms[i] = ds.Get(id).(types.Room)
+	}
+	return rooms
+
 }
 
 // DeleteRoom removes the given room object from the model and the database. It
@@ -718,13 +714,8 @@ func CreateSpawner(name string, areaId types.Id) types.Spawner {
 	return db.NewSpawner(name, areaId)
 }
 
-func GetSpawner(id types.Id) types.Spawner {
-	return ds.Get(id).(types.Spawner)
-}
-
-func GetAreaSpawners(areaId types.Id) types.SpawnerList {
-	ids := db.Find(types.SpawnerType, bson.M{"areaid": areaId})
-
+func GetSpawners() types.SpawnerList {
+	ids := db.FindAll(types.SpawnerType)
 	spawners := make(types.SpawnerList, len(ids))
 
 	for i, id := range ids {
@@ -732,6 +723,28 @@ func GetAreaSpawners(areaId types.Id) types.SpawnerList {
 	}
 
 	return spawners
+}
+
+func GetSpawner(id types.Id) types.Spawner {
+	return ds.Get(id).(types.Spawner)
+}
+
+func GetAreaSpawners(areaId types.Id) types.SpawnerList {
+	ids := db.Find(types.SpawnerType, bson.M{"areaid": areaId})
+	spawners := make(types.SpawnerList, len(ids))
+	for i, id := range ids {
+		spawners[i] = ds.Get(id).(types.Spawner)
+	}
+	return spawners
+}
+
+func GetSpawnerNpcs(spawnerId types.Id) types.NPCList {
+	ids := db.Find(types.NpcType, bson.M{"spawnerid": spawnerId})
+	npcs := make(types.NPCList, len(ids))
+	for i, id := range ids {
+		npcs[i] = ds.Get(id).(types.NPC)
+	}
+	return npcs
 }
 
 // vim: nocindent

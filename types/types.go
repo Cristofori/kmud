@@ -72,6 +72,7 @@ type Character interface {
 	Hit(int)
 	Heal(int)
 	GetHitPoints() int
+	SetHitPoints(int)
 	GetHealth() int
 }
 
@@ -115,6 +116,7 @@ type NPCList []NPC
 
 type Spawner interface {
 	Character
+	GetAreaId() Id
 	SetCount(int)
 	GetCount() int
 }

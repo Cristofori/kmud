@@ -30,6 +30,8 @@ type PlayerChar struct {
 type NonPlayerChar struct {
 	Character `bson:",inline"`
 
+	SpawnerId types.Id `bson:",omitempty"`
+
 	Roaming      bool
 	Conversation string
 }
@@ -52,8 +54,11 @@ func NewPlayerChar(name string, userId types.Id, roomId types.Id) *PlayerChar {
 	return &pc
 }
 
-func NewNonPlayerChar(name string, roomId types.Id) *NonPlayerChar {
+func NewNonPlayerChar(name string, roomId types.Id, spawnerId types.Id) *NonPlayerChar {
 	var npc NonPlayerChar
+
+	npc.SpawnerId = spawnerId
+
 	npc.initCharacter(name, types.NpcType, roomId)
 	npc.initDbObject(&npc)
 	return &npc
@@ -103,16 +108,6 @@ func (self *Character) SetName(name string) {
 func (self *Character) SetObjectType(t types.ObjectType) {
 	self.objType = t
 }
-
-/*
-func NewNpcTemplate(name string) *Character {
-	return NewCharacter(name, "", "")
-}
-
-func NewNpcFromTemplate(template *Character, roomId types.Id) *Character {
-	return NewNpc(template.GetName(), template.GetRoomId())
-}
-*/
 
 func (self *PlayerChar) SetOnline(online bool) {
 	self.WriteLock()
@@ -344,6 +339,13 @@ func (self *Spawner) GetCount() int {
 	defer self.ReadUnlock()
 
 	return self.Count
+}
+
+func (self *Spawner) GetAreaId() types.Id {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.AreaId
 }
 
 // vim: nocindent
