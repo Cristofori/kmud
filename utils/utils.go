@@ -346,7 +346,7 @@ func (self *Throttler) Sync() {
 // Random returns a random integer between low and high, inclusive
 func Random(low, high int) int {
 	if high < low {
-		panic("utils.Random: high should be >= low")
+		high, low = low, high
 	}
 
 	diff := high - low

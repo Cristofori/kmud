@@ -1,7 +1,6 @@
 package combat
 
 import (
-	"math/rand"
 	"time"
 
 	"github.com/Cristofori/kmud/events"
@@ -73,7 +72,7 @@ func StartCombatLoop() {
 			case combatTick:
 				for a, d := range fights {
 					if a.GetRoomId() == d.GetRoomId() {
-						dmg := rand.Int()%10 + 1
+						dmg := utils.Random(1, 10)
 						d.Hit(dmg)
 
 						events.Broadcast(events.CombatEvent{Attacker: a, Defender: d, Damage: dmg})
