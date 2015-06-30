@@ -5,21 +5,23 @@ import (
 
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/datastore"
-	tu "github.com/Cristofori/kmud/testutils"
+	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/types"
+	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
 )
 
+func Test(t *testing.T) { TestingT(t) }
+
+type ModelSuite struct{}
+
+var _ = Suite(&ModelSuite{})
+
 var _db *mgo.Database
 
-func _cleanup(t *testing.T) {
-	_db.DropDatabase()
-	datastore.ClearAll()
-}
-
-func Test_Init(t *testing.T) {
+func (s *ModelSuite) SetUpSuite(c *C) {
 	session, err := mgo.Dial("localhost")
-	tu.Assert(err == nil, t, "Failed to connect to database")
+	c.Assert(err, Equals, nil)
 
 	if err != nil {
 		return
@@ -31,30 +33,38 @@ func Test_Init(t *testing.T) {
 
 	session.DB(dbName).DropDatabase()
 	Init(database.NewMongoSession(session), dbName)
+
+	events.StartEvents()
 }
 
-func Test_UserFunctions(t *testing.T) {
+func (s *ModelSuite) TearDownSuite(c *C) {
+	_db.DropDatabase()
+	datastore.ClearAll()
+}
+
+func (s *ModelSuite) TestUserFunctions(c *C) {
 	name1 := "Test_name1"
 	password1 := "test_password2"
 
 	user1 := CreateUser(name1, password1)
 
-	tu.Assert(user1.GetName() == name1, t, "User creation failed, bad name:", user1.GetName(), name1)
-	tu.Assert(user1.VerifyPassword(password1), t, "User creation failed, bad password")
+	c.Assert(user1.GetName(), Equals, name1)
+	c.Assert(user1.VerifyPassword(password1), Equals, true)
 
 	user2 := GetOrCreateUser(name1, password1)
-	tu.Assert(user1 == user2, t, "GetOrCreateUser() should have returned the user we already created")
+	c.Assert(user1, Equals, user2)
 
 	name2 := "test_name2"
 	password2 := "test_password2"
 	user3 := GetOrCreateUser(name2, password2)
-	tu.Assert(user3 != user2 && user3 != user1, t, "GetOrCreateUser() shouldn't have returned an already existing user")
+	c.Assert(user3, Not(Equals), user2)
+	c.Assert(user3, Not(Equals), user1)
 
 	userByName := GetUserByName(name1)
-	tu.Assert(userByName == user1, t, "GetUserByName() failed to find user1", name1)
+	c.Assert(userByName, Equals, user1)
 
 	userByName = GetUserByName("foobar")
-	tu.Assert(userByName == nil, t, "GetUserByName() should have returned nill")
+	c.Assert(userByName, Equals, nil)
 
 	zone, _ := CreateZone("testZone")
 	room, _ := CreateRoom(zone, types.Coordinate{X: 0, Y: 0, Z: 0})
@@ -62,68 +72,67 @@ func Test_UserFunctions(t *testing.T) {
 
 	DeleteUser(user1)
 	userByName = GetUserByName(name1)
-	tu.Assert(userByName == nil, t, "DeleteUser() failed to delete user1")
-	tu.Assert(len(GetUserCharacters(user1)) == 0, t, "Deleting a user should have deleted its characters")
-
-	_cleanup(t)
+	c.Assert(userByName, Equals, nil)
+	c.Assert(GetUserCharacters(user1), HasLen, 0)
 }
 
-func Test_ZoneFunctions(t *testing.T) {
+func (s *ModelSuite) TestZoneFunctions(c *C) {
 	name := "zone1"
 	zone1, err1 := CreateZone(name)
 
-	tu.Assert(zone1 != nil && err1 == nil, t, "Zone creation failed")
+	c.Assert(zone1, Not(Equals), nil)
+	c.Assert(err1, Equals, nil)
 
 	zoneByName := GetZoneByName(name)
-	tu.Assert(zoneByName == zone1, t, "GetZoneByName() failed", zoneByName, zone1)
+	c.Assert(zoneByName, Equals, zone1)
 
 	zone2, err2 := CreateZone("zone2")
-	tu.Assert(zone2 != nil && err2 == nil, t, "Failed to create zone2")
+	c.Assert(zone2, Not(Equals), nil)
+	c.Assert(err2, Equals, nil)
 
 	zone3, err3 := CreateZone("zone3")
-	tu.Assert(zone3 != nil && err3 == nil, t, "Failed to create zone3")
+	c.Assert(zone3, Not(Equals), nil)
+	c.Assert(err3, Equals, nil)
 
 	zoneById := GetZone(zone1.GetId())
-	tu.Assert(zoneById == zone1, t, "GetZoneById() failed")
+	c.Assert(zoneById, Equals, zone1)
 
 	_, err := CreateZone("zone3")
-	tu.Assert(err != nil, t, "Creating zone with duplicate name should have failed")
-
-	_cleanup(t)
+	c.Assert(err, Not(Equals), nil)
 }
 
-func Test_RoomFunctions(t *testing.T) {
+func (s *ModelSuite) TestRoomFunctions(c *C) {
 	zone, err := CreateZone("zone")
-	tu.Assert(zone != nil && err == nil, t, "Zone creation failed")
+	c.Assert(zone, Not(Equals), nil)
+	c.Assert(err, Equals, nil)
 
 	room1, err1 := CreateRoom(zone, types.Coordinate{X: 0, Y: 0, Z: 0})
-	tu.Assert(room1 != nil && err1 == nil, t, "Room creation failed")
+	c.Assert(room1, Not(Equals), nil)
+	c.Assert(err1, Equals, nil)
 
 	badRoom, shouldError := CreateRoom(zone, types.Coordinate{X: 0, Y: 0, Z: 0})
-	tu.Assert(badRoom == nil && shouldError != nil, t, "Creating two rooms at the same location should have failed")
+	c.Assert(badRoom, Equals, nil)
+	c.Assert(shouldError, Not(Equals), nil)
 
 	room2, err2 := CreateRoom(zone, types.Coordinate{X: 0, Y: 1, Z: 0})
-	tu.Assert(room2 != nil && err2 == nil, t, "Second room creation failed")
+	c.Assert(room2, Not(Equals), nil)
+	c.Assert(err2, Equals, nil)
 
 	room1.SetExitEnabled(types.DirectionSouth, true)
 	room2.SetExitEnabled(types.DirectionNorth, true)
 
-	tu.Assert(room2.HasExit(types.DirectionNorth), t, "Call to room.SetExitEnabled failed")
+	c.Assert(room2.HasExit(types.DirectionNorth), Equals, true)
 	DeleteRoom(room1)
-	tu.Assert(!room2.HasExit(types.DirectionNorth), t, "Deleting room1 should have removed corresponding exit from room2")
-
-	_cleanup(t)
+	c.Assert(room2.HasExit(types.DirectionNorth), Equals, false)
 }
 
-func Test_RoomAndZoneFunctions(t *testing.T) {
+func (s *ModelSuite) TestRoomAndZoneFunctions(c *C) {
 	// ZoneCorners
 	// GetRoomsInZone
 }
 
-func Test_CharFunctions(t *testing.T) {
+func (s *ModelSuite) TestCharFunctions(c *C) {
 	//user := CreateUser("user1", "")
 	//playerName1 := "player1"
 	//player1 := CreatePlayer(name1, user
 }
-
-// vim: nocindent
