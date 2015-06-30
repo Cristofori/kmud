@@ -1,8 +1,9 @@
 package types
 
 import (
-	"github.com/Cristofori/kmud/utils/naturalsort"
 	"net"
+
+	"github.com/Cristofori/kmud/utils/naturalsort"
 )
 
 type Id interface{}
@@ -144,6 +145,7 @@ type Room interface {
 	NextLocation(Direction) Coordinate
 	GetExits() []Direction
 	ToString(PCList, NPCList, ItemList, Area) string
+	GetTitle() string
 	SetTitle(string)
 	SetDescription(string)
 	GetProperties() map[string]string

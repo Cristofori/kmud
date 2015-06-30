@@ -110,14 +110,20 @@ func (ch *commandHandler) Location(args []string) {
 }
 
 func (ch *commandHandler) Room(args []string) {
-	menu := utils.NewMenu("Room")
-
-	menu.AddAction("t", "Title")
-	menu.AddAction("d", "Description")
-	menu.AddAction("e", "Exits")
-	menu.AddAction("a", "Area")
-
 	for {
+		menu := utils.NewMenu("Room")
+
+		menu.AddAction("t", fmt.Sprintf("Title - %s", ch.session.room.GetTitle()))
+		menu.AddAction("d", "Description")
+		menu.AddAction("e", "Exits")
+
+		area := model.GetArea(ch.session.room.GetAreaId())
+		name := "(None)"
+		if area != nil {
+			name = area.GetName()
+		}
+		menu.AddAction("a", fmt.Sprintf("Area - %s", name))
+
 		choice, _ := ch.session.execMenu(menu)
 
 		switch choice {
