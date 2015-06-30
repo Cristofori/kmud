@@ -68,7 +68,8 @@ func manageSpawner(spawner types.Spawner) {
 				diff := spawner.GetCount() - len(npcs)
 
 				for diff > 0 && len(rooms) > 0 {
-					npc := model.CreateNpc(spawner.GetName(), rooms[0].GetId(), spawner.GetId())
+					room := rooms[utils.Random(0, len(rooms)-1)]
+					npc := model.CreateNpc(spawner.GetName(), room.GetId(), spawner.GetId())
 					npc.SetHealth(spawner.GetHealth())
 					manageNpc(npc)
 					diff--
