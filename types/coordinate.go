@@ -8,20 +8,20 @@ type Coordinate struct {
 	Z int
 }
 
-type Direction int
+type Direction string
 
 const (
-	DirectionNorth     Direction = iota
-	DirectionNorthEast Direction = iota
-	DirectionEast      Direction = iota
-	DirectionSouthEast Direction = iota
-	DirectionSouth     Direction = iota
-	DirectionSouthWest Direction = iota
-	DirectionWest      Direction = iota
-	DirectionNorthWest Direction = iota
-	DirectionUp        Direction = iota
-	DirectionDown      Direction = iota
-	DirectionNone      Direction = iota
+	DirectionNorth     Direction = "North"
+	DirectionNorthEast Direction = "NorthEast"
+	DirectionEast      Direction = "East"
+	DirectionSouthEast Direction = "SouthEast"
+	DirectionSouth     Direction = "South"
+	DirectionSouthWest Direction = "SouthWest"
+	DirectionWest      Direction = "West"
+	DirectionNorthWest Direction = "NorthWest"
+	DirectionUp        Direction = "Up"
+	DirectionDown      Direction = "Down"
+	DirectionNone      Direction = "None"
 )
 
 func StringToDirection(str string) Direction {

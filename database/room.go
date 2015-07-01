@@ -9,26 +9,22 @@ import (
 	"github.com/Cristofori/kmud/utils"
 )
 
+type Exit struct {
+	Locked bool
+}
+
 type Room struct {
 	DbObject `bson:",inline"`
 
-	ZoneId        types.Id
-	AreaId        types.Id `bson:",omitempty"`
-	Title         string
-	Description   string
-	Items         []types.Id
-	Links         map[string]types.Id
-	Location      types.Coordinate
-	ExitNorth     bool
-	ExitNorthEast bool
-	ExitEast      bool
-	ExitSouthEast bool
-	ExitSouth     bool
-	ExitSouthWest bool
-	ExitWest      bool
-	ExitNorthWest bool
-	ExitUp        bool
-	ExitDown      bool
+	ZoneId      types.Id
+	AreaId      types.Id `bson:",omitempty"`
+	Title       string
+	Description string
+	Items       []types.Id
+	Links       map[string]types.Id
+	Location    types.Coordinate
+
+	Exits map[types.Direction]Exit
 
 	Properties map[string]string
 }
@@ -40,17 +36,6 @@ func NewRoom(zoneId types.Id, location types.Coordinate) *Room {
 	room.Description = "You are floating in the blackness of space. Complete darkness surrounds " +
 		"you in all directions. There is no escape, there is no hope, just the emptiness. " +
 		"You are likely to be eaten by a grue."
-
-	room.ExitNorth = false
-	room.ExitNorthEast = false
-	room.ExitEast = false
-	room.ExitSouthEast = false
-	room.ExitSouth = false
-	room.ExitSouthWest = false
-	room.ExitWest = false
-	room.ExitNorthWest = false
-	room.ExitUp = false
-	room.ExitDown = false
 
 	room.Location = location
 	room.ZoneId = zoneId
@@ -167,57 +152,22 @@ func (self *Room) HasExit(dir types.Direction) bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
-	switch dir {
-	case types.DirectionNorth:
-		return self.ExitNorth
-	case types.DirectionNorthEast:
-		return self.ExitNorthEast
-	case types.DirectionEast:
-		return self.ExitEast
-	case types.DirectionSouthEast:
-		return self.ExitSouthEast
-	case types.DirectionSouth:
-		return self.ExitSouth
-	case types.DirectionSouthWest:
-		return self.ExitSouthWest
-	case types.DirectionWest:
-		return self.ExitWest
-	case types.DirectionNorthWest:
-		return self.ExitNorthWest
-	case types.DirectionUp:
-		return self.ExitUp
-	case types.DirectionDown:
-		return self.ExitDown
-	}
-
-	panic("Unexpected code path")
+	_, found := self.Exits[dir]
+	return found
 }
 
 func (self *Room) SetExitEnabled(dir types.Direction, enabled bool) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
-	switch dir {
-	case types.DirectionNorth:
-		self.ExitNorth = enabled
-	case types.DirectionNorthEast:
-		self.ExitNorthEast = enabled
-	case types.DirectionEast:
-		self.ExitEast = enabled
-	case types.DirectionSouthEast:
-		self.ExitSouthEast = enabled
-	case types.DirectionSouth:
-		self.ExitSouth = enabled
-	case types.DirectionSouthWest:
-		self.ExitSouthWest = enabled
-	case types.DirectionWest:
-		self.ExitWest = enabled
-	case types.DirectionNorthWest:
-		self.ExitNorthWest = enabled
-	case types.DirectionUp:
-		self.ExitUp = enabled
-	case types.DirectionDown:
-		self.ExitDown = enabled
+	if self.Exits == nil {
+		self.Exits = map[types.Direction]Exit{}
+	}
+
+	if enabled {
+		self.Exits[dir] = Exit{}
+	} else {
+		delete(self.Exits, dir)
 	}
 
 	self.modified()
@@ -400,24 +350,16 @@ func (self *Room) NextLocation(direction types.Direction) types.Coordinate {
 }
 
 func (self *Room) GetExits() []types.Direction {
-	var exits []types.Direction
+	self.ReadLock()
+	defer self.ReadUnlock()
 
-	appendIfExists := func(direction types.Direction) {
-		if self.HasExit(direction) {
-			exits = append(exits, direction)
-		}
+	exits := make([]types.Direction, len(self.Exits))
+
+	i := 0
+	for dir := range self.Exits {
+		exits[i] = dir
+		i++
 	}
-
-	appendIfExists(types.DirectionNorth)
-	appendIfExists(types.DirectionNorthEast)
-	appendIfExists(types.DirectionEast)
-	appendIfExists(types.DirectionSouthEast)
-	appendIfExists(types.DirectionSouth)
-	appendIfExists(types.DirectionSouthWest)
-	appendIfExists(types.DirectionWest)
-	appendIfExists(types.DirectionNorthWest)
-	appendIfExists(types.DirectionUp)
-	appendIfExists(types.DirectionDown)
 
 	return exits
 }
