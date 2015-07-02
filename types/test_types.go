@@ -2,6 +2,12 @@ package types
 
 import "gopkg.in/mgo.v2/bson"
 
+type MockId string
+
+func (self MockId) String() string {
+	return string(self)
+}
+
 type MockIdentifiable struct {
 	Id   Id
 	Type ObjectType

@@ -81,7 +81,7 @@ func Test_ThreadSafety(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 	database.Init(&TestSession{}, "unit_dbtest")
 
-	char := database.NewPlayerChar("test", "", "")
+	char := database.NewPlayerChar("test", types.MockId(""), types.MockId(""))
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -168,14 +168,14 @@ func Test_PlayerCharacter(t *testing.T) {
 	item1 := database.NewItem("test_item1")
 	item2 := database.NewItem("test_item2")
 
-	character.AddItem(item1)
+	character.AddItem(item1.GetId())
 
-	testutils.Assert(character.HasItem(item1), t, "Call to character.AddItem()/HasItem() failed - item1")
+	testutils.Assert(character.HasItem(item1.GetId()), t, "Call to character.AddItem()/HasItem() failed - item1")
 
-	character.AddItem(item2)
+	character.AddItem(item2.GetId())
 
-	testutils.Assert(character.HasItem(item2), t, "Call to character.AddItem()/HasItem() failed - item2")
-	testutils.Assert(character.HasItem(item1), t, "Lost item1 after adding item2")
+	testutils.Assert(character.HasItem(item2.GetId()), t, "Call to character.AddItem()/HasItem() failed - item2")
+	testutils.Assert(character.HasItem(item1.GetId()), t, "Lost item1 after adding item2")
 
 	// conversation := "this is a fake conversation that is made up for the unit test"
 
@@ -251,21 +251,21 @@ func Test_Room(t *testing.T) {
 	item1 := database.NewItem("test_item1")
 	item2 := database.NewItem("test_item2")
 
-	room.AddItem(item1)
-	testutils.Assert(room.HasItem(item1), t, "Call to room.AddItem(item1) faled")
-	testutils.Assert(!room.HasItem(item2), t, "Room shouldn't have item2 in it yet")
+	room.AddItem(item1.GetId())
+	testutils.Assert(room.HasItem(item1.GetId()), t, "Call to room.AddItem(item1) faled")
+	testutils.Assert(!room.HasItem(item2.GetId()), t, "Room shouldn't have item2 in it yet")
 
-	room.AddItem(item2)
-	testutils.Assert(room.HasItem(item2), t, "Call to room.AddItem(item2) failed")
-	testutils.Assert(room.HasItem(item1), t, "Room should still have item1 in it")
+	room.AddItem(item2.GetId())
+	testutils.Assert(room.HasItem(item2.GetId()), t, "Call to room.AddItem(item2) failed")
+	testutils.Assert(room.HasItem(item1.GetId()), t, "Room should still have item1 in it")
 
-	room.RemoveItem(item1)
-	testutils.Assert(!room.HasItem(item1), t, "Call to room.RemoveItem(item1) failed")
-	testutils.Assert(room.HasItem(item2), t, "Room should still have item2 in it")
+	room.RemoveItem(item1.GetId())
+	testutils.Assert(!room.HasItem(item1.GetId()), t, "Call to room.RemoveItem(item1) failed")
+	testutils.Assert(room.HasItem(item2.GetId()), t, "Room should still have item2 in it")
 
-	room.RemoveItem(item2)
-	testutils.Assert(!room.HasItem(item2), t, "Call to room.RemoveItem(item2) failed")
-	testutils.Assert(!room.HasItem(item1), t, "Room still shouldn't have item1 in it")
+	room.RemoveItem(item2.GetId())
+	testutils.Assert(!room.HasItem(item2.GetId()), t, "Call to room.RemoveItem(item2) failed")
+	testutils.Assert(!room.HasItem(item1.GetId()), t, "Room still shouldn't have item1 in it")
 
 	title := "Test Title"
 	room.SetTitle(title)

@@ -5,13 +5,9 @@ import (
 	"testing"
 )
 
-// import "fmt"
-
 // Verify that all methods are exported (with some exceptions), and that they all
 // take in a []string as their only argument
 func checkMethods(i interface{}, t *testing.T) {
-	exceptions := map[string]bool{"handleCommand": true, "handleAction": true, "quickRoom": true}
-
 	objType := reflect.TypeOf(i)
 
 	var stringArray []string
@@ -21,16 +17,9 @@ func checkMethods(i interface{}, t *testing.T) {
 		methodValue := objType.Method(i)
 		methodType := methodValue.Type
 
-		_, found := exceptions[methodValue.Name]
-
-		if found {
-			continue
-		}
-
 		structType := methodType.In(0)
 
 		if methodValue.PkgPath != "" {
-			t.Errorf("All methods must be exported: %s.%s", structType, methodValue.Name)
 			continue
 		}
 
