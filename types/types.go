@@ -6,7 +6,9 @@ import (
 	"github.com/Cristofori/kmud/utils/naturalsort"
 )
 
-type Id interface{}
+type Id interface {
+	String() string
+}
 
 type ObjectType int
 
@@ -155,6 +157,8 @@ type Room interface {
 	RemoveLink(string)
 	GetLinks() map[string]Id
 	LinkNames() []string
+	SetLocked(Direction, bool)
+	IsLocked(Direction) bool
 }
 
 type RoomList []Room

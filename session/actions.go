@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/Cristofori/kmud/combat"
+	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
@@ -75,7 +76,7 @@ func (ah *actionHandler) Look(args []string) {
 		} else {
 			if ah.session.room.HasExit(arg) {
 				loc := ah.session.room.NextLocation(arg)
-				roomToSee := model.GetRoomByLocation(loc, ah.session.currentZone())
+				roomToSee := model.GetRoomByLocation(loc, ah.session.room.GetZoneId())
 				if roomToSee != nil {
 					area := model.GetArea(roomToSee.GetAreaId())
 					ah.session.printLine(roomToSee.ToString(model.PlayerCharactersIn(roomToSee, nil),
@@ -260,6 +261,50 @@ func (ah *actionHandler) Go(args []string) {
 
 		ah.session.room = newRoom
 		ah.session.printRoom()
+	}
+}
+
+func (ah *actionHandler) Lock(args []string) {
+	if len(args) != 1 {
+		ah.session.printError("Usage: lock <direction>")
+	}
+	ah.handleLock(args[0], true)
+}
+
+func (ah *actionHandler) Unlock(args []string) {
+	if len(args) != 1 {
+		ah.session.printError("Usage: unlock <direction>")
+	}
+	ah.handleLock(args[0], false)
+}
+
+func (ah *actionHandler) handleLock(arg string, locked bool) {
+	dir := types.StringToDirection(arg)
+
+	if dir == types.DirectionNone {
+		ah.session.printError("Invalid direction")
+	} else {
+		ah.session.room.SetLocked(dir, locked)
+
+		events.Broadcast(events.LockEvent{
+			RoomId: ah.session.room.GetId(),
+			Exit:   dir,
+			Locked: locked,
+		})
+
+		// Lock on both sides
+		location := ah.session.room.NextLocation(dir)
+		otherRoom := model.GetRoomByLocation(location, ah.session.room.GetZoneId())
+
+		if otherRoom != nil {
+			otherRoom.SetLocked(dir.Opposite(), locked)
+
+			events.Broadcast(events.LockEvent{
+				RoomId: otherRoom.GetId(),
+				Exit:   dir.Opposite(),
+				Locked: locked,
+			})
+		}
 	}
 }
 

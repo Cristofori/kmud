@@ -101,6 +101,8 @@ type Event interface {
 	IsFor(receiver EventReceiver) bool
 }
 
+type TickEvent struct{}
+
 type CreateEvent struct {
 	Object *database.DbObject
 }
@@ -174,7 +176,10 @@ type CombatEvent struct {
 	Damage   int
 }
 
-type TickEvent struct {
+type LockEvent struct {
+	RoomId types.Id
+	Exit   types.Direction
+	Locked bool
 }
 
 func (self BroadcastEvent) ToString(receiver EventReceiver) string {
@@ -360,4 +365,20 @@ func (self DeathEvent) ToString(receiver EventReceiver) string {
 	}
 
 	return types.Colorize(types.ColorRed, fmt.Sprintf(">> %s has died", self.Character.GetName()))
+}
+
+// Lock
+func (self LockEvent) IsFor(receiver EventReceiver) bool {
+	return receiver.GetRoomId() == self.RoomId
+}
+
+func (self LockEvent) ToString(receiver EventReceiver) string {
+	status := "unlocked"
+	if self.Locked {
+		status = "locked"
+	}
+
+	return types.Colorize(types.ColorBlue,
+		fmt.Sprintf("The exit to the %s has been %s", self.Exit.ToString(),
+			types.Colorize(types.ColorWhite, status)))
 }

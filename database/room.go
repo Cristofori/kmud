@@ -24,7 +24,7 @@ type Room struct {
 	Links       map[string]types.Id
 	Location    types.Coordinate
 
-	Exits map[types.Direction]Exit
+	Exits map[types.Direction]*Exit
 
 	Properties map[string]string
 }
@@ -161,11 +161,11 @@ func (self *Room) SetExitEnabled(dir types.Direction, enabled bool) {
 	defer self.WriteUnlock()
 
 	if self.Exits == nil {
-		self.Exits = map[types.Direction]Exit{}
+		self.Exits = map[types.Direction]*Exit{}
 	}
 
 	if enabled {
-		self.Exits[dir] = Exit{}
+		self.Exits[dir] = &Exit{}
 	} else {
 		delete(self.Exits, dir)
 	}
@@ -400,6 +400,25 @@ func (self *Room) RemoveProperty(key string) {
 	self.modified()
 }
 
-type Rooms []*Room
+func (self *Room) SetLocked(dir types.Direction, locked bool) {
+	if self.HasExit(dir) {
+		self.WriteLock()
+		defer self.WriteUnlock()
+
+		self.Exits[dir].Locked = locked
+		self.modified()
+	}
+}
+
+func (self *Room) IsLocked(dir types.Direction) bool {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	if self.HasExit(dir) {
+		return self.Exits[dir].Locked
+	}
+
+	return false
+}
 
 // vim: nocindent

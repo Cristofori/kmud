@@ -233,7 +233,7 @@ func DeleteCharacter(c types.Character) {
 // CreateRoom creates a new Room object in the database and adds it to the model.
 // A pointer to the new Room object is returned.
 func CreateRoom(zone types.Zone, location types.Coordinate) (types.Room, error) {
-	existingRoom := GetRoomByLocation(location, zone)
+	existingRoom := GetRoomByLocation(location, zone.GetId())
 	if existingRoom != nil {
 		return nil, errors.New("A room already exists at that location")
 	}
@@ -273,9 +273,9 @@ func GetRoomsInZone(zone types.Zone) types.RoomList {
 
 // GetRoomByLocation searches for the room associated with the given coordinate
 // in the given zone. Returns a nil room object if it was not found.
-func GetRoomByLocation(coordinate types.Coordinate, zone types.Zone) types.Room {
+func GetRoomByLocation(coordinate types.Coordinate, zoneId types.Id) types.Room {
 	id := db.FindOne(types.RoomType, bson.M{
-		"zoneid":   zone.GetId(),
+		"zoneid":   zoneId,
 		"location": coordinate,
 	})
 	if id != nil {
@@ -387,7 +387,7 @@ func DeleteRoom(room types.Room) {
 
 	updateRoom := func(dir types.Direction) {
 		next := loc.Next(dir)
-		room := GetRoomByLocation(next, GetZone(room.GetZoneId()))
+		room := GetRoomByLocation(next, room.GetZoneId())
 
 		if room != nil {
 			room.SetExitEnabled(dir.Opposite(), false)
@@ -523,7 +523,7 @@ func Init(session db.Session, dbName string) {
 // MoveCharacter attempts to move the character to the given coordinates
 // specific by location. Returns an error if there is no room to move to.
 func MoveCharacterToLocation(character types.Character, zone types.Zone, location types.Coordinate) (types.Room, error) {
-	newRoom := GetRoomByLocation(location, zone)
+	newRoom := GetRoomByLocation(location, zone.GetId())
 
 	if newRoom == nil {
 		return nil, errors.New("Invalid location")
@@ -564,8 +564,12 @@ func MoveCharacter(character types.Character, direction types.Direction) (types.
 		return room, errors.New("Attempted to move through an exit that the room does not contain")
 	}
 
+	if room.IsLocked(direction) {
+		return room, errors.New("That way is locked")
+	}
+
 	newLocation := room.NextLocation(direction)
-	newRoom := GetRoomByLocation(newLocation, GetZone(room.GetZoneId()))
+	newRoom := GetRoomByLocation(newLocation, room.GetZoneId())
 
 	if newRoom == nil {
 		zone := GetZone(room.GetZoneId())
@@ -692,10 +696,9 @@ func ZoneCorners(zone types.Zone) (types.Coordinate, types.Coordinate) {
 }
 
 func DirectionBetween(from, to types.Room) types.Direction {
-	zone := GetZone(from.GetZoneId())
 	for _, exit := range from.GetExits() {
 		nextLocation := from.NextLocation(exit)
-		nextRoom := GetRoomByLocation(nextLocation, zone)
+		nextRoom := GetRoomByLocation(nextLocation, from.GetZoneId())
 
 		if nextRoom == to {
 			return exit

@@ -162,7 +162,7 @@ func (ch *commandHandler) Room(args []string) {
 
 					// Disable the corresponding exit in the adjacent room if necessary
 					loc := ch.session.room.NextLocation(direction)
-					otherRoom := model.GetRoomByLocation(loc, ch.session.currentZone())
+					otherRoom := model.GetRoomByLocation(loc, ch.session.room.GetZoneId())
 					if otherRoom != nil {
 						otherRoom.SetExitEnabled(direction.Opposite(), enable)
 					}
@@ -481,7 +481,7 @@ func (ch *commandHandler) DestroyRoom(args []string) {
 			ch.session.printError("Not a valid direction")
 		} else {
 			loc := ch.session.room.NextLocation(direction)
-			roomToDelete := model.GetRoomByLocation(loc, ch.session.currentZone())
+			roomToDelete := model.GetRoomByLocation(loc, ch.session.room.GetZoneId())
 			if roomToDelete != nil {
 				model.DeleteRoom(roomToDelete)
 				ch.session.printLine("Room destroyed")
@@ -521,7 +521,7 @@ func (ch *commandHandler) Npc(args []string) {
 		} else if choice == "n" {
 			name := getNpcName(ch)
 			if name != "" {
-				model.CreateNpc(name, ch.session.room, nil)
+				model.CreateNpc(name, ch.session.room.GetId(), nil)
 			}
 		} else if npcId != nil {
 			for {
