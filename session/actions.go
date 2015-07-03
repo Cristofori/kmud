@@ -147,7 +147,7 @@ func (ah *actionHandler) Drop(args []string) {
 		return
 	}
 
-	characterItems := model.GetItems(ah.session.player.GetItemIds())
+	characterItems := model.GetItems(ah.session.player.GetItems())
 	index := utils.BestMatch(args[0], characterItems.Names())
 
 	if index == -1 {
@@ -188,7 +188,7 @@ func (ah *actionHandler) Pickup(args []string) {
 		return
 	}
 
-	itemsInRoom := model.GetItems(ah.session.room.GetItemIds())
+	itemsInRoom := model.GetItems(ah.session.room.GetItems())
 	index := utils.BestMatch(args[0], itemsInRoom.Names())
 
 	if index == -2 {
@@ -212,7 +212,7 @@ func (ah *actionHandler) Inv(args []string) {
 }
 
 func (ah *actionHandler) Inventory(args []string) {
-	itemIds := ah.session.player.GetItemIds()
+	itemIds := ah.session.player.GetItems()
 
 	if len(itemIds) == 0 {
 		ah.session.printLine("You aren't carrying anything")

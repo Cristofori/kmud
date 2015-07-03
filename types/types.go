@@ -8,6 +8,7 @@ import (
 
 type Id interface {
 	String() string
+	Hex() string
 }
 
 type ObjectType int
@@ -21,6 +22,7 @@ const (
 	AreaType    ObjectType = iota
 	RoomType    ObjectType = iota
 	ItemType    ObjectType = iota
+	SkillType   ObjectType = iota
 )
 
 type Identifiable interface {
@@ -55,7 +57,7 @@ type Loginable interface {
 type Container interface {
 	AddItem(Id)
 	RemoveItem(Id)
-	GetItemIds() []Id
+	GetItems() []Id
 }
 
 type Object interface {
@@ -224,4 +226,11 @@ func (self ItemList) Names() []string {
 	}
 
 	return names
+}
+
+type Skill interface {
+	Object
+	Nameable
+	SetDamage(int)
+	GetDamage() int
 }

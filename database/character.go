@@ -2,9 +2,9 @@ package database
 
 import (
 	"fmt"
-
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type Character struct {
@@ -13,9 +13,11 @@ type Character struct {
 
 	Name      string
 	Cash      int
-	Inventory []types.Id
 	Health    int
 	HitPoints int
+
+	Inventory map[string]bool
+	Skills    map[string]bool
 
 	objType types.ObjectType
 }
@@ -191,7 +193,11 @@ func (self *Character) AddItem(id types.Id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
 
-		self.Inventory = append(self.Inventory, id)
+		if self.Inventory == nil {
+			self.Inventory = map[string]bool{}
+		}
+
+		self.Inventory[id.Hex()] = true
 		self.modified()
 	}
 }
@@ -201,14 +207,7 @@ func (self *Character) RemoveItem(id types.Id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
 
-		for i, itemId := range self.Inventory {
-			if itemId == id {
-				// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
-				self.Inventory = append(self.Inventory[:i], self.Inventory[i+1:]...)
-				break
-			}
-		}
-
+		delete(self.Inventory, id.Hex())
 		self.modified()
 	}
 }
@@ -217,19 +216,70 @@ func (self *Character) HasItem(id types.Id) bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
-	for _, itemId := range self.Inventory {
-		if itemId == id {
-			return true
-		}
-	}
-
-	return false
+	_, found := self.Inventory[id.Hex()]
+	return found
 }
 
-func (self *Character) GetItemIds() []types.Id {
+func (self *Character) GetItems() []types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-	return self.Inventory
+
+	ids := make([]types.Id, len(self.Inventory))
+
+	i := 0
+	for id := range self.Inventory {
+		ids[i] = bson.ObjectIdHex(id)
+		i++
+	}
+
+	return ids
+}
+
+func (self *Character) AddSkill(id types.Id) {
+	if !self.HasSkill(id) {
+		self.WriteLock()
+		defer self.WriteUnlock()
+
+		if self.Skills == nil {
+			self.Skills = map[string]bool{}
+		}
+
+		self.Skills[id.Hex()] = true
+		self.modified()
+	}
+}
+
+func (self *Character) RemoveSkill(id types.Id) {
+	if self.HasSkill(id) {
+		self.WriteLock()
+		defer self.WriteUnlock()
+
+		delete(self.Skills, id.Hex())
+		self.modified()
+	}
+}
+
+func (self *Character) HasSkill(id types.Id) bool {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	_, found := self.Skills[id.Hex()]
+	return found
+}
+
+func (self *Character) GetSkills() []types.Id {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	ids := make([]types.Id, len(self.Skills))
+
+	i := 0
+	for id := range self.Skills {
+		ids[i] = bson.ObjectIdHex(id)
+		i++
+	}
+
+	return ids
 }
 
 func (self *NonPlayerChar) SetConversation(conversation string) {

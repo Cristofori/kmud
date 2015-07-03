@@ -153,7 +153,7 @@ func (session *Session) printRoom() {
 	area := model.GetArea(session.room.GetAreaId())
 
 	session.printLine(session.room.ToString(playerList, npcList,
-		model.GetItems(session.room.GetItemIds()), area))
+		model.GetItems(session.room.GetItems()), area))
 }
 
 func (session *Session) clearLine() {

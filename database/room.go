@@ -2,11 +2,11 @@ package database
 
 import (
 	"fmt"
-	"sort"
-	"strings"
-
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
+	"gopkg.in/mgo.v2/bson"
+	"sort"
+	"strings"
 )
 
 type Exit struct {
@@ -20,7 +20,7 @@ type Room struct {
 	AreaId      types.Id `bson:",omitempty"`
 	Title       string
 	Description string
-	Items       []types.Id
+	Items       map[string]bool
 	Links       map[string]types.Id
 	Location    types.Coordinate
 
@@ -178,7 +178,11 @@ func (self *Room) AddItem(id types.Id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
 
-		self.Items = append(self.Items, id)
+		if self.Items == nil {
+			self.Items = map[string]bool{}
+		}
+
+		self.Items[id.Hex()] = true
 		self.modified()
 	}
 }
@@ -188,14 +192,7 @@ func (self *Room) RemoveItem(id types.Id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
 
-		for i, itemId := range self.Items {
-			if itemId == id {
-				// TODO: Potential memory leak. See http://code.google.com/p/go-wiki/wiki/SliceTricks
-				self.Items = append(self.Items[:i], self.Items[i+1:]...)
-				break
-			}
-		}
-
+		delete(self.Items, id.Hex())
 		self.modified()
 	}
 }
@@ -243,20 +240,22 @@ func (self *Room) HasItem(id types.Id) bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
-	for _, itemId := range self.Items {
-		if itemId == id {
-			return true
-		}
-	}
-
-	return false
+	_, found := self.Items[id.Hex()]
+	return found
 }
 
-func (self *Room) GetItemIds() []types.Id {
+func (self *Room) GetItems() []types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
-	return self.Items
+	ids := make([]types.Id, len(self.Items))
+	i := 0
+	for id := range self.Items {
+		ids[i] = bson.ObjectIdHex(id)
+		i++
+	}
+
+	return ids
 }
 
 func (self *Room) SetTitle(title string) {

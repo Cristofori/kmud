@@ -123,7 +123,7 @@ func (*MockCharacter) AddItem(Id) {
 func (*MockCharacter) RemoveItem(Id) {
 }
 
-func (*MockCharacter) GetItemIds() []Id {
+func (*MockCharacter) GetItems() []Id {
 	return []Id{}
 }
 

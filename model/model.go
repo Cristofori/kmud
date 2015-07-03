@@ -424,7 +424,7 @@ func GetItems(itemIds []types.Id) types.ItemList {
 
 // ItemsIn returns a slice containing all of the items in the given room
 func ItemsIn(room types.Room) types.ItemList {
-	return GetItems(room.GetItemIds())
+	return GetItems(room.GetItems())
 }
 
 func DeleteItemId(itemId types.Id) {

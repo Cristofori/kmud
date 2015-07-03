@@ -586,7 +586,7 @@ func (ch *commandHandler) DestroyItem(args []string) {
 		return
 	}
 
-	itemsInRoom := model.GetItems(ch.session.room.GetItemIds())
+	itemsInRoom := model.GetItems(ch.session.room.GetItems())
 	name := strings.ToLower(args[0])
 
 	for _, item := range itemsInRoom {
