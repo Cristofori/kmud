@@ -1,14 +1,14 @@
 package utils
 
 import (
-	"errors"
-	"github.com/Cristofori/kmud/testutils"
-	"github.com/Cristofori/kmud/types"
 	"io"
 	"math/rand"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/Cristofori/kmud/testutils"
+	"github.com/Cristofori/kmud/types"
 )
 
 func Test_WriteLine(t *testing.T) {
@@ -312,19 +312,6 @@ func Test_TrimEmptyRows(t *testing.T) {
 			t.Errorf("%v: TrimEmptyRows(\n%v) == \n%v,\nWanted: \n%v", i, test.input, result, test.output)
 		}
 	}
-}
-
-func Test_PanicIfError(t *testing.T) {
-	PanicIfError(nil)
-
-	defer func() {
-		r := recover()
-		if r == nil {
-			t.Errorf("PanicIfError() didn't panic on a non-nil error")
-		}
-	}()
-
-	PanicIfError(errors.New("A real error!"))
 }
 
 type FindMethodTester struct {

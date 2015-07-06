@@ -54,7 +54,7 @@ func (ah *actionHandler) Look(args []string) {
 		arg := types.StringToDirection(args[0])
 
 		if arg == types.DirectionNone {
-			charList := model.CharactersIn(ah.session.room)
+			charList := model.CharactersIn(ah.session.room.GetId())
 			index := utils.BestMatch(args[0], charList.Names())
 
 			if index == -2 {
@@ -79,8 +79,8 @@ func (ah *actionHandler) Look(args []string) {
 				roomToSee := model.GetRoomByLocation(loc, ah.session.room.GetZoneId())
 				if roomToSee != nil {
 					area := model.GetArea(roomToSee.GetAreaId())
-					ah.session.printLine(roomToSee.ToString(model.PlayerCharactersIn(roomToSee, nil),
-						model.NpcsIn(roomToSee), nil, area))
+					ah.session.printLine(roomToSee.ToString(model.PlayerCharactersIn(roomToSee.GetId(), nil),
+						model.NpcsIn(roomToSee.GetId()), nil, area))
 				} else {
 					ah.session.printLine("Nothing to see")
 				}
@@ -96,7 +96,7 @@ func (ah *actionHandler) A(args []string) {
 }
 
 func (ah *actionHandler) Attack(args []string) {
-	charList := model.CharactersIn(ah.session.room)
+	charList := model.CharactersIn(ah.session.room.GetId())
 	index := utils.BestMatch(args[0], charList.Names())
 
 	if index == -1 {
@@ -124,7 +124,7 @@ func (ah *actionHandler) Talk(args []string) {
 		return
 	}
 
-	npcList := model.NpcsIn(ah.session.room)
+	npcList := model.NpcsIn(ah.session.room.GetId())
 	index := utils.BestMatch(args[0], npcList.Characters().Names())
 
 	if index == -1 {

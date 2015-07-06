@@ -14,11 +14,11 @@ type commandHandler struct {
 	session *Session
 }
 
-func npcMenu(room types.Room) *utils.Menu {
+func npcMenu(roomId types.Id) *utils.Menu {
 	var npcs types.NPCList
 
-	if room != nil {
-		npcs = model.NpcsIn(room)
+	if roomId != nil {
+		npcs = model.NpcsIn(roomId)
 	} else {
 		npcs = model.GetNpcs()
 	}
@@ -265,7 +265,7 @@ func (ch *commandHandler) Zone(args []string) {
 			}
 
 			newRoom, err := model.CreateRoom(newZone, types.Coordinate{X: 0, Y: 0, Z: 0})
-			utils.PanicIfError(err)
+			utils.HandleError(err)
 
 			model.MoveCharacterToRoom(ch.session.player, newRoom)
 
@@ -530,7 +530,7 @@ func (ch *commandHandler) Npc(args []string) {
 				npc := model.GetNpc(npcId)
 
 				if choice == "d" {
-					model.DeleteCharacterId(npcId)
+					model.DeleteCharacter(npcId)
 				} else if choice == "r" {
 					name := getNpcName(ch)
 					if name != "" {
@@ -592,7 +592,7 @@ func (ch *commandHandler) DestroyItem(args []string) {
 	for _, item := range itemsInRoom {
 		if strings.ToLower(item.GetName()) == name {
 			ch.session.room.RemoveItem(item.GetId())
-			model.DeleteItem(item)
+			model.DeleteItem(item.GetId())
 			ch.session.printLine("Item destroyed")
 			return
 		}
@@ -772,7 +772,7 @@ func (ch *commandHandler) Area(args []string) {
 						answer := ch.session.getRawUserInput("Are you sure? ")
 
 						if strings.ToLower(answer) == "y" {
-							model.DeleteArea(area)
+							model.DeleteArea(areaId)
 						}
 					case "s":
 					SpawnerMenu:
@@ -956,7 +956,7 @@ func (ch *commandHandler) Kill(args []string) {
 		return
 	}
 
-	npcs := model.NpcsIn(ch.session.room)
+	npcs := model.NpcsIn(ch.session.room.GetId())
 	index := utils.BestMatch(args[0], npcs.Characters().Names())
 
 	if index == -1 {
@@ -976,7 +976,7 @@ func (ch *commandHandler) Inspect(args []string) {
 		return
 	}
 
-	characters := model.CharactersIn(ch.session.room)
+	characters := model.CharactersIn(ch.session.room.GetId())
 	index := utils.BestMatch(args[0], characters.Names())
 
 	if index == -1 {

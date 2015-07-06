@@ -166,7 +166,7 @@ func newPlayer(conn *wrappedConnection, user types.User) types.PC {
 			user.WriteLine(err.Error())
 		} else {
 			room := model.GetRooms()[0] // TODO: Better way to pick an initial character location
-			return model.CreatePlayerCharacter(name, user, room)
+			return model.CreatePlayerCharacter(name, user.GetId(), room)
 		}
 	}
 }
@@ -182,7 +182,7 @@ func mainMenu() *utils.Menu {
 }
 
 func userMenu(user types.User) *utils.Menu {
-	chars := model.GetUserCharacters(user)
+	chars := model.GetUserCharacters(user.GetId())
 
 	menu := utils.NewMenu(user.GetName())
 	menu.AddAction("l", "Logout")
@@ -203,7 +203,7 @@ func userMenu(user types.User) *utils.Menu {
 }
 
 func deleteMenu(user types.User) *utils.Menu {
-	chars := model.GetUserCharacters(user)
+	chars := model.GetUserCharacters(user.GetId())
 
 	menu := utils.NewMenu("Delete character")
 
@@ -371,7 +371,7 @@ func handleConnection(conn *wrappedConnection) {
 										if choice == "" {
 											break
 										} else if choice == "d" {
-											model.DeleteUserId(userId)
+											model.DeleteUser(userId)
 											break
 										} else if choice == "w" {
 											userToWatch := model.GetUser(userId)
@@ -407,7 +407,7 @@ func handleConnection(conn *wrappedConnection) {
 
 					if err == nil {
 						// TODO: Delete confirmation
-						model.DeleteCharacterId(deleteCharId)
+						model.DeleteCharacter(deleteCharId)
 					}
 				}
 

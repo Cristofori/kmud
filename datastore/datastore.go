@@ -44,10 +44,14 @@ func Set(obj types.Object) {
 }
 
 func Remove(obj types.Identifiable) {
+	RemoveId(obj.GetId())
+}
+
+func RemoveId(id types.Id) {
 	_mutex.Lock()
 	defer _mutex.Unlock()
 
-	delete(_data, obj.GetId())
+	delete(_data, id)
 }
 
 func ClearAll() {

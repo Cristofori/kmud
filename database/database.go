@@ -183,24 +183,21 @@ func find_helper(t types.ObjectType, query interface{}) Query {
 	return c.Find(query)
 }
 
-func DeleteObject(obj types.Object) error {
-	obj.Destroy()
-	c := getCollectionOfObject(obj)
+func DeleteObject(id types.Id) {
+	object := datastore.Get(id)
+	datastore.Remove(object)
 
-	err := c.RemoveId(obj.GetId())
+	object.Destroy()
 
-	if err != nil {
-		fmt.Println("Delete object failed", obj.GetId())
-	}
-
-	return err
+	c := getCollectionOfObject(object)
+	utils.HandleError(c.RemoveId(object.GetId()))
 }
 
-func commitObject(id types.Id) error {
+func commitObject(id types.Id) {
 	object := datastore.Get(id)
 
 	if object == nil || object.IsDestroyed() {
-		return nil
+		return
 	}
 
 	c := getCollectionFromType(object.GetType())
@@ -214,7 +211,6 @@ func commitObject(id types.Id) error {
 	}
 
 	utils.HandleError(err)
-	return err
 }
 
 // vim: nocindent

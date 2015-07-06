@@ -1,12 +1,13 @@
 package engine
 
 import (
+	"time"
+
 	"github.com/Cristofori/kmud/combat"
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
-	"time"
 )
 
 const (
@@ -49,7 +50,7 @@ func manageNpc(npc types.NPC) {
 				}
 			case events.DeathEvent:
 				if npc == e.Character {
-					model.DeleteCharacter(npc)
+					model.DeleteCharacter(npc.GetId())
 					return
 				}
 			}

@@ -72,7 +72,7 @@ func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string
 			panic("EOF")
 		}
 
-		PanicIfError(scanner.Err())
+		HandleError(scanner.Err())
 
 		input := scanner.Text()
 		Write(conn, suffix, cm)
@@ -118,12 +118,6 @@ func FormatName(name string) string {
 	runes := []rune(Simplify(name))
 	runes[0] = unicode.ToUpper(runes[0])
 	return string(runes)
-}
-
-func PanicIfError(err error) {
-	if err != nil {
-		panic(err)
-	}
 }
 
 func Argify(data string) (string, []string) {

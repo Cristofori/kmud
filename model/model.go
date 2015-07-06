@@ -52,18 +52,13 @@ func GetUserByName(username string) types.User {
 	return nil
 }
 
-func DeleteUserId(userId types.Id) {
-	DeleteUser(GetUser(userId))
-}
-
 // Removes the given User from the model. Removes it from the database as well.
-func DeleteUser(user types.User) {
-	for _, character := range GetUserCharacters(user) {
-		DeleteCharacter(character)
+func DeleteUser(userId types.Id) {
+	for _, character := range GetUserCharacters(userId) {
+		DeleteCharacter(character.GetId())
 	}
 
-	ds.Remove(user)
-	utils.HandleError(db.DeleteObject(user))
+	db.DeleteObject(userId)
 }
 
 // GetPlayerCharacter returns the Character object associated the given Id
@@ -122,8 +117,8 @@ func GetNpcs() types.NPCList {
 
 // GetUserCharacters returns all of the Character objects associated with the
 // given user id
-func GetUserCharacters(user types.User) types.PCList {
-	ids := db.Find(types.PcType, bson.M{"userid": user.GetId()})
+func GetUserCharacters(userId types.Id) types.PCList {
+	ids := db.Find(types.PcType, bson.M{"userid": userId})
 	pcs := make(types.PCList, len(ids))
 
 	for i, id := range ids {
@@ -133,11 +128,11 @@ func GetUserCharacters(user types.User) types.PCList {
 	return pcs
 }
 
-func CharactersIn(room types.Room) types.CharacterList {
+func CharactersIn(roomId types.Id) types.CharacterList {
 	var characters types.CharacterList
 
-	players := PlayerCharactersIn(room, nil)
-	npcs := NpcsIn(room)
+	players := PlayerCharactersIn(roomId, nil)
+	npcs := NpcsIn(roomId)
 
 	characters = append(characters, players.Characters()...)
 	characters = append(characters, npcs.Characters()...)
@@ -146,14 +141,14 @@ func CharactersIn(room types.Room) types.CharacterList {
 }
 
 // PlayerCharactersIn returns a list of player characters that are in the given room
-func PlayerCharactersIn(room types.Room, except types.Character) types.PCList {
-	ids := db.Find(types.PcType, bson.M{"roomid": room.GetId()})
+func PlayerCharactersIn(roomId types.Id, except types.Id) types.PCList {
+	ids := db.Find(types.PcType, bson.M{"roomid": roomId})
 	var pcs types.PCList
 
 	for _, id := range ids {
 		pc := ds.Get(id).(types.PC)
 
-		if pc.IsOnline() && pc != except {
+		if pc.IsOnline() && id != except {
 			pcs = append(pcs, pc)
 		}
 	}
@@ -162,8 +157,8 @@ func PlayerCharactersIn(room types.Room, except types.Character) types.PCList {
 }
 
 // NpcsIn returns all of the NPC characters that are in the given room
-func NpcsIn(room types.Room) types.NPCList {
-	ids := db.Find(types.NpcType, bson.M{"roomid": room.GetId()})
+func NpcsIn(roomId types.Id) types.NPCList {
+	ids := db.Find(types.NpcType, bson.M{"roomid": roomId})
 	npcs := make(types.NPCList, len(ids))
 
 	for i, id := range ids {
@@ -190,8 +185,8 @@ func GetOnlinePlayerCharacters() []types.PC {
 // CreatePlayerCharacter creates a new player-controlled Character object in the
 // database and adds it to the model.  A pointer to the new character object is
 // returned.
-func CreatePlayerCharacter(name string, parentUser types.User, startingRoom types.Room) types.PC {
-	pc := db.NewPlayerChar(name, parentUser.GetId(), startingRoom.GetId())
+func CreatePlayerCharacter(name string, userId types.Id, startingRoom types.Room) types.PC {
+	pc := db.NewPlayerChar(name, userId, startingRoom.GetId())
 	events.Broadcast(events.EnterEvent{Character: pc, RoomId: startingRoom.GetId(), Direction: types.DirectionNone})
 	return pc
 }
@@ -199,12 +194,12 @@ func CreatePlayerCharacter(name string, parentUser types.User, startingRoom type
 // GetOrCreatePlayerCharacter attempts to retrieve the existing user from the model by the given name.
 // if none exists, then a new one is created. If the name matches an NPC (rather than a player)
 // then nil will be returned.
-func GetOrCreatePlayerCharacter(name string, parentUser types.User, startingRoom types.Room) types.PC {
+func GetOrCreatePlayerCharacter(name string, userId types.Id, startingRoom types.Room) types.PC {
 	player := GetPlayerCharacterByName(name)
 	npc := GetNpcByName(name)
 
 	if player == nil && npc == nil {
-		player = CreatePlayerCharacter(name, parentUser, startingRoom)
+		player = CreatePlayerCharacter(name, userId, startingRoom)
 	} else if npc != nil {
 		return nil
 	}
@@ -220,14 +215,9 @@ func CreateNpc(name string, roomId types.Id, spawnerId types.Id) types.NPC {
 	return npc
 }
 
-func DeleteCharacterId(id types.Id) {
-	DeleteCharacter(ds.Get(id).(types.Character))
-}
-
 // DeleteCharacter removes the character associated with the given id from the model and from the database
-func DeleteCharacter(c types.Character) {
-	ds.Remove(c)
-	utils.HandleError(db.DeleteObject(c))
+func DeleteCharacter(charId types.Id) {
+	db.DeleteObject(charId)
 }
 
 // CreateRoom creates a new Room object in the database and adds it to the model.
@@ -312,9 +302,9 @@ func CreateZone(name string) (types.Zone, error) {
 }
 
 // Removes the given Zone from the model and the database
-func DeleteZone(zone types.Zone) {
-	ds.Remove(zone)
-	utils.HandleError(db.DeleteObject(zone))
+func DeleteZone(zoneId types.Id) {
+	// TODO - Delete rooms in zone
+	db.DeleteObject(zoneId)
 }
 
 // GetZoneByName name searches for a zone with the given name
@@ -360,9 +350,9 @@ func GetAreaByName(name string) types.Area {
 	return nil
 }
 
-func DeleteArea(area types.Area) {
-	ds.Remove(area)
-	utils.HandleError(db.DeleteObject(area))
+func DeleteArea(areaId types.Id) {
+	// TODO - Remove room references to area
+	db.DeleteObject(areaId)
 }
 
 func GetAreaRooms(areaId types.Id) types.RoomList {
@@ -378,9 +368,7 @@ func GetAreaRooms(areaId types.Id) types.RoomList {
 // DeleteRoom removes the given room object from the model and the database. It
 // also disables all exits in neighboring rooms that lead to the given room.
 func DeleteRoom(room types.Room) {
-	ds.Remove(room)
-
-	utils.HandleError(db.DeleteObject(room))
+	db.DeleteObject(room.GetId())
 
 	// Disconnect all exits leading to this room
 	loc := room.GetLocation()
@@ -440,20 +428,13 @@ func ItemsIn(room types.Room) types.ItemList {
 }
 
 func DeleteItemId(itemId types.Id) {
-	DeleteItem(GetItem(itemId))
+	DeleteItem(itemId)
 }
 
 // DeleteItem removes the item associated with the given id from the
 // model and from the database
-func DeleteItem(item types.Item) {
-	ds.Remove(item)
-
-	utils.HandleError(db.DeleteObject(item))
-}
-
-func DeleteObject(obj types.Object) {
-	ds.Remove(obj)
-	utils.HandleError(db.DeleteObject(obj))
+func DeleteItem(itemId types.Id) {
+	db.DeleteObject(itemId)
 }
 
 func Init(session db.Session, dbName string) {
