@@ -106,6 +106,8 @@ func getCollectionFromType(t types.ObjectType) Collection {
 		return getCollection(cRooms)
 	case types.ItemType:
 		return getCollection(cItems)
+	case types.SkillType:
+		return getCollection(cSkills)
 	default:
 		panic("database.getCollectionFromType: Unhandled object type")
 	}
@@ -123,6 +125,7 @@ const (
 	cZones          = collectionName("zones")
 	cItems          = collectionName("items")
 	cAreas          = collectionName("areas")
+	cSkills         = collectionName("skills")
 )
 
 // Field names

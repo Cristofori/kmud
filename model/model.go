@@ -443,14 +443,12 @@ func Init(session db.Session, dbName string) {
 
 	users := []*db.User{}
 	db.RetrieveObjects(types.UserType, &users)
-
 	for _, user := range users {
 		ds.Set(user)
 	}
 
 	pcs := []*db.PlayerChar{}
 	db.RetrieveObjects(types.PcType, &pcs)
-
 	for _, pc := range pcs {
 		pc.SetObjectType(types.PcType)
 		ds.Set(pc)
@@ -458,7 +456,6 @@ func Init(session db.Session, dbName string) {
 
 	npcs := []*db.NonPlayerChar{}
 	db.RetrieveObjects(types.NpcType, &npcs)
-
 	for _, npc := range npcs {
 		npc.SetObjectType(types.NpcType)
 		ds.Set(npc)
@@ -466,7 +463,6 @@ func Init(session db.Session, dbName string) {
 
 	spawners := []*db.Spawner{}
 	db.RetrieveObjects(types.SpawnerType, &spawners)
-
 	for _, spawner := range spawners {
 		spawner.SetObjectType(types.SpawnerType)
 		ds.Set(spawner)
@@ -474,30 +470,32 @@ func Init(session db.Session, dbName string) {
 
 	zones := []*db.Zone{}
 	db.RetrieveObjects(types.ZoneType, &zones)
-
 	for _, zone := range zones {
 		ds.Set(zone)
 	}
 
 	areas := []*db.Area{}
 	db.RetrieveObjects(types.AreaType, &areas)
-
 	for _, area := range areas {
 		ds.Set(area)
 	}
 
 	rooms := []*db.Room{}
 	db.RetrieveObjects(types.RoomType, &rooms)
-
 	for _, room := range rooms {
 		ds.Set(room)
 	}
 
 	items := []*db.Item{}
 	db.RetrieveObjects(types.ItemType, &items)
-
 	for _, item := range items {
 		ds.Set(item)
+	}
+
+	skills := []*db.Skill{}
+	db.RetrieveObjects(types.SkillType, &skills)
+	for _, skill := range skills {
+		ds.Set(skill)
 	}
 }
 
@@ -724,6 +722,27 @@ func GetSpawnerNpcs(spawnerId types.Id) types.NPCList {
 		npcs[i] = ds.Get(id).(types.NPC)
 	}
 	return npcs
+}
+
+func GetSkill(id types.Id) types.Skill {
+	return ds.Get(id).(types.Skill)
+}
+
+func GetSkills() types.SkillList {
+	ids := db.FindAll(types.SkillType)
+	skills := make(types.SkillList, len(ids))
+	for i, id := range ids {
+		skills[i] = ds.Get(id).(types.Skill)
+	}
+	return skills
+}
+
+func CreateSkill(name string) types.Skill {
+	return db.NewSkill(name, 10)
+}
+
+func DeleteSkill(id types.Id) {
+	db.DeleteObject(id)
 }
 
 // vim: nocindent

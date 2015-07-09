@@ -991,4 +991,56 @@ func (ch *commandHandler) Inspect(args []string) {
 	}
 }
 
+func (ch *commandHandler) Skills(args []string) {
+Loop:
+	for {
+		menu := utils.NewMenu("Skills")
+
+		menu.AddAction("n", "New")
+
+		skills := model.GetSkills()
+
+		for i, skill := range skills {
+			menu.AddActionData(i+1, skill.GetName(), skill.GetId())
+		}
+
+		choice, skillId := ch.session.execMenu(menu)
+
+		switch choice {
+		case "":
+			break Loop
+		case "n":
+			name := ch.session.getRawUserInput("Skill name: ")
+			if name != "" {
+				model.CreateSkill(name)
+			}
+		default:
+			skill := model.GetSkill(skillId)
+		SingleSkillMenu:
+			for {
+				menu := utils.NewMenu(fmt.Sprintf("Skill - %s", skill.GetName()))
+				menu.AddAction("a", fmt.Sprintf("Damage - %v", skill.GetDamage()))
+				menu.AddAction("d", "Delete")
+
+				choice, _ := ch.session.execMenu(menu)
+
+				switch choice {
+				case "a":
+					input := ch.session.getRawUserInput("New damage value: ")
+					dmg, err := strconv.ParseInt(input, 10, 0)
+
+					if err != nil || dmg < 0 {
+						ch.session.printError("Invalid value")
+					} else {
+						skill.SetDamage(int(dmg))
+					}
+				case "d":
+					model.DeleteSkill(skillId)
+					break SingleSkillMenu
+				}
+			}
+		}
+	}
+}
+
 // vim: nocindent

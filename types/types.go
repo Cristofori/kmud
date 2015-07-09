@@ -234,3 +234,5 @@ type Skill interface {
 	SetDamage(int)
 	GetDamage() int
 }
+
+type SkillList []Skill
