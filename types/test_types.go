@@ -8,6 +8,10 @@ func (self MockId) String() string {
 	return string(self)
 }
 
+func (self MockId) Hex() string {
+	return string(self)
+}
+
 type MockIdentifiable struct {
 	Id   Id
 	Type ObjectType

@@ -16,6 +16,7 @@ type User struct {
 	Name      string
 	ColorMode types.ColorMode
 	Password  []byte
+	Admin     bool
 
 	online       bool
 	conn         net.Conn
@@ -157,14 +158,16 @@ func (self *User) Write(text string) (int, error) {
 	return utils.Write(self.conn, text, self.GetColorMode())
 }
 
-func UserNames(users []*User) []string {
-	names := make([]string, len(users))
+func (self *User) SetAdmin(admin bool) {
+	self.WriteLock()
+	defer self.WriteUnlock()
 
-	for i, user := range users {
-		names[i] = user.GetName()
-	}
-
-	return names
+	self.Admin = admin
+	self.modified()
 }
 
-// vim: nocindent
+func (self *User) IsAdmin() bool {
+	self.ReadLock()
+	defer self.ReadUnlock()
+	return self.Admin
+}

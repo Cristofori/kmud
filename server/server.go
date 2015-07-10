@@ -186,7 +186,9 @@ func userMenu(user types.User) *utils.Menu {
 
 	menu := utils.NewMenu(user.GetName())
 	menu.AddAction("l", "Logout")
-	menu.AddAction("a", "Admin")
+	if user.IsAdmin() {
+		menu.AddAction("a", "Admin")
+	}
 	menu.AddAction("n", "New character")
 	if len(chars) > 0 {
 		menu.AddAction("d", "Delete character")
@@ -255,6 +257,7 @@ func userSpecificMenu(user types.User) *utils.Menu {
 
 	menu := utils.NewMenu("User: " + user.GetName() + " " + suffix)
 	menu.AddAction("d", "Delete")
+	menu.AddAction("a", fmt.Sprintf("Admin - %v", user.IsAdmin()))
 
 	if user.IsOnline() {
 		menu.AddAction("w", "Watch")
@@ -284,7 +287,9 @@ func handleConnection(conn *wrappedConnection) {
 				charname = pc.GetName()
 			}
 
-			debug.PrintStack()
+			if r != "EOF" {
+				debug.PrintStack()
+			}
 
 			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
 				username,
@@ -365,15 +370,21 @@ func handleConnection(conn *wrappedConnection) {
 								_, err := strconv.Atoi(choice)
 
 								if err == nil {
+								UserSpecificMenu:
 									for {
 										userMenu := userSpecificMenu(model.GetUser(userId))
 										choice, _ = userMenu.Exec(conn, user.GetColorMode())
-										if choice == "" {
-											break
-										} else if choice == "d" {
+
+										switch choice {
+										case "":
+											break UserSpecificMenu
+										case "d":
 											model.DeleteUser(userId)
-											break
-										} else if choice == "w" {
+											break UserSpecificMenu
+										case "a":
+											u := model.GetUser(userId)
+											u.SetAdmin(!u.IsAdmin())
+										case "w":
 											userToWatch := model.GetUser(userId)
 
 											if userToWatch == user {

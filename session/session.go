@@ -128,7 +128,7 @@ func (session *Session) Exec() {
 		}
 
 		if strings.HasPrefix(input, "/") {
-			session.commander.handleCommand(utils.Argify(input[1:]))
+			session.handleCommand(utils.Argify(input[1:]))
 		} else {
 			session.actioner.handleAction(utils.Argify(input))
 		}

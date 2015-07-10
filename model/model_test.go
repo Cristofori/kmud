@@ -70,7 +70,6 @@ func (s *ModelSuite) TestUserFunctions(c *C) {
 	room, _ := CreateRoom(zone, types.Coordinate{X: 0, Y: 0, Z: 0})
 	CreatePlayerCharacter("testPlayer", user1.GetId(), room)
 
-
 	DeleteUser(user1.GetId())
 	userByName = GetUserByName(name1)
 	c.Assert(userByName, Equals, nil)

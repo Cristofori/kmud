@@ -195,6 +195,8 @@ type User interface {
 	GetInput(string) string
 	SetColorMode(ColorMode)
 	Write(string) (int, error)
+	IsAdmin() bool
+	SetAdmin(bool)
 }
 
 type UserList []User
