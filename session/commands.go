@@ -16,10 +16,6 @@ type command struct {
 	exec  func(*Session, []string)
 }
 
-type commandHandler struct {
-	session *Session
-}
-
 func npcMenu(roomId types.Id) *utils.Menu {
 	var npcs types.NPCList
 

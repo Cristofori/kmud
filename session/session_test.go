@@ -44,10 +44,8 @@ func Test_UserInputHandlers(t *testing.T) {
 	args[0] = reflect.ValueOf(strlist)
 
 	var ah actionHandler
-	var ch commandHandler
 
 	checkMethods(&ah, t)
-	checkMethods(&ch, t)
 }
 
 // vim:nocindent

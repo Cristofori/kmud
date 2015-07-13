@@ -37,8 +37,7 @@ type Session struct {
 	// input into a single struct. This makes it so that we can use reflection
 	// to lookup the function that should handle the user's input without fear
 	// of them calling some function that we didn't intent to expose to them.
-	commander commandHandler
-	actioner  actionHandler
+	actioner actionHandler
 
 	replyId types.Id
 
@@ -62,7 +61,6 @@ func NewSession(conn io.ReadWriter, user types.User, player types.PC) *Session {
 	session.eventChannel = events.Register(player)
 
 	session.silentMode = false
-	session.commander.session = &session
 	session.actioner.session = &session
 
 	// file, err := os.OpenFile(player.GetName()+".log", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
