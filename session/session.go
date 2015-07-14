@@ -33,12 +33,6 @@ type Session struct {
 
 	silentMode bool
 
-	// These handlers encapsulate all of the functions that handle user
-	// input into a single struct. This makes it so that we can use reflection
-	// to lookup the function that should handle the user's input without fear
-	// of them calling some function that we didn't intent to expose to them.
-	actioner actionHandler
-
 	replyId types.Id
 
 	// logger *log.Logger
@@ -61,7 +55,6 @@ func NewSession(conn io.ReadWriter, user types.User, player types.PC) *Session {
 	session.eventChannel = events.Register(player)
 
 	session.silentMode = false
-	session.actioner.session = &session
 
 	// file, err := os.OpenFile(player.GetName()+".log", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
 	// utils.PanicIfError(err)
@@ -128,7 +121,7 @@ func (session *Session) Exec() {
 		if strings.HasPrefix(input, "/") {
 			session.handleCommand(utils.Argify(input[1:]))
 		} else {
-			session.actioner.handleAction(utils.Argify(input))
+			session.handleAction(utils.Argify(input))
 		}
 	}
 }
@@ -260,4 +253,54 @@ func (session *Session) currentZone() types.Zone {
 	return model.GetZone(session.room.GetZoneId())
 }
 
-// vim: nocindent
+func (self *Session) handleAction(action string, args []string) {
+	if len(args) == 0 {
+		direction := types.StringToDirection(action)
+
+		if direction != types.DirectionNone {
+			if self.room.HasExit(direction) {
+				newRoom, err := model.MoveCharacter(self.player, direction)
+				if err == nil {
+					self.room = newRoom
+					self.printRoom()
+				} else {
+					self.printError(err.Error())
+				}
+
+			} else {
+				self.printError("You can't go that way")
+			}
+
+			return
+		}
+	}
+
+	handler, found := actions[action]
+
+	if found {
+		if handler.alias != "" {
+			handler = actions[handler.alias]
+		}
+		handler.exec(self, args)
+	} else {
+		self.printError("You can't do that")
+	}
+}
+
+func (self *Session) handleCommand(command string, args []string) {
+	if command[0] == '/' && self.user.IsAdmin() {
+		quickRoom(self, command[1:])
+		return
+	}
+
+	handler, found := commands[command]
+
+	if found {
+		if handler.alias != "" {
+			handler = commands[handler.alias]
+		}
+		handler.exec(self, args)
+	} else {
+		self.printError("Unrecognized command: %s", command)
+	}
+}

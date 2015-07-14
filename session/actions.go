@@ -10,291 +10,248 @@ import (
 	"github.com/Cristofori/kmud/utils"
 )
 
-type actionHandler struct {
-	session *Session
+type action struct {
+	alias string
+	exec  func(*Session, []string)
 }
 
-func (ah *actionHandler) handleAction(action string, args []string) {
-	if len(args) == 0 {
-		direction := types.StringToDirection(action)
+var actions = map[string]action{
+	"l": aAlias("look"),
+	"look": action{
+		exec: func(s *Session, args []string) {
+			if len(args) == 0 {
+				s.printRoom()
+			} else if len(args) == 1 {
+				arg := types.StringToDirection(args[0])
 
-		if direction != types.DirectionNone {
-			if ah.session.room.HasExit(direction) {
-				newRoom, err := model.MoveCharacter(ah.session.player, direction)
-				if err == nil {
-					ah.session.room = newRoom
-					ah.session.printRoom()
+				if arg == types.DirectionNone {
+					charList := model.CharactersIn(s.room.GetId())
+					index := utils.BestMatch(args[0], charList.Names())
+
+					if index == -2 {
+						s.printError("Which one do you mean?")
+					} else if index != -1 {
+						s.printLine("Looking at: %s", charList[index].GetName())
+					} else {
+						itemList := model.ItemsIn(s.room)
+						index = utils.BestMatch(args[0], itemList.Names())
+
+						if index == -1 {
+							s.printLine("Nothing to see")
+						} else if index == -2 {
+							s.printError("Which one do you mean?")
+						} else {
+							s.printLine("Looking at: %s", itemList[index].GetName())
+						}
+					}
 				} else {
-					ah.session.printError(err.Error())
+					if s.room.HasExit(arg) {
+						loc := s.room.NextLocation(arg)
+						roomToSee := model.GetRoomByLocation(loc, s.room.GetZoneId())
+						if roomToSee != nil {
+							area := model.GetArea(roomToSee.GetAreaId())
+							s.printLine(roomToSee.ToString(model.PlayerCharactersIn(roomToSee.GetId(), nil),
+								model.NpcsIn(roomToSee.GetId()), nil, area))
+						} else {
+							s.printLine("Nothing to see")
+						}
+					} else {
+						s.printError("You can't look in that direction")
+					}
 				}
-
-			} else {
-				ah.session.printError("You can't go that way")
 			}
-
-			return
-		}
-	}
-
-	found := utils.FindAndCallMethod(ah, action, args)
-
-	if !found {
-		ah.session.printError("You can't do that")
-	}
-}
-
-func (ah *actionHandler) L(args []string) {
-	ah.Look(args)
-}
-
-func (ah *actionHandler) Look(args []string) {
-	if len(args) == 0 {
-		ah.session.printRoom()
-	} else if len(args) == 1 {
-		arg := types.StringToDirection(args[0])
-
-		if arg == types.DirectionNone {
-			charList := model.CharactersIn(ah.session.room.GetId())
+		},
+	},
+	"a": aAlias("attack"),
+	"attack": action{
+		exec: func(s *Session, args []string) {
+			charList := model.CharactersIn(s.room.GetId())
 			index := utils.BestMatch(args[0], charList.Names())
 
+			if index == -1 {
+				s.printError("Not found")
+			} else if index == -2 {
+				s.printError("Which one do you mean?")
+			} else {
+				defender := charList[index]
+				if defender.GetId() == s.player.GetId() {
+					s.printError("You can't attack yourself")
+				} else {
+					combat.StartFight(s.player, defender)
+				}
+			}
+		},
+	},
+	"talk": action{
+		exec: func(s *Session, args []string) {
+			if len(args) != 1 {
+				s.printError("Usage: talk <NPC name>")
+				return
+			}
+
+			npcList := model.NpcsIn(s.room.GetId())
+			index := utils.BestMatch(args[0], npcList.Characters().Names())
+
+			if index == -1 {
+				s.printError("Not found")
+			} else if index == -2 {
+				s.printError("Which one do you mean?")
+			} else {
+				npc := npcList[index]
+				s.printLine(npc.PrettyConversation())
+			}
+		},
+	},
+	"drop": action{
+		exec: func(s *Session, args []string) {
+			dropUsage := func() {
+				s.printError("Usage: drop <item name>")
+			}
+
+			if len(args) != 1 {
+				dropUsage()
+				return
+			}
+
+			characterItems := model.GetItems(s.player.GetItems())
+			index := utils.BestMatch(args[0], characterItems.Names())
+
+			if index == -1 {
+				s.printError("Not found")
+			} else if index == -2 {
+				s.printError("Which one do you mean?")
+			} else {
+				item := characterItems[index]
+				s.player.RemoveItem(item.GetId())
+				s.room.AddItem(item.GetId())
+				s.printLine("Dropped %s", item.GetName())
+			}
+		},
+	},
+	"take": aAlias("get"),
+	"t":    aAlias("get"),
+	"g":    aAlias("g"),
+	"get": action{
+		exec: func(s *Session, args []string) {
+			takeUsage := func() {
+				s.printError("Usage: take <item name>")
+			}
+
+			if len(args) != 1 {
+				takeUsage()
+				return
+			}
+
+			itemsInRoom := model.GetItems(s.room.GetItems())
+			index := utils.BestMatch(args[0], itemsInRoom.Names())
+
 			if index == -2 {
-				ah.session.printError("Which one do you mean?")
-			} else if index != -1 {
-				ah.session.printLine("Looking at: %s", charList[index].GetName())
+				s.printError("Which one do you mean?")
+			} else if index == -1 {
+				s.printError("Item %s not found", args[0])
 			} else {
-				itemList := model.ItemsIn(ah.session.room)
-				index = utils.BestMatch(args[0], itemList.Names())
-
-				if index == -1 {
-					ah.session.printLine("Nothing to see")
-				} else if index == -2 {
-					ah.session.printError("Which one do you mean?")
-				} else {
-					ah.session.printLine("Looking at: %s", itemList[index].GetName())
-				}
+				item := itemsInRoom[index]
+				s.player.AddItem(item.GetId())
+				s.room.RemoveItem(item.GetId())
+				s.printLine("Picked up %s", item.GetName())
 			}
-		} else {
-			if ah.session.room.HasExit(arg) {
-				loc := ah.session.room.NextLocation(arg)
-				roomToSee := model.GetRoomByLocation(loc, ah.session.room.GetZoneId())
-				if roomToSee != nil {
-					area := model.GetArea(roomToSee.GetAreaId())
-					ah.session.printLine(roomToSee.ToString(model.PlayerCharactersIn(roomToSee.GetId(), nil),
-						model.NpcsIn(roomToSee.GetId()), nil, area))
-				} else {
-					ah.session.printLine("Nothing to see")
-				}
+		},
+	},
+	"i":   aAlias("inventory"),
+	"inv": aAlias("inv"),
+	"inventory": action{
+		exec: func(s *Session, args []string) {
+			itemIds := s.player.GetItems()
+
+			if len(itemIds) == 0 {
+				s.printLine("You aren't carrying anything")
 			} else {
-				ah.session.printError("You can't look in that direction")
+				var itemNames []string
+				for _, item := range model.GetItems(itemIds) {
+					itemNames = append(itemNames, item.GetName())
+				}
+				s.printLine("You are carrying: %s", strings.Join(itemNames, ", "))
 			}
-		}
-	}
+
+			s.printLine("Cash: %v", s.player.GetCash())
+		},
+	},
+	"help": action{
+		exec: func(s *Session, args []string) {
+			s.printLine("HELP!")
+		},
+	},
+	"ls": action{
+		exec: func(s *Session, args []string) {
+			s.printLine("Where do you think you are?!")
+		},
+	},
+	"stop": action{
+		exec: func(s *Session, args []string) {
+			combat.StopFight(s.player)
+		},
+	},
+	"go": action{
+		exec: func(s *Session, args []string) {
+			if len(args) != 1 {
+				s.printError("Usage: go <name>")
+				return
+			}
+
+			links := s.room.GetLinks()
+			linkNames := s.room.LinkNames()
+			index := utils.BestMatch(args[0], linkNames)
+
+			if index == -2 {
+				s.printError("Which one do you mean?")
+			} else if index == -1 {
+				s.printError("Exit %s not found", args[0])
+			} else {
+				destId := links[linkNames[index]]
+				newRoom := model.GetRoom(destId)
+
+				model.MoveCharacterToRoom(s.player, newRoom)
+
+				s.room = newRoom
+				s.printRoom()
+			}
+		},
+	},
+	"lock": action{
+		exec: func(s *Session, args []string) {
+			if len(args) != 1 {
+				s.printError("Usage: lock <direction>")
+			}
+			handleLock(s, args[0], true)
+		},
+	},
+	"unlock": action{
+		exec: func(s *Session, args []string) {
+			if len(args) != 1 {
+				s.printError("Usage: unlock <direction>")
+			}
+			handleLock(s, args[0], false)
+		},
+	},
 }
 
-func (ah *actionHandler) A(args []string) {
-	ah.Attack(args)
-}
-
-func (ah *actionHandler) Attack(args []string) {
-	charList := model.CharactersIn(ah.session.room.GetId())
-	index := utils.BestMatch(args[0], charList.Names())
-
-	if index == -1 {
-		ah.session.printError("Not found")
-	} else if index == -2 {
-		ah.session.printError("Which one do you mean?")
-	} else {
-		defender := charList[index]
-		if defender.GetId() == ah.session.player.GetId() {
-			ah.session.printError("You can't attack yourself")
-		} else {
-			combat.StartFight(ah.session.player, defender)
-		}
-	}
-}
-
-func (ah *actionHandler) Disconnect(args []string) {
-	ah.session.printLine("Take luck!")
-	panic("User quit")
-}
-
-func (ah *actionHandler) Talk(args []string) {
-	if len(args) != 1 {
-		ah.session.printError("Usage: talk <NPC name>")
-		return
-	}
-
-	npcList := model.NpcsIn(ah.session.room.GetId())
-	index := utils.BestMatch(args[0], npcList.Characters().Names())
-
-	if index == -1 {
-		ah.session.printError("Not found")
-	} else if index == -2 {
-		ah.session.printError("Which one do you mean?")
-	} else {
-		npc := npcList[index]
-		ah.session.printLine(npc.PrettyConversation())
-	}
-}
-
-func (ah *actionHandler) Drop(args []string) {
-	dropUsage := func() {
-		ah.session.printError("Usage: drop <item name>")
-	}
-
-	if len(args) != 1 {
-		dropUsage()
-		return
-	}
-
-	characterItems := model.GetItems(ah.session.player.GetItems())
-	index := utils.BestMatch(args[0], characterItems.Names())
-
-	if index == -1 {
-		ah.session.printError("Not found")
-	} else if index == -2 {
-		ah.session.printError("Which one do you mean?")
-	} else {
-		item := characterItems[index]
-		ah.session.player.RemoveItem(item.GetId())
-		ah.session.room.AddItem(item.GetId())
-		ah.session.printLine("Dropped %s", item.GetName())
-	}
-}
-
-func (ah *actionHandler) Take(args []string) {
-	ah.Pickup(args)
-}
-
-func (ah *actionHandler) T(args []string) {
-	ah.Pickup(args)
-}
-
-func (ah *actionHandler) Get(args []string) {
-	ah.Pickup(args)
-}
-
-func (ah *actionHandler) G(args []string) {
-	ah.Pickup(args)
-}
-
-func (ah *actionHandler) Pickup(args []string) {
-	takeUsage := func() {
-		ah.session.printError("Usage: take <item name>")
-	}
-
-	if len(args) != 1 {
-		takeUsage()
-		return
-	}
-
-	itemsInRoom := model.GetItems(ah.session.room.GetItems())
-	index := utils.BestMatch(args[0], itemsInRoom.Names())
-
-	if index == -2 {
-		ah.session.printError("Which one do you mean?")
-	} else if index == -1 {
-		ah.session.printError("Item %s not found", args[0])
-	} else {
-		item := itemsInRoom[index]
-		ah.session.player.AddItem(item.GetId())
-		ah.session.room.RemoveItem(item.GetId())
-		ah.session.printLine("Picked up %s", item.GetName())
-	}
-}
-
-func (ah *actionHandler) I(args []string) {
-	ah.Inventory(args)
-}
-
-func (ah *actionHandler) Inv(args []string) {
-	ah.Inventory(args)
-}
-
-func (ah *actionHandler) Inventory(args []string) {
-	itemIds := ah.session.player.GetItems()
-
-	if len(itemIds) == 0 {
-		ah.session.printLine("You aren't carrying anything")
-	} else {
-		var itemNames []string
-		for _, item := range model.GetItems(itemIds) {
-			itemNames = append(itemNames, item.GetName())
-		}
-		ah.session.printLine("You are carrying: %s", strings.Join(itemNames, ", "))
-	}
-
-	ah.session.printLine("Cash: %v", ah.session.player.GetCash())
-}
-
-func (ah *actionHandler) Help(args []string) {
-	ah.session.printLine("HELP!")
-}
-
-func (ah *actionHandler) Ls(args []string) {
-	ah.session.printLine("Where do you think you are?!")
-}
-
-func (ah *actionHandler) Stop(args []string) {
-	combat.StopFight(ah.session.player)
-}
-
-func (ah *actionHandler) Go(args []string) {
-	if len(args) != 1 {
-		ah.session.printError("Usage: go <name>")
-		return
-	}
-
-	links := ah.session.room.GetLinks()
-	linkNames := ah.session.room.LinkNames()
-	index := utils.BestMatch(args[0], linkNames)
-
-	if index == -2 {
-		ah.session.printError("Which one do you mean?")
-	} else if index == -1 {
-		ah.session.printError("Exit %s not found", args[0])
-	} else {
-		destId := links[linkNames[index]]
-		newRoom := model.GetRoom(destId)
-
-		model.MoveCharacterToRoom(ah.session.player, newRoom)
-
-		ah.session.room = newRoom
-		ah.session.printRoom()
-	}
-}
-
-func (ah *actionHandler) Lock(args []string) {
-	if len(args) != 1 {
-		ah.session.printError("Usage: lock <direction>")
-	}
-	ah.handleLock(args[0], true)
-}
-
-func (ah *actionHandler) Unlock(args []string) {
-	if len(args) != 1 {
-		ah.session.printError("Usage: unlock <direction>")
-	}
-	ah.handleLock(args[0], false)
-}
-
-func (ah *actionHandler) handleLock(arg string, locked bool) {
+func handleLock(s *Session, arg string, locked bool) {
 	dir := types.StringToDirection(arg)
 
 	if dir == types.DirectionNone {
-		ah.session.printError("Invalid direction")
+		s.printError("Invalid direction")
 	} else {
-		ah.session.room.SetLocked(dir, locked)
+		s.room.SetLocked(dir, locked)
 
 		events.Broadcast(events.LockEvent{
-			RoomId: ah.session.room.GetId(),
+			RoomId: s.room.GetId(),
 			Exit:   dir,
 			Locked: locked,
 		})
 
 		// Lock on both sides
-		location := ah.session.room.NextLocation(dir)
-		otherRoom := model.GetRoomByLocation(location, ah.session.room.GetZoneId())
+		location := s.room.NextLocation(dir)
+		otherRoom := model.GetRoomByLocation(location, s.room.GetZoneId())
 
 		if otherRoom != nil {
 			otherRoom.SetLocked(dir.Opposite(), locked)
@@ -308,4 +265,6 @@ func (ah *actionHandler) handleLock(arg string, locked bool) {
 	}
 }
 
-// vim: nocindent
+func aAlias(name string) action {
+	return action{alias: name}
+}
