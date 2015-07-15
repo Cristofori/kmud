@@ -22,7 +22,7 @@ type Telnet struct {
 	conn net.Conn
 	err  error
 
-	processor telnetProcessor
+	processor *telnetProcessor
 }
 
 func NewTelnet(conn net.Conn) *Telnet {
@@ -247,7 +247,7 @@ type telnetProcessor struct {
 	debug bool
 }
 
-func newTelnetProcessor() telnetProcessor {
+func newTelnetProcessor() *telnetProcessor {
 	initLookups()
 
 	var tp telnetProcessor
@@ -255,7 +255,7 @@ func newTelnetProcessor() telnetProcessor {
 	tp.debug = false
 	tp.currentSB = NUL
 
-	return tp
+	return &tp
 }
 
 func (self *telnetProcessor) Read(p []byte) (int, error) {

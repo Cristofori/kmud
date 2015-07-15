@@ -25,7 +25,7 @@ type Server struct {
 }
 
 type wrappedConnection struct {
-	telnet  *telnet.Telnet
+	telnet.Telnet
 	watcher *utils.WatchableReadWriter
 }
 
@@ -35,30 +35,6 @@ func (s *wrappedConnection) Write(p []byte) (int, error) {
 
 func (s *wrappedConnection) Read(p []byte) (int, error) {
 	return s.watcher.Read(p)
-}
-
-func (s *wrappedConnection) Close() error {
-	return s.telnet.Close()
-}
-
-func (s *wrappedConnection) LocalAddr() net.Addr {
-	return s.telnet.LocalAddr()
-}
-
-func (s *wrappedConnection) RemoteAddr() net.Addr {
-	return s.telnet.RemoteAddr()
-}
-
-func (s *wrappedConnection) SetDeadline(dl time.Time) error {
-	return s.telnet.SetDeadline(dl)
-}
-
-func (s *wrappedConnection) SetReadDeadline(dl time.Time) error {
-	return s.telnet.SetReadDeadline(dl)
-}
-
-func (s *wrappedConnection) SetWriteDeadline(dl time.Time) error {
-	return s.telnet.SetWriteDeadline(dl)
 }
 
 func login(conn *wrappedConnection) types.User {
@@ -77,7 +53,7 @@ func login(conn *wrappedConnection) types.User {
 			utils.WriteLine(conn, "That user is already online", types.ColorModeNone)
 		} else {
 			attempts := 1
-			conn.telnet.WillEcho()
+			conn.WillEcho()
 			for {
 				password := utils.GetRawUserInputSuffix(conn, "Password: ", "\r\n", types.ColorModeNone)
 
@@ -97,7 +73,7 @@ func login(conn *wrappedConnection) types.User {
 				time.Sleep(2 * time.Second)
 				utils.WriteLine(conn, "Invalid password", types.ColorModeNone)
 			}
-			conn.telnet.WontEcho()
+			conn.WontEcho()
 
 			return user
 		}
@@ -120,7 +96,7 @@ func newUser(conn *wrappedConnection) types.User {
 		} else if err := utils.ValidateName(name); err != nil {
 			utils.WriteLine(conn, err.Error(), types.ColorModeNone)
 		} else {
-			conn.telnet.WillEcho()
+			conn.WillEcho()
 			for {
 				pass1 := utils.GetRawUserInputSuffix(conn, "Desired password: ", "\r\n", types.ColorModeNone)
 
@@ -140,7 +116,7 @@ func newUser(conn *wrappedConnection) types.User {
 
 				break
 			}
-			conn.telnet.WontEcho()
+			conn.WontEcho()
 
 			user = model.CreateUser(name, password)
 			return user
@@ -287,7 +263,7 @@ func handleConnection(conn *wrappedConnection) {
 				charname = pc.GetName()
 			}
 
-			if r != "EOF" {
+			if r != nil {
 				debug.PrintStack()
 			}
 
@@ -324,10 +300,10 @@ func handleConnection(conn *wrappedConnection) {
 			user.SetOnline(true)
 			user.SetConnection(conn)
 
-			conn.telnet.DoWindowSize()
-			conn.telnet.DoTerminalType()
+			conn.DoWindowSize()
+			conn.DoTerminalType()
 
-			conn.telnet.Listen(func(code telnet.TelnetCode, data []byte) {
+			conn.Listen(func(code telnet.TelnetCode, data []byte) {
 				switch code {
 				case telnet.WS:
 					if len(data) != 4 {
@@ -480,7 +456,7 @@ func (self *Server) Listen() {
 
 		wc := utils.NewWatchableReadWriter(t)
 
-		go handleConnection(&wrappedConnection{t, wc})
+		go handleConnection(&wrappedConnection{Telnet: *t, watcher: wc})
 	}
 }
 
