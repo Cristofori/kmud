@@ -69,10 +69,13 @@ func GetRawUserInputSuffixP(conn io.ReadWriter, prompter Prompter, suffix string
 		Write(conn, prompter.GetPrompt(), cm)
 
 		if !scanner.Scan() {
-			panic("EOF")
-		}
+			err := scanner.Err()
+			if err == nil {
+				err = io.EOF
+			}
 
-		HandleError(scanner.Err())
+			panic(err)
+		}
 
 		input := scanner.Text()
 		Write(conn, suffix, cm)

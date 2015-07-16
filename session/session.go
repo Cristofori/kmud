@@ -85,9 +85,7 @@ func (self *Session) Exec() {
 	// commands from the user.
 	go func() {
 		defer func() {
-			if r := recover(); r != nil {
-				self.panicChannel <- r
-			}
+			self.panicChannel <- recover()
 		}()
 
 		throttler := utils.NewThrottler(200 * time.Millisecond)

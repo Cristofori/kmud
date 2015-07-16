@@ -98,7 +98,7 @@ func Test_GetUserInputPanicOnEOF(t *testing.T) {
 	defer func() {
 		r := recover()
 		if r == nil {
-			t.Errorf("PanicIfError() didn't panic on a non-nil error")
+			t.Errorf("GetUserInput() didn't panic on EOF")
 		}
 	}()
 

@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"runtime/debug"
 	"sort"
@@ -249,30 +250,30 @@ func handleConnection(conn *wrappedConnection) {
 	var pc types.PC
 
 	defer func() {
-		if r := recover(); r != nil {
-			username := ""
-			charname := ""
+		r := recover()
 
-			if user != nil {
-				user.SetOnline(false)
-				username = user.GetName()
-			}
+		username := ""
+		charname := ""
 
-			if pc != nil {
-				pc.SetOnline(false)
-				charname = pc.GetName()
-			}
-
-			if r != nil {
-				debug.PrintStack()
-			}
-
-			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
-				username,
-				charname,
-				conn.RemoteAddr(),
-				r)
+		if user != nil {
+			user.SetOnline(false)
+			username = user.GetName()
 		}
+
+		if pc != nil {
+			pc.SetOnline(false)
+			charname = pc.GetName()
+		}
+
+		if r != io.EOF {
+			debug.PrintStack()
+		}
+
+		fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
+			username,
+			charname,
+			conn.RemoteAddr(),
+			r)
 	}()
 
 	for {
