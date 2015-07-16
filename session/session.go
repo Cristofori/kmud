@@ -73,12 +73,12 @@ const (
 	RawUserInput   userInputMode = iota
 )
 
-func (session *Session) Exec() {
-	defer events.Unregister(session.player)
-	defer model.Logout(session.player)
+func (self *Session) Exec() {
+	defer events.Unregister(self.player)
+	defer model.Logout(self.player)
 
-	session.printLineColor(types.ColorWhite, "Welcome, "+session.player.GetName())
-	session.printRoom()
+	self.printLineColor(types.ColorWhite, "Welcome, "+self.player.GetName())
+	self.printRoom()
 
 	// Main routine in charge of actually reading input from the connection object,
 	// also has built in throttling to limit how fast we are allowed to process
@@ -86,92 +86,92 @@ func (session *Session) Exec() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				session.panicChannel <- r
+				self.panicChannel <- r
 			}
 		}()
 
 		throttler := utils.NewThrottler(200 * time.Millisecond)
 
 		for {
-			mode := <-session.inputModeChannel
-			prompter := <-session.prompterChannel
+			mode := <-self.inputModeChannel
+			prompter := <-self.prompterChannel
 			input := ""
 
 			switch mode {
 			case CleanUserInput:
-				input = utils.GetUserInputP(session.conn, prompter, session.user.GetColorMode())
+				input = utils.GetUserInputP(self.conn, prompter, self.user.GetColorMode())
 			case RawUserInput:
-				input = utils.GetRawUserInputP(session.conn, prompter, session.user.GetColorMode())
+				input = utils.GetRawUserInputP(self.conn, prompter, self.user.GetColorMode())
 			default:
 				panic("Unhandled case in switch statement (userInputMode)")
 			}
 
 			throttler.Sync()
-			session.userInputChannel <- input
+			self.userInputChannel <- input
 		}
 	}()
 
 	// Main loop
 	for {
-		input := session.getUserInputP(RawUserInput, session)
+		input := self.getUserInputP(RawUserInput, self)
 		if input == "" || input == "logout" || input == "quit" {
 			return
 		}
 
 		if strings.HasPrefix(input, "/") {
-			session.handleCommand(utils.Argify(input[1:]))
+			self.handleCommand(utils.Argify(input[1:]))
 		} else {
-			session.handleAction(utils.Argify(input))
+			self.handleAction(utils.Argify(input))
 		}
 	}
 }
 
-func (session *Session) printLineColor(color types.Color, line string, a ...interface{}) {
-	session.user.WriteLine(types.Colorize(color, fmt.Sprintf(line, a...)))
+func (self *Session) printLineColor(color types.Color, line string, a ...interface{}) {
+	self.user.WriteLine(types.Colorize(color, fmt.Sprintf(line, a...)))
 }
 
-func (session *Session) printLine(line string, a ...interface{}) {
-	session.printLineColor(types.ColorWhite, line, a...)
+func (self *Session) printLine(line string, a ...interface{}) {
+	self.printLineColor(types.ColorWhite, line, a...)
 }
 
-func (session *Session) printError(err string, a ...interface{}) {
-	session.printLineColor(types.ColorRed, err, a...)
+func (self *Session) printError(err string, a ...interface{}) {
+	self.printLineColor(types.ColorRed, err, a...)
 }
 
-func (session *Session) printRoom() {
-	playerList := model.PlayerCharactersIn(session.room.GetId(), session.player.GetId())
-	npcList := model.NpcsIn(session.room.GetId())
-	area := model.GetArea(session.room.GetAreaId())
+func (self *Session) printRoom() {
+	playerList := model.PlayerCharactersIn(self.room.GetId(), self.player.GetId())
+	npcList := model.NpcsIn(self.room.GetId())
+	area := model.GetArea(self.room.GetAreaId())
 
-	session.printLine(session.room.ToString(playerList, npcList,
-		model.GetItems(session.room.GetItems()), area))
+	self.printLine(self.room.ToString(playerList, npcList,
+		model.GetItems(self.room.GetItems()), area))
 }
 
-func (session *Session) clearLine() {
-	utils.ClearLine(session.conn)
+func (self *Session) clearLine() {
+	utils.ClearLine(self.conn)
 }
 
-func (session *Session) asyncMessage(message string) {
-	session.clearLine()
-	session.printLine(message)
+func (self *Session) asyncMessage(message string) {
+	self.clearLine()
+	self.printLine(message)
 }
 
 // Same behavior as menu.Exec(), except that it uses getUserInput
 // which doesn't block the event loop while waiting for input
-func (session *Session) execMenu(menu *utils.Menu) (string, types.Id) {
+func (self *Session) execMenu(menu *utils.Menu) (string, types.Id) {
 	choice := ""
 	var data types.Id
 
 	for {
-		menu.Print(session.conn, session.user.GetColorMode())
-		choice = session.getUserInputP(CleanUserInput, menu)
+		menu.Print(self.conn, self.user.GetColorMode())
+		choice = self.getUserInputP(CleanUserInput, menu)
 		if menu.HasAction(choice) || choice == "" {
 			data = menu.GetData(choice)
 			break
 		}
 
 		if choice != "?" {
-			session.printError("Invalid selection")
+			self.printError("Invalid selection")
 		}
 	}
 	return choice, data
@@ -180,65 +180,65 @@ func (session *Session) execMenu(menu *utils.Menu) (string, types.Id) {
 // getUserInput allows us to retrieve user input in a way that doesn't block the
 // event loop by using channels and a separate Go routine to grab
 // either the next user input or the next event.
-func (session *Session) getUserInputP(inputMode userInputMode, prompter utils.Prompter) string {
-	session.inputModeChannel <- inputMode
-	session.prompterChannel <- prompter
+func (self *Session) getUserInputP(inputMode userInputMode, prompter utils.Prompter) string {
+	self.inputModeChannel <- inputMode
+	self.prompterChannel <- prompter
 
 	for {
 		select {
-		case input := <-session.userInputChannel:
+		case input := <-self.userInputChannel:
 			return input
-		case event := <-session.eventChannel:
-			if session.silentMode {
+		case event := <-self.eventChannel:
+			if self.silentMode {
 				continue
 			}
 
 			switch e := event.(type) {
 			case events.TellEvent:
-				session.replyId = e.From.GetId()
+				self.replyId = e.From.GetId()
 			case events.TickEvent:
-				if !combat.InCombat(session.player) {
-					oldHps := session.player.GetHitPoints()
-					session.player.Heal(5)
-					newHps := session.player.GetHitPoints()
+				if !combat.InCombat(self.player) {
+					oldHps := self.player.GetHitPoints()
+					self.player.Heal(5)
+					newHps := self.player.GetHitPoints()
 
 					if oldHps != newHps {
-						session.clearLine()
-						session.user.Write(prompter.GetPrompt())
+						self.clearLine()
+						self.user.Write(prompter.GetPrompt())
 					}
 				}
 			}
 
-			message := event.ToString(session.player)
+			message := event.ToString(self.player)
 			if message != "" {
-				session.asyncMessage(message)
-				session.user.Write(prompter.GetPrompt())
+				self.asyncMessage(message)
+				self.user.Write(prompter.GetPrompt())
 			}
 
-		case quitMessage := <-session.panicChannel:
+		case quitMessage := <-self.panicChannel:
 			panic(quitMessage)
 		}
 	}
 }
 
-func (session *Session) getUserInput(inputMode userInputMode, prompt string) string {
-	return session.getUserInputP(inputMode, utils.SimplePrompter(prompt))
+func (self *Session) getUserInput(inputMode userInputMode, prompt string) string {
+	return self.getUserInputP(inputMode, utils.SimplePrompter(prompt))
 }
 
-func (session *Session) getRawUserInput(prompt string) string {
-	return session.getUserInput(RawUserInput, prompt)
+func (self *Session) getRawUserInput(prompt string) string {
+	return self.getUserInput(RawUserInput, prompt)
 }
 
-func (session *Session) GetPrompt() string {
-	prompt := session.prompt
-	prompt = strings.Replace(prompt, "%h", strconv.Itoa(session.player.GetHitPoints()), -1)
-	prompt = strings.Replace(prompt, "%H", strconv.Itoa(session.player.GetHealth()), -1)
+func (self *Session) GetPrompt() string {
+	prompt := self.prompt
+	prompt = strings.Replace(prompt, "%h", strconv.Itoa(self.player.GetHitPoints()), -1)
+	prompt = strings.Replace(prompt, "%H", strconv.Itoa(self.player.GetHealth()), -1)
 
-	if len(session.states) > 0 {
-		states := make([]string, len(session.states))
+	if len(self.states) > 0 {
+		states := make([]string, len(self.states))
 
 		i := 0
-		for key, value := range session.states {
+		for key, value := range self.states {
 			states[i] = fmt.Sprintf("%s:%s", key, value)
 			i++
 		}
@@ -249,8 +249,8 @@ func (session *Session) GetPrompt() string {
 	return types.Colorize(types.ColorWhite, prompt)
 }
 
-func (session *Session) currentZone() types.Zone {
-	return model.GetZone(session.room.GetZoneId())
+func (self *Session) currentZone() types.Zone {
+	return model.GetZone(self.room.GetZoneId())
 }
 
 func (self *Session) handleAction(action string, args []string) {
