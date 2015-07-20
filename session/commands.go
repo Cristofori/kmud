@@ -18,7 +18,7 @@ type command struct {
 }
 
 func (self command) Usage(s *Session) {
-	s.printLine(fmt.Sprintf("Usage : %s", self.usage))
+	s.printLine(fmt.Sprintf("Usage: %s", self.usage))
 }
 
 var commands map[string]command
@@ -26,16 +26,28 @@ var commands map[string]command
 func initCommands() {
 	commands = map[string]command{
 		"help": command{
+			usage: "/help <command name>",
 			exec: func(self command, s *Session, args []string) {
-				s.printLine("List of commands:")
-				var names []string
-				for name, command := range commands {
-					if command.alias == "" {
-						names = append(names, name)
+				if len(args) == 0 {
+					s.printLine("List of commands:")
+					var names []string
+					for name, command := range commands {
+						if command.alias == "" {
+							names = append(names, name)
+						}
 					}
+					width, _ := s.user.GetWindowSize()
+					s.printLine(utils.Columnize(names, width))
+				} else if len(args) == 1 {
+					command, found := commands[args[0]]
+					if found {
+						command.Usage(s)
+					} else {
+						s.printError("Command not found")
+					}
+				} else {
+					self.Usage(s)
 				}
-				width, _ := s.user.GetWindowSize()
-				s.printLine(utils.Columnize(names, width))
 			},
 		},
 		"loc": cAlias("location"),
