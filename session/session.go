@@ -285,19 +285,23 @@ func (self *Session) handleAction(action string, args []string) {
 	}
 }
 
-func (self *Session) handleCommand(command string, args []string) {
-	if command[0] == '/' && self.user.IsAdmin() {
-		quickRoom(self, command[1:])
+func (self *Session) handleCommand(name string, args []string) {
+	if name[0] == '/' && self.user.IsAdmin() {
+		quickRoom(self, name[1:])
 		return
 	}
 
-	handler, found := commands[command]
+	if commands == nil {
+		initCommands()
+	}
+
+	command, found := commands[name]
 
 	if found {
-		if handler.alias != "" {
-			handler = commands[handler.alias]
+		if command.alias != "" {
+			command = commands[command.alias]
 		}
-		handler.exec(self, args)
+		command.exec(command, self, args)
 	} else {
 		self.printError("Unrecognized command: %s", command)
 	}

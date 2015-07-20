@@ -399,4 +399,7 @@ func DirectionToExitString(direction types.Direction) string {
 	panic("Unexpected code path")
 }
 
-// vim: nocindent
+// TODO: placeholder
+func Columnize(list []string, width int) string {
+	return "\t" + strings.Join(list, "\r\n\t")
+}
