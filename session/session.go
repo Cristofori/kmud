@@ -286,6 +286,10 @@ func (self *Session) handleAction(action string, args []string) {
 }
 
 func (self *Session) handleCommand(name string, args []string) {
+	if len(name) == 0 {
+		return
+	}
+
 	if name[0] == '/' && self.user.IsAdmin() {
 		quickRoom(self, name[1:])
 		return
@@ -301,7 +305,12 @@ func (self *Session) handleCommand(name string, args []string) {
 		if command.alias != "" {
 			command = commands[command.alias]
 		}
-		command.exec(command, self, args)
+
+		if command.admin && !self.user.IsAdmin() {
+			self.printError("You don't have permission to do that")
+		} else {
+			command.exec(command, self, args)
+		}
 	} else {
 		self.printError("Unrecognized command: %s", name)
 	}
