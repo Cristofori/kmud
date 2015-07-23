@@ -303,6 +303,6 @@ func (self *Session) handleCommand(name string, args []string) {
 		}
 		command.exec(command, self, args)
 	} else {
-		self.printError("Unrecognized command: %s", command)
+		self.printError("Unrecognized command: %s", name)
 	}
 }
