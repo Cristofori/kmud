@@ -450,21 +450,18 @@ func Init(session db.Session, dbName string) {
 	pcs := []*db.PlayerChar{}
 	db.RetrieveObjects(types.PcType, &pcs)
 	for _, pc := range pcs {
-		pc.SetObjectType(types.PcType)
 		ds.Set(pc)
 	}
 
 	npcs := []*db.NonPlayerChar{}
 	db.RetrieveObjects(types.NpcType, &npcs)
 	for _, npc := range npcs {
-		npc.SetObjectType(types.NpcType)
 		ds.Set(npc)
 	}
 
 	spawners := []*db.Spawner{}
 	db.RetrieveObjects(types.SpawnerType, &spawners)
 	for _, spawner := range spawners {
-		spawner.SetObjectType(types.SpawnerType)
 		ds.Set(spawner)
 	}
 

@@ -23,10 +23,6 @@ func NewArea(name string, zone types.Id) *Area {
 	return &area
 }
 
-func (self *Area) GetType() types.ObjectType {
-	return types.AreaType
-}
-
 func (self *Area) GetName() string {
 	self.ReadLock()
 	defer self.ReadUnlock()

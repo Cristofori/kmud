@@ -40,10 +40,6 @@ func NewUser(name string, password string) *User {
 	return &user
 }
 
-func (self *User) GetType() types.ObjectType {
-	return types.UserType
-}
-
 func (self *User) GetName() string {
 	self.ReadLock()
 	defer self.ReadUnlock()

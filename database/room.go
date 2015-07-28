@@ -2,11 +2,12 @@ package database
 
 import (
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
-	"sort"
-	"strings"
 )
 
 type Exit struct {
@@ -42,10 +43,6 @@ func NewRoom(zoneId types.Id, location types.Coordinate) *Room {
 
 	room.initDbObject(&room)
 	return &room
-}
-
-func (self *Room) GetType() types.ObjectType {
-	return types.RoomType
 }
 
 func (self *Room) ToString(players types.PCList, npcs types.NPCList, items types.ItemList, area types.Area) string {

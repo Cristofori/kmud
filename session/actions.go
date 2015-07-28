@@ -17,7 +17,7 @@ type action struct {
 
 var actions = map[string]action{
 	"l": aAlias("look"),
-	"look": action{
+	"look": {
 		exec: func(s *Session, args []string) {
 			if len(args) == 0 {
 				s.printRoom()
@@ -63,7 +63,7 @@ var actions = map[string]action{
 		},
 	},
 	"a": aAlias("attack"),
-	"attack": action{
+	"attack": {
 		exec: func(s *Session, args []string) {
 			charList := model.CharactersIn(s.room.GetId())
 			index := utils.BestMatch(args[0], charList.Names())
@@ -82,7 +82,7 @@ var actions = map[string]action{
 			}
 		},
 	},
-	"talk": action{
+	"talk": {
 		exec: func(s *Session, args []string) {
 			if len(args) != 1 {
 				s.printError("Usage: talk <NPC name>")
@@ -102,7 +102,7 @@ var actions = map[string]action{
 			}
 		},
 	},
-	"drop": action{
+	"drop": {
 		exec: func(s *Session, args []string) {
 			dropUsage := func() {
 				s.printError("Usage: drop <item name>")
@@ -131,7 +131,7 @@ var actions = map[string]action{
 	"take": aAlias("get"),
 	"t":    aAlias("get"),
 	"g":    aAlias("g"),
-	"get": action{
+	"get": {
 		exec: func(s *Session, args []string) {
 			takeUsage := func() {
 				s.printError("Usage: take <item name>")
@@ -159,7 +159,7 @@ var actions = map[string]action{
 	},
 	"i":   aAlias("inventory"),
 	"inv": aAlias("inv"),
-	"inventory": action{
+	"inventory": {
 		exec: func(s *Session, args []string) {
 			itemIds := s.player.GetItems()
 
@@ -176,22 +176,22 @@ var actions = map[string]action{
 			s.printLine("Cash: %v", s.player.GetCash())
 		},
 	},
-	"help": action{
+	"help": {
 		exec: func(s *Session, args []string) {
 			s.printLine("HELP!")
 		},
 	},
-	"ls": action{
+	"ls": {
 		exec: func(s *Session, args []string) {
 			s.printLine("Where do you think you are?!")
 		},
 	},
-	"stop": action{
+	"stop": {
 		exec: func(s *Session, args []string) {
 			combat.StopFight(s.player)
 		},
 	},
-	"go": action{
+	"go": {
 		exec: func(s *Session, args []string) {
 			if len(args) != 1 {
 				s.printError("Usage: go <name>")
@@ -217,7 +217,7 @@ var actions = map[string]action{
 			}
 		},
 	},
-	"lock": action{
+	"lock": {
 		exec: func(s *Session, args []string) {
 			if len(args) != 1 {
 				s.printError("Usage: lock <direction>")
@@ -225,7 +225,7 @@ var actions = map[string]action{
 			handleLock(s, args[0], true)
 		},
 	},
-	"unlock": action{
+	"unlock": {
 		exec: func(s *Session, args []string) {
 			if len(args) != 1 {
 				s.printError("Usage: unlock <direction>")

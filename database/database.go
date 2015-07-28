@@ -84,8 +84,29 @@ func getCollection(collection collectionName) Collection {
 	return _session.DB(_dbName).C(string(collection))
 }
 
-func getCollectionOfObject(obj types.Identifiable) Collection {
-	return getCollectionFromType(obj.GetType())
+func getCollectionOfObject(obj types.Object) Collection {
+	switch obj.(type) {
+	case types.PC:
+		return getCollection(cPlayerChars)
+	case types.NPC:
+		return getCollection(cNonPlayerChars)
+	case types.Spawner:
+		return getCollection(cSpawners)
+	case types.User:
+		return getCollection(cUsers)
+	case types.Zone:
+		return getCollection(cZones)
+	case types.Area:
+		return getCollection(cAreas)
+	case types.Room:
+		return getCollection(cRooms)
+	case types.Item:
+		return getCollection(cItems)
+	case types.Skill:
+		return getCollection(cSkills)
+	default:
+		panic(fmt.Sprintf("unrecognized object in getCollectionOfObject: %v", obj))
+	}
 }
 
 func getCollectionFromType(t types.ObjectType) Collection {
@@ -203,7 +224,7 @@ func commitObject(id types.Id) {
 		return
 	}
 
-	c := getCollectionFromType(object.GetType())
+	c := getCollectionOfObject(object)
 
 	object.ReadLock()
 	err := c.UpsertId(object.GetId(), object)

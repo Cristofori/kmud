@@ -1,9 +1,5 @@
 package database
 
-import (
-	"github.com/Cristofori/kmud/types"
-)
-
 type Skill struct {
 	DbObject `bson:",inline"`
 
@@ -19,10 +15,6 @@ func NewSkill(name string, damage int) *Skill {
 
 	skill.initDbObject(&skill)
 	return &skill
-}
-
-func (self *Skill) GetType() types.ObjectType {
-	return types.SkillType
 }
 
 func (self *Skill) GetName() string {

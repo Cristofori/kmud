@@ -21,10 +21,6 @@ func (self MockIdentifiable) GetId() Id {
 	return self.Id
 }
 
-func (self MockIdentifiable) GetType() ObjectType {
-	return self.Type
-}
-
 type MockNameable struct {
 	Name string
 }

@@ -27,7 +27,6 @@ const (
 
 type Identifiable interface {
 	GetId() Id
-	GetType() ObjectType
 }
 
 type ReadLockable interface {

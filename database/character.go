@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
@@ -18,8 +19,6 @@ type Character struct {
 
 	Inventory map[string]bool
 	Skills    map[string]bool
-
-	objType types.ObjectType
 }
 
 type PlayerChar struct {
@@ -83,11 +82,6 @@ func (self *Character) initCharacter(name string, objType types.ObjectType, room
 	self.Health = 100
 	self.HitPoints = 100
 	self.Name = utils.FormatName(name)
-	self.objType = objType
-}
-
-func (self *Character) GetType() types.ObjectType {
-	return self.objType
 }
 
 func (self *Character) GetName() string {
@@ -104,11 +98,6 @@ func (self *Character) SetName(name string) {
 		self.WriteUnlock()
 		self.modified()
 	}
-}
-
-// Used when loading existing characters from the DB
-func (self *Character) SetObjectType(t types.ObjectType) {
-	self.objType = t
 }
 
 func (self *PlayerChar) SetOnline(online bool) {

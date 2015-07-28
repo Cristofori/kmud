@@ -1,9 +1,6 @@
 package database
 
-import (
-	"github.com/Cristofori/kmud/types"
-	"github.com/Cristofori/kmud/utils"
-)
+import "github.com/Cristofori/kmud/utils"
 
 type Item struct {
 	DbObject `bson:",inline"`
@@ -16,10 +13,6 @@ func NewItem(name string) *Item {
 	item.Name = utils.FormatName(name)
 	item.initDbObject(&item)
 	return &item
-}
-
-func (self *Item) GetType() types.ObjectType {
-	return types.ItemType
 }
 
 func (self *Item) GetName() string {

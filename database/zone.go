@@ -1,9 +1,6 @@
 package database
 
-import (
-	"github.com/Cristofori/kmud/types"
-	"github.com/Cristofori/kmud/utils"
-)
+import "github.com/Cristofori/kmud/utils"
 
 type Zone struct {
 	DbObject `bson:",inline"`
@@ -18,10 +15,6 @@ func NewZone(name string) *Zone {
 
 	zone.initDbObject(&zone)
 	return &zone
-}
-
-func (self *Zone) GetType() types.ObjectType {
-	return types.ZoneType
 }
 
 func (self *Zone) GetName() string {

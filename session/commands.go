@@ -25,7 +25,7 @@ var commands map[string]command
 
 func initCommands() {
 	commands = map[string]command{
-		"help": command{
+		"help": {
 			usage: "/help <command name>",
 			exec: func(self command, s *Session, args []string) {
 				if len(args) == 0 {
@@ -51,13 +51,13 @@ func initCommands() {
 			},
 		},
 		"loc": cAlias("location"),
-		"location": command{
+		"location": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
 				s.printLine("%v", s.room.GetLocation())
 			},
 		},
-		"room": command{
+		"room": {
 			admin: true,
 			exec: func(self command, s *Session, args []string) {
 				for {
@@ -142,7 +142,7 @@ func initCommands() {
 				}
 			},
 		},
-		"map": command{
+		"map": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
 				zoneRooms := model.GetRoomsInZone(s.currentZone())
@@ -185,7 +185,7 @@ func initCommands() {
 				s.printLine(utils.TrimEmptyRows(builder.toString()))
 			},
 		},
-		"zone": command{
+		"zone": {
 			admin: true,
 			usage: "/zone [list|rename <name>|new <name>]",
 			exec: func(self command, s *Session, args []string) {
@@ -231,7 +231,7 @@ func initCommands() {
 			},
 		},
 		"b": cAlias("broadcast"),
-		"broadcast": command{
+		"broadcast": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
 				if len(args) == 0 {
@@ -242,7 +242,7 @@ func initCommands() {
 			},
 		},
 		"s": cAlias("say"),
-		"say": command{
+		"say": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
 				if len(args) == 0 {
@@ -252,7 +252,7 @@ func initCommands() {
 				}
 			},
 		},
-		"me": command{
+		"me": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
 				model.Emote(s.player, strings.Join(args, " "))
@@ -260,13 +260,13 @@ func initCommands() {
 		},
 		"w":    cAlias("whiser"),
 		"tell": cAlias("whisper"),
-		"whisper": command{
+		"whisper": {
 			admin: false,
 			usage: "/whisper <player> <message>",
 			exec:  whisper,
 		},
 		"tp": cAlias("teleport"),
-		"teleport": command{
+		"teleport": {
 			admin: true,
 			usage: "/teleport [<zone>|<X> <Y> <Z>]",
 			exec: func(self command, s *Session, args []string) {
@@ -334,7 +334,7 @@ func initCommands() {
 				}
 			},
 		},
-		"who": command{
+		"who": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
 				chars := model.GetOnlinePlayerCharacters()
@@ -349,7 +349,7 @@ func initCommands() {
 				s.printLine("")
 			},
 		},
-		"colors": command{
+		"colors": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
 				s.printLineColor(types.ColorNormal, "Normal")
@@ -371,7 +371,7 @@ func initCommands() {
 			},
 		},
 		"cm": cAlias("colormode"),
-		"colormode": command{
+		"colormode": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
 				if len(args) == 0 {
@@ -405,7 +405,7 @@ func initCommands() {
 			},
 		},
 		"dr": cAlias("destroyroom"),
-		"destroyroom": command{
+		"destroyroom": {
 			admin: true,
 			usage: "/destroyroom <direction>",
 			exec: func(self command, s *Session, args []string) {
@@ -429,7 +429,7 @@ func initCommands() {
 				}
 			},
 		},
-		"npc": command{
+		"npc": {
 			admin: true,
 			exec: func(self command, s *Session, args []string) {
 				for {
@@ -479,7 +479,7 @@ func initCommands() {
 				s.printRoom()
 			},
 		},
-		"create": command{
+		"create": {
 			admin: true,
 			usage: "Usage: /create <item name>",
 			exec: func(self command, s *Session, args []string) {
@@ -493,7 +493,7 @@ func initCommands() {
 				s.printLine("Item created")
 			},
 		},
-		"destroyitem": command{
+		"destroyitem": {
 			admin: true,
 			usage: "/destroyitem <item name>",
 			exec: func(self command, s *Session, args []string) {
@@ -517,13 +517,13 @@ func initCommands() {
 				s.printError("Item not found")
 			},
 		},
-		"roomid": command{
+		"roomid": {
 			admin: true,
 			exec: func(self command, s *Session, args []string) {
 				s.printLine("Room ID: %v", s.room.GetId())
 			},
 		},
-		"cash": command{
+		"cash": {
 			admin: true,
 			usage: "/cash give <amount>",
 			exec: func(self command, s *Session, args []string) {
@@ -549,7 +549,7 @@ func initCommands() {
 			},
 		},
 		"ws": cAlias("windowsize"),
-		"windowsize": command{
+		"windowsize": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
 				width, height := s.user.GetWindowSize()
@@ -570,13 +570,13 @@ func initCommands() {
 			},
 		},
 		"tt": cAlias("terminaltype"),
-		"terminaltype": command{
+		"terminaltype": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
 				s.printLine("Terminal type: %s", s.user.GetTerminalType())
 			},
 		},
-		"silent": command{
+		"silent": {
 			admin: false,
 			usage: "/silent [on|off]",
 			exec: func(self command, s *Session, args []string) {
@@ -594,7 +594,7 @@ func initCommands() {
 			},
 		},
 		"r": cAlias("reply"),
-		"reply": command{
+		"reply": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
 				targetChar := model.GetPlayerCharacter(s.replyId)
@@ -619,7 +619,7 @@ func initCommands() {
 				}
 			},
 		},
-		"area": command{
+		"area": {
 			admin: true,
 			exec: func(self command, s *Session, args []string) {
 				for {
@@ -748,7 +748,7 @@ func initCommands() {
 				}
 			},
 		},
-		"link": command{
+		"link": {
 			admin: true,
 			usage: "Usage: /link <name> [single|double*] to start, /link to finish, /link remove <name> [single|double*], /link rename <old name> <new name>, /link cancel",
 			exec: func(self command, s *Session, args []string) {
@@ -837,7 +837,7 @@ func initCommands() {
 				}
 			},
 		},
-		"kill": command{
+		"kill": {
 			admin: true,
 			usage: "/kill [npc name]",
 			exec: func(self command, s *Session, args []string) {
@@ -860,7 +860,7 @@ func initCommands() {
 				}
 			},
 		},
-		"inspect": command{
+		"inspect": {
 			admin: true,
 			usage: "/inspect [name]",
 			exec: func(self command, s *Session, args []string) {
@@ -884,7 +884,7 @@ func initCommands() {
 				}
 			},
 		},
-		"skills": command{
+		"skills": {
 			admin: true,
 			exec: func(self command, s *Session, args []string) {
 			Loop:
