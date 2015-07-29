@@ -37,7 +37,7 @@ type Iterator interface {
 	All(interface{}) error
 }
 
-var modifiedObjects map[types.Id]bool
+var modifiedObjects = map[types.Id]bool{}
 var modifiedObjectChannel chan types.Id
 
 var _session Session
@@ -47,7 +47,6 @@ func Init(session Session, dbName string) {
 	_session = session
 	_dbName = dbName
 
-	modifiedObjects = make(map[types.Id]bool)
 	modifiedObjectChannel = make(chan types.Id, 1)
 
 	watchModifiedObjects()
@@ -74,6 +73,7 @@ func watchModifiedObjects() {
 				for id := range modifiedObjects {
 					go commitObject(id)
 				}
+				modifiedObjects = map[types.Id]bool{}
 				startTimeout()
 			}
 		}
