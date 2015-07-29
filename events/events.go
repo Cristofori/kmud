@@ -29,7 +29,7 @@ type broadcast struct {
 }
 
 func Register(receiver types.Character) chan Event {
-	listener := eventListener{Character: receiver, Channel: make(chan Event, 20)}
+	listener := eventListener{Character: receiver, Channel: make(chan Event)}
 	eventMessages <- register(listener)
 	return listener.Channel
 }
@@ -65,12 +65,9 @@ func StartEvents() {
 			case broadcast:
 				for char, channel := range _listeners {
 					if m.Event.IsFor(char) {
-						if len(channel) == cap(channel) {
-							// TODO - Kill the session rather than the whole server
-							panic(fmt.Sprintf("Buffer full! %s %v", char.GetName(), m.Event))
-						}
-
-						channel <- m.Event
+						go func(c chan Event) {
+							c <- m.Event
+						}(channel)
 					}
 				}
 			default:
