@@ -217,6 +217,7 @@ func CreateNpc(name string, roomId types.Id, spawnerId types.Id) types.NPC {
 
 // DeleteCharacter removes the character associated with the given id from the model and from the database
 func DeleteCharacter(charId types.Id) {
+	// TODO: Delete (or drop) inventory
 	db.DeleteObject(charId)
 }
 
@@ -250,7 +251,8 @@ func GetRooms() types.RoomList {
 
 // GetRoomsInZone returns a slice containing all of the rooms that belong to
 // the given zone
-func GetRoomsInZone(zone types.Zone) types.RoomList {
+func GetRoomsInZone(zoneId types.Id) types.RoomList {
+	zone := GetZone(zoneId)
 	ids := db.Find(types.RoomType, bson.M{"zoneid": zone.GetId()})
 	rooms := make(types.RoomList, len(ids))
 
@@ -303,7 +305,12 @@ func CreateZone(name string) (types.Zone, error) {
 
 // Removes the given Zone from the model and the database
 func DeleteZone(zoneId types.Id) {
-	// TODO - Delete rooms in zone
+	rooms := GetRoomsInZone(zoneId)
+
+	for _, room := range rooms {
+		DeleteRoom(room)
+	}
+
 	db.DeleteObject(zoneId)
 }
 
@@ -635,7 +642,7 @@ func ZoneCorners(zone types.Zone) (types.Coordinate, types.Coordinate) {
 	var high int
 	var low int
 
-	rooms := GetRoomsInZone(zone)
+	rooms := GetRoomsInZone(zone.GetId())
 
 	for _, room := range rooms {
 		top = room.GetLocation().Y

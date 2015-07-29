@@ -145,7 +145,7 @@ func initCommands() {
 		"map": {
 			admin: false,
 			exec: func(self command, s *Session, args []string) {
-				zoneRooms := model.GetRoomsInZone(s.currentZone())
+				zoneRooms := model.GetRoomsInZone(s.currentZone().GetId())
 				roomsByLocation := map[types.Coordinate]types.Room{}
 
 				for _, room := range zoneRooms {
@@ -187,7 +187,7 @@ func initCommands() {
 		},
 		"zone": {
 			admin: true,
-			usage: "/zone [list|rename <name>|new <name>]",
+			usage: "/zone [list|rename <name>|new <name>|delete <name>]",
 			exec: func(self command, s *Session, args []string) {
 				if len(args) == 0 {
 					s.printLine("Current zone: " + types.Colorize(types.ColorBlue, s.currentZone().GetName()))
@@ -203,7 +203,7 @@ func initCommands() {
 					}
 				} else if len(args) == 2 {
 					if args[0] == "rename" {
-						zone := model.GetZoneByName(args[0])
+						zone := model.GetZoneByName(args[1])
 
 						if zone != nil {
 							s.printError("A zone with that name already exists")
@@ -226,7 +226,24 @@ func initCommands() {
 
 						s.room = newRoom
 						s.printRoom()
+					} else if args[0] == "delete" {
+						zone := model.GetZoneByName(args[1])
+
+						if zone != nil {
+							if zone == s.currentZone() {
+								s.printError("You can't delete the zone you are in")
+							} else {
+								model.DeleteZone(zone.GetId())
+								s.printLine("Zone deleted")
+							}
+						} else {
+							s.printError("Zone not found")
+						}
+					} else {
+						self.Usage(s)
 					}
+				} else {
+					self.Usage(s)
 				}
 			},
 		},
@@ -289,7 +306,7 @@ func initCommands() {
 						return
 					}
 
-					zoneRooms := model.GetRoomsInZone(newZone)
+					zoneRooms := model.GetRoomsInZone(newZone.GetId())
 
 					if len(zoneRooms) > 0 {
 						r := zoneRooms[0]
