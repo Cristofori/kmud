@@ -104,6 +104,8 @@ func getCollectionOfObject(obj types.Object) Collection {
 		return getCollection(cItems)
 	case types.Skill:
 		return getCollection(cSkills)
+	case types.Shop:
+		return getCollection(cShops)
 	default:
 		panic(fmt.Sprintf("unrecognized object in getCollectionOfObject: %v", obj))
 	}
@@ -129,6 +131,8 @@ func getCollectionFromType(t types.ObjectType) Collection {
 		return getCollection(cItems)
 	case types.SkillType:
 		return getCollection(cSkills)
+	case types.ShopType:
+		return getCollection(cShops)
 	default:
 		panic("database.getCollectionFromType: Unhandled object type")
 	}
@@ -147,6 +151,7 @@ const (
 	cItems          = collectionName("items")
 	cAreas          = collectionName("areas")
 	cSkills         = collectionName("skills")
+	cShops          = collectionName("shops")
 )
 
 // Field names

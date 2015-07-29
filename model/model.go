@@ -494,6 +494,12 @@ func Init(session db.Session, dbName string) {
 	for _, skill := range skills {
 		ds.Set(skill)
 	}
+
+	shops := []*db.Shop{}
+	db.RetrieveObjects(types.ShopType, &shops)
+	for _, shop := range shops {
+		ds.Set(shop)
+	}
 }
 
 // MoveCharacter attempts to move the character to the given coordinates

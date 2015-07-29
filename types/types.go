@@ -23,6 +23,7 @@ const (
 	RoomType    ObjectType = iota
 	ItemType    ObjectType = iota
 	SkillType   ObjectType = iota
+	ShopType    ObjectType = iota
 )
 
 type Identifiable interface {
@@ -237,3 +238,7 @@ type Skill interface {
 }
 
 type SkillList []Skill
+
+type Shop interface {
+	Object
+}
