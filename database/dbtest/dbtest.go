@@ -35,6 +35,10 @@ func (mc TestCollection) Find(selector interface{}) database.Query {
 	return &TestQuery{}
 }
 
+func (mc TestCollection) FindId(selector interface{}) database.Query {
+	return &TestQuery{}
+}
+
 func (mc TestCollection) RemoveId(id interface{}) error {
 	return nil
 }
