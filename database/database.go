@@ -20,6 +20,7 @@ type Database interface {
 
 type Collection interface {
 	Find(interface{}) Query
+	FindId(interface{}) Query
 	RemoveId(interface{}) error
 	Remove(interface{}) error
 	DropCollection() error
@@ -171,6 +172,18 @@ const (
 	PULL = "$pull"
 )
 
+func Retrieve(t types.ObjectType, id types.Id, object types.Object) types.Object {
+	c := getCollectionFromType(t)
+	err := c.FindId(id).One(object)
+	return object
+
+	if err == nil {
+		return object
+	}
+
+	return nil
+}
+
 func RetrieveObjects(t types.ObjectType, objects interface{}) {
 	c := getCollectionFromType(t)
 	err := c.Find(nil).Iter().All(objects)
@@ -241,5 +254,3 @@ func commitObject(id types.Id) {
 
 	utils.HandleError(err)
 }
-
-// vim: nocindent

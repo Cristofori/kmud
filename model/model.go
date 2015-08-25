@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	db "github.com/Cristofori/kmud/database"
-	ds "github.com/Cristofori/kmud/datastore"
+	"github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
@@ -36,7 +36,7 @@ func GetUsers() types.UserList {
 	users := make(types.UserList, len(ids))
 
 	for i, id := range ids {
-		users[i] = ds.Get(id).(types.User)
+		users[i] = GetUser(id)
 	}
 
 	return users
@@ -47,7 +47,7 @@ func GetUsers() types.UserList {
 func GetUserByName(username string) types.User {
 	id := db.FindOne(types.UserType, bson.M{"name": utils.FormatName(username)})
 	if id != nil {
-		return ds.Get(id).(types.User)
+		return GetUser(id)
 	}
 	return nil
 }
@@ -63,11 +63,11 @@ func DeleteUser(userId types.Id) {
 
 // GetPlayerCharacter returns the Character object associated the given Id
 func GetPlayerCharacter(id types.Id) types.PC {
-	return ds.Get(id).(types.PC)
+	return fetch(id, types.PcType).(types.PC)
 }
 
 func GetNpc(id types.Id) types.NPC {
-	return ds.Get(id).(types.NPC)
+	return fetch(id, types.NpcType).(types.NPC)
 }
 
 func GetCharacterByName(name string) types.Character {
@@ -91,7 +91,7 @@ func GetCharacterByName(name string) types.Character {
 func GetPlayerCharacterByName(name string) types.PC {
 	id := db.FindOne(types.PcType, bson.M{"name": utils.FormatName(name)})
 	if id != nil {
-		return ds.Get(id).(types.PC)
+		return GetPlayerCharacter(id)
 	}
 	return nil
 }
@@ -99,7 +99,7 @@ func GetPlayerCharacterByName(name string) types.PC {
 func GetNpcByName(name string) types.NPC {
 	id := db.FindOne(types.NpcType, bson.M{"name": utils.FormatName(name)})
 	if id != nil {
-		return ds.Get(id).(types.NPC)
+		return GetNpc(id)
 	}
 	return nil
 }
@@ -109,7 +109,7 @@ func GetNpcs() types.NPCList {
 	npcs := make(types.NPCList, len(ids))
 
 	for i, id := range ids {
-		npcs[i] = ds.Get(id).(types.NPC)
+		npcs[i] = GetNpc(id)
 	}
 
 	return npcs
@@ -122,7 +122,7 @@ func GetUserCharacters(userId types.Id) types.PCList {
 	pcs := make(types.PCList, len(ids))
 
 	for i, id := range ids {
-		pcs[i] = ds.Get(id).(types.PC)
+		pcs[i] = GetPlayerCharacter(id)
 	}
 
 	return pcs
@@ -146,7 +146,7 @@ func PlayerCharactersIn(roomId types.Id, except types.Id) types.PCList {
 	var pcs types.PCList
 
 	for _, id := range ids {
-		pc := ds.Get(id).(types.PC)
+		pc := GetPlayerCharacter(id)
 
 		if pc.IsOnline() && id != except {
 			pcs = append(pcs, pc)
@@ -162,7 +162,7 @@ func NpcsIn(roomId types.Id) types.NPCList {
 	npcs := make(types.NPCList, len(ids))
 
 	for i, id := range ids {
-		npcs[i] = ds.Get(id).(types.NPC)
+		npcs[i] = GetNpc(id)
 	}
 
 	return npcs
@@ -173,7 +173,7 @@ func GetOnlinePlayerCharacters() []types.PC {
 	var pcs []types.PC
 
 	for _, id := range db.FindAll(types.PcType) {
-		pc := ds.Get(id).(types.PC)
+		pc := GetPlayerCharacter(id)
 		if pc.IsOnline() {
 			pcs = append(pcs, pc)
 		}
@@ -234,7 +234,7 @@ func CreateRoom(zone types.Zone, location types.Coordinate) (types.Room, error) 
 
 // GetRoom returns the room object associated with the given id
 func GetRoom(id types.Id) types.Room {
-	return ds.Get(id).(types.Room)
+	return fetch(id, types.RoomType).(types.Room)
 }
 
 // GetRooms returns a list of all of the rooms in the entire model
@@ -243,7 +243,7 @@ func GetRooms() types.RoomList {
 	rooms := make(types.RoomList, len(ids))
 
 	for i, id := range ids {
-		rooms[i] = ds.Get(id).(types.Room)
+		rooms[i] = GetRoom(id)
 	}
 
 	return rooms
@@ -257,7 +257,7 @@ func GetRoomsInZone(zoneId types.Id) types.RoomList {
 	rooms := make(types.RoomList, len(ids))
 
 	for i, id := range ids {
-		rooms[i] = ds.Get(id).(types.Room)
+		rooms[i] = GetRoom(id)
 	}
 
 	return rooms
@@ -271,14 +271,14 @@ func GetRoomByLocation(coordinate types.Coordinate, zoneId types.Id) types.Room 
 		"location": coordinate,
 	})
 	if id != nil {
-		return ds.Get(id).(types.Room)
+		return GetRoom(id)
 	}
 	return nil
 }
 
 // GetZone returns the zone object associated with the given id
-func GetZone(zoneId types.Id) types.Zone {
-	return ds.Get(zoneId).(types.Zone)
+func GetZone(id types.Id) types.Zone {
+	return fetch(id, types.ZoneType).(types.Zone)
 }
 
 // GetZones returns all of the zones in the model
@@ -287,7 +287,7 @@ func GetZones() types.ZoneList {
 	zones := make(types.ZoneList, len(ids))
 
 	for i, id := range ids {
-		zones[i] = ds.Get(id).(types.Zone)
+		zones[i] = GetZone(id)
 	}
 
 	return zones
@@ -317,7 +317,7 @@ func DeleteZone(zoneId types.Id) {
 // GetZoneByName name searches for a zone with the given name
 func GetZoneByName(name string) types.Zone {
 	for _, id := range db.Find(types.ZoneType, bson.M{"name": utils.FormatName(name)}) {
-		return ds.Get(id).(types.Zone)
+		return GetZone(id)
 	}
 
 	return nil
@@ -327,18 +327,14 @@ func GetAreas(zone types.Zone) types.AreaList {
 	ids := db.FindAll(types.AreaType)
 	areas := make(types.AreaList, len(ids))
 	for i, id := range ids {
-		areas[i] = ds.Get(id).(types.Area)
+		areas[i] = GetArea(id)
 	}
 
 	return areas
 }
 
-func GetArea(areaId types.Id) types.Area {
-	if ds.ContainsId(areaId) {
-		return ds.Get(areaId).(types.Area)
-	}
-
-	return nil
+func GetArea(id types.Id) types.Area {
+	return fetch(id, types.AreaType).(types.Area)
 }
 
 func CreateArea(name string, zone types.Zone) (types.Area, error) {
@@ -352,7 +348,7 @@ func CreateArea(name string, zone types.Zone) (types.Area, error) {
 func GetAreaByName(name string) types.Area {
 	id := db.FindOne(types.AreaType, bson.M{"name": utils.FormatName(name)})
 	if id != nil {
-		return ds.Get(id).(types.Area)
+		return GetArea(id)
 	}
 	return nil
 }
@@ -366,7 +362,7 @@ func GetAreaRooms(areaId types.Id) types.RoomList {
 	ids := db.Find(types.RoomType, bson.M{"areaid": areaId})
 	rooms := make(types.RoomList, len(ids))
 	for i, id := range ids {
-		rooms[i] = ds.Get(id).(types.Room)
+		rooms[i] = GetRoom(id)
 	}
 	return rooms
 
@@ -403,7 +399,7 @@ func DeleteRoom(room types.Room) {
 
 // GetUser returns the User object associated with the given id
 func GetUser(id types.Id) types.User {
-	return ds.Get(id).(types.User)
+	return fetch(id, types.UserType).(types.User)
 }
 
 // CreateItem creates an item object in the database with the given name and
@@ -415,7 +411,7 @@ func CreateItem(name string) types.Item {
 
 // GetItem returns the Item object associated the given id
 func GetItem(id types.Id) types.Item {
-	return ds.Get(id).(types.Item)
+	return fetch(id, types.ItemType).(types.Item)
 }
 
 // GetItems returns the Items object associated the given ids
@@ -442,71 +438,6 @@ func DeleteItemId(itemId types.Id) {
 // model and from the database
 func DeleteItem(itemId types.Id) {
 	db.DeleteObject(itemId)
-}
-
-func Init(session db.Session, dbName string) {
-	ds.Init()
-	db.Init(session, dbName)
-
-	users := []*db.User{}
-	db.RetrieveObjects(types.UserType, &users)
-	for _, user := range users {
-		ds.Set(user)
-	}
-
-	pcs := []*db.PlayerChar{}
-	db.RetrieveObjects(types.PcType, &pcs)
-	for _, pc := range pcs {
-		ds.Set(pc)
-	}
-
-	npcs := []*db.NonPlayerChar{}
-	db.RetrieveObjects(types.NpcType, &npcs)
-	for _, npc := range npcs {
-		ds.Set(npc)
-	}
-
-	spawners := []*db.Spawner{}
-	db.RetrieveObjects(types.SpawnerType, &spawners)
-	for _, spawner := range spawners {
-		ds.Set(spawner)
-	}
-
-	zones := []*db.Zone{}
-	db.RetrieveObjects(types.ZoneType, &zones)
-	for _, zone := range zones {
-		ds.Set(zone)
-	}
-
-	areas := []*db.Area{}
-	db.RetrieveObjects(types.AreaType, &areas)
-	for _, area := range areas {
-		ds.Set(area)
-	}
-
-	rooms := []*db.Room{}
-	db.RetrieveObjects(types.RoomType, &rooms)
-	for _, room := range rooms {
-		ds.Set(room)
-	}
-
-	items := []*db.Item{}
-	db.RetrieveObjects(types.ItemType, &items)
-	for _, item := range items {
-		ds.Set(item)
-	}
-
-	skills := []*db.Skill{}
-	db.RetrieveObjects(types.SkillType, &skills)
-	for _, skill := range skills {
-		ds.Set(skill)
-	}
-
-	shops := []*db.Shop{}
-	db.RetrieveObjects(types.ShopType, &shops)
-	for _, shop := range shops {
-		ds.Set(shop)
-	}
 }
 
 // MoveCharacter attempts to move the character to the given coordinates
@@ -706,21 +637,21 @@ func GetSpawners() types.SpawnerList {
 	spawners := make(types.SpawnerList, len(ids))
 
 	for i, id := range ids {
-		spawners[i] = ds.Get(id).(types.Spawner)
+		spawners[i] = GetSpawner(id)
 	}
 
 	return spawners
 }
 
 func GetSpawner(id types.Id) types.Spawner {
-	return ds.Get(id).(types.Spawner)
+	return fetch(id, types.SpawnerType).(types.Spawner)
 }
 
 func GetAreaSpawners(areaId types.Id) types.SpawnerList {
 	ids := db.Find(types.SpawnerType, bson.M{"areaid": areaId})
 	spawners := make(types.SpawnerList, len(ids))
 	for i, id := range ids {
-		spawners[i] = ds.Get(id).(types.Spawner)
+		spawners[i] = GetSpawner(id)
 	}
 	return spawners
 }
@@ -729,20 +660,20 @@ func GetSpawnerNpcs(spawnerId types.Id) types.NPCList {
 	ids := db.Find(types.NpcType, bson.M{"spawnerid": spawnerId})
 	npcs := make(types.NPCList, len(ids))
 	for i, id := range ids {
-		npcs[i] = ds.Get(id).(types.NPC)
+		npcs[i] = GetNpc(id)
 	}
 	return npcs
 }
 
 func GetSkill(id types.Id) types.Skill {
-	return ds.Get(id).(types.Skill)
+	return fetch(id, types.SkillType).(types.Skill)
 }
 
 func GetSkills() types.SkillList {
 	ids := db.FindAll(types.SkillType)
 	skills := make(types.SkillList, len(ids))
 	for i, id := range ids {
-		skills[i] = ds.Get(id).(types.Skill)
+		skills[i] = GetSkill(id)
 	}
 	return skills
 }
@@ -755,4 +686,43 @@ func DeleteSkill(id types.Id) {
 	db.DeleteObject(id)
 }
 
-// vim: nocindent
+func fetch(id types.Id, typ types.ObjectType) types.Object {
+	if datastore.ContainsId(id) {
+		return datastore.Get(id)
+	}
+
+	var object types.Object
+
+	switch typ {
+	case types.PcType:
+		object = &db.PlayerChar{}
+	case types.NpcType:
+		object = &db.NonPlayerChar{}
+	case types.SpawnerType:
+		object = &db.Spawner{}
+	case types.UserType:
+		object = &db.User{}
+	case types.ZoneType:
+		object = &db.Zone{}
+	case types.AreaType:
+		object = &db.Area{}
+	case types.RoomType:
+		object = &db.Room{}
+	case types.ItemType:
+		object = &db.Item{}
+	case types.SkillType:
+		object = &db.Skill{}
+	case types.ShopType:
+		object = &db.Shop{}
+	default:
+		panic(fmt.Sprintf("unrecognized object type: %v", typ))
+	}
+
+	object = db.Retrieve(typ, id, object)
+
+	if object != nil {
+		datastore.Set(object)
+	}
+
+	return object
+}

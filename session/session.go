@@ -139,7 +139,11 @@ func (self *Session) printError(err string, a ...interface{}) {
 func (self *Session) printRoom() {
 	playerList := model.PlayerCharactersIn(self.room.GetId(), self.player.GetId())
 	npcList := model.NpcsIn(self.room.GetId())
-	area := model.GetArea(self.room.GetAreaId())
+	var area types.Area
+
+	if self.room.GetAreaId() != nil {
+		area = model.GetArea(self.room.GetAreaId())
+	}
 
 	self.printLine(self.room.ToString(playerList, npcList,
 		model.GetItems(self.room.GetItems()), area))

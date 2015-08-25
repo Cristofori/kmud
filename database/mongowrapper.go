@@ -32,6 +32,10 @@ type MongoCollection struct {
 	collection *mgo.Collection
 }
 
+func (mc MongoCollection) FindId(id interface{}) Query {
+	return &MongoQuery{query: mc.collection.FindId(id)}
+}
+
 func (mc MongoCollection) Find(selector interface{}) Query {
 	return &MongoQuery{query: mc.collection.Find(selector)}
 }
