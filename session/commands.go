@@ -601,16 +601,20 @@ func initCommands() {
 			admin: false,
 			usage: "/silent [on|off]",
 			exec: func(self *command, s *Session, args []string) {
-				if len(args) != 1 {
+				if len(args) > 1 {
 					self.Usage(s)
+				} else if len(args) == 0 {
+					s.silentMode = !s.silentMode
 				} else if args[0] == "on" {
 					s.silentMode = true
-					s.printLine("Silent mode ON")
 				} else if args[0] == "off" {
 					s.silentMode = false
-					s.printLine("Silent mode OFF")
+				}
+
+				if s.silentMode {
+					s.printLine("Silent mode on")
 				} else {
-					self.Usage(s)
+					s.printLine("Silent mode off")
 				}
 			},
 		},
