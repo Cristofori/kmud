@@ -932,23 +932,18 @@ func initCommands() {
 					case "n":
 						for {
 							name := s.getCleanUserInput("Skill name: ")
-							command := findCommand(name)
 
 							if name == "" {
 								break
 							}
 
-							if command != nil {
-								s.printError("Skill name conflicts with a command with the same name")
-							} else {
-								skill := model.GetSkillByName(name)
+							skill := model.GetSkillByName(name)
 
-								if skill != nil {
-									s.printError("A skill with that name already exists")
-								} else {
-									model.CreateSkill(name)
-									break
-								}
+							if skill != nil {
+								s.printError("A skill with that name already exists")
+							} else {
+								model.CreateSkill(name)
+								break
 							}
 						}
 					default:

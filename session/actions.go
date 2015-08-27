@@ -82,6 +82,31 @@ var actions = map[string]action{
 			}
 		},
 	},
+	"c": aAlias("cast"),
+	"cast": {
+		exec: func(s *Session, args []string) {
+			var target types.Character
+
+			if len(args) == 1 {
+				target = s.player
+			} else if len(args) == 2 {
+				charList := model.CharactersIn(s.room.GetId())
+				index := utils.BestMatch(args[0], charList.Names())
+
+				if index == -1 {
+					s.printError("Target not found")
+				} else if index == -2 {
+					s.printError("Which one do you mean?")
+				} else {
+					target = charList[index]
+				}
+			}
+
+			if target != nil {
+				s.printLine("Casting on", target.GetName())
+			}
+		},
+	},
 	"talk": {
 		exec: func(s *Session, args []string) {
 			if len(args) != 1 {
