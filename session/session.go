@@ -32,8 +32,8 @@ type Session struct {
 	eventChannel     chan events.Event
 
 	silentMode bool
-
-	replyId types.Id
+	replyId    types.Id
+	lastInput  string
 
 	// logger *log.Logger
 }
@@ -115,6 +115,12 @@ func (self *Session) Exec() {
 		if input == "" || input == "logout" || input == "quit" {
 			return
 		}
+
+		if input == "." {
+			input = self.lastInput
+		}
+
+		self.lastInput = input
 
 		if strings.HasPrefix(input, "/") {
 			self.handleCommand(utils.Argify(input[1:]))
