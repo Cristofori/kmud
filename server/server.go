@@ -447,8 +447,6 @@ func (self *Server) Start() {
 
 		model.CreateRoom(zone, types.Coordinate{X: 0, Y: 0, Z: 0})
 	}
-
-	fmt.Println("Server listening on port 8945")
 }
 
 func (self *Server) Listen() {

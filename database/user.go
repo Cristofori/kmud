@@ -26,18 +26,17 @@ type User struct {
 }
 
 func NewUser(name string, password string) *User {
-	var user User
+	user := &User{
+		Name:         utils.FormatName(name),
+		Password:     hash(password),
+		ColorMode:    types.ColorModeNone,
+		online:       false,
+		windowWidth:  80,
+		windowHeight: 40,
+	}
 
-	user.Name = utils.FormatName(name)
-	user.Password = hash(password)
-	user.ColorMode = types.ColorModeNone
-	user.online = false
-
-	user.windowWidth = 80
-	user.windowHeight = 40
-
-	user.initDbObject(&user)
-	return &user
+	user.init(user)
+	return user
 }
 
 func (self *User) GetName() string {

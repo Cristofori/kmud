@@ -11,19 +11,19 @@ type Id interface {
 	Hex() string
 }
 
-type ObjectType int
+type ObjectType string
 
 const (
-	NpcType     ObjectType = iota
-	PcType      ObjectType = iota
-	SpawnerType ObjectType = iota
-	UserType    ObjectType = iota
-	ZoneType    ObjectType = iota
-	AreaType    ObjectType = iota
-	RoomType    ObjectType = iota
-	ItemType    ObjectType = iota
-	SkillType   ObjectType = iota
-	ShopType    ObjectType = iota
+	NpcType     ObjectType = "Npc"
+	PcType      ObjectType = "Pc"
+	SpawnerType ObjectType = "Spawner"
+	UserType    ObjectType = "User"
+	ZoneType    ObjectType = "Zone"
+	AreaType    ObjectType = "Area"
+	RoomType    ObjectType = "Room"
+	ItemType    ObjectType = "Item"
+	SkillType   ObjectType = "Skill"
+	ShopType    ObjectType = "Shop"
 )
 
 type Identifiable interface {

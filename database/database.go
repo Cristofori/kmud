@@ -2,12 +2,31 @@ package database
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
+)
+
+// Field names
+const (
+	fId           = "_id"
+	fName         = "name"
+	fCharacterIds = "characterids"
+	fRoom         = "room"
+	fLocation     = "location"
+	fDefault      = "default"
+)
+
+// MongDB operations
+const (
+	SET  = "$set"
+	PUSH = "$push"
+	PULL = "$pull"
 )
 
 type Session interface {
@@ -81,101 +100,21 @@ func watchModifiedObjects() {
 	}()
 }
 
-func getCollection(collection collectionName) Collection {
+func getCollection(collection types.ObjectType) Collection {
 	return _session.DB(_dbName).C(string(collection))
 }
 
 func getCollectionOfObject(obj types.Object) Collection {
-	switch obj.(type) {
-	case types.PC:
-		return getCollection(cPlayerChars)
-	case types.NPC:
-		return getCollection(cNonPlayerChars)
-	case types.Spawner:
-		return getCollection(cSpawners)
-	case types.User:
-		return getCollection(cUsers)
-	case types.Zone:
-		return getCollection(cZones)
-	case types.Area:
-		return getCollection(cAreas)
-	case types.Room:
-		return getCollection(cRooms)
-	case types.Item:
-		return getCollection(cItems)
-	case types.Skill:
-		return getCollection(cSkills)
-	case types.Shop:
-		return getCollection(cShops)
-	default:
-		panic(fmt.Sprintf("unrecognized object in getCollectionOfObject: %v", obj))
-	}
+	name := reflect.TypeOf(obj).String()
+	parts := strings.Split(name, ".")
+	name = parts[len(parts)-1]
+
+	return getCollection(types.ObjectType(name))
 }
 
-func getCollectionFromType(t types.ObjectType) Collection {
-	switch t {
-	case types.PcType:
-		return getCollection(cPlayerChars)
-	case types.NpcType:
-		return getCollection(cNonPlayerChars)
-	case types.SpawnerType:
-		return getCollection(cSpawners)
-	case types.UserType:
-		return getCollection(cUsers)
-	case types.ZoneType:
-		return getCollection(cZones)
-	case types.AreaType:
-		return getCollection(cAreas)
-	case types.RoomType:
-		return getCollection(cRooms)
-	case types.ItemType:
-		return getCollection(cItems)
-	case types.SkillType:
-		return getCollection(cSkills)
-	case types.ShopType:
-		return getCollection(cShops)
-	default:
-		panic("database.getCollectionFromType: Unhandled object type")
-	}
-}
-
-type collectionName string
-
-// Collection names
-const (
-	cUsers          = collectionName("users")
-	cPlayerChars    = collectionName("player_characters")
-	cNonPlayerChars = collectionName("npcs")
-	cSpawners       = collectionName("spawners")
-	cRooms          = collectionName("rooms")
-	cZones          = collectionName("zones")
-	cItems          = collectionName("items")
-	cAreas          = collectionName("areas")
-	cSkills         = collectionName("skills")
-	cShops          = collectionName("shops")
-)
-
-// Field names
-const (
-	fId           = "_id"
-	fName         = "name"
-	fCharacterIds = "characterids"
-	fRoom         = "room"
-	fLocation     = "location"
-	fDefault      = "default"
-)
-
-// MongDB operations
-const (
-	SET  = "$set"
-	PUSH = "$push"
-	PULL = "$pull"
-)
-
-func Retrieve(t types.ObjectType, id types.Id, object types.Object) types.Object {
-	c := getCollectionFromType(t)
+func Retrieve(id types.Id, object types.Object) types.Object {
+	c := getCollectionOfObject(object)
 	err := c.FindId(id).One(object)
-	return object
 
 	if err == nil {
 		return object
@@ -185,7 +124,7 @@ func Retrieve(t types.ObjectType, id types.Id, object types.Object) types.Object
 }
 
 func RetrieveObjects(t types.ObjectType, objects interface{}) {
-	c := getCollectionFromType(t)
+	c := getCollection(t)
 	err := c.Find(nil).Iter().All(objects)
 	utils.HandleError(err)
 }
@@ -221,7 +160,7 @@ func find(t types.ObjectType, query interface{}) []bson.ObjectId {
 }
 
 func find_helper(t types.ObjectType, query interface{}) Query {
-	c := getCollectionFromType(t)
+	c := getCollection(t)
 	return c.Find(query)
 }
 

@@ -31,18 +31,17 @@ type Room struct {
 }
 
 func NewRoom(zoneId types.Id, location types.Coordinate) *Room {
-	var room Room
+	room := &Room{
+		Title: "The Void",
+		Description: "You are floating in the blackness of space. Complete darkness surrounds " +
+			"you in all directions. There is no escape, there is no hope, just the emptiness. " +
+			"You are likely to be eaten by a grue.",
+		Location: location,
+		ZoneId:   zoneId,
+	}
 
-	room.Title = "The Void"
-	room.Description = "You are floating in the blackness of space. Complete darkness surrounds " +
-		"you in all directions. There is no escape, there is no hope, just the emptiness. " +
-		"You are likely to be eaten by a grue."
-
-	room.Location = location
-	room.ZoneId = zoneId
-
-	room.initDbObject(&room)
-	return &room
+	room.init(room)
+	return room
 }
 
 func (self *Room) ToString(players types.PCList, npcs types.NPCList, items types.ItemList, area types.Area) string {

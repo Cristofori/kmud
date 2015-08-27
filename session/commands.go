@@ -13,21 +13,25 @@ import (
 type command struct {
 	admin bool
 	alias string
-	exec  func(command, *Session, []string)
+	exec  func(*command, *Session, []string)
 	usage string
 }
 
-func (self command) Usage(s *Session) {
+func (self *command) Usage(s *Session) {
 	s.printLine(fmt.Sprintf("Usage: %s", self.usage))
 }
 
-var commands map[string]command
+var commands map[string]*command
+
+func findCommand(name string) *command {
+	return commands[strings.ToLower(name)]
+}
 
 func initCommands() {
-	commands = map[string]command{
+	commands = map[string]*command{
 		"help": {
 			usage: "/help <command name>",
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) == 0 {
 					s.printLine("List of commands:")
 					var names []string
@@ -53,13 +57,13 @@ func initCommands() {
 		"loc": cAlias("location"),
 		"location": {
 			admin: false,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				s.printLine("%v", s.room.GetLocation())
 			},
 		},
 		"room": {
 			admin: true,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				for {
 					menu := utils.NewMenu("Room")
 
@@ -82,14 +86,14 @@ func initCommands() {
 						return
 
 					case "t":
-						title := s.getUserInput(RawUserInput, "Enter new title: ")
+						title := s.getRawUserInput("Enter new title: ")
 
 						if title != "" {
 							s.room.SetTitle(title)
 						}
 
 					case "d":
-						description := s.getUserInput(RawUserInput, "Enter new description: ")
+						description := s.getRawUserInput("Enter new description: ")
 
 						if description != "" {
 							s.room.SetDescription(description)
@@ -144,7 +148,7 @@ func initCommands() {
 		},
 		"map": {
 			admin: false,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				zoneRooms := model.GetRoomsInZone(s.currentZone().GetId())
 				roomsByLocation := map[types.Coordinate]types.Room{}
 
@@ -188,7 +192,7 @@ func initCommands() {
 		"zone": {
 			admin: true,
 			usage: "/zone [list|rename <name>|new <name>|delete <name>]",
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) == 0 {
 					s.printLine("Current zone: " + types.Colorize(types.ColorBlue, s.currentZone().GetName()))
 				} else if len(args) == 1 {
@@ -250,7 +254,7 @@ func initCommands() {
 		"b": cAlias("broadcast"),
 		"broadcast": {
 			admin: false,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) == 0 {
 					s.printError("Nothing to say")
 				} else {
@@ -261,7 +265,7 @@ func initCommands() {
 		"s": cAlias("say"),
 		"say": {
 			admin: false,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) == 0 {
 					s.printError("Nothing to say")
 				} else {
@@ -271,7 +275,7 @@ func initCommands() {
 		},
 		"me": {
 			admin: false,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				model.Emote(s.player, strings.Join(args, " "))
 			},
 		},
@@ -286,7 +290,7 @@ func initCommands() {
 		"teleport": {
 			admin: true,
 			usage: "/teleport [<zone>|<X> <Y> <Z>]",
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				x := 0
 				y := 0
 				z := 0
@@ -353,7 +357,7 @@ func initCommands() {
 		},
 		"who": {
 			admin: false,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				chars := model.GetOnlinePlayerCharacters()
 
 				s.printLine("")
@@ -368,7 +372,7 @@ func initCommands() {
 		},
 		"colors": {
 			admin: false,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				s.printLineColor(types.ColorNormal, "Normal")
 				s.printLineColor(types.ColorRed, "Red")
 				s.printLineColor(types.ColorDarkRed, "Dark Red")
@@ -390,7 +394,7 @@ func initCommands() {
 		"cm": cAlias("colormode"),
 		"colormode": {
 			admin: false,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) == 0 {
 					message := "Current color mode is: "
 					switch s.user.GetColorMode() {
@@ -425,7 +429,7 @@ func initCommands() {
 		"destroyroom": {
 			admin: true,
 			usage: "/destroyroom <direction>",
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) == 1 {
 					direction := types.StringToDirection(args[0])
 
@@ -448,7 +452,7 @@ func initCommands() {
 		},
 		"npc": {
 			admin: true,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				for {
 					choice, npcId := s.execMenu(npcMenu(nil))
 					if choice == "" {
@@ -479,7 +483,7 @@ func initCommands() {
 								}
 
 								s.printLine("Conversation: %s", conversation)
-								newConversation := s.getUserInput(RawUserInput, "New conversation text: ")
+								newConversation := s.getRawUserInput("New conversation text: ")
 
 								if newConversation != "" {
 									npc.SetConversation(newConversation)
@@ -499,7 +503,7 @@ func initCommands() {
 		"create": {
 			admin: true,
 			usage: "Usage: /create <item name>",
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) != 1 {
 					self.Usage(s)
 					return
@@ -513,7 +517,7 @@ func initCommands() {
 		"destroyitem": {
 			admin: true,
 			usage: "/destroyitem <item name>",
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) != 1 {
 					self.Usage(s)
 					return
@@ -536,14 +540,14 @@ func initCommands() {
 		},
 		"roomid": {
 			admin: true,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				s.printLine("Room ID: %v", s.room.GetId())
 			},
 		},
 		"cash": {
 			admin: true,
 			usage: "/cash give <amount>",
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) != 2 {
 					self.Usage(s)
 					return
@@ -568,7 +572,7 @@ func initCommands() {
 		"ws": cAlias("windowsize"),
 		"windowsize": {
 			admin: false,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				width, height := s.user.GetWindowSize()
 
 				header := fmt.Sprintf("Width: %v, Height: %v", width, height)
@@ -589,14 +593,14 @@ func initCommands() {
 		"tt": cAlias("terminaltype"),
 		"terminaltype": {
 			admin: false,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				s.printLine("Terminal type: %s", s.user.GetTerminalType())
 			},
 		},
 		"silent": {
 			admin: false,
 			usage: "/silent [on|off]",
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) != 1 {
 					self.Usage(s)
 				} else if args[0] == "on" {
@@ -613,7 +617,7 @@ func initCommands() {
 		"r": cAlias("reply"),
 		"reply": {
 			admin: false,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				targetChar := model.GetPlayerCharacter(s.replyId)
 
 				if targetChar == nil {
@@ -625,7 +629,7 @@ func initCommands() {
 					whisper(commands["whisper"], s, newArgs)
 				} else {
 					prompt := "Reply to " + targetChar.GetName() + ": "
-					input := s.getUserInput(RawUserInput, prompt)
+					input := s.getRawUserInput(prompt)
 
 					if input != "" {
 						newArgs := make([]string, 1)
@@ -638,7 +642,7 @@ func initCommands() {
 		},
 		"area": {
 			admin: true,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				for {
 					menu := utils.NewMenu("Areas")
 
@@ -768,7 +772,7 @@ func initCommands() {
 		"link": {
 			admin: true,
 			usage: "Usage: /link <name> [single|double*] to start, /link to finish, /link remove <name> [single|double*], /link rename <old name> <new name>, /link cancel",
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				StateName := "Linking"
 
 				linkName, linking := s.states[StateName]
@@ -857,7 +861,7 @@ func initCommands() {
 		"kill": {
 			admin: true,
 			usage: "/kill [npc name]",
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) != 1 {
 					self.Usage(s)
 					return
@@ -880,7 +884,7 @@ func initCommands() {
 		"inspect": {
 			admin: true,
 			usage: "/inspect [name]",
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 				if len(args) != 1 {
 					self.Usage(s)
 					return
@@ -903,7 +907,7 @@ func initCommands() {
 		},
 		"skills": {
 			admin: true,
-			exec: func(self command, s *Session, args []string) {
+			exec: func(self *command, s *Session, args []string) {
 			Loop:
 				for {
 					menu := utils.NewMenu("Skills")
@@ -922,9 +926,26 @@ func initCommands() {
 					case "":
 						break Loop
 					case "n":
-						name := s.getRawUserInput("Skill name: ")
-						if name != "" {
-							model.CreateSkill(name)
+						for {
+							name := s.getCleanUserInput("Skill name: ")
+							command := findCommand(name)
+
+							if name == "" {
+								break
+							}
+
+							if command != nil {
+								s.printError("Skill name conflicts with a command with the same name")
+							} else {
+								skill := model.GetSkillByName(name)
+
+								if skill != nil {
+									s.printError("A skill with that name already exists")
+								} else {
+									model.CreateSkill(name)
+									break
+								}
+							}
 						}
 					default:
 						skill := model.GetSkill(skillId)
@@ -948,6 +969,8 @@ func initCommands() {
 								}
 							case "d":
 								model.DeleteSkill(skillId)
+								fallthrough
+							case "":
 								break SingleSkillMenu
 							}
 						}
@@ -1028,8 +1051,8 @@ var linkData struct {
 const LinkSingle = "Single"
 const LinkDouble = "Double"
 
-func cAlias(name string) command {
-	return command{alias: name}
+func cAlias(name string) *command {
+	return &command{alias: name}
 }
 
 func quickRoom(s *Session, command string) {
@@ -1047,7 +1070,7 @@ func quickRoom(s *Session, command string) {
 func getNpcName(s *Session) string {
 	name := ""
 	for {
-		name = s.getUserInput(CleanUserInput, "Desired NPC name: ")
+		name = s.getCleanUserInput("Desired NPC name: ")
 		char := model.GetNpcByName(name)
 
 		if name == "" {
@@ -1063,7 +1086,7 @@ func getNpcName(s *Session) string {
 	return name
 }
 
-func whisper(self command, s *Session, args []string) {
+func whisper(self *command, s *Session, args []string) {
 	if len(args) < 2 {
 		self.Usage(s)
 		return

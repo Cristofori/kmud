@@ -1,5 +1,7 @@
 package database
 
+import "github.com/Cristofori/kmud/utils"
+
 type Skill struct {
 	DbObject `bson:",inline"`
 
@@ -8,13 +10,13 @@ type Skill struct {
 }
 
 func NewSkill(name string, damage int) *Skill {
-	skill := Skill{
-		Name:   name,
+	skill := &Skill{
+		Name:   utils.FormatName(name),
 		Damage: damage,
 	}
 
-	skill.initDbObject(&skill)
-	return &skill
+	skill.init(skill)
+	return skill
 }
 
 func (self *Skill) GetName() string {

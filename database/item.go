@@ -9,10 +9,11 @@ type Item struct {
 }
 
 func NewItem(name string) *Item {
-	var item Item
-	item.Name = utils.FormatName(name)
-	item.initDbObject(&item)
-	return &item
+	item := &Item{
+		Name: utils.FormatName(name),
+	}
+	item.init(item)
+	return item
 }
 
 func (self *Item) GetName() string {

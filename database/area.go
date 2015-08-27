@@ -13,14 +13,13 @@ type Area struct {
 }
 
 func NewArea(name string, zone types.Id) *Area {
-	var area Area
+	area := &Area{
+		ZoneId: zone,
+		Name:   utils.FormatName(name),
+	}
 
-	area.ZoneId = zone
-	area.Name = utils.FormatName(name)
-
-	area.initDbObject(&area)
-
-	return &area
+	area.init(area)
+	return area
 }
 
 func (self *Area) GetName() string {

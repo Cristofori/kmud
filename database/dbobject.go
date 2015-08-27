@@ -15,9 +15,9 @@ type DbObject struct {
 	destroyed bool
 }
 
-func (self *DbObject) initDbObject(i types.Object) {
+func (self *DbObject) init(obj types.Object) {
 	self.Id = bson.NewObjectId()
-	datastore.Set(i)
+	datastore.Set(obj)
 	commitObject(self.Id)
 }
 

@@ -9,12 +9,12 @@ type Zone struct {
 }
 
 func NewZone(name string) *Zone {
-	var zone Zone
+	zone := &Zone{
+		Name: utils.FormatName(name),
+	}
 
-	zone.Name = utils.FormatName(name)
-
-	zone.initDbObject(&zone)
-	return &zone
+	zone.init(zone)
+	return zone
 }
 
 func (self *Zone) GetName() string {

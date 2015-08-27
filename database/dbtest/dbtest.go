@@ -85,7 +85,7 @@ func Test_ThreadSafety(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 	database.Init(&TestSession{}, "unit_dbtest")
 
-	char := database.NewPlayerChar("test", types.MockId(""), types.MockId(""))
+	char := database.NewPc("test", types.MockId(""), types.MockId(""))
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -147,7 +147,7 @@ func Test_User(t *testing.T) {
 
 func Test_PlayerCharacter(t *testing.T) {
 	fakeId := bson.ObjectId("12345")
-	character := database.NewPlayerChar("testcharacter", fakeId, fakeId)
+	character := database.NewPc("testcharacter", fakeId, fakeId)
 
 	testutils.Assert(character.GetUserId() == fakeId, t, "Call to character.SetUser() failed", fakeId, character.GetUserId())
 	testutils.Assert(!character.IsOnline(), t, "Player-Characters should be offline by default")

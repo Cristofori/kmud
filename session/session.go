@@ -227,6 +227,10 @@ func (self *Session) getUserInput(inputMode userInputMode, prompt string) string
 	return self.getUserInputP(inputMode, utils.SimplePrompter(prompt))
 }
 
+func (self *Session) getCleanUserInput(prompt string) string {
+	return self.getUserInput(CleanUserInput, prompt)
+}
+
 func (self *Session) getRawUserInput(prompt string) string {
 	return self.getUserInput(RawUserInput, prompt)
 }

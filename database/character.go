@@ -21,14 +21,14 @@ type Character struct {
 	Skills    map[string]bool
 }
 
-type PlayerChar struct {
+type Pc struct {
 	Character `bson:",inline"`
 
 	UserId types.Id
 	online bool
 }
 
-type NonPlayerChar struct {
+type Npc struct {
 	Character `bson:",inline"`
 
 	SpawnerId types.Id `bson:",omitempty"`
@@ -44,36 +44,36 @@ type Spawner struct {
 	Count  int
 }
 
-func NewPlayerChar(name string, userId types.Id, roomId types.Id) *PlayerChar {
-	var pc PlayerChar
-
-	pc.UserId = userId
-	pc.online = false
+func NewPc(name string, userId types.Id, roomId types.Id) *Pc {
+	pc := &Pc{
+		UserId: userId,
+		online: false,
+	}
 
 	pc.initCharacter(name, types.PcType, roomId)
-	pc.initDbObject(&pc)
-	return &pc
+	pc.init(pc)
+	return pc
 }
 
-func NewNonPlayerChar(name string, roomId types.Id, spawnerId types.Id) *NonPlayerChar {
-	var npc NonPlayerChar
-
-	npc.SpawnerId = spawnerId
+func NewNpc(name string, roomId types.Id, spawnerId types.Id) *Npc {
+	npc := &Npc{
+		SpawnerId: spawnerId,
+	}
 
 	npc.initCharacter(name, types.NpcType, roomId)
-	npc.initDbObject(&npc)
-	return &npc
+	npc.init(npc)
+	return npc
 }
 
 func NewSpawner(name string, areaId types.Id) *Spawner {
-	var spawner Spawner
-
-	spawner.AreaId = areaId
-	spawner.Count = 1
+	spawner := &Spawner{
+		AreaId: areaId,
+		Count:  1,
+	}
 
 	spawner.initCharacter(name, types.SpawnerType, nil)
-	spawner.initDbObject(&spawner)
-	return &spawner
+	spawner.init(spawner)
+	return spawner
 }
 
 func (self *Character) initCharacter(name string, objType types.ObjectType, roomId types.Id) {
@@ -100,27 +100,18 @@ func (self *Character) SetName(name string) {
 	}
 }
 
-func (self *PlayerChar) SetOnline(online bool) {
+func (self *Pc) SetOnline(online bool) {
 	self.WriteLock()
 	self.online = online
 	self.WriteUnlock()
 }
 
-func (self *PlayerChar) IsOnline() bool {
+func (self *Pc) IsOnline() bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
 	return self.online
 }
-
-/*
-func (self *Character) IsNpcTemplate() bool {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	return self.UserId == "" && self.RoomId == ""
-}
-*/
 
 func (self *Character) SetRoomId(id types.Id) {
 	self.WriteLock()
@@ -139,7 +130,7 @@ func (self *Character) GetRoomId() types.Id {
 	return self.RoomId
 }
 
-func (self *PlayerChar) SetUserId(id types.Id) {
+func (self *Pc) SetUserId(id types.Id) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
@@ -149,7 +140,7 @@ func (self *PlayerChar) SetUserId(id types.Id) {
 	}
 }
 
-func (self *PlayerChar) GetUserId() types.Id {
+func (self *Pc) GetUserId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
@@ -271,7 +262,7 @@ func (self *Character) GetSkills() []types.Id {
 	return ids
 }
 
-func (self *NonPlayerChar) SetConversation(conversation string) {
+func (self *Npc) SetConversation(conversation string) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
@@ -281,13 +272,13 @@ func (self *NonPlayerChar) SetConversation(conversation string) {
 	}
 }
 
-func (self *NonPlayerChar) GetConversation() string {
+func (self *Npc) GetConversation() string {
 	self.ReadLock()
 	defer self.ReadUnlock()
 	return self.Conversation
 }
 
-func (self *NonPlayerChar) PrettyConversation() string {
+func (self *Npc) PrettyConversation() string {
 	conv := self.GetConversation()
 
 	if conv == "" {
@@ -350,14 +341,14 @@ func (self *Character) Heal(hitpoints int) {
 	self.SetHitPoints(self.GetHitPoints() + hitpoints)
 }
 
-func (self *NonPlayerChar) GetRoaming() bool {
+func (self *Npc) GetRoaming() bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
 	return self.Roaming
 }
 
-func (self *NonPlayerChar) SetRoaming(roaming bool) {
+func (self *Npc) SetRoaming(roaming bool) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 

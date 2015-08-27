@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	db "github.com/Cristofori/kmud/database"
-	"github.com/Cristofori/kmud/datastore"
+	ds "github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
@@ -186,7 +186,7 @@ func GetOnlinePlayerCharacters() []types.PC {
 // database and adds it to the model.  A pointer to the new character object is
 // returned.
 func CreatePlayerCharacter(name string, userId types.Id, startingRoom types.Room) types.PC {
-	pc := db.NewPlayerChar(name, userId, startingRoom.GetId())
+	pc := db.NewPc(name, userId, startingRoom.GetId())
 	events.Broadcast(events.EnterEvent{Character: pc, RoomId: startingRoom.GetId(), Direction: types.DirectionNone})
 	return pc
 }
@@ -210,7 +210,7 @@ func GetOrCreatePlayerCharacter(name string, userId types.Id, startingRoom types
 // CreateNpc is a convenience function for creating a new character object that
 // is an NPC (as opposed to an actual player-controlled character)
 func CreateNpc(name string, roomId types.Id, spawnerId types.Id) types.NPC {
-	npc := db.NewNonPlayerChar(name, roomId, spawnerId)
+	npc := db.NewNpc(name, roomId, spawnerId)
 	events.Broadcast(events.EnterEvent{Character: npc, RoomId: roomId, Direction: types.DirectionNone})
 	return npc
 }
@@ -669,6 +669,14 @@ func GetSkill(id types.Id) types.Skill {
 	return fetch(id, types.SkillType).(types.Skill)
 }
 
+func GetSkillByName(name string) types.Skill {
+	id := db.FindOne(types.SkillType, bson.M{"name": utils.FormatName(name)})
+	if id != nil {
+		return GetSkill(id)
+	}
+	return nil
+}
+
 func GetSkills() types.SkillList {
 	ids := db.FindAll(types.SkillType)
 	skills := make(types.SkillList, len(ids))
@@ -687,17 +695,17 @@ func DeleteSkill(id types.Id) {
 }
 
 func fetch(id types.Id, typ types.ObjectType) types.Object {
-	if datastore.ContainsId(id) {
-		return datastore.Get(id)
+	if ds.ContainsId(id) {
+		return ds.Get(id)
 	}
 
 	var object types.Object
 
 	switch typ {
 	case types.PcType:
-		object = &db.PlayerChar{}
+		object = &db.Pc{}
 	case types.NpcType:
-		object = &db.NonPlayerChar{}
+		object = &db.Npc{}
 	case types.SpawnerType:
 		object = &db.Spawner{}
 	case types.UserType:
@@ -718,10 +726,10 @@ func fetch(id types.Id, typ types.ObjectType) types.Object {
 		panic(fmt.Sprintf("unrecognized object type: %v", typ))
 	}
 
-	object = db.Retrieve(typ, id, object)
+	object = db.Retrieve(id, object)
 
 	if object != nil {
-		datastore.Set(object)
+		ds.Set(object)
 	}
 
 	return object
