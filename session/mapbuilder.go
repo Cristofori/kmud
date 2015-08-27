@@ -76,7 +76,7 @@ func (self *mapBuilder) addRoom(room types.Room, x int, y int, z int) {
 	}
 
 	if self.userRoom.GetId() == room.GetId() {
-		self.data[z][y][x].char = 'O'
+		self.data[z][y][x].char = '*'
 		self.data[z][y][x].color = types.ColorRed
 	} else {
 		self.data[z][y][x].color = types.ColorMagenta
@@ -87,7 +87,16 @@ func (self *mapBuilder) addRoom(room types.Room, x int, y int, z int) {
 		} else if room.HasExit(types.DirectionDown) {
 			self.data[z][y][x].char = 'v'
 		} else {
-			self.data[z][y][x].char = '#'
+			char := '#'
+
+			/*
+				count := len(model.CharactersIn(room.GetId()))
+				if count < 10 {
+					char = rune(strconv.Itoa(count)[0])
+				}
+			*/
+
+			self.data[z][y][x].char = char
 			self.data[z][y][x].color = types.ColorWhite
 		}
 	}
