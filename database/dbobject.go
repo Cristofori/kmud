@@ -60,4 +60,16 @@ func (self *DbObject) modified() {
 	modifiedObjectChannel <- self.Id
 }
 
+func idMapToList(m map[string]bool) []types.Id {
+	ids := make([]types.Id, len(m))
+
+	i := 0
+	for id := range m {
+		ids[i] = bson.ObjectIdHex(id)
+		i++
+	}
+
+	return ids
+}
+
 // vim: nocindent

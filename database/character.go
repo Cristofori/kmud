@@ -5,7 +5,6 @@ import (
 
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type Character struct {
@@ -203,16 +202,7 @@ func (self *Character) HasItem(id types.Id) bool {
 func (self *Character) GetItems() []types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
-	ids := make([]types.Id, len(self.Inventory))
-
-	i := 0
-	for id := range self.Inventory {
-		ids[i] = bson.ObjectIdHex(id)
-		i++
-	}
-
-	return ids
+	return idMapToList(self.Inventory)
 }
 
 func (self *Character) AddSkill(id types.Id) {
@@ -250,16 +240,7 @@ func (self *Character) HasSkill(id types.Id) bool {
 func (self *Character) GetSkills() []types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
-	ids := make([]types.Id, len(self.Skills))
-
-	i := 0
-	for id := range self.Skills {
-		ids[i] = bson.ObjectIdHex(id)
-		i++
-	}
-
-	return ids
+	return idMapToList(self.Skills)
 }
 
 func (self *Npc) SetConversation(conversation string) {

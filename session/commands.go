@@ -919,7 +919,7 @@ func initCommands() {
 
 					menu.AddAction("n", "New")
 
-					skills := model.GetSkills()
+					skills := model.GetAllSkills()
 
 					for i, skill := range skills {
 						menu.AddActionData(i+1, skill.GetName(), skill.GetId())
@@ -941,7 +941,7 @@ func initCommands() {
 							skill := model.GetSkillByName(name)
 
 							if skill != nil {
-								s.printError("A skill with that name already exists")
+								s.printError("An skill with that name already exists")
 							} else {
 								model.CreateSkill(name)
 								break

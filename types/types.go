@@ -80,17 +80,17 @@ type Character interface {
 	SetHitPoints(int)
 	GetHealth() int
 	SetHealth(int)
+	GetSkills() []Id
+	AddSkill(Id)
 }
 
 type CharacterList []Character
 
 func (self CharacterList) Names() []string {
 	names := make([]string, len(self))
-
 	for i, char := range self {
 		names[i] = char.GetName()
 	}
-
 	return names
 }
 
@@ -222,11 +222,9 @@ type ItemList []Item
 
 func (self ItemList) Names() []string {
 	names := make([]string, len(self))
-
 	for i, item := range self {
 		names[i] = item.GetName()
 	}
-
 	return names
 }
 
@@ -238,6 +236,14 @@ type Skill interface {
 }
 
 type SkillList []Skill
+
+func (self SkillList) Names() []string {
+	names := make([]string, len(self))
+	for i, skill := range self {
+		names[i] = skill.GetName()
+	}
+	return names
+}
 
 type Shop interface {
 	Object

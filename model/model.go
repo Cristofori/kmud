@@ -677,10 +677,18 @@ func GetSkillByName(name string) types.Skill {
 	return nil
 }
 
-func GetSkills() types.SkillList {
+func GetAllSkills() types.SkillList {
 	ids := db.FindAll(types.SkillType)
 	skills := make(types.SkillList, len(ids))
 	for i, id := range ids {
+		skills[i] = GetSkill(id)
+	}
+	return skills
+}
+
+func GetSkills(SkillIds []types.Id) types.SkillList {
+	skills := make(types.SkillList, len(SkillIds))
+	for i, id := range SkillIds {
 		skills[i] = GetSkill(id)
 	}
 	return skills

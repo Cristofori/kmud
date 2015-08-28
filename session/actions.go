@@ -85,25 +85,90 @@ var actions = map[string]action{
 	"c": aAlias("cast"),
 	"cast": {
 		exec: func(s *Session, args []string) {
-			var target types.Character
-
-			if len(args) == 1 {
-				target = s.player
-			} else if len(args) == 2 {
-				charList := model.CharactersIn(s.room.GetId())
-				index := utils.BestMatch(args[0], charList.Names())
-
-				if index == -1 {
-					s.printError("Target not found")
-				} else if index == -2 {
-					s.printError("Which one do you mean?")
-				} else {
-					target = charList[index]
-				}
+			usage := func() {
+				s.printError("Usage: cast <spell> [target]")
 			}
 
-			if target != nil {
-				s.printLine("Casting on", target.GetName())
+			if len(args) == 0 || len(args) > 2 {
+				usage()
+				return
+			}
+
+			var skill types.Skill
+			skills := model.GetSkills(s.player.GetSkills())
+			index := utils.BestMatch(args[0], skills.Names())
+
+			if index == -1 {
+				s.printError("Skill not found")
+			} else if index == -2 {
+				s.printError("Which skill do you mean?")
+			} else {
+				skill = skills[index]
+			}
+
+			if skill != nil {
+				var target types.Character
+
+				if len(args) == 1 {
+					target = s.player
+				} else if len(args) == 2 {
+					charList := model.CharactersIn(s.room.GetId())
+					index := utils.BestMatch(args[1], charList.Names())
+
+					if index == -1 {
+						s.printError("Target not found")
+					} else if index == -2 {
+						s.printError("Which target do you mean?")
+					} else {
+						target = charList[index]
+					}
+				}
+
+				if target != nil {
+					s.printLine("Casting %s on %s", skill.GetName(), target.GetName())
+					target.Hit(skill.GetDamage())
+				}
+			}
+		},
+	},
+	"sb": aAlias("skillbook"),
+	"skillbook": {
+		exec: func(s *Session, args []string) {
+		Loop:
+			for {
+				menu := utils.NewMenu("Skill Book")
+				menu.AddAction("a", "Add")
+
+				skills := model.GetSkills(s.player.GetSkills())
+				for i, skill := range skills {
+					menu.AddActionData(i+1, skill.GetName(), skill.GetId())
+				}
+
+				choice, skillId := s.execMenu(menu)
+
+				switch choice {
+				case "":
+					break Loop
+				case "a":
+					allSkillsMenu := utils.NewMenu("Select a skill to add")
+
+					for i, skill := range model.GetAllSkills() {
+						allSkillsMenu.AddActionData(i+1, skill.GetName(), skill.GetId())
+					}
+
+					choice, skillId := s.execMenu(allSkillsMenu)
+
+					switch choice {
+					case "":
+					default:
+						skill := model.GetSkill(skillId)
+						s.player.AddSkill(skill.GetId())
+					}
+				default:
+					skill := model.GetSkill(skillId)
+					s.printLine("Skill: %v", skill.GetName())
+					s.printLine("  Damage: %v", skill.GetDamage())
+				}
 			}
 		},
 	},
