@@ -71,9 +71,10 @@ func initCommands() {
 					menu.AddAction("d", "Description")
 					menu.AddAction("e", "Exits")
 
-					area := model.GetArea(s.room.GetAreaId())
+					areaId := s.room.GetAreaId()
 					name := "(None)"
-					if area != nil {
+					if areaId != nil {
+						area := model.GetArea(areaId)
 						name = area.GetName()
 					}
 					menu.AddAction("a", fmt.Sprintf("Area - %s", name))
