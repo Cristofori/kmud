@@ -231,11 +231,20 @@ func (self ItemList) Names() []string {
 type Skill interface {
 	Object
 	Nameable
-	SetDamage(int)
-	GetDamage() int
+	SetPower(int)
+	GetPower() int
 }
 
 type SkillList []Skill
+
+type SkillEffect string
+
+const (
+	DamageEffect  SkillEffect = "damage"
+	DotEffect     SkillEffect = "dot"
+	HealingEffect SkillEffect = "heal"
+	HotEffect     SkillEffect = "hot"
+)
 
 func (self SkillList) Names() []string {
 	names := make([]string, len(self))

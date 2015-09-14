@@ -157,3 +157,10 @@ func (self MockPC) IsOnline() bool {
 
 func (self MockPC) SetRoomId(Id) {
 }
+
+func (self MockPC) GetSkills() []Id {
+	return []Id{}
+}
+
+func (self MockPC) AddSkill(Id) {
+}

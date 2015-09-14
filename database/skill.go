@@ -1,18 +1,26 @@
 package database
 
-import "github.com/Cristofori/kmud/utils"
+import (
+	"github.com/Cristofori/kmud/types"
+	"github.com/Cristofori/kmud/utils"
+)
 
 type Skill struct {
 	DbObject `bson:",inline"`
 
-	Name   string
-	Damage int
+	Name     string
+	Power    int
+	Cost     int
+	Variance int
+	Effect   types.SkillEffect
 }
 
-func NewSkill(name string, damage int) *Skill {
+func NewSkill(name string, power int) *Skill {
 	skill := &Skill{
-		Name:   utils.FormatName(name),
-		Damage: damage,
+		Name:     utils.FormatName(name),
+		Power:    power,
+		Effect:   types.DamageEffect,
+		Variance: 0,
 	}
 
 	skill.init(skill)
@@ -36,19 +44,19 @@ func (self *Skill) SetName(name string) {
 	}
 }
 
-func (self *Skill) SetDamage(damage int) {
+func (self *Skill) SetPower(damage int) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
-	if damage != self.Damage {
-		self.Damage = damage
+	if damage != self.Power {
+		self.Power = damage
 		self.modified()
 	}
 }
 
-func (self *Skill) GetDamage() int {
+func (self *Skill) GetPower() int {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
-	return self.Damage
+	return self.Power
 }

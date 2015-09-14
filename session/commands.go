@@ -952,7 +952,7 @@ func initCommands() {
 					SingleSkillMenu:
 						for {
 							menu := utils.NewMenu(fmt.Sprintf("Skill - %s", skill.GetName()))
-							menu.AddAction("a", fmt.Sprintf("Damage - %v", skill.GetDamage()))
+							menu.AddAction("a", fmt.Sprintf("Damage - %v", skill.GetPower()))
 							menu.AddAction("d", "Delete")
 
 							choice, _ := s.execMenu(menu)
@@ -965,7 +965,7 @@ func initCommands() {
 								if err != nil || dmg < 0 {
 									s.printError("Invalid value")
 								} else {
-									skill.SetDamage(int(dmg))
+									skill.SetPower(int(dmg))
 								}
 							case "d":
 								model.DeleteSkill(skillId)

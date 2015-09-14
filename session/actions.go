@@ -126,7 +126,7 @@ var actions = map[string]action{
 
 				if target != nil {
 					s.printLine("Casting %s on %s", skill.GetName(), target.GetName())
-					target.Hit(skill.GetDamage())
+					target.Hit(skill.GetPower())
 				}
 			}
 		},
@@ -167,7 +167,7 @@ var actions = map[string]action{
 				default:
 					skill := model.GetSkill(skillId)
 					s.printLine("Skill: %v", skill.GetName())
-					s.printLine("  Damage: %v", skill.GetDamage())
+					s.printLine("  Damage: %v", skill.GetPower())
 				}
 			}
 		},
