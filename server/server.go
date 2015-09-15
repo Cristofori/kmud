@@ -11,7 +11,6 @@ import (
 
 	"github.com/Cristofori/kmud/combat"
 	"github.com/Cristofori/kmud/database"
-	"github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/engine"
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
@@ -426,7 +425,6 @@ func (self *Server) Start() {
 	self.listener, err = net.Listen("tcp", ":8945")
 	utils.HandleError(err)
 
-	datastore.Init()
 	database.Init(database.NewMongoSession(session.Copy()), "mud")
 
 	events.StartEvents()

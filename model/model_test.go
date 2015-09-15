@@ -33,7 +33,6 @@ func (s *ModelSuite) SetUpSuite(c *C) {
 
 	session.DB(dbName).DropDatabase()
 
-	datastore.Init()
 	database.Init(database.NewMongoSession(session), dbName)
 
 	events.StartEvents()

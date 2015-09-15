@@ -27,7 +27,7 @@ func findCommand(name string) *command {
 	return commands[strings.ToLower(name)]
 }
 
-func initCommands() {
+func init() {
 	commands = map[string]*command{
 		"help": {
 			usage: "/help <command name>",

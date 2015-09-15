@@ -63,13 +63,14 @@ var modifiedObjectChannel chan types.Id
 var _session Session
 var _dbName string
 
+func init() {
+	modifiedObjectChannel = make(chan types.Id, 1)
+	watchModifiedObjects()
+}
+
 func Init(session Session, dbName string) {
 	_session = session
 	_dbName = dbName
-
-	modifiedObjectChannel = make(chan types.Id, 1)
-
-	watchModifiedObjects()
 }
 
 func watchModifiedObjects() {

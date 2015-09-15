@@ -309,10 +309,6 @@ func (self *Session) handleCommand(name string, args []string) {
 		return
 	}
 
-	if commands == nil {
-		initCommands()
-	}
-
 	command, found := commands[name]
 
 	if found {

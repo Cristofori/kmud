@@ -9,8 +9,8 @@ import (
 var _data map[types.Id]types.Object
 var _mutex sync.RWMutex
 
-func Init() {
-	_data = map[types.Id]types.Object{}
+func init() {
+	ClearAll()
 }
 
 func Get(id types.Id) types.Object {
@@ -58,5 +58,5 @@ func ClearAll() {
 	_mutex.Lock()
 	defer _mutex.Unlock()
 
-	Init()
+	_data = map[types.Id]types.Object{}
 }
