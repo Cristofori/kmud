@@ -9,7 +9,6 @@ import (
 	"io"
 	"log"
 	"math/rand"
-	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -272,43 +271,6 @@ func (w *WatchableReadWriter) RemoveWatcher(rw io.ReadWriter) {
 			return
 		}
 	}
-}
-
-// FindMethod uses reflection to find an exported method with the given name on
-// the given object. The reflect.Value is the value of the method that was
-// found, such that Call be be invoked on it directly. The matching is
-// case-inensitive.
-// In order to be able to find methods that operate on the object pointer type,
-// a pointer to an instance of an object should be given, rather than the
-// object itself
-func FindMethod(object interface{}, name string) (reflect.Value, bool) {
-	objType := reflect.TypeOf(object)
-
-	for i := 0; i < objType.NumMethod(); i++ {
-		method := objType.Method(i)
-
-		// An empty PkgPath here means the method is exported (reflect can't call unexported methods)
-		if strings.ToLower(method.Name) == strings.ToLower(name) && method.PkgPath == "" {
-			return reflect.ValueOf(object).MethodByName(method.Name), true
-		}
-	}
-
-	return reflect.Value{}, false
-}
-
-func FindAndCallMethod(object interface{}, name string, a ...interface{}) bool {
-	method, found := FindMethod(object, name)
-
-	if found {
-		vals := make([]reflect.Value, len(a))
-		for i, arg := range a {
-			vals[i] = reflect.ValueOf(arg)
-		}
-
-		method.Call(vals)
-	}
-
-	return found
 }
 
 // Case-insensitive string comparison
