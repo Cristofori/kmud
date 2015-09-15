@@ -49,7 +49,10 @@ var actions = map[string]action{
 						loc := s.room.NextLocation(arg)
 						roomToSee := model.GetRoomByLocation(loc, s.room.GetZoneId())
 						if roomToSee != nil {
-							area := model.GetArea(roomToSee.GetAreaId())
+							var area types.Area
+							if roomToSee.GetAreaId() != nil {
+								area = model.GetArea(roomToSee.GetAreaId())
+							}
 							s.printLine(roomToSee.ToString(model.PlayerCharactersIn(roomToSee.GetId(), nil),
 								model.NpcsIn(roomToSee.GetId()), nil, area))
 						} else {
