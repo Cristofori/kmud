@@ -8,14 +8,17 @@ import (
 	"github.com/Cristofori/kmud/utils"
 )
 
-var _combatInterval = 3 * time.Second
+const combatInterval = 3 * time.Second
 
 var combatMessages chan interface{}
+
 var fights map[types.Character]types.Character
+var skills map[types.Character]types.Skill
 
 type combatStart struct {
 	Attacker types.Character
 	Defender types.Character
+	Skill    types.Skill
 }
 
 type combatStop struct {
@@ -29,8 +32,8 @@ type combatQuery struct {
 
 type combatTick bool
 
-func StartFight(attacker types.Character, defender types.Character) {
-	combatMessages <- combatStart{Attacker: attacker, Defender: defender}
+func StartFight(attacker types.Character, skill types.Skill, defender types.Character) {
+	combatMessages <- combatStart{Attacker: attacker, Defender: defender, Skill: skill}
 }
 
 func StopFight(attacker types.Character) {
@@ -43,22 +46,15 @@ func InCombat(character types.Character) bool {
 	return <-query.Ret
 }
 
-func StopCombatLoop() {
-	defer func() { recover() }()
-	close(combatMessages)
-}
-
-func StartCombatLoop() {
-	if fights != nil {
-		return
-	}
-
+func init() {
 	fights = map[types.Character]types.Character{}
+	skills = map[types.Character]types.Skill{}
+
 	combatMessages = make(chan interface{}, 1)
 
 	go func() {
 		defer func() { recover() }()
-		throttler := utils.NewThrottler(_combatInterval)
+		throttler := utils.NewThrottler(combatInterval)
 		for {
 			throttler.Sync()
 			combatMessages <- combatTick(true)
@@ -72,17 +68,24 @@ func StartCombatLoop() {
 			case combatTick:
 				for a, d := range fights {
 					if a.GetRoomId() == d.GetRoomId() {
-						dmg := utils.Random(1, 10)
-						d.Hit(dmg)
+						var power int
+						skill := skills[a]
+						if skill == nil {
+							power = utils.Random(1, 10)
+						} else {
+							power = skill.GetPower()
+							variance := utils.Random(-skill.GetVariance(), skill.GetVariance())
+							power += variance
+						}
 
-						events.Broadcast(events.CombatEvent{Attacker: a, Defender: d, Damage: dmg})
+						d.Hit(power)
+						events.Broadcast(events.CombatEvent{Attacker: a, Defender: d, Skill: skill, Power: power})
 
 						if d.GetHitPoints() <= 0 {
 							doCombatStop(a)
 							doCombatStop(d)
 							events.Broadcast(events.DeathEvent{Character: d})
 						}
-
 					} else {
 						doCombatStop(a)
 					}
@@ -99,6 +102,7 @@ func StartCombatLoop() {
 				}
 
 				fights[m.Attacker] = m.Defender
+				skills[m.Attacker] = m.Skill
 
 				events.Broadcast(events.CombatStartEvent{Attacker: m.Attacker, Defender: m.Defender})
 			case combatStop:
@@ -121,7 +125,6 @@ func StartCombatLoop() {
 				panic("Unhandled combat message")
 			}
 		}
-		fights = nil
 	}()
 }
 
@@ -130,6 +133,7 @@ func doCombatStop(attacker types.Character) {
 
 	if defender != nil {
 		delete(fights, attacker)
+		delete(skills, attacker)
 		events.Broadcast(events.CombatStopEvent{Attacker: attacker, Defender: defender})
 	}
 }

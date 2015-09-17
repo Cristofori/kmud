@@ -31,7 +31,9 @@ var actions = map[string]action{
 					if index == -2 {
 						s.printError("Which one do you mean?")
 					} else if index != -1 {
-						s.printLine("Looking at: %s", charList[index].GetName())
+						char := charList[index]
+						s.printLine("Looking at: %s", char.GetName())
+						s.printLine("    Health: %v/%v", char.GetHitPoints(), char.GetHealth())
 					} else {
 						itemList := model.ItemsIn(s.room)
 						index = utils.BestMatch(args[0], itemList.Names())
@@ -80,7 +82,7 @@ var actions = map[string]action{
 				if defender.GetId() == s.player.GetId() {
 					s.printError("You can't attack yourself")
 				} else {
-					combat.StartFight(s.player, defender)
+					combat.StartFight(s.player, nil, defender)
 				}
 			}
 		},
@@ -128,8 +130,8 @@ var actions = map[string]action{
 				}
 
 				if target != nil {
-					s.printLine("Casting %s on %s", skill.GetName(), target.GetName())
-					target.Hit(skill.GetPower())
+					s.printLineColor(types.ColorRed, "Casting %s on %s", skill.GetName(), target.GetName())
+					combat.StartFight(s.player, skill, target)
 				}
 			}
 		},

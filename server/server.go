@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Cristofori/kmud/combat"
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/engine"
 	"github.com/Cristofori/kmud/events"
@@ -428,7 +427,6 @@ func (self *Server) Start() {
 	database.Init(database.NewMongoSession(session.Copy()), "mud")
 
 	events.StartEvents()
-	combat.StartCombatLoop()
 
 	// If there are no rooms at all create one
 	rooms := model.GetRooms()

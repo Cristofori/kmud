@@ -42,7 +42,7 @@ func manageNpc(npc types.NPC) {
 				}
 			case events.CombatStartEvent:
 				if npc == e.Defender {
-					combat.StartFight(npc, e.Attacker)
+					combat.StartFight(npc, nil, e.Attacker)
 				}
 			case events.CombatStopEvent:
 				if npc == e.Defender {

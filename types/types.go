@@ -233,6 +233,8 @@ type Skill interface {
 	Nameable
 	SetPower(int)
 	GetPower() int
+	GetVariance() int
+	SetVariance(int)
 }
 
 type SkillList []Skill

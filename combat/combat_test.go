@@ -19,11 +19,9 @@ var _ = Suite(&CombatSuite{})
 func (s *CombatSuite) SetUpSuite(c *C) {
 	_combatInterval = 10 * time.Millisecond
 	events.StartEvents()
-	StartCombatLoop()
 }
 
 func (s *CombatSuite) TearDownSuite(c *C) {
-	StopCombatLoop()
 	events.StopEvents()
 }
 
@@ -101,16 +99,4 @@ func (s *CombatSuite) TestCombatLoop(c *C) {
 	StartFight(char1, char2)
 	<-eventChannel1
 	<-eventChannel2
-
-	StopCombatLoop()
-
-	timeout = tu.Timeout(20 * time.Millisecond)
-
-	select {
-	case <-eventChannel1:
-		c.Fatalf("Shouldn't have gotten any combat events after stopping the combat loop (channel 1)")
-	case <-eventChannel2:
-		c.Fatalf("Shouldn't have gotten any combat events after stopping the combat loop (channel 2)")
-	case <-timeout:
-	}
 }

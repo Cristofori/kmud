@@ -44,6 +44,13 @@ func (self *Skill) SetName(name string) {
 	}
 }
 
+func (self *Skill) GetPower() int {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Power
+}
+
 func (self *Skill) SetPower(damage int) {
 	self.WriteLock()
 	defer self.WriteUnlock()
@@ -54,9 +61,18 @@ func (self *Skill) SetPower(damage int) {
 	}
 }
 
-func (self *Skill) GetPower() int {
+func (self *Skill) GetVariance() int {
 	self.ReadLock()
 	defer self.ReadUnlock()
+	return self.Variance
+}
 
-	return self.Power
+func (self *Skill) SetVariance(variance int) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	if variance != self.Variance {
+		self.Variance = variance
+		self.modified()
+	}
 }

@@ -170,7 +170,8 @@ type CombatStopEvent struct {
 type CombatEvent struct {
 	Attacker types.Character
 	Defender types.Character
-	Damage   int
+	Skill    types.Skill
+	Power    int
 }
 
 type LockEvent struct {
@@ -310,10 +311,15 @@ func (self CombatStopEvent) IsFor(receiver EventReceiver) bool {
 
 // Combat
 func (self CombatEvent) ToString(receiver EventReceiver) string {
+	skillMsg := ""
+	if self.Skill != nil {
+		skillMsg = fmt.Sprintf(" with %s", self.Skill.GetName())
+	}
+
 	if receiver == self.Attacker {
-		return types.Colorize(types.ColorRed, fmt.Sprintf("You hit %s for %v damage", self.Defender.GetName(), self.Damage))
+		return types.Colorize(types.ColorRed, fmt.Sprintf("You hit %s%s for %v damage", self.Defender.GetName(), skillMsg, self.Power))
 	} else if receiver == self.Defender {
-		return types.Colorize(types.ColorRed, fmt.Sprintf("%s hits you for %v damage", self.Attacker.GetName(), self.Damage))
+		return types.Colorize(types.ColorRed, fmt.Sprintf("%s hits you%s for %v damage", self.Attacker.GetName(), skillMsg, self.Power))
 	}
 
 	return ""
