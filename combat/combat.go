@@ -8,7 +8,7 @@ import (
 	"github.com/Cristofori/kmud/utils"
 )
 
-const combatInterval = 3 * time.Second
+var combatInterval = 3 * time.Second
 
 var combatMessages chan interface{}
 

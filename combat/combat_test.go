@@ -16,8 +16,8 @@ type CombatSuite struct{}
 
 var _ = Suite(&CombatSuite{})
 
-func (s *CombatSuite) SetUpSuite(c *C) {
-	_combatInterval = 10 * time.Millisecond
+func init() {
+	combatInterval = 10 * time.Millisecond
 	events.StartEvents()
 }
 
@@ -33,7 +33,7 @@ func (s *CombatSuite) TestCombatLoop(c *C) {
 	eventChannel1 := events.Register(char1)
 	eventChannel2 := events.Register(char2)
 
-	StartFight(char1, char2)
+	StartFight(char1, nil, char2)
 
 	c.Assert(InCombat(char1), Equals, true)
 	c.Assert(InCombat(char2), Equals, true)
@@ -96,7 +96,7 @@ func (s *CombatSuite) TestCombatLoop(c *C) {
 	case <-timeout:
 	}
 
-	StartFight(char1, char2)
+	StartFight(char1, nil, char2)
 	<-eventChannel1
 	<-eventChannel2
 }
