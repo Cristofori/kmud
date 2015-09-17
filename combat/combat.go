@@ -92,6 +92,7 @@ func init() {
 				}
 			case combatStart:
 				oldDefender, found := fights[m.Attacker]
+				skills[m.Attacker] = m.Skill
 
 				if m.Defender == oldDefender {
 					break
@@ -102,7 +103,6 @@ func init() {
 				}
 
 				fights[m.Attacker] = m.Defender
-				skills[m.Attacker] = m.Skill
 
 				events.Broadcast(events.CombatStartEvent{Attacker: m.Attacker, Defender: m.Defender})
 			case combatStop:
