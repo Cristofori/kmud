@@ -727,7 +727,7 @@ func init() {
 
 												menu.AddAction("r", "Rename")
 												menu.AddAction("c", fmt.Sprintf("Count - %v", spawner.GetCount()))
-												menu.AddAction("h", fmt.Sprintf("Hitpoints - %v", spawner.GetHitPoints()))
+												menu.AddAction("h", fmt.Sprintf("Health - %v", spawner.GetHealth()))
 
 												choice, _ := s.execMenu(menu)
 
