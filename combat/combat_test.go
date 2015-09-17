@@ -18,11 +18,6 @@ var _ = Suite(&CombatSuite{})
 
 func init() {
 	combatInterval = 10 * time.Millisecond
-	events.StartEvents()
-}
-
-func (s *CombatSuite) TearDownSuite(c *C) {
-	events.StopEvents()
 }
 
 func (s *CombatSuite) TestCombatLoop(c *C) {

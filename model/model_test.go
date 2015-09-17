@@ -5,7 +5,6 @@ import (
 
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/datastore"
-	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/types"
 	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
@@ -34,8 +33,6 @@ func (s *ModelSuite) SetUpSuite(c *C) {
 	session.DB(dbName).DropDatabase()
 
 	database.Init(database.NewMongoSession(session), dbName)
-
-	events.StartEvents()
 }
 
 func (s *ModelSuite) TearDownSuite(c *C) {

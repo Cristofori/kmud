@@ -15,13 +15,6 @@ type EventSuite struct{}
 
 var _ = Suite(&EventSuite{})
 
-func (s *EventSuite) SetUpSuite(c *C) {
-	StartEvents()
-}
-
-func (s *EventSuite) TearDownSuite(c *C) {
-}
-
 func (s *EventSuite) TestEventLoop(c *C) {
 
 	char := types.NewMockPC()

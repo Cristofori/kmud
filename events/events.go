@@ -42,17 +42,8 @@ func Broadcast(event Event) {
 	eventMessages <- broadcast{event}
 }
 
-func StopEvents() {
-	close(eventMessages)
-}
-
-func StartEvents() {
-	if _listeners != nil {
-		return
-	}
-
+func init() {
 	_listeners = map[types.Character]chan Event{}
-
 	eventMessages = make(chan interface{}, 1)
 
 	go func() {

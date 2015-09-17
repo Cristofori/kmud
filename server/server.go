@@ -11,7 +11,6 @@ import (
 
 	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/engine"
-	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/session"
 	"github.com/Cristofori/kmud/telnet"
@@ -425,8 +424,6 @@ func (self *Server) Start() {
 	utils.HandleError(err)
 
 	database.Init(database.NewMongoSession(session.Copy()), "mud")
-
-	events.StartEvents()
 
 	// If there are no rooms at all create one
 	rooms := model.GetRooms()
