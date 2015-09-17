@@ -241,6 +241,25 @@ func (self *Session) getRawUserInput(prompt string) string {
 	return self.getUserInput(RawUserInput, prompt)
 }
 
+func (self *Session) getInt(prompt string, min, max int) (int, bool) {
+	for {
+		input := self.getRawUserInput(prompt)
+		if input == "" {
+			return 0, false
+		}
+
+		val, err := strconv.ParseInt(input, 10, 0)
+
+		if err != nil {
+			self.printError("Invalid value (not a number)")
+		} else if int(val) < min || int(val) > max {
+			self.printError("Invalid value (out of range: %v - %v)", min, max)
+		}
+
+		return int(val), true
+	}
+}
+
 func (self *Session) GetPrompt() string {
 	prompt := self.prompt
 	prompt = strings.Replace(prompt, "%h", strconv.Itoa(self.player.GetHitPoints()), -1)

@@ -233,8 +233,14 @@ type Skill interface {
 	Nameable
 	SetPower(int)
 	GetPower() int
+	SetCost(int)
+	GetCost() int
+	GetEffect() SkillEffect
+	SetEffect(SkillEffect)
 	GetVariance() int
 	SetVariance(int)
+	GetSpeed() int
+	SetSpeed(int)
 }
 
 type SkillList []Skill

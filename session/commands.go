@@ -952,20 +952,35 @@ func init() {
 					SingleSkillMenu:
 						for {
 							menu := utils.NewMenu(fmt.Sprintf("Skill - %s", skill.GetName()))
-							menu.AddAction("a", fmt.Sprintf("Damage - %v", skill.GetPower()))
+							menu.AddAction("e", fmt.Sprintf("Effect - %v", skill.GetEffect()))
+							menu.AddAction("p", fmt.Sprintf("Power - %v", skill.GetPower()))
+							menu.AddAction("c", fmt.Sprintf("Cost - %v", skill.GetCost()))
+							menu.AddAction("v", fmt.Sprintf("Variance - %v", skill.GetVariance()))
+							menu.AddAction("s", fmt.Sprintf("Speed - %v", skill.GetSpeed()))
 							menu.AddAction("d", "Delete")
 
 							choice, _ := s.execMenu(menu)
 
 							switch choice {
-							case "a":
-								input := s.getRawUserInput("New damage value: ")
-								dmg, err := strconv.ParseInt(input, 10, 0)
-
-								if err != nil || dmg < 0 {
-									s.printError("Invalid value")
-								} else {
-									skill.SetPower(int(dmg))
+							case "p":
+								dmg, valid := s.getInt("New power: ", 0, 1000)
+								if valid {
+									skill.SetPower(dmg)
+								}
+							case "c":
+								cost, valid := s.getInt("New cost: ", 0, 1000)
+								if valid {
+									skill.SetCost(cost)
+								}
+							case "v":
+								variance, valid := s.getInt("New variance: ", 0, 1000)
+								if valid {
+									skill.SetVariance(variance)
+								}
+							case "s":
+								speed, valid := s.getInt("New speed: ", 0, 1000)
+								if valid {
+									skill.SetSpeed(speed)
 								}
 							case "d":
 								model.DeleteSkill(skillId)

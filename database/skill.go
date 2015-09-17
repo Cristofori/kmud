@@ -12,6 +12,7 @@ type Skill struct {
 	Power    int
 	Cost     int
 	Variance int
+	Speed    int
 	Effect   types.SkillEffect
 }
 
@@ -44,6 +45,23 @@ func (self *Skill) SetName(name string) {
 	}
 }
 
+func (self *Skill) GetEffect() types.SkillEffect {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Effect
+}
+
+func (self *Skill) SetEffect(effect types.SkillEffect) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	if effect != self.Effect {
+		self.Effect = effect
+		self.modified()
+	}
+}
+
 func (self *Skill) GetPower() int {
 	self.ReadLock()
 	defer self.ReadUnlock()
@@ -51,12 +69,29 @@ func (self *Skill) GetPower() int {
 	return self.Power
 }
 
-func (self *Skill) SetPower(damage int) {
+func (self *Skill) SetPower(power int) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
-	if damage != self.Power {
-		self.Power = damage
+	if power != self.Power {
+		self.Power = power
+		self.modified()
+	}
+}
+
+func (self *Skill) GetCost() int {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Cost
+}
+
+func (self *Skill) SetCost(cost int) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	if cost != self.Cost {
+		self.Cost = cost
 		self.modified()
 	}
 }
@@ -73,6 +108,23 @@ func (self *Skill) SetVariance(variance int) {
 
 	if variance != self.Variance {
 		self.Variance = variance
+		self.modified()
+	}
+}
+
+func (self *Skill) GetSpeed() int {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Speed
+}
+
+func (self *Skill) SetSpeed(speed int) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	if speed != self.Speed {
+		self.Speed = speed
 		self.modified()
 	}
 }
