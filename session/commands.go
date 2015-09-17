@@ -740,26 +740,14 @@ func init() {
 														spawner.SetName(newName)
 													}
 												case "c":
-													input := s.getRawUserInput("New count: ")
-													if input != "" {
-														newCount, err := strconv.ParseInt(input, 10, 0)
-
-														if err != nil || newCount < 0 {
-															s.printError("Invalid value")
-														} else {
-															spawner.SetCount(int(newCount))
-														}
+													count, valid := s.getInt("New count: ", 0, 1000)
+													if valid {
+														spawner.SetCount(count)
 													}
 												case "h":
-													input := s.getRawUserInput("New hitpoint count: ")
-													if input != "" {
-														newCount, err := strconv.ParseInt(input, 10, 0)
-
-														if err != nil || newCount <= 0 {
-															s.printError("Invalid value")
-														} else {
-															spawner.SetHealth(int(newCount))
-														}
+													health, valid := s.getInt("New hitpoint count: ", 0, 1000)
+													if valid {
+														spawner.SetHealth(health)
 													}
 												}
 											}
