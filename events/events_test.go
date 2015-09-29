@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	tu "github.com/Cristofori/kmud/testutils"
 	"github.com/Cristofori/kmud/types"
 	. "gopkg.in/check.v1"
 )
@@ -24,8 +23,6 @@ func (s *EventSuite) TestEventLoop(c *C) {
 	message := "hey how are yah"
 	Broadcast(TellEvent{char, char, message})
 
-	timeout := tu.Timeout(3 * time.Second)
-
 	select {
 	case event := <-eventChannel:
 		gotTellEvent := false
@@ -40,7 +37,7 @@ func (s *EventSuite) TestEventLoop(c *C) {
 		if gotTellEvent == false {
 			c.Fatalf("Didn't get a Tell event back")
 		}
-	case <-timeout:
+	case <-time.After(3 * time.Second):
 		c.Fatalf("Timed out waiting for tell event")
 	}
 }

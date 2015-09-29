@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/Cristofori/kmud/events"
-	tu "github.com/Cristofori/kmud/testutils"
 	"github.com/Cristofori/kmud/types"
 	. "gopkg.in/check.v1"
 )
@@ -34,8 +33,6 @@ func (s *CombatSuite) TestCombatLoop(c *C) {
 	c.Assert(InCombat(char2), Equals, true)
 
 	verifyEvents := func(channel chan events.Event) {
-		timeout := tu.Timeout(30 * time.Millisecond)
-
 		gotCombatEvent := false
 		gotStartEvent := false
 
@@ -52,7 +49,7 @@ func (s *CombatSuite) TestCombatLoop(c *C) {
 				default:
 					c.FailNow()
 				}
-			case <-timeout:
+			case <-time.After(30 * time.Millisecond):
 				c.Fatalf("Timed out waiting for combat event")
 				break Loop
 			}
@@ -81,14 +78,12 @@ func (s *CombatSuite) TestCombatLoop(c *C) {
 		c.Fatalf("Didn't get a combat stop event (channel 1)")
 	}
 
-	timeout := tu.Timeout(20 * time.Millisecond)
-
 	select {
 	case e := <-eventChannel1:
 		c.Fatalf("Shouldn't have gotten any combat events after stopping combat (channel 1) - %s", e)
 	case e := <-eventChannel2:
 		c.Fatalf("Shouldn't have gotten any combat events after stopping combat (channel 2) - %s", e)
-	case <-timeout:
+	case <-time.After(20 * time.Millisecond):
 	}
 
 	StartFight(char1, nil, char2)
