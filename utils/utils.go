@@ -10,6 +10,7 @@ import (
 	"log"
 	"math/rand"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -364,4 +365,17 @@ func DirectionToExitString(direction types.Direction) string {
 // TODO: placeholder
 func Columnize(list []string, width int) string {
 	return "\t" + strings.Join(list, "\r\n\t")
+}
+
+func Atois(strings []string) ([]int, error) {
+	ints := make([]int, len(strings))
+	for i, str := range strings {
+		val, err := strconv.Atoi(str)
+		if err != nil {
+			return ints, err
+		}
+		ints[i] = val
+	}
+
+	return ints, nil
 }

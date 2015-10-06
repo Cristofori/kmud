@@ -320,27 +320,13 @@ func init() {
 						z = r.GetLocation().Z
 					}
 				} else if len(args) == 3 {
-					var err error
-					x, err = strconv.Atoi(args[0])
-
+					coords, err := utils.Atois(args)
 					if err != nil {
 						self.Usage(s)
 						return
 					}
 
-					y, err = strconv.Atoi(args[1])
-
-					if err != nil {
-						self.Usage(s)
-						return
-					}
-
-					z, err = strconv.Atoi(args[2])
-
-					if err != nil {
-						self.Usage(s)
-						return
-					}
+					x, y, z = coords[0], coords[1], coords[2]
 				} else {
 					self.Usage(s)
 					return

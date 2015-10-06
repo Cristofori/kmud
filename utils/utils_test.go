@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"io"
 	"math/rand"
 	"reflect"
@@ -25,7 +26,7 @@ func Test_WriteLine(t *testing.T) {
 }
 
 func Test_Simplify(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s, want string
 	}{
 		{" Test1", "test1"},
@@ -47,7 +48,7 @@ func Test_Simplify(t *testing.T) {
 func Test_GetRawUserInput(t *testing.T) {
 	readWriter := &testutils.TestReadWriter{}
 
-	var tests = []struct {
+	tests := []struct {
 		input, output string
 	}{
 		{"Test1", "Test1"},
@@ -70,7 +71,7 @@ func Test_GetRawUserInput(t *testing.T) {
 func Test_GetUserInput(t *testing.T) {
 	readWriter := &testutils.TestReadWriter{}
 
-	var tests = []struct {
+	tests := []struct {
 		input, output string
 	}{
 		{"Test1", "test1"},
@@ -111,7 +112,7 @@ func Test_HandleError(t *testing.T) {
 }
 
 func Test_FormatName(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		input  string
 		output string
 	}{
@@ -131,7 +132,7 @@ func Test_FormatName(t *testing.T) {
 }
 
 func Test_ValidateName(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		input  string
 		output bool
 	}{
@@ -160,7 +161,7 @@ func Test_ValidateName(t *testing.T) {
 func Test_BestMatch(t *testing.T) {
 	searchList := []string{"", "Foo", "Bar", "Joe", "Bob", "Abcdef", "Abc", "QrStUv"}
 
-	var tests = []struct {
+	tests := []struct {
 		input  string
 		output int
 	}{
@@ -183,7 +184,7 @@ func Test_BestMatch(t *testing.T) {
 }
 
 func Test_Argify(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		input   string
 		output1 string
 		output2 []string
@@ -216,7 +217,7 @@ func Test_TrimUpperRows(t *testing.T) {
 	nonEmptyRow4 := "                         B"
 	nonEmptyRow5 := "            C             "
 
-	var tests = []struct {
+	tests := []struct {
 		input  []string
 		output []string
 	}{
@@ -249,7 +250,7 @@ func Test_TrimLowerRows(t *testing.T) {
 	nonEmptyRow4 := "                         B"
 	nonEmptyRow5 := "            C             "
 
-	var tests = []struct {
+	tests := []struct {
 		input  []string
 		output []string
 	}{
@@ -284,7 +285,7 @@ func Test_TrimEmptyRows(t *testing.T) {
 
 	NL := "\r\n"
 
-	var tests = []struct {
+	tests := []struct {
 		input  string
 		output string
 	}{
@@ -315,7 +316,7 @@ func Test_TrimEmptyRows(t *testing.T) {
 }
 
 func Test_Random(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		low  int
 		high int
 	}{
@@ -333,6 +334,36 @@ func Test_Random(t *testing.T) {
 
 			if result < test.low || result > test.high {
 				t.Errorf("Random number was out of range %v-%v, got %v", test.low, test.high, result)
+			}
+		}
+	}
+}
+
+func Test_Atois(t *testing.T) {
+	tests := []struct {
+		input  []string
+		output []int
+		err    error
+	}{
+		{[]string{"0"}, []int{0}, nil},
+		{[]string{"0", "1", "3"}, []int{0, 1, 3}, nil},
+		{[]string{"asdf"}, []int{}, errors.New("not nil")},
+		{[]string{"1", "2", "asdf"}, []int{}, errors.New("not nil")},
+	}
+
+	for _, test := range tests {
+		output, err := Atois(test.input)
+		if (err == nil && test.err != nil) || (err != nil && test.err == nil) {
+			t.Errorf("Error flags did not match: %v, got %v", test.input, err)
+		} else if err == nil {
+			if len(output) != len(test.output) {
+				t.Errorf("Mismatched length: %v, %v", output, test.output)
+			} else {
+				for i, o := range output {
+					if o != test.output[i] {
+						t.Errorf("Expected: %v, got: %v", test.output, output)
+					}
+				}
 			}
 		}
 	}
