@@ -379,3 +379,16 @@ func Atois(strings []string) ([]int, error) {
 
 	return ints, nil
 }
+
+func Atoir(str string, min, max int) (int, error) {
+	val, err := strconv.Atoi(str)
+	if err != nil {
+		return val, fmt.Errorf("%v is not a valid number", str)
+	}
+
+	if val < min || val > max {
+		return val, fmt.Errorf("Value out of range: %v (%v - %v)", val, min, max)
+	}
+
+	return val, nil
+}

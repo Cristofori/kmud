@@ -2,7 +2,7 @@ package session
 
 import (
 	"fmt"
-	"strconv"
+	"math"
 	"strings"
 
 	"github.com/Cristofori/kmud/model"
@@ -541,9 +541,10 @@ func init() {
 				}
 
 				if args[0] == "give" {
-					amount, err := strconv.Atoi(args[1])
+					amount, err := utils.Atoir(args[1], 1, math.MaxInt32)
 
 					if err != nil {
+						s.printError(err.Error())
 						self.Usage(s)
 						return
 					}
@@ -1092,5 +1093,3 @@ func whisper(self *command, s *Session, args []string) {
 	message := strings.Join(args[1:], " ")
 	model.Tell(s.player, targetChar, message)
 }
-
-// vim: nocindent

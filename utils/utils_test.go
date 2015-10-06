@@ -369,4 +369,32 @@ func Test_Atois(t *testing.T) {
 	}
 }
 
+func Test_Atoir(t *testing.T) {
+	tests := []struct {
+		input  string
+		min    int
+		max    int
+		output int
+		err    error
+	}{
+		{"1", 0, 10, 1, nil},
+		{"asdf", 0, 10, 0, errors.New("error")},
+		{"999999", -5, 5, 0, errors.New("error")},
+		{"-10", -5, 5, 0, errors.New("error")},
+		{"-3", -5, 5, -3, nil},
+		{"3", -5, 5, 3, nil},
+	}
+
+	for _, test := range tests {
+		output, err := Atoir(test.input, test.min, test.max)
+		if (err == nil && test.err != nil) || (err != nil && test.err == nil) {
+			t.Errorf("Error flags did not match: %v, got %v", test.input, err)
+		} else if err == nil {
+			if test.output != output {
+				t.Errorf("Expected %v, got %v", test.output, output)
+			}
+		}
+	}
+}
+
 // vim:nocindent

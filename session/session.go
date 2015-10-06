@@ -248,15 +248,14 @@ func (self *Session) getInt(prompt string, min, max int) (int, bool) {
 			return 0, false
 		}
 
-		val, err := strconv.ParseInt(input, 10, 0)
+		val, err := utils.Atoir(input, min, max)
 
 		if err != nil {
-			self.printError("Invalid value (not a number)")
-		} else if int(val) < min || int(val) > max {
-			self.printError("Invalid value (out of range: %v - %v)", min, max)
+			self.printError(err.Error())
+			return 0, false
 		}
 
-		return int(val), true
+		return val, true
 	}
 }
 
