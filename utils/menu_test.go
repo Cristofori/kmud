@@ -1,59 +1,26 @@
 package utils
 
 import (
-	"github.com/Cristofori/kmud/testutils"
-	"github.com/Cristofori/kmud/types"
-	"strings"
 	"testing"
+
+	"github.com/Cristofori/kmud/testutils"
 )
 
-func Test_NewMenu(t *testing.T) {
-	title := "test menu"
-	menu := NewMenu(title)
+func Test_Menu(t *testing.T) {
+	var Comm testutils.TestCommunicable
+	Comm.ToRead = "a"
 
-	if menu.title != title {
-		t.Errorf("NewMenu(%s) == %s, want %s", title, menu.title, title)
-	}
-}
+	called := false
+	handled := false
+	ExecMenu("Menu", &Comm, func(menu *Menu) {
+		called = true
 
-func Test_AddAction(t *testing.T) {
-	menu := NewMenu("test")
+		menu.AddAction("a", "Apple", func() bool {
+			handled = true
+			return false
+		})
+	})
 
-	key := "KEY"
-
-	menu.AddAction(key, "option")
-
-	testutils.Assert(menu.HasAction(key), t, "Menu didn't have action %s", key)
-}
-
-func Test_Exec(t *testing.T) {
-	menu := NewMenu("test")
-
-	menu.AddAction("a", "Action 1")
-	menu.AddAction("b", "Action 2")
-
-	readWriter := &testutils.TestReadWriter{}
-
-	expected := "a"
-	readWriter.ToRead = expected
-
-	choice, _ := menu.Exec(readWriter, types.ColorModeNone)
-
-	testutils.Assert(choice == expected, t, "Expected choice to be %s", expected)
-}
-
-func Test_Print(t *testing.T) {
-	menu := NewMenu("print test")
-
-	menu.AddAction("a", "Action1")
-	menu.AddAction("1", "Action2")
-	menu.AddAction("c", "Action3")
-
-	writer := &testutils.TestWriter{}
-
-	menu.Print(writer, types.ColorModeNone)
-
-	testutils.Assert(strings.Contains(writer.Wrote, "[A]ction1"), t, "Didn't have Action1")
-	testutils.Assert(strings.Contains(writer.Wrote, "[1]Action2"), t, "Didn't have Action2")
-	testutils.Assert(strings.Contains(writer.Wrote, "A[c]tion3"), t, "Didn't have Action3")
+	testutils.Assert(called == true, t, "Failed to exec menu")
+	testutils.Assert(handled == true, t, "Failed to handle menu action")
 }

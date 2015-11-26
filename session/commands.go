@@ -3,6 +3,7 @@ package session
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 
 	"github.com/Cristofori/kmud/model"
@@ -64,87 +65,62 @@ func init() {
 		"room": {
 			admin: true,
 			exec: func(self *command, s *Session, args []string) {
-				for {
-					menu := utils.NewMenu("Room")
-
-					menu.AddAction("t", fmt.Sprintf("Title - %s", s.room.GetTitle()))
-					menu.AddAction("d", "Description")
-					menu.AddAction("e", "Exits")
-
-					areaId := s.room.GetAreaId()
-					name := "(None)"
-					if areaId != nil {
-						area := model.GetArea(areaId)
-						name = area.GetName()
-					}
-					menu.AddAction("a", fmt.Sprintf("Area - %s", name))
-
-					choice, _ := s.execMenu(menu)
-
-					switch choice {
-					case "":
-						s.printRoom()
-						return
-
-					case "t":
-						title := s.getRawUserInput("Enter new title: ")
-
-						if title != "" {
-							s.room.SetTitle(title)
-						}
-
-					case "d":
-						description := s.getRawUserInput("Enter new description: ")
-
-						if description != "" {
-							s.room.SetDescription(description)
-						}
-
-					case "e":
-						for {
-							menu := toggleExitMenu(s.room)
-
-							choice, _ := s.execMenu(menu)
-
-							if choice == "" {
-								break
+				utils.ExecMenu(
+					"Room", s,
+					func(menu *utils.Menu) {
+						menu.AddAction("t", fmt.Sprintf("Title - %s", s.room.GetTitle()), func() bool {
+							title := s.getRawUserInput("Enter new title: ")
+							if title != "" {
+								s.room.SetTitle(title)
 							}
+							return true
+						})
 
-							direction := types.StringToDirection(choice)
-							if direction != types.DirectionNone {
-								enable := !s.room.HasExit(direction)
-								s.room.SetExitEnabled(direction, enable)
+						menu.AddAction("d", "Description", func() bool {
+							description := s.getRawUserInput("Enter new description: ")
+							if description != "" {
+								s.room.SetDescription(description)
+							}
+							return true
+						})
 
-								// Disable the corresponding exit in the adjacent room if necessary
-								loc := s.room.NextLocation(direction)
-								otherRoom := model.GetRoomByLocation(loc, s.room.GetZoneId())
-								if otherRoom != nil {
-									otherRoom.SetExitEnabled(direction.Opposite(), enable)
+						menu.AddAction("e", "Exits", func() bool {
+							toggleExitMenu(s)
+							return true
+						})
+
+						areaId := s.room.GetAreaId()
+						areaName := "(None)"
+						if areaId != nil {
+							area := model.GetArea(areaId)
+							areaName = area.GetName()
+						}
+
+						menu.AddAction("a", fmt.Sprintf("Area - %s", areaName), func() bool {
+							utils.ExecMenu("Change Area", s, func(menu *utils.Menu) {
+								menu.AddAction("n", "None", func() bool {
+									s.room.SetAreaId(nil)
+									return true
+								})
+
+								for i, area := range model.GetAreas(s.currentZone()) {
+									actionText := area.GetName()
+									if area.GetId() == s.room.GetAreaId() {
+										actionText += "*"
+									}
+
+									a := area
+									menu.AddAction(strconv.Itoa(i+1), actionText, func() bool {
+										s.room.SetAreaId(a.GetId())
+										return true
+									})
 								}
-							}
-						}
-					case "a":
-						menu := utils.NewMenu("Change Area")
-						menu.AddAction("n", "None")
-						for i, area := range model.GetAreas(s.currentZone()) {
-							index := i + 1
-							actionText := area.GetName()
-							if area.GetId() == s.room.GetAreaId() {
-								actionText += "*"
-							}
-							menu.AddActionData(index, actionText, area.GetId())
-						}
+							})
+							return true
+						})
+					})
 
-						choice, areaId := s.execMenu(menu)
-
-						switch choice {
-						case "n":
-							s.room.SetAreaId(nil)
-						default:
-							s.room.SetAreaId(areaId)
-						}
-					}
-				}
+				s.printRoom()
 			},
 		},
 		"map": {
@@ -440,49 +416,27 @@ func init() {
 		"npc": {
 			admin: true,
 			exec: func(self *command, s *Session, args []string) {
-				for {
-					choice, npcId := s.execMenu(npcMenu(nil))
-					if choice == "" {
-						break
-					} else if choice == "n" {
+
+				utils.ExecMenu("NPCs", s, func(menu *utils.Menu) {
+					var npcs types.NPCList
+					npcs = model.GetNpcs()
+
+					menu.AddAction("n", "New", func() bool {
 						name := getNpcName(s)
 						if name != "" {
 							model.CreateNpc(name, s.room.GetId(), nil)
 						}
-					} else if npcId != nil {
-						for {
-							specificMenu := specificNpcMenu(npcId)
-							choice, _ := s.execMenu(specificMenu)
-							npc := model.GetNpc(npcId)
+						return true
+					})
 
-							if choice == "d" {
-								model.DeleteCharacter(npcId)
-							} else if choice == "r" {
-								name := getNpcName(s)
-								if name != "" {
-									npc.SetName(name)
-								}
-							} else if choice == "c" {
-								conversation := npc.GetConversation()
-
-								if conversation == "" {
-									conversation = "<empty>"
-								}
-
-								s.printLine("Conversation: %s", conversation)
-								newConversation := s.getRawUserInput("New conversation text: ")
-
-								if newConversation != "" {
-									npc.SetConversation(newConversation)
-								}
-							} else if choice == "o" {
-								npc.SetRoaming(!npc.GetRoaming())
-							} else if choice == "" {
-								break
-							}
-						}
+					for i, npc := range npcs {
+						n := npc
+						menu.AddAction(strconv.Itoa(i+1), npc.GetName(), func() bool {
+							specificNpcMenu(s, n)
+							return true
+						})
 					}
-				}
+				})
 
 				s.printRoom()
 			},
@@ -635,118 +589,23 @@ func init() {
 		"area": {
 			admin: true,
 			exec: func(self *command, s *Session, args []string) {
-				for {
-					menu := utils.NewMenu("Areas")
-
-					menu.AddAction("n", "New")
-
-					for i, area := range model.GetAreas(s.currentZone()) {
-						menu.AddActionData(i+1, area.GetName(), area.GetId())
-					}
-
-					choice, areaId := s.execMenu(menu)
-
-					switch choice {
-					case "":
-						return
-					case "n":
+				utils.ExecMenu("Areas", s, func(menu *utils.Menu) {
+					menu.AddAction("n", "New", func() bool {
 						name := s.getRawUserInput("Area name: ")
-
 						if name != "" {
 							model.CreateArea(name, s.currentZone())
 						}
-					default:
-						area := model.GetArea(areaId)
+						return true
+					})
 
-						if area != nil {
-						AreaMenu:
-							for {
-								areaMenu := utils.NewMenu(area.GetName())
-								areaMenu.AddAction("r", "Rename")
-								areaMenu.AddAction("d", "Delete")
-								areaMenu.AddAction("s", "Spawners")
-
-								choice, _ = s.execMenu(areaMenu)
-
-								switch choice {
-								case "":
-									break AreaMenu
-								case "r":
-									newName := s.getRawUserInput("New name: ")
-
-									if newName != "" {
-										area.SetName(newName)
-									}
-								case "d":
-									answer := s.getRawUserInput("Are you sure? ")
-
-									if strings.ToLower(answer) == "y" {
-										model.DeleteArea(areaId)
-									}
-								case "s":
-								SpawnerMenu:
-									for {
-										menu := utils.NewMenu("Spawners")
-
-										for i, spawner := range model.GetAreaSpawners(areaId) {
-											menu.AddActionData(i+1, spawner.GetName(), spawner.GetId())
-										}
-
-										menu.AddAction("n", "New")
-
-										choice, spawnerId := s.execMenu(menu)
-
-										switch choice {
-										case "":
-											break SpawnerMenu
-										case "n":
-											name := s.getRawUserInput("Name of spawned NPC: ")
-
-											if name != "" {
-												model.CreateSpawner(name, areaId)
-											}
-										default:
-											spawner := model.GetSpawner(spawnerId)
-
-										SingleSpawnerMenu:
-											for {
-												menu := utils.NewMenu(fmt.Sprintf("%s - %s", "Spawner", spawner.GetName()))
-
-												menu.AddAction("r", "Rename")
-												menu.AddAction("c", fmt.Sprintf("Count - %v", spawner.GetCount()))
-												menu.AddAction("h", fmt.Sprintf("Health - %v", spawner.GetHealth()))
-
-												choice, _ := s.execMenu(menu)
-
-												switch choice {
-												case "":
-													break SingleSpawnerMenu
-												case "r":
-													newName := s.getRawUserInput("New name: ")
-													if newName != "" {
-														spawner.SetName(newName)
-													}
-												case "c":
-													count, valid := s.getInt("New count: ", 0, 1000)
-													if valid {
-														spawner.SetCount(count)
-													}
-												case "h":
-													health, valid := s.getInt("New hitpoint count: ", 0, 1000)
-													if valid {
-														spawner.SetHealth(health)
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						} else {
-							s.printError("That area doesn't exist")
-						}
+					for i, area := range model.GetAreas(s.currentZone()) {
+						a := area
+						menu.AddAction(strconv.Itoa(i+1), area.GetName(), func() bool {
+							specificAreaMenu(s, a)
+							return true
+						})
 					}
-				}
+				})
 			},
 		},
 		"link": {
@@ -888,24 +747,8 @@ func init() {
 		"skills": {
 			admin: true,
 			exec: func(self *command, s *Session, args []string) {
-			Loop:
-				for {
-					menu := utils.NewMenu("Skills")
-
-					menu.AddAction("n", "New")
-
-					skills := model.GetAllSkills()
-
-					for i, skill := range skills {
-						menu.AddActionData(i+1, skill.GetName(), skill.GetId())
-					}
-
-					choice, skillId := s.execMenu(menu)
-
-					switch choice {
-					case "":
-						break Loop
-					case "n":
+				utils.ExecMenu("Skills", s, func(menu *utils.Menu) {
+					menu.AddAction("n", "New", func() bool {
 						for {
 							name := s.getCleanUserInput("Skill name: ")
 
@@ -916,121 +759,147 @@ func init() {
 							skill := model.GetSkillByName(name)
 
 							if skill != nil {
-								s.printError("An skill with that name already exists")
+								s.printError("A skill with that name already exists")
 							} else {
 								model.CreateSkill(name)
 								break
 							}
 						}
-					default:
-						skill := model.GetSkill(skillId)
-					SingleSkillMenu:
-						for {
-							menu := utils.NewMenu(fmt.Sprintf("Skill - %s", skill.GetName()))
-							menu.AddAction("e", fmt.Sprintf("Effect - %v", skill.GetEffect()))
-							menu.AddAction("p", fmt.Sprintf("Power - %v", skill.GetPower()))
-							menu.AddAction("c", fmt.Sprintf("Cost - %v", skill.GetCost()))
-							menu.AddAction("v", fmt.Sprintf("Variance - %v", skill.GetVariance()))
-							menu.AddAction("s", fmt.Sprintf("Speed - %v", skill.GetSpeed()))
-							menu.AddAction("d", "Delete")
+						return true
+					})
 
-							choice, _ := s.execMenu(menu)
-
-							switch choice {
-							case "p":
-								dmg, valid := s.getInt("New power: ", 0, 1000)
-								if valid {
-									skill.SetPower(dmg)
-								}
-							case "c":
-								cost, valid := s.getInt("New cost: ", 0, 1000)
-								if valid {
-									skill.SetCost(cost)
-								}
-							case "v":
-								variance, valid := s.getInt("New variance: ", 0, 1000)
-								if valid {
-									skill.SetVariance(variance)
-								}
-							case "s":
-								speed, valid := s.getInt("New speed: ", 0, 1000)
-								if valid {
-									skill.SetSpeed(speed)
-								}
-							case "d":
-								model.DeleteSkill(skillId)
-								fallthrough
-							case "":
-								break SingleSkillMenu
-							}
-						}
+					skills := model.GetAllSkills()
+					for i, skill := range skills {
+						sk := skill
+						menu.AddAction(strconv.Itoa(i+1), skill.GetName(), func() bool {
+							specificSkillMenu(s, sk)
+							return true
+						})
 					}
-				}
+				})
 			},
 		},
 	}
 }
 
-func npcMenu(roomId types.Id) *utils.Menu {
-	var npcs types.NPCList
-
-	if roomId != nil {
-		npcs = model.NpcsIn(roomId)
-	} else {
-		npcs = model.GetNpcs()
-	}
-
-	menu := utils.NewMenu("NPCs")
-
-	menu.AddAction("n", "New")
-
-	for i, npc := range npcs {
-		index := i + 1
-		menu.AddActionData(index, npc.GetName(), npc.GetId())
-	}
-
-	return menu
+func specificSkillMenu(s *Session, skill types.Skill) {
+	utils.ExecMenu(fmt.Sprintf("Skill - %s", skill.GetName()), s, func(menu *utils.Menu) {
+		menu.AddAction("e", fmt.Sprintf("Effect - %v", skill.GetEffect()), func() bool {
+			return true
+		})
+		menu.AddAction("p", fmt.Sprintf("Power - %v", skill.GetPower()), func() bool {
+			dmg, valid := s.getInt("New power: ", 0, 1000)
+			if valid {
+				skill.SetPower(dmg)
+			}
+			return true
+		})
+		menu.AddAction("c", fmt.Sprintf("Cost - %v", skill.GetCost()), func() bool {
+			cost, valid := s.getInt("New cost: ", 0, 1000)
+			if valid {
+				skill.SetCost(cost)
+			}
+			return true
+		})
+		menu.AddAction("v", fmt.Sprintf("Variance - %v", skill.GetVariance()), func() bool {
+			variance, valid := s.getInt("New variance: ", 0, 1000)
+			if valid {
+				skill.SetVariance(variance)
+			}
+			return true
+		})
+		menu.AddAction("s", fmt.Sprintf("Speed - %v", skill.GetSpeed()), func() bool {
+			speed, valid := s.getInt("New speed: ", 0, 1000)
+			if valid {
+				skill.SetSpeed(speed)
+			}
+			return true
+		})
+		menu.AddAction("d", "Delete", func() bool {
+			model.DeleteSkill(skill.GetId())
+			return false
+		})
+	})
 }
 
-func specificNpcMenu(npcId types.Id) *utils.Menu {
-	npc := model.GetNpc(npcId)
-	menu := utils.NewMenu(npc.GetName())
-	menu.AddAction("r", "Rename")
-	menu.AddAction("d", "Delete")
-	menu.AddAction("c", "Conversation")
+func specificNpcMenu(s *Session, npc types.NPC) {
+	utils.ExecMenu(npc.GetName(), s, func(menu *utils.Menu) {
+		menu.AddAction("r", "Rename", func() bool {
+			name := getNpcName(s)
+			if name != "" {
+				npc.SetName(name)
+			}
+			return true
+		})
 
-	roamingState := "Off"
-	if npc.GetRoaming() {
-		roamingState = "On"
-	}
+		menu.AddAction("d", "Delete", func() bool {
+			model.DeleteCharacter(npc.GetId())
+			return false
+		})
 
-	menu.AddAction("o", fmt.Sprintf("Roaming - %s", roamingState))
-	return menu
+		menu.AddAction("c", "Conversation", func() bool {
+			conversation := npc.GetConversation()
+
+			if conversation == "" {
+				conversation = "<empty>"
+			}
+
+			s.printLine("Conversation: %s", conversation)
+			newConversation := s.getRawUserInput("New conversation text: ")
+
+			if newConversation != "" {
+				npc.SetConversation(newConversation)
+			}
+			return true
+		})
+
+		roamingState := "Off"
+		if npc.GetRoaming() {
+			roamingState = "On"
+		}
+
+		menu.AddAction("o", fmt.Sprintf("Roaming - %s", roamingState), func() bool {
+			npc.SetRoaming(!npc.GetRoaming())
+			return true
+		})
+	})
 }
 
-func toggleExitMenu(room types.Room) *utils.Menu {
+func toggleExitMenu(s *Session) {
 	onOrOff := func(direction types.Direction) string {
 		text := "Off"
-		if room.HasExit(direction) {
+		if s.room.HasExit(direction) {
 			text = "On"
 		}
 		return types.Colorize(types.ColorBlue, text)
 	}
 
-	menu := utils.NewMenu("Edit Exits")
+	toggleExit := func(direction types.Direction) func() bool {
+		return func() bool {
+			enable := !s.room.HasExit(direction)
+			s.room.SetExitEnabled(direction, enable)
 
-	menu.AddAction("n", "North: "+onOrOff(types.DirectionNorth))
-	menu.AddAction("ne", "North East: "+onOrOff(types.DirectionNorthEast))
-	menu.AddAction("e", "East: "+onOrOff(types.DirectionEast))
-	menu.AddAction("se", "South East: "+onOrOff(types.DirectionSouthEast))
-	menu.AddAction("s", "South: "+onOrOff(types.DirectionSouth))
-	menu.AddAction("sw", "South West: "+onOrOff(types.DirectionSouthWest))
-	menu.AddAction("w", "West: "+onOrOff(types.DirectionWest))
-	menu.AddAction("nw", "North West: "+onOrOff(types.DirectionNorthWest))
-	menu.AddAction("u", "Up: "+onOrOff(types.DirectionUp))
-	menu.AddAction("d", "Down: "+onOrOff(types.DirectionDown))
+			loc := s.room.NextLocation(direction)
+			otherRoom := model.GetRoomByLocation(loc, s.room.GetZoneId())
+			if otherRoom != nil {
+				otherRoom.SetExitEnabled(direction.Opposite(), enable)
+			}
+			return false
+		}
+	}
 
-	return menu
+	utils.ExecMenu("Edit Exits", s, func(menu *utils.Menu) {
+		menu.AddAction("n", "North: "+onOrOff(types.DirectionNorth), toggleExit(types.DirectionNorth))
+		menu.AddAction("ne", "North East: "+onOrOff(types.DirectionNorthEast), toggleExit(types.DirectionNorthEast))
+		menu.AddAction("e", "East: "+onOrOff(types.DirectionEast), toggleExit(types.DirectionEast))
+		menu.AddAction("se", "South East: "+onOrOff(types.DirectionSouthEast), toggleExit(types.DirectionSouthEast))
+		menu.AddAction("s", "South: "+onOrOff(types.DirectionSouth), toggleExit(types.DirectionSouth))
+		menu.AddAction("sw", "South West: "+onOrOff(types.DirectionSouthWest), toggleExit(types.DirectionSouthWest))
+		menu.AddAction("w", "West: "+onOrOff(types.DirectionWest), toggleExit(types.DirectionWest))
+		menu.AddAction("nw", "North West: "+onOrOff(types.DirectionNorthWest), toggleExit(types.DirectionNorthWest))
+		menu.AddAction("u", "Up: "+onOrOff(types.DirectionUp), toggleExit(types.DirectionUp))
+		menu.AddAction("d", "Down: "+onOrOff(types.DirectionDown), toggleExit(types.DirectionDown))
+	})
 }
 
 var linkData struct {
@@ -1092,4 +961,78 @@ func whisper(self *command, s *Session, args []string) {
 
 	message := strings.Join(args[1:], " ")
 	model.Tell(s.player, targetChar, message)
+}
+
+func specificAreaMenu(s *Session, area types.Area) {
+	utils.ExecMenu(area.GetName(), s, func(menu *utils.Menu) {
+		menu.AddAction("r", "Rename", func() bool {
+			newName := s.getRawUserInput("New name: ")
+
+			if newName != "" {
+				area.SetName(newName)
+			}
+			return true
+		})
+		menu.AddAction("d", "Delete", func() bool {
+			answer := s.getRawUserInput("Are you sure? ")
+
+			if strings.ToLower(answer) == "y" {
+				model.DeleteArea(area.GetId())
+			}
+			return false
+		})
+		menu.AddAction("s", "Spawners", func() bool {
+			spawnerMenu(s, area)
+			return true
+		})
+	})
+}
+
+func spawnerMenu(s *Session, area types.Area) {
+	utils.ExecMenu("Spawners", s, func(menu *utils.Menu) {
+		for i, spawner := range model.GetAreaSpawners(area.GetId()) {
+			sp := spawner
+			menu.AddAction(strconv.Itoa(i+1), spawner.GetName(), func() bool {
+				specificSpawnerMenu(s, sp)
+				return true
+			})
+		}
+
+		menu.AddAction("n", "New", func() bool {
+			name := s.getRawUserInput("Name of spawned NPC: ")
+
+			if name != "" {
+				model.CreateSpawner(name, area.GetId())
+			}
+			return true
+		})
+	})
+}
+
+func specificSpawnerMenu(s *Session, spawner types.Spawner) {
+	utils.ExecMenu(fmt.Sprintf("%s - %s", "Spawner", spawner.GetName()), s, func(menu *utils.Menu) {
+		menu.AddAction("r", "Rename", func() bool {
+			newName := s.getRawUserInput("New name: ")
+			if newName != "" {
+				spawner.SetName(newName)
+			}
+			return true
+		})
+
+		menu.AddAction("c", fmt.Sprintf("Count - %v", spawner.GetCount()), func() bool {
+			count, valid := s.getInt("New count: ", 0, 1000)
+			if valid {
+				spawner.SetCount(count)
+			}
+			return true
+		})
+
+		menu.AddAction("h", fmt.Sprintf("Health - %v", spawner.GetHealth()), func() bool {
+			health, valid := s.getInt("New hitpoint count: ", 0, 1000)
+			if valid {
+				spawner.SetHealth(health)
+			}
+			return true
+		})
+	})
 }

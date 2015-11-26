@@ -37,12 +37,13 @@ func SimplePrompter(prompt string) Prompter {
 	return &prompter
 }
 
-func Write(conn io.Writer, text string, cm types.ColorMode) (int, error) {
-	return conn.Write([]byte(types.ProcessColors(text, cm)))
+func Write(conn io.Writer, text string, cm types.ColorMode) {
+	_, err := conn.Write([]byte(types.ProcessColors(text, cm)))
+	HandleError(err)
 }
 
-func WriteLine(conn io.Writer, line string, cm types.ColorMode) (int, error) {
-	return Write(conn, line+"\r\n", cm)
+func WriteLine(conn io.Writer, line string, cm types.ColorMode) {
+	Write(conn, line+"\r\n", cm)
 }
 
 // ClearLine sends the VT100 code for erasing the line followed by a carriage

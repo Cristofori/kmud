@@ -145,12 +145,12 @@ func (self *User) GetInput(prompt string) string {
 	return utils.GetUserInput(self.conn, prompt, self.GetColorMode())
 }
 
-func (self *User) WriteLine(line string) (int, error) {
-	return utils.WriteLine(self.conn, line, self.GetColorMode())
+func (self *User) WriteLine(line string) {
+	utils.WriteLine(self.conn, line, self.GetColorMode())
 }
 
-func (self *User) Write(text string) (int, error) {
-	return utils.Write(self.conn, text, self.GetColorMode())
+func (self *User) Write(text string) {
+	utils.Write(self.conn, text, self.GetColorMode())
 }
 
 func (self *User) SetAdmin(admin bool) {

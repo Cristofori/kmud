@@ -135,7 +135,15 @@ func (self *Session) printLineColor(color types.Color, line string, a ...interfa
 }
 
 func (self *Session) printLine(line string, a ...interface{}) {
-	self.printLineColor(types.ColorWhite, line, a...)
+	self.WriteLine(fmt.Sprintf(line, a...))
+}
+
+func (self *Session) WriteLine(line string) {
+	self.printLineColor(types.ColorWhite, line)
+}
+
+func (self *Session) Write(text string) {
+	self.user.Write(text)
 }
 
 func (self *Session) printError(err string, a ...interface{}) {
@@ -151,8 +159,7 @@ func (self *Session) printRoom() {
 		area = model.GetArea(self.room.GetAreaId())
 	}
 
-	self.printLine(self.room.ToString(playerList, npcList,
-		model.GetItems(self.room.GetItems()), area))
+	self.WriteLine(self.room.ToString(playerList, npcList, model.GetItems(self.room.GetItems()), area))
 }
 
 func (self *Session) clearLine() {
@@ -161,28 +168,11 @@ func (self *Session) clearLine() {
 
 func (self *Session) asyncMessage(message string) {
 	self.clearLine()
-	self.printLine(message)
+	self.WriteLine(message)
 }
 
-// Same behavior as menu.Exec(), except that it uses getUserInput
-// which doesn't block the event loop while waiting for input
-func (self *Session) execMenu(menu *utils.Menu) (string, types.Id) {
-	choice := ""
-	var data types.Id
-
-	for {
-		menu.Print(self.conn, self.user.GetColorMode())
-		choice = self.getUserInputP(CleanUserInput, menu)
-		if menu.HasAction(choice) || choice == "" {
-			data = menu.GetData(choice)
-			break
-		}
-
-		if choice != "?" {
-			self.printError("Invalid selection")
-		}
-	}
-	return choice, data
+func (self *Session) GetInput(prompt string) string {
+	return self.getUserInput(CleanUserInput, prompt)
 }
 
 // getUserInput allows us to retrieve user input in a way that doesn't block the

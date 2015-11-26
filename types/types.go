@@ -179,10 +179,17 @@ type Zone interface {
 
 type ZoneList []Zone
 
+type Communicable interface {
+	WriteLine(string)
+	Write(string)
+	GetInput(prompt string) string
+}
+
 type User interface {
 	Object
 	Nameable
 	Loginable
+	Communicable
 	VerifyPassword(string) bool
 	SetConnection(net.Conn)
 	GetConnection() net.Conn
@@ -191,10 +198,7 @@ type User interface {
 	SetTerminalType(string)
 	GetTerminalType() string
 	GetColorMode() ColorMode
-	WriteLine(string) (int, error)
-	GetInput(string) string
 	SetColorMode(ColorMode)
-	Write(string) (int, error)
 	IsAdmin() bool
 	SetAdmin(bool)
 }

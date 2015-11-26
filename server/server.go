@@ -23,6 +23,12 @@ type Server struct {
 	listener net.Listener
 }
 
+type connectionHandler struct {
+	user types.User
+	pc   types.PC
+	conn *wrappedConnection
+}
+
 type wrappedConnection struct {
 	telnet.Telnet
 	watcher *utils.WatchableReadWriter
@@ -123,11 +129,11 @@ func newUser(conn *wrappedConnection) types.User {
 	}
 }
 
-func newPlayer(conn *wrappedConnection, user types.User) types.PC {
+func (self *connectionHandler) newPlayer() types.PC {
 	// TODO: character slot limit
 	const SizeLimit = 12
 	for {
-		name := user.GetInput("Desired character name: ")
+		name := self.user.GetInput("Desired character name: ")
 
 		if name == "" {
 			return nil
@@ -136,93 +142,143 @@ func newPlayer(conn *wrappedConnection, user types.User) types.PC {
 		char := model.GetCharacterByName(name)
 
 		if char != nil {
-			user.WriteLine("That name is unavailable")
+			self.user.WriteLine("That name is unavailable")
 		} else if err := utils.ValidateName(name); err != nil {
-			user.WriteLine(err.Error())
+			self.user.WriteLine(err.Error())
 		} else {
 			room := model.GetRooms()[0] // TODO: Better way to pick an initial character location
-			return model.CreatePlayerCharacter(name, user.GetId(), room)
+			return model.CreatePlayerCharacter(name, self.user.GetId(), room)
 		}
 	}
 }
 
-func mainMenu() *utils.Menu {
-	menu := utils.NewMenu("MUD")
-
-	menu.AddAction("l", "Login")
-	menu.AddAction("n", "New user")
-	menu.AddAction("q", "Quit")
-
-	return menu
+func (self *connectionHandler) WriteLine(line string) {
+	utils.WriteLine(self.conn, line, types.ColorModeNone)
 }
 
-func userMenu(user types.User) *utils.Menu {
-	chars := model.GetUserCharacters(user.GetId())
-
-	menu := utils.NewMenu(user.GetName())
-	menu.AddAction("l", "Logout")
-	if user.IsAdmin() {
-		menu.AddAction("a", "Admin")
-	}
-	menu.AddAction("n", "New character")
-	if len(chars) > 0 {
-		menu.AddAction("d", "Delete character")
-	}
-
-	// TODO: Sort character list
-
-	for i, char := range chars {
-		index := i + 1
-		menu.AddActionData(index, char.GetName(), char.GetId())
-	}
-
-	return menu
+func (self *connectionHandler) Write(text string) {
+	utils.Write(self.conn, text, types.ColorModeNone)
 }
 
-func deleteMenu(user types.User) *utils.Menu {
-	chars := model.GetUserCharacters(user.GetId())
-
-	menu := utils.NewMenu("Delete character")
-
-	menu.AddAction("c", "Cancel")
-
-	// TODO: Sort character list
-
-	for i, char := range chars {
-		index := i + 1
-		menu.AddActionData(index, char.GetName(), char.GetId())
-	}
-
-	return menu
+func (self *connectionHandler) GetInput(prompt string) string {
+	return utils.GetUserInput(self.conn, prompt, types.ColorModeNone)
 }
 
-func adminMenu() *utils.Menu {
-	menu := utils.NewMenu("Admin")
-	menu.AddAction("u", "Users")
-	return menu
+func (self *connectionHandler) mainMenu() {
+	utils.ExecMenu(
+		"MUD",
+		self,
+		func(menu *utils.Menu) {
+			menu.AddAction("l", "Login", func() bool {
+				self.user = login(self.conn)
+				return false
+			})
+
+			menu.AddAction("n", "New user", func() bool {
+				self.user = newUser(self.conn)
+				return false
+			})
+
+			menu.OnExit(func() {
+				utils.WriteLine(self.conn, "Take luck!", types.ColorModeNone)
+				self.conn.Close()
+			})
+		})
 }
 
-func userAdminMenu() *utils.Menu {
-	menu := utils.NewMenu("User Admin")
+func (self *connectionHandler) userMenu() {
+	utils.ExecMenu(
+		self.user.GetName(),
+		self.user,
+		func(menu *utils.Menu) {
+			menu.OnExit(func() {
+				self.user.SetOnline(false)
+				self.user = nil
+			})
 
-	users := model.GetUsers()
-	sort.Sort(users)
+			if self.user.IsAdmin() {
+				menu.AddAction("a", "Admin", func() bool {
+					self.adminMenu()
+					return true
+				})
+			}
 
-	for i, user := range users {
-		index := i + 1
+			menu.AddAction("n", "New character", func() bool {
+				self.pc = self.newPlayer()
+				return true
+			})
 
-		online := ""
-		if user.IsOnline() {
-			online = "*"
+			// TODO: Sort character list
+			chars := model.GetUserCharacters(self.user.GetId())
+
+			if len(chars) > 0 {
+				menu.AddAction("d", "Delete character", func() bool {
+					self.deleteMenu()
+					return true
+				})
+			}
+
+			for i, char := range chars {
+				c := char
+				menu.AddAction(strconv.Itoa(i+1), char.GetName(), func() bool {
+					self.pc = c
+					return false
+				})
+			}
+		})
+}
+
+func (self *connectionHandler) deleteMenu() {
+	utils.ExecMenu(
+		"Delete character",
+		self.user,
+		func(menu *utils.Menu) {
+			// TODO: Sort character list
+			chars := model.GetUserCharacters(self.user.GetId())
+			for i, char := range chars {
+				c := char
+				menu.AddAction(strconv.Itoa(i+1), char.GetName(), func() bool {
+					// TODO: Delete confirmation
+					model.DeleteCharacter(c.GetId())
+					return true
+				})
+			}
+		})
+}
+
+func (self *connectionHandler) adminMenu() {
+	utils.ExecMenu(
+		"Admin",
+		self.user,
+		func(menu *utils.Menu) {
+			menu.AddAction("u", "Users", func() bool {
+				self.userAdminMenu()
+				return true
+			})
+		})
+}
+
+func (self *connectionHandler) userAdminMenu() {
+	utils.ExecMenu("User Admin", self.user, func(menu *utils.Menu) {
+		users := model.GetUsers()
+		sort.Sort(users)
+
+		for i, user := range users {
+			online := ""
+			if user.IsOnline() {
+				online = "*"
+			}
+
+			u := user
+			menu.AddAction(strconv.Itoa(i+1), user.GetName()+online, func() bool {
+				self.specificUserMenu(u)
+				return true
+			})
 		}
-
-		menu.AddActionData(index, user.GetName()+online, user.GetId())
-	}
-
-	return menu
+	})
 }
 
-func userSpecificMenu(user types.User) *utils.Menu {
+func (self *connectionHandler) specificUserMenu(user types.User) {
 	suffix := ""
 	if user.IsOnline() {
 		suffix = "(Online)"
@@ -230,186 +286,105 @@ func userSpecificMenu(user types.User) *utils.Menu {
 		suffix = "(Offline)"
 	}
 
-	menu := utils.NewMenu("User: " + user.GetName() + " " + suffix)
-	menu.AddAction("d", "Delete")
-	menu.AddAction("a", fmt.Sprintf("Admin - %v", user.IsAdmin()))
-
-	if user.IsOnline() {
-		menu.AddAction("w", "Watch")
-	}
-
-	return menu
-}
-
-func handleConnection(conn *wrappedConnection) {
-	defer conn.Close()
-
-	var user types.User
-	var pc types.PC
-
-	defer func() {
-		r := recover()
-
-		username := ""
-		charname := ""
-
-		if user != nil {
-			user.SetOnline(false)
-			username = user.GetName()
-		}
-
-		if pc != nil {
-			pc.SetOnline(false)
-			charname = pc.GetName()
-		}
-
-		if r != io.EOF {
-			debug.PrintStack()
-		}
-
-		fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
-			username,
-			charname,
-			conn.RemoteAddr(),
-			r)
-	}()
-
-	for {
-		if user == nil {
-			menu := mainMenu()
-			choice, _ := menu.Exec(conn, types.ColorModeNone)
-
-			switch choice {
-			case "l":
-				user = login(conn)
-			case "n":
-				user = newUser(conn)
-			case "":
-				fallthrough
-			case "q":
-				utils.WriteLine(conn, "Take luck!", types.ColorModeNone)
-				conn.Close()
-				return
-			}
-
-			if user == nil {
-				continue
-			}
-
-			user.SetOnline(true)
-			user.SetConnection(conn)
-
-			conn.DoWindowSize()
-			conn.DoTerminalType()
-
-			conn.Listen(func(code telnet.TelnetCode, data []byte) {
-				switch code {
-				case telnet.WS:
-					if len(data) != 4 {
-						fmt.Println("Malformed window size data:", data)
-						return
-					}
-
-					width := (255 * data[0]) + data[1]
-					height := (255 * data[2]) + data[3]
-					user.SetWindowSize(int(width), int(height))
-
-				case telnet.TT:
-					user.SetTerminalType(string(data))
-				}
+	utils.ExecMenu(
+		fmt.Sprintf("User: %s %s", user.GetName(), suffix),
+		self.user,
+		func(menu *utils.Menu) {
+			menu.AddAction("d", "Delete", func() bool {
+				model.DeleteUser(user.GetId())
+				return false
 			})
 
-		} else if pc == nil {
-			menu := userMenu(user)
-			choice, charId := menu.Exec(conn, user.GetColorMode())
+			menu.AddAction("a", fmt.Sprintf("Admin - %v", user.IsAdmin()), func() bool {
+				u := model.GetUser(user.GetId())
+				u.SetAdmin(!u.IsAdmin())
+				return true
+			})
 
-			switch choice {
-			case "":
-				fallthrough
-			case "l":
-				user.SetOnline(false)
-				user = nil
-			case "a":
-				adminMenu := adminMenu()
-				for {
-					choice, _ := adminMenu.Exec(conn, user.GetColorMode())
-					if choice == "" {
-						break
-					} else if choice == "u" {
-						for {
-							userAdminMenu := userAdminMenu()
-							choice, userId := userAdminMenu.Exec(conn, user.GetColorMode())
-							if choice == "" {
-								break
-							} else {
-								_, err := strconv.Atoi(choice)
+			if user.IsOnline() {
+				menu.AddAction("w", "Watch", func() bool {
+					if user == self.user {
+						self.user.WriteLine("You can't watch yourself!")
+					} else {
+						userConn := user.GetConnection().(*wrappedConnection)
 
-								if err == nil {
-								UserSpecificMenu:
-									for {
-										userMenu := userSpecificMenu(model.GetUser(userId))
-										choice, _ = userMenu.Exec(conn, user.GetColorMode())
-
-										switch choice {
-										case "":
-											break UserSpecificMenu
-										case "d":
-											model.DeleteUser(userId)
-											break UserSpecificMenu
-										case "a":
-											u := model.GetUser(userId)
-											u.SetAdmin(!u.IsAdmin())
-										case "w":
-											userToWatch := model.GetUser(userId)
-
-											if userToWatch == user {
-												user.WriteLine("You can't watch yourself!")
-											} else {
-												userConn := userToWatch.GetConnection().(*wrappedConnection)
-
-												userConn.watcher.AddWatcher(conn)
-												utils.GetRawUserInput(conn, "Type anything to stop watching\r\n", user.GetColorMode())
-												userConn.watcher.RemoveWatcher(conn)
-											}
-										}
-									}
-								}
-							}
-						}
+						userConn.watcher.AddWatcher(self.conn)
+						utils.GetRawUserInput(self.conn, "Type anything to stop watching\r\n", self.user.GetColorMode())
+						userConn.watcher.RemoveWatcher(self.conn)
 					}
-				}
-			case "n":
-				pc = newPlayer(conn, user)
-			case "d":
-				for {
-					deleteMenu := deleteMenu(user)
-					deleteChoice, deleteCharId := deleteMenu.Exec(conn, user.GetColorMode())
-
-					if deleteChoice == "" || deleteChoice == "c" {
-						break
-					}
-
-					_, err := strconv.Atoi(deleteChoice)
-
-					if err == nil {
-						// TODO: Delete confirmation
-						model.DeleteCharacter(deleteCharId)
-					}
-				}
-
-			default:
-				_, err := strconv.Atoi(choice)
-
-				if err == nil {
-					pc = model.GetPlayerCharacter(charId)
-				}
+					return true
+				})
 			}
-		} else {
-			session := session.NewSession(conn, user, pc)
-			session.Exec()
-			pc = nil
+		})
+}
+
+func (self *connectionHandler) Handle() {
+	go func() {
+		defer self.conn.Close()
+
+		defer func() {
+			r := recover()
+
+			username := ""
+			charname := ""
+
+			if self.user != nil {
+				self.user.SetOnline(false)
+				username = self.user.GetName()
+			}
+
+			if self.pc != nil {
+				self.pc.SetOnline(false)
+				charname = self.pc.GetName()
+			}
+
+			if r != io.EOF {
+				debug.PrintStack()
+			}
+
+			fmt.Printf("Lost connection to client (%v/%v): %v, %v\n",
+				username,
+				charname,
+				self.conn.RemoteAddr(),
+				r)
+		}()
+
+		for {
+			if self.user == nil {
+				self.mainMenu()
+				if self.user != nil {
+					self.user.SetOnline(true)
+					self.user.SetConnection(self.conn)
+
+					self.conn.DoWindowSize()
+					self.conn.DoTerminalType()
+
+					self.conn.Listen(func(code telnet.TelnetCode, data []byte) {
+						switch code {
+						case telnet.WS:
+							if len(data) != 4 {
+								fmt.Println("Malformed window size data:", data)
+								return
+							}
+
+							width := (255 * data[0]) + data[1]
+							height := (255 * data[2]) + data[3]
+							self.user.SetWindowSize(int(width), int(height))
+
+						case telnet.TT:
+							self.user.SetTerminalType(string(data))
+						}
+					})
+				}
+			} else if self.pc == nil {
+				self.userMenu()
+			} else {
+				session := session.NewSession(self.conn, self.user, self.pc)
+				session.Exec()
+				self.pc = nil
+			}
 		}
-	}
+	}()
 }
 
 func (self *Server) Start() {
@@ -451,7 +426,11 @@ func (self *Server) Listen() {
 
 		wc := utils.NewWatchableReadWriter(t)
 
-		go handleConnection(&wrappedConnection{Telnet: *t, watcher: wc})
+		ch := connectionHandler{
+			conn: &wrappedConnection{Telnet: *t, watcher: wc},
+		}
+
+		ch.Handle()
 	}
 }
 

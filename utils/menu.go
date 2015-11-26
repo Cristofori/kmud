@@ -2,42 +2,65 @@ package utils
 
 import (
 	"fmt"
-	"github.com/Cristofori/kmud/types"
-	"io"
-	"strconv"
 	"strings"
+
+	"github.com/Cristofori/kmud/types"
 )
 
 type Menu struct {
-	actions []action
-	title   string
-	prompt  string
+	actions     []action
+	title       string
+	prompt      string
+	exitHandler func()
 }
 
-func NewMenu(text string) *Menu {
-	var menu Menu
-	menu.title = text
-	menu.prompt = "> "
-	return &menu
+func ExecMenu(title string, comm types.Communicable, build func(*Menu)) {
+	for {
+		var menu Menu
+		menu.title = title
+		menu.prompt = "> "
+		build(&menu)
+
+		menu.Print(comm)
+
+		input := comm.GetInput(types.Colorize(types.ColorWhite, menu.prompt))
+
+		if input == "" {
+			if menu.exitHandler != nil {
+				menu.exitHandler()
+			}
+			return
+		}
+
+		action := menu.getAction(input)
+
+		if action.handler != nil {
+			if !action.handler() {
+				return
+			}
+		} else if input != "?" && input != "help" {
+			comm.WriteLine(types.Colorize(types.ColorRed, "Invalid selection"))
+		}
+	}
 }
 
 type action struct {
-	key  string
-	text string
-	data types.Id
+	key     string
+	text    string
+	data    types.Id
+	handler func() bool
 }
 
-func (self *Menu) AddAction(key string, text string) {
-	self.addAction(key, text, nil)
+func (self *Menu) AddAction(key string, text string, handler func() bool) {
+	self.actions = append(self.actions,
+		action{key: strings.ToLower(key),
+			text:    text,
+			handler: handler,
+		})
 }
 
-func (self *Menu) AddActionData(key int, text string, data types.Id) {
-	keyStr := strconv.Itoa(key)
-	self.addAction(keyStr, text, data)
-}
-
-func (self *Menu) addAction(key string, text string, data types.Id) {
-	self.actions = append(self.actions, action{key: strings.ToLower(key), text: text, data: data})
+func (self *Menu) OnExit(handler func()) {
+	self.exitHandler = handler
 }
 
 func (self *Menu) GetData(choice string) types.Id {
@@ -70,26 +93,10 @@ func (self *Menu) HasAction(key string) bool {
 	return action.key != ""
 }
 
-func (self *Menu) Exec(conn io.ReadWriter, cm types.ColorMode) (string, types.Id) {
-	for {
-		self.Print(conn, cm)
-		input := GetUserInput(conn, types.Colorize(types.ColorWhite, self.prompt), cm)
-
-		if input == "" {
-			return "", nil
-		}
-
-		action := self.getAction(input)
-		if action.key != "" {
-			return action.key, action.data
-		}
-	}
-}
-
-func (self *Menu) Print(conn io.Writer, cm types.ColorMode) {
+func (self *Menu) Print(comm types.Communicable) {
 	border := types.Colorize(types.ColorWhite, "-=-=-")
 	title := types.Colorize(types.ColorBlue, self.title)
-	WriteLine(conn, fmt.Sprintf("%s %s %s", border, title, border), cm)
+	comm.WriteLine(fmt.Sprintf("%s %s %s", border, title, border))
 
 	for _, action := range self.actions {
 		index := strings.Index(strings.ToLower(action.text), action.key)
@@ -116,7 +123,7 @@ func (self *Menu) Print(conn io.Writer, cm types.ColorMode) {
 				action.text[index+keyLength:])
 		}
 
-		WriteLine(conn, fmt.Sprintf("  %s", actionText), cm)
+		comm.WriteLine(fmt.Sprintf("  %s", actionText))
 	}
 }
 

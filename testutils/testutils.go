@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/Cristofori/kmud/utils"
 )
 
 // import "fmt"
@@ -44,6 +46,25 @@ func (self *TestReader) SetError(err error) {
 type TestReadWriter struct {
 	TestReader
 	TestWriter
+}
+
+type TestCommunicable struct {
+	TestReadWriter
+}
+
+func (self *TestCommunicable) Write(text string) {
+	self.TestReadWriter.Write([]byte(text))
+}
+
+func (self *TestCommunicable) WriteLine(line string) {
+	self.Write(line + "\n")
+}
+
+func (self *TestCommunicable) GetInput(prompt string) string {
+	self.Write(prompt)
+	buf := make([]byte, 1024)
+	n, _ := self.Read(buf)
+	return utils.Simplify(string(buf[:n]))
 }
 
 func TestSettersAndGetters(object interface{}, t *testing.T) bool {

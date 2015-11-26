@@ -1,6 +1,7 @@
 package session
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/Cristofori/kmud/combat"
@@ -139,42 +140,30 @@ var actions = map[string]action{
 	"sb": aAlias("skillbook"),
 	"skillbook": {
 		exec: func(s *Session, args []string) {
-		Loop:
-			for {
-				menu := utils.NewMenu("Skill Book")
-				menu.AddAction("a", "Add")
+			utils.ExecMenu("Skill Book", s, func(menu *utils.Menu) {
+				menu.AddAction("a", "Add", func() bool {
+					utils.ExecMenu("Select a skill to add", s, func(menu *utils.Menu) {
+						for i, skill := range model.GetAllSkills() {
+							sk := skill
+							menu.AddAction(strconv.Itoa(i+1), skill.GetName(), func() bool {
+								s.player.AddSkill(sk.GetId())
+								return true
+							})
+						}
+					})
+					return true
+				})
 
 				skills := model.GetSkills(s.player.GetSkills())
 				for i, skill := range skills {
-					menu.AddActionData(i+1, skill.GetName(), skill.GetId())
+					sk := skill
+					menu.AddAction(strconv.Itoa(i+1), skill.GetName(), func() bool {
+						s.printLine("Skill: %v", sk.GetName())
+						s.printLine("  Damage: %v", sk.GetPower())
+						return true
+					})
 				}
-
-				choice, skillId := s.execMenu(menu)
-
-				switch choice {
-				case "":
-					break Loop
-				case "a":
-					allSkillsMenu := utils.NewMenu("Select a skill to add")
-
-					for i, skill := range model.GetAllSkills() {
-						allSkillsMenu.AddActionData(i+1, skill.GetName(), skill.GetId())
-					}
-
-					choice, skillId := s.execMenu(allSkillsMenu)
-
-					switch choice {
-					case "":
-					default:
-						skill := model.GetSkill(skillId)
-						s.player.AddSkill(skill.GetId())
-					}
-				default:
-					skill := model.GetSkill(skillId)
-					s.printLine("Skill: %v", skill.GetName())
-					s.printLine("  Damage: %v", skill.GetPower())
-				}
-			}
+			})
 		},
 	},
 	"talk": {
