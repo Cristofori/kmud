@@ -12,8 +12,12 @@ var combatInterval = 3 * time.Second
 
 var combatMessages chan interface{}
 
-var fights map[types.Character]types.Character
-var skills map[types.Character]types.Skill
+type combatInfo struct {
+	Defender types.Character
+	Skill    types.Skill
+}
+
+var fights map[types.Character]combatInfo
 
 type combatStart struct {
 	Attacker types.Character
@@ -47,8 +51,7 @@ func InCombat(character types.Character) bool {
 }
 
 func init() {
-	fights = map[types.Character]types.Character{}
-	skills = map[types.Character]types.Skill{}
+	fights = map[types.Character]combatInfo{}
 
 	combatMessages = make(chan interface{}, 1)
 
@@ -66,10 +69,13 @@ func init() {
 		Switch:
 			switch m := message.(type) {
 			case combatTick:
-				for a, d := range fights {
+				for a, info := range fights {
+					d := info.Defender
+
 					if a.GetRoomId() == d.GetRoomId() {
 						var power int
-						skill := skills[a]
+						skill := info.Skill
+
 						if skill == nil {
 							power = utils.Random(1, 10)
 						} else {
@@ -82,19 +88,16 @@ func init() {
 						events.Broadcast(events.CombatEvent{Attacker: a, Defender: d, Skill: skill, Power: power})
 
 						if d.GetHitPoints() <= 0 {
-							doCombatStop(a)
-							doCombatStop(d)
-							events.Broadcast(events.DeathEvent{Character: d})
+							Kill(d)
 						}
 					} else {
 						doCombatStop(a)
 					}
 				}
 			case combatStart:
-				oldDefender, found := fights[m.Attacker]
-				skills[m.Attacker] = m.Skill
+				oldInfo, found := fights[m.Attacker]
 
-				if m.Defender == oldDefender {
+				if m.Defender == oldInfo.Defender {
 					break
 				}
 
@@ -102,7 +105,10 @@ func init() {
 					doCombatStop(m.Attacker)
 				}
 
-				fights[m.Attacker] = m.Defender
+				fights[m.Attacker] = combatInfo{
+					Defender: m.Defender,
+					Skill:    m.Skill,
+				}
 
 				events.Broadcast(events.CombatStartEvent{Attacker: m.Attacker, Defender: m.Defender})
 			case combatStop:
@@ -113,14 +119,15 @@ func init() {
 				if found {
 					m.Ret <- true
 				} else {
-					for _, defender := range fights {
-						if defender == m.Character {
+					for _, info := range fights {
+						if info.Defender == m.Character {
 							m.Ret <- true
 							break Switch
 						}
 					}
 					m.Ret <- false
 				}
+
 			default:
 				panic("Unhandled combat message")
 			}
@@ -128,13 +135,31 @@ func init() {
 	}()
 }
 
-func doCombatStop(attacker types.Character) {
-	defender := fights[attacker]
+func Kill(char types.Character) {
+	clearCombat(char)
+	events.Broadcast(events.DeathEvent{Character: char})
+}
 
-	if defender != nil {
+func clearCombat(char types.Character) {
+	_, found := fights[char]
+
+	if found {
+		doCombatStop(char)
+	}
+
+	for a, info := range fights {
+		if info.Defender == char {
+			doCombatStop(a)
+		}
+	}
+}
+
+func doCombatStop(attacker types.Character) {
+	info := fights[attacker]
+
+	if info.Defender != nil {
 		delete(fights, attacker)
-		delete(skills, attacker)
-		events.Broadcast(events.CombatStopEvent{Attacker: attacker, Defender: defender})
+		events.Broadcast(events.CombatStopEvent{Attacker: attacker, Defender: info.Defender})
 	}
 }
 

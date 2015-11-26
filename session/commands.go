@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Cristofori/kmud/combat"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
@@ -715,7 +716,7 @@ func init() {
 					s.printError("Which one do you mean?")
 				} else {
 					npc := npcs[index]
-					npc.SetHitPoints(0)
+					combat.Kill(npc)
 					s.printLine("Killed %s", npc.GetName())
 				}
 			},
