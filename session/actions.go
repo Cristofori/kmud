@@ -80,10 +80,10 @@ var actions = map[string]action{
 				s.printError("Which one do you mean?")
 			} else {
 				defender := charList[index]
-				if defender.GetId() == s.player.GetId() {
+				if defender.GetId() == s.pc.GetId() {
 					s.printError("You can't attack yourself")
 				} else {
-					combat.StartFight(s.player, nil, defender)
+					combat.StartFight(s.pc, nil, defender)
 				}
 			}
 		},
@@ -101,7 +101,7 @@ var actions = map[string]action{
 			}
 
 			var skill types.Skill
-			skills := model.GetSkills(s.player.GetSkills())
+			skills := model.GetSkills(s.pc.GetSkills())
 			index := utils.BestMatch(args[0], skills.Names())
 
 			if index == -1 {
@@ -116,7 +116,7 @@ var actions = map[string]action{
 				var target types.Character
 
 				if len(args) == 1 {
-					target = s.player
+					target = s.pc
 				} else if len(args) == 2 {
 					charList := model.CharactersIn(s.room.GetId())
 					index := utils.BestMatch(args[1], charList.Names())
@@ -132,7 +132,7 @@ var actions = map[string]action{
 
 				if target != nil {
 					s.printLineColor(types.ColorRed, "Casting %s on %s", skill.GetName(), target.GetName())
-					combat.StartFight(s.player, skill, target)
+					combat.StartFight(s.pc, skill, target)
 				}
 			}
 		},
@@ -146,7 +146,7 @@ var actions = map[string]action{
 						for i, skill := range model.GetAllSkills() {
 							sk := skill
 							menu.AddAction(strconv.Itoa(i+1), skill.GetName(), func() bool {
-								s.player.AddSkill(sk.GetId())
+								s.pc.AddSkill(sk.GetId())
 								return true
 							})
 						}
@@ -154,7 +154,7 @@ var actions = map[string]action{
 					return true
 				})
 
-				skills := model.GetSkills(s.player.GetSkills())
+				skills := model.GetSkills(s.pc.GetSkills())
 				for i, skill := range skills {
 					sk := skill
 					menu.AddAction(strconv.Itoa(i+1), skill.GetName(), func() bool {
@@ -197,7 +197,7 @@ var actions = map[string]action{
 				return
 			}
 
-			characterItems := model.GetItems(s.player.GetItems())
+			characterItems := model.GetItems(s.pc.GetItems())
 			index := utils.BestMatch(args[0], characterItems.Names())
 
 			if index == -1 {
@@ -206,7 +206,7 @@ var actions = map[string]action{
 				s.printError("Which one do you mean?")
 			} else {
 				item := characterItems[index]
-				s.player.RemoveItem(item.GetId())
+				s.pc.RemoveItem(item.GetId())
 				s.room.AddItem(item.GetId())
 				s.printLine("Dropped %s", item.GetName())
 			}
@@ -235,7 +235,7 @@ var actions = map[string]action{
 				s.printError("Item %s not found", args[0])
 			} else {
 				item := itemsInRoom[index]
-				s.player.AddItem(item.GetId())
+				s.pc.AddItem(item.GetId())
 				s.room.RemoveItem(item.GetId())
 				s.printLine("Picked up %s", item.GetName())
 			}
@@ -245,7 +245,7 @@ var actions = map[string]action{
 	"inv": aAlias("inv"),
 	"inventory": {
 		exec: func(s *Session, args []string) {
-			itemIds := s.player.GetItems()
+			itemIds := s.pc.GetItems()
 
 			if len(itemIds) == 0 {
 				s.printLine("You aren't carrying anything")
@@ -257,7 +257,7 @@ var actions = map[string]action{
 				s.printLine("You are carrying: %s", strings.Join(itemNames, ", "))
 			}
 
-			s.printLine("Cash: %v", s.player.GetCash())
+			s.printLine("Cash: %v", s.pc.GetCash())
 		},
 	},
 	"help": {
@@ -272,7 +272,7 @@ var actions = map[string]action{
 	},
 	"stop": {
 		exec: func(s *Session, args []string) {
-			combat.StopFight(s.player)
+			combat.StopFight(s.pc)
 		},
 	},
 	"go": {
@@ -294,7 +294,7 @@ var actions = map[string]action{
 				destId := links[linkNames[index]]
 				newRoom := model.GetRoom(destId)
 
-				model.MoveCharacterToRoom(s.player, newRoom)
+				model.MoveCharacterToRoom(s.pc, newRoom)
 
 				s.room = newRoom
 				s.printRoom()

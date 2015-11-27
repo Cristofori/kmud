@@ -17,10 +17,10 @@ import (
 )
 
 type Session struct {
-	conn   io.ReadWriter
-	user   types.User
-	player types.PC
-	room   types.Room
+	conn io.ReadWriter
+	user types.User
+	pc   types.PC
+	room types.Room
 
 	prompt string
 	states map[string]string
@@ -38,12 +38,12 @@ type Session struct {
 	// logger *log.Logger
 }
 
-func NewSession(conn io.ReadWriter, user types.User, player types.PC) *Session {
+func NewSession(conn io.ReadWriter, user types.User, pc types.PC) *Session {
 	var session Session
 	session.conn = conn
 	session.user = user
-	session.player = player
-	session.room = model.GetRoom(player.GetRoomId())
+	session.pc = pc
+	session.room = model.GetRoom(pc.GetRoomId())
 
 	session.prompt = "%h/%H> "
 	session.states = map[string]string{}
@@ -52,16 +52,16 @@ func NewSession(conn io.ReadWriter, user types.User, player types.PC) *Session {
 	session.inputModeChannel = make(chan userInputMode)
 	session.prompterChannel = make(chan utils.Prompter)
 	session.panicChannel = make(chan interface{})
-	session.eventChannel = events.Register(player)
+	session.eventChannel = events.Register(pc)
 
 	session.silentMode = false
 
-	// file, err := os.OpenFile(player.GetName()+".log", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
+	// file, err := os.OpenFile(pc.GetName()+".log", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModePerm)
 	// utils.PanicIfError(err)
 
-	// session.logger = log.New(file, player.GetName()+" ", log.LstdFlags)
+	// session.logger = log.New(file, pc.GetName()+" ", log.LstdFlags)
 
-	model.Login(player)
+	model.Login(pc)
 
 	return &session
 }
@@ -74,10 +74,10 @@ const (
 )
 
 func (self *Session) Exec() {
-	defer events.Unregister(self.player)
-	defer model.Logout(self.player)
+	defer events.Unregister(self.pc)
+	defer model.Logout(self.pc)
 
-	self.printLineColor(types.ColorWhite, "Welcome, "+self.player.GetName())
+	self.printLineColor(types.ColorWhite, "Welcome, "+self.pc.GetName())
 	self.printRoom()
 
 	// Main routine in charge of actually reading input from the connection object,
@@ -151,7 +151,7 @@ func (self *Session) printError(err string, a ...interface{}) {
 }
 
 func (self *Session) printRoom() {
-	playerList := model.PlayerCharactersIn(self.room.GetId(), self.player.GetId())
+	pcList := model.PlayerCharactersIn(self.room.GetId(), self.pc.GetId())
 	npcList := model.NpcsIn(self.room.GetId())
 	var area types.Area
 
@@ -159,7 +159,7 @@ func (self *Session) printRoom() {
 		area = model.GetArea(self.room.GetAreaId())
 	}
 
-	self.WriteLine(self.room.ToString(playerList, npcList, model.GetItems(self.room.GetItems()), area))
+	self.WriteLine(self.room.ToString(pcList, npcList, model.GetItems(self.room.GetItems()), area))
 }
 
 func (self *Session) clearLine() {
@@ -195,10 +195,10 @@ func (self *Session) getUserInputP(inputMode userInputMode, prompter utils.Promp
 			case events.TellEvent:
 				self.replyId = e.From.GetId()
 			case events.TickEvent:
-				if !combat.InCombat(self.player) {
-					oldHps := self.player.GetHitPoints()
-					self.player.Heal(5)
-					newHps := self.player.GetHitPoints()
+				if !combat.InCombat(self.pc) {
+					oldHps := self.pc.GetHitPoints()
+					self.pc.Heal(5)
+					newHps := self.pc.GetHitPoints()
 
 					if oldHps != newHps {
 						self.clearLine()
@@ -207,7 +207,7 @@ func (self *Session) getUserInputP(inputMode userInputMode, prompter utils.Promp
 				}
 			}
 
-			message := event.ToString(self.player)
+			message := event.ToString(self.pc)
 			if message != "" {
 				self.asyncMessage(message)
 				self.user.Write(prompter.GetPrompt())
@@ -251,8 +251,8 @@ func (self *Session) getInt(prompt string, min, max int) (int, bool) {
 
 func (self *Session) GetPrompt() string {
 	prompt := self.prompt
-	prompt = strings.Replace(prompt, "%h", strconv.Itoa(self.player.GetHitPoints()), -1)
-	prompt = strings.Replace(prompt, "%H", strconv.Itoa(self.player.GetHealth()), -1)
+	prompt = strings.Replace(prompt, "%h", strconv.Itoa(self.pc.GetHitPoints()), -1)
+	prompt = strings.Replace(prompt, "%H", strconv.Itoa(self.pc.GetHealth()), -1)
 
 	if len(self.states) > 0 {
 		states := make([]string, len(self.states))
@@ -279,7 +279,7 @@ func (self *Session) handleAction(action string, args []string) {
 
 		if direction != types.DirectionNone {
 			if self.room.HasExit(direction) {
-				newRoom, err := model.MoveCharacter(self.player, direction)
+				newRoom, err := model.MoveCharacter(self.pc, direction)
 				if err == nil {
 					self.room = newRoom
 					self.printRoom()

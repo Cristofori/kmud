@@ -204,7 +204,7 @@ func init() {
 						newRoom, err := model.CreateRoom(newZone, types.Coordinate{X: 0, Y: 0, Z: 0})
 						utils.HandleError(err)
 
-						model.MoveCharacterToRoom(s.player, newRoom)
+						model.MoveCharacterToRoom(s.pc, newRoom)
 
 						s.room = newRoom
 						s.printRoom()
@@ -236,7 +236,7 @@ func init() {
 				if len(args) == 0 {
 					s.printError("Nothing to say")
 				} else {
-					model.BroadcastMessage(s.player, strings.Join(args, " "))
+					model.BroadcastMessage(s.pc, strings.Join(args, " "))
 				}
 			},
 		},
@@ -247,14 +247,14 @@ func init() {
 				if len(args) == 0 {
 					s.printError("Nothing to say")
 				} else {
-					model.Say(s.player, strings.Join(args, " "))
+					model.Say(s.pc, strings.Join(args, " "))
 				}
 			},
 		},
 		"me": {
 			admin: false,
 			exec: func(self *command, s *Session, args []string) {
-				model.Emote(s.player, strings.Join(args, " "))
+				model.Emote(s.pc, strings.Join(args, " "))
 			},
 		},
 		"w":    cAlias("whiser"),
@@ -309,7 +309,7 @@ func init() {
 					return
 				}
 
-				newRoom, err := model.MoveCharacterToLocation(s.player, newZone, types.Coordinate{X: x, Y: y, Z: z})
+				newRoom, err := model.MoveCharacterToLocation(s.pc, newZone, types.Coordinate{X: x, Y: y, Z: z})
 
 				if err == nil {
 					s.room = newRoom
@@ -504,7 +504,7 @@ func init() {
 						return
 					}
 
-					s.player.AddCash(amount)
+					s.pc.AddCash(amount)
 					s.printLine("Received: %v monies", amount)
 				} else {
 					self.Usage(s)
@@ -961,7 +961,7 @@ func whisper(self *command, s *Session, args []string) {
 	}
 
 	message := strings.Join(args[1:], " ")
-	model.Tell(s.player, targetChar, message)
+	model.Tell(s.pc, targetChar, message)
 }
 
 func specificAreaMenu(s *Session, area types.Area) {

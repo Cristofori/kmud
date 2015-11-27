@@ -440,5 +440,3 @@ func (self *Server) Exec() {
 	engine.Start()
 	self.Listen()
 }
-
-// vim: nocindent
