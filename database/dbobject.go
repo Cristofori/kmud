@@ -61,6 +61,10 @@ func (self *DbObject) modified() {
 	modifiedObjectChannel <- self.Id
 }
 
+func modified(id types.Id) {
+	modifiedObjectChannel <- id
+}
+
 func idMapToList(m map[string]bool) []types.Id {
 	ids := make([]types.Id, len(m))
 

@@ -1,23 +1,19 @@
 package database
 
-import (
-	"github.com/Cristofori/kmud/types"
-	"gopkg.in/mgo.v2/bson"
-)
+import "github.com/Cristofori/kmud/types"
 
 type Exit struct {
 	Locked bool
 }
 
 type Room struct {
-	DbObject `bson:",inline"`
+	DbObject  `bson:",inline"`
+	Container `bson:",inline"`
 
 	ZoneId      types.Id
 	AreaId      types.Id `bson:",omitempty"`
 	Title       string
 	Description string
-	Items       map[string]bool
-	Cash        int
 	Links       map[string]types.Id
 	Location    types.Coordinate
 
@@ -65,32 +61,6 @@ func (self *Room) SetExitEnabled(dir types.Direction, enabled bool) {
 	self.modified()
 }
 
-func (self *Room) AddItem(id types.Id) {
-	if !self.HasItem(id) {
-		self.WriteLock()
-		defer self.WriteUnlock()
-
-		if self.Items == nil {
-			self.Items = map[string]bool{}
-		}
-
-		self.Items[id.Hex()] = true
-		self.modified()
-	}
-}
-
-func (self *Room) RemoveItem(id types.Id) bool {
-	if self.HasItem(id) {
-		self.WriteLock()
-		defer self.WriteUnlock()
-
-		delete(self.Items, id.Hex())
-		self.modified()
-		return true
-	}
-	return false
-}
-
 func (self *Room) SetLink(name string, roomId types.Id) {
 	self.WriteLock()
 	defer self.WriteUnlock()
@@ -128,28 +98,6 @@ func (self *Room) LinkNames() []string {
 		i++
 	}
 	return names
-}
-
-func (self *Room) HasItem(id types.Id) bool {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	_, found := self.Items[id.Hex()]
-	return found
-}
-
-func (self *Room) GetItems() []types.Id {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	ids := make([]types.Id, len(self.Items))
-	i := 0
-	for id := range self.Items {
-		ids[i] = bson.ObjectIdHex(id)
-		i++
-	}
-
-	return ids
 }
 
 func (self *Room) SetTitle(title string) {
@@ -314,14 +262,19 @@ func (self *Room) IsLocked(dir types.Direction) bool {
 	return false
 }
 
-func (self *Room) SetCash(cash int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
+func (self *Room) AddItem(id types.Id) {
+	self.Container.AddItem(id)
+	self.modified()
+}
 
-	if cash != self.Cash {
-		self.Cash = cash
-		self.modified()
-	}
+func (self *Room) RemoveItem(id types.Id) bool {
+	self.modified()
+	return self.Container.RemoveItem(id)
+}
+
+func (self *Room) SetCash(cash int) {
+	self.Container.SetCash(cash)
+	self.modified()
 }
 
 func (self *Room) AddCash(amount int) {
@@ -330,11 +283,4 @@ func (self *Room) AddCash(amount int) {
 
 func (self *Room) RemoveCash(amount int) {
 	self.SetCash(self.GetCash() - amount)
-}
-
-func (self *Room) GetCash() int {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	return self.Cash
 }

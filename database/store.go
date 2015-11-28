@@ -6,12 +6,11 @@ import (
 )
 
 type Store struct {
-	DbObject `bson:",inline"`
+	DbObject  `bson:",inline"`
+	Container `bson:",inline"`
 
-	Name      string
-	Inventory utils.Set
-	RoomId    types.Id
-	Cash      int
+	Name   string
+	RoomId types.Id
 }
 
 func NewStore(name string, roomId types.Id) *Store {
@@ -41,52 +40,18 @@ func (self *Store) SetName(name string) {
 }
 
 func (self *Store) AddItem(id types.Id) {
-	if !self.HasItem(id) {
-		self.WriteLock()
-		defer self.WriteUnlock()
-
-		if self.Inventory == nil {
-			self.Inventory = utils.Set{}
-		}
-
-		self.Inventory.Insert(id.Hex())
-		self.modified()
-	}
-}
-
-func (self *Store) HasItem(id types.Id) bool {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	return self.Inventory.Contains(id.Hex())
+	self.Container.AddItem(id)
+	self.modified()
 }
 
 func (self *Store) RemoveItem(id types.Id) bool {
-	if self.HasItem(id) {
-		self.WriteLock()
-		defer self.WriteUnlock()
-
-		delete(self.Inventory, id.Hex())
-		self.modified()
-		return true
-	}
-	return false
-}
-
-func (self *Store) GetItems() []types.Id {
-	self.ReadLock()
-	defer self.ReadUnlock()
-	return idSetToList(self.Inventory)
+	self.modified()
+	return self.Container.RemoveItem(id)
 }
 
 func (self *Store) SetCash(cash int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if cash != self.Cash {
-		self.Cash = cash
-		self.modified()
-	}
+	self.Container.SetCash(cash)
+	self.modified()
 }
 
 func (self *Store) AddCash(amount int) {
@@ -95,11 +60,4 @@ func (self *Store) AddCash(amount int) {
 
 func (self *Store) RemoveCash(amount int) {
 	self.SetCash(self.GetCash() - amount)
-}
-
-func (self *Store) GetCash() int {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	return self.Cash
 }

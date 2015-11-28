@@ -353,7 +353,7 @@ var actions = map[string]action{
 						s.pc.AddItem(item.GetId())
 						s.pc.RemoveCash(item.GetValue())
 						store.AddCash(item.GetValue())
-						s.printLine("Bought %s", item.GetName())
+						s.printLine(types.Colorize(types.ColorGreen, "Bought %s"), item.GetName())
 					} else {
 						s.printError("That item is no longer available")
 					}
@@ -392,7 +392,7 @@ var actions = map[string]action{
 						store.AddItem(item.GetId())
 						store.RemoveCash(item.GetValue())
 						s.pc.AddCash(item.GetValue())
-						s.printLine("Sold %s", item.GetName())
+						s.printLine(types.Colorize(types.ColorGreen, "Sold %s"), item.GetName())
 					} else {
 						s.printError("Transaction failed")
 					}
@@ -413,7 +413,6 @@ var actions = map[string]action{
 			itemIds := store.GetItems()
 			if len(itemIds) == 0 {
 				s.printLine("This store is empty")
-				return
 			}
 
 			for i, item := range model.GetItems(itemIds) {

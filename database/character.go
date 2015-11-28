@@ -8,15 +8,13 @@ import (
 )
 
 type Character struct {
-	DbObject `bson:",inline"`
-	RoomId   types.Id `bson:",omitempty"`
+	DbObject  `bson:",inline"`
+	Container `bson:",inline"`
 
+	RoomId    types.Id `bson:",omitempty"`
 	Name      string
-	Cash      int
 	Health    int
 	HitPoints int
-
-	Inventory map[string]bool
 	Skills    map[string]bool
 }
 
@@ -146,13 +144,8 @@ func (self *Pc) GetUserId() types.Id {
 }
 
 func (self *Character) SetCash(cash int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if cash != self.Cash {
-		self.Cash = cash
-		self.modified()
-	}
+	self.Container.SetCash(cash)
+	self.modified()
 }
 
 func (self *Character) AddCash(amount int) {
@@ -163,51 +156,14 @@ func (self *Character) RemoveCash(amount int) {
 	self.SetCash(self.GetCash() - amount)
 }
 
-func (self *Character) GetCash() int {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	return self.Cash
-}
-
 func (self *Character) AddItem(id types.Id) {
-	if !self.HasItem(id) {
-		self.WriteLock()
-		defer self.WriteUnlock()
-
-		if self.Inventory == nil {
-			self.Inventory = map[string]bool{}
-		}
-
-		self.Inventory[id.Hex()] = true
-		self.modified()
-	}
+	self.Container.AddItem(id)
+	self.modified()
 }
 
 func (self *Character) RemoveItem(id types.Id) bool {
-	if self.HasItem(id) {
-		self.WriteLock()
-		defer self.WriteUnlock()
-
-		delete(self.Inventory, id.Hex())
-		self.modified()
-		return true
-	}
-	return false
-}
-
-func (self *Character) HasItem(id types.Id) bool {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	_, found := self.Inventory[id.Hex()]
-	return found
-}
-
-func (self *Character) GetItems() []types.Id {
-	self.ReadLock()
-	defer self.ReadUnlock()
-	return idMapToList(self.Inventory)
+	self.modified()
+	return self.Container.RemoveItem(id)
 }
 
 func (self *Character) AddSkill(id types.Id) {
