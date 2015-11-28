@@ -11,6 +11,7 @@ type Store struct {
 	Name      string
 	Inventory utils.Set
 	RoomId    types.Id
+	Cash      int
 }
 
 func NewStore(name string, roomId types.Id) *Store {
@@ -60,18 +61,45 @@ func (self *Store) HasItem(id types.Id) bool {
 	return self.Inventory.Contains(id.Hex())
 }
 
-func (self *Store) RemoveItem(id types.Id) {
+func (self *Store) RemoveItem(id types.Id) bool {
 	if self.HasItem(id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
 
 		delete(self.Inventory, id.Hex())
 		self.modified()
+		return true
 	}
+	return false
 }
 
 func (self *Store) GetItems() []types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
 	return idSetToList(self.Inventory)
+}
+
+func (self *Store) SetCash(cash int) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	if cash != self.Cash {
+		self.Cash = cash
+		self.modified()
+	}
+}
+
+func (self *Store) AddCash(amount int) {
+	self.SetCash(self.GetCash() + amount)
+}
+
+func (self *Store) RemoveCash(amount int) {
+	self.SetCash(self.GetCash() - amount)
+}
+
+func (self *Store) GetCash() int {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Cash
 }

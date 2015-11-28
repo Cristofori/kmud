@@ -159,6 +159,10 @@ func (self *Character) AddCash(amount int) {
 	self.SetCash(self.GetCash() + amount)
 }
 
+func (self *Character) RemoveCash(amount int) {
+	self.SetCash(self.GetCash() - amount)
+}
+
 func (self *Character) GetCash() int {
 	self.ReadLock()
 	defer self.ReadUnlock()
@@ -180,14 +184,16 @@ func (self *Character) AddItem(id types.Id) {
 	}
 }
 
-func (self *Character) RemoveItem(id types.Id) {
+func (self *Character) RemoveItem(id types.Id) bool {
 	if self.HasItem(id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
 
 		delete(self.Inventory, id.Hex())
 		self.modified()
+		return true
 	}
+	return false
 }
 
 func (self *Character) HasItem(id types.Id) bool {

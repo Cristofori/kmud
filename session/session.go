@@ -224,6 +224,11 @@ func (self *Session) getRawUserInput(prompt string) string {
 	return self.getUserInput(RawUserInput, prompt)
 }
 
+func (self *Session) getConfirmation(prompt string) bool {
+	answer := self.getCleanUserInput(types.Colorize(types.ColorWhite, prompt))
+	return answer == "y" || answer == "yes"
+}
+
 func (self *Session) getInt(prompt string, min, max int) (int, bool) {
 	for {
 		input := self.getRawUserInput(prompt)
@@ -354,7 +359,7 @@ func (self *Session) PrintRoom(room types.Room) {
 		room.GetDescription())
 
 	if store != nil {
-		str = fmt.Sprintf("%s Store: %s\r\n\r\n", str, store.GetName())
+		str = fmt.Sprintf("%s Store: %s\r\n\r\n", str, types.Colorize(types.ColorBlue, store.GetName()))
 	}
 
 	extraNewLine := ""

@@ -5,7 +5,8 @@ import "github.com/Cristofori/kmud/utils"
 type Item struct {
 	DbObject `bson:",inline"`
 
-	Name string
+	Name  string
+	Value int
 }
 
 func NewItem(name string) *Item {
@@ -30,6 +31,12 @@ func (self *Item) SetName(name string) {
 		self.WriteUnlock()
 		self.modified()
 	}
+}
+
+func (self *Item) GetValue() int {
+	self.ReadLock()
+	defer self.ReadUnlock()
+	return self.Value
 }
 
 // vim: nocindent

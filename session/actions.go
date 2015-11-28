@@ -1,6 +1,7 @@
 package session
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -245,11 +246,8 @@ var actions = map[string]action{
 			if len(itemIds) == 0 {
 				s.printLine("You aren't carrying anything")
 			} else {
-				var itemNames []string
-				for _, item := range model.GetItems(itemIds) {
-					itemNames = append(itemNames, item.GetName())
-				}
-				s.printLine("You are carrying: %s", strings.Join(itemNames, ", "))
+				items := model.GetItems(itemIds)
+				s.printLine("You are carrying: %s", strings.Join(items.Names(), ", "))
 			}
 
 			s.printLine("Cash: %v", s.pc.GetCash())
@@ -310,6 +308,119 @@ var actions = map[string]action{
 				s.printError("Usage: unlock <direction>")
 			}
 			handleLock(s, args[0], false)
+		},
+	},
+	"buy": {
+		exec: func(s *Session, args []string) {
+			store := model.StoreIn(s.room.GetId())
+			if store == nil {
+				s.printError("There is no store here")
+				return
+			}
+
+			if len(args) != 1 {
+				s.printError("Usage: buy <item name>")
+			}
+
+			items := model.GetItems(store.GetItems())
+			index, err := strconv.Atoi(args[0])
+			var item types.Item
+
+			if err == nil {
+				index--
+				if index < len(items) && index >= 0 {
+					item = items[index]
+				} else {
+					s.printError("Invalid selection")
+				}
+			} else {
+				index := utils.BestMatch(args[0], items.Names())
+
+				if index == -1 {
+					s.printError("Not found")
+				} else if index == -2 {
+					s.printError("Which one do you mean?")
+				} else {
+					item = items[index]
+				}
+			}
+
+			if item != nil {
+				confirmed := s.getConfirmation(fmt.Sprintf("Buy %s for %v? ", item.GetName(), item.GetValue()))
+
+				if confirmed {
+					if store.RemoveItem(item.GetId()) {
+						s.pc.AddItem(item.GetId())
+						s.pc.RemoveCash(item.GetValue())
+						store.AddCash(item.GetValue())
+						s.printLine("Bought %s", item.GetName())
+					} else {
+						s.printError("That item is no longer available")
+					}
+				} else {
+					s.printError("Purchase canceled")
+				}
+			}
+		},
+	},
+	"sell": {
+		exec: func(s *Session, args []string) {
+			store := model.StoreIn(s.room.GetId())
+			if store == nil {
+				s.printError("There is no store here")
+				return
+			}
+
+			if len(args) != 1 {
+				s.printError("Usage: sell <item name>")
+			}
+
+			items := model.GetItems(s.pc.GetItems())
+			index := utils.BestMatch(args[0], items.Names())
+
+			if index == -1 {
+				s.printError("Not found")
+			} else if index == -2 {
+				s.printError("Which one do you mean?")
+			} else {
+				item := items[index]
+
+				confirmed := s.getConfirmation(fmt.Sprintf("Sell %s for %v? ", item.GetName(), item.GetValue()))
+
+				if confirmed {
+					if s.pc.RemoveItem(item.GetId()) {
+						store.AddItem(item.GetId())
+						store.RemoveCash(item.GetValue())
+						s.pc.AddCash(item.GetValue())
+						s.printLine("Sold %s", item.GetName())
+					} else {
+						s.printError("Transaction failed")
+					}
+				}
+			}
+		},
+	},
+	"store": {
+		exec: func(s *Session, args []string) {
+			store := model.StoreIn(s.room.GetId())
+			if store == nil {
+				s.printError("There is no store here")
+				return
+			}
+
+			s.printLine("\r\nStore cash: %v", store.GetCash())
+
+			itemIds := store.GetItems()
+			if len(itemIds) == 0 {
+				s.printLine("This store is empty")
+				return
+			}
+
+			for i, item := range model.GetItems(itemIds) {
+				s.printLine("[%v] %s - %v", i+1, item.GetName(), item.GetValue())
+			}
+
+			s.printLine("")
 		},
 	},
 }

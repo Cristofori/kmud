@@ -56,8 +56,11 @@ type Loginable interface {
 
 type Container interface {
 	AddItem(Id)
-	RemoveItem(Id)
+	RemoveItem(Id) bool
 	GetItems() []Id
+	AddCash(int)
+	RemoveCash(int)
+	GetCash() int
 }
 
 type Object interface {
@@ -72,8 +75,6 @@ type Character interface {
 	Locateable
 	Container
 	SetRoomId(Id)
-	AddCash(int)
-	GetCash() int
 	Hit(int)
 	Heal(int)
 	GetHitPoints() int
@@ -220,6 +221,7 @@ func (self UserList) Swap(i, j int) {
 type Item interface {
 	Object
 	Nameable
+	GetValue() int
 }
 
 type ItemList []Item
@@ -230,6 +232,18 @@ func (self ItemList) Names() []string {
 		names[i] = item.GetName()
 	}
 	return names
+}
+
+func (self ItemList) Len() int {
+	return len(self)
+}
+
+func (self ItemList) Less(i, j int) bool {
+	return naturalsort.NaturalLessThan(self[i].GetName(), self[j].GetName())
+}
+
+func (self ItemList) Swap(i, j int) {
+	self[i], self[j] = self[j], self[i]
 }
 
 type Skill interface {

@@ -17,6 +17,7 @@ type Room struct {
 	Title       string
 	Description string
 	Items       map[string]bool
+	Cash        int
 	Links       map[string]types.Id
 	Location    types.Coordinate
 
@@ -78,14 +79,16 @@ func (self *Room) AddItem(id types.Id) {
 	}
 }
 
-func (self *Room) RemoveItem(id types.Id) {
+func (self *Room) RemoveItem(id types.Id) bool {
 	if self.HasItem(id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
 
 		delete(self.Items, id.Hex())
 		self.modified()
+		return true
 	}
+	return false
 }
 
 func (self *Room) SetLink(name string, roomId types.Id) {
@@ -311,4 +314,27 @@ func (self *Room) IsLocked(dir types.Direction) bool {
 	return false
 }
 
-// vim: nocindent
+func (self *Room) SetCash(cash int) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+
+	if cash != self.Cash {
+		self.Cash = cash
+		self.modified()
+	}
+}
+
+func (self *Room) AddCash(amount int) {
+	self.SetCash(self.GetCash() + amount)
+}
+
+func (self *Room) RemoveCash(amount int) {
+	self.SetCash(self.GetCash() - amount)
+}
+
+func (self *Room) GetCash() int {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Cash
+}

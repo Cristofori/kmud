@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	db "github.com/Cristofori/kmud/database"
 	ds "github.com/Cristofori/kmud/datastore"
@@ -375,6 +376,7 @@ func GetItems(itemIds []types.Id) types.ItemList {
 		items[i] = GetItem(itemId)
 	}
 
+	sort.Sort(items)
 	return items
 }
 
