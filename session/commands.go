@@ -56,6 +56,36 @@ func init() {
 				}
 			},
 		},
+		"store": {
+			admin: true,
+			exec: func(self *command, s *Session, args []string) {
+				utils.ExecMenu("Store", s, func(menu *utils.Menu) {
+					store := model.StoreIn(s.room.GetId())
+
+					if store != nil {
+						menu.AddAction("r", "Rename", func() bool {
+							name := s.getCleanUserInput("New name: ")
+							if name != "" {
+								store.SetName("Name")
+							}
+							return true
+						})
+						menu.AddAction("d", "Delete", func() bool {
+							model.DeleteStore(store.GetId())
+							return true
+						})
+					} else {
+						menu.AddAction("n", "New Store", func() bool {
+							name := s.getCleanUserInput("Store name: ")
+							if name != "" {
+								model.CreateStore(name, s.room.GetId())
+							}
+							return true
+						})
+					}
+				})
+			},
+		},
 		"loc": cAlias("location"),
 		"location": {
 			admin: false,

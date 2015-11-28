@@ -3,6 +3,7 @@ package session
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strconv"
 
 	"github.com/Cristofori/kmud/combat"
@@ -151,15 +152,7 @@ func (self *Session) printError(err string, a ...interface{}) {
 }
 
 func (self *Session) printRoom() {
-	pcList := model.PlayerCharactersIn(self.room.GetId(), self.pc.GetId())
-	npcList := model.NpcsIn(self.room.GetId())
-	var area types.Area
-
-	if self.room.GetAreaId() != nil {
-		area = model.GetArea(self.room.GetAreaId())
-	}
-
-	self.WriteLine(self.room.ToString(pcList, npcList, model.GetItems(self.room.GetItems()), area))
+	self.PrintRoom(self.room)
 }
 
 func (self *Session) clearLine() {
@@ -332,4 +325,118 @@ func (self *Session) handleCommand(name string, args []string) {
 	} else {
 		self.printError("Unrecognized command: %s", name)
 	}
+}
+
+func (self *Session) PrintRoom(room types.Room) {
+	pcs := model.PlayerCharactersIn(self.room.GetId(), self.pc.GetId())
+	npcs := model.NpcsIn(room.GetId())
+	items := model.GetItems(room.GetItems())
+	store := model.StoreIn(room.GetId())
+
+	var area types.Area
+	if room.GetAreaId() != nil {
+		area = model.GetArea(room.GetAreaId())
+	}
+
+	var str string
+
+	areaStr := ""
+	if area != nil {
+		areaStr = fmt.Sprintf("%s - ", area.GetName())
+	}
+
+	str = fmt.Sprintf("\r\n %v>>> %v%s%s %v<<< %v(%v %v %v)\r\n\r\n %v%s\r\n\r\n",
+		types.ColorWhite, types.ColorBlue,
+		areaStr, room.GetTitle(),
+		types.ColorWhite, types.ColorBlue,
+		room.GetLocation().X, room.GetLocation().Y, room.GetLocation().Z,
+		types.ColorWhite,
+		room.GetDescription())
+
+	if store != nil {
+		str = fmt.Sprintf("%s Store: %s\r\n\r\n", str, store.GetName())
+	}
+
+	extraNewLine := ""
+
+	if len(pcs) > 0 {
+		str = fmt.Sprintf("%s %sAlso here:", str, types.ColorBlue)
+
+		names := make([]string, len(pcs))
+		for i, char := range pcs {
+			names[i] = types.Colorize(types.ColorWhite, char.GetName())
+		}
+		str = fmt.Sprintf("%s %s \r\n", str, strings.Join(names, types.Colorize(types.ColorBlue, ", ")))
+
+		extraNewLine = "\r\n"
+	}
+
+	if len(npcs) > 0 {
+		str = fmt.Sprintf("%s %s", str, types.Colorize(types.ColorBlue, "NPCs: "))
+
+		names := make([]string, len(npcs))
+		for i, npc := range npcs {
+			names[i] = types.Colorize(types.ColorWhite, npc.GetName())
+		}
+		str = fmt.Sprintf("%s %s \r\n", str, strings.Join(names, types.Colorize(types.ColorBlue, ", ")))
+
+		extraNewLine = "\r\n"
+	}
+
+	if len(items) > 0 {
+		itemMap := make(map[string]int)
+		var nameList []string
+
+		for _, item := range items {
+			if item == nil {
+				continue
+			}
+
+			_, found := itemMap[item.GetName()]
+			if !found {
+				nameList = append(nameList, item.GetName())
+			}
+			itemMap[item.GetName()]++
+		}
+
+		sort.Strings(nameList)
+
+		str = str + " " + types.Colorize(types.ColorBlue, "Items: ")
+
+		var names []string
+		for _, name := range nameList {
+			if itemMap[name] > 1 {
+				name = fmt.Sprintf("%s x%v", name, itemMap[name])
+			}
+			names = append(names, types.Colorize(types.ColorWhite, name))
+		}
+		str = str + strings.Join(names, types.Colorize(types.ColorBlue, ", ")) + "\r\n"
+
+		extraNewLine = "\r\n"
+	}
+
+	str = str + extraNewLine + " " + types.Colorize(types.ColorBlue, "Exits: ")
+
+	var exitList []string
+	for _, direction := range room.GetExits() {
+		exitList = append(exitList, utils.DirectionToExitString(direction))
+	}
+
+	if len(exitList) == 0 {
+		str = str + types.Colorize(types.ColorWhite, "None")
+	} else {
+		str = str + strings.Join(exitList, " ")
+	}
+
+	if len(room.GetLinks()) > 0 {
+		str = fmt.Sprintf("%s\r\n\r\n %s %s",
+			str,
+			types.Colorize(types.ColorBlue, "Other exits:"),
+			types.Colorize(types.ColorWhite, strings.Join(room.LinkNames(), ", ")),
+		)
+	}
+
+	str = str + "\r\n"
+
+	self.WriteLine(str)
 }

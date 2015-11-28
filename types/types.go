@@ -23,7 +23,7 @@ const (
 	RoomType    ObjectType = "Room"
 	ItemType    ObjectType = "Item"
 	SkillType   ObjectType = "Skill"
-	ShopType    ObjectType = "Shop"
+	StoreType   ObjectType = "Store"
 )
 
 type Identifiable interface {
@@ -148,9 +148,9 @@ type Room interface {
 	HasExit(Direction) bool
 	NextLocation(Direction) Coordinate
 	GetExits() []Direction
-	ToString(PCList, NPCList, ItemList, Area) string
 	GetTitle() string
 	SetTitle(string)
+	GetDescription() string
 	SetDescription(string)
 	GetProperties() map[string]string
 	SetProperty(string, string)
@@ -266,6 +266,8 @@ func (self SkillList) Names() []string {
 	return names
 }
 
-type Shop interface {
+type Store interface {
 	Object
+	Nameable
+	Container
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/types"
+	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -65,6 +66,18 @@ func idMapToList(m map[string]bool) []types.Id {
 
 	i := 0
 	for id := range m {
+		ids[i] = bson.ObjectIdHex(id)
+		i++
+	}
+
+	return ids
+}
+
+func idSetToList(set utils.Set) []types.Id {
+	ids := make([]types.Id, len(set))
+
+	i := 0
+	for id := range set {
 		ids[i] = bson.ObjectIdHex(id)
 		i++
 	}

@@ -1,12 +1,7 @@
 package database
 
 import (
-	"fmt"
-	"sort"
-	"strings"
-
 	"github.com/Cristofori/kmud/types"
-	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -42,106 +37,6 @@ func NewRoom(zoneId types.Id, location types.Coordinate) *Room {
 
 	room.init(room)
 	return room
-}
-
-func (self *Room) ToString(players types.PCList, npcs types.NPCList, items types.ItemList, area types.Area) string {
-	var str string
-
-	areaStr := ""
-	if area != nil {
-		areaStr = fmt.Sprintf("%s - ", area.GetName())
-	}
-
-	str = fmt.Sprintf("\r\n %v>>> %v%s%s %v<<< %v(%v %v %v)\r\n\r\n %v%s\r\n\r\n",
-		types.ColorWhite, types.ColorBlue,
-		areaStr, self.GetTitle(),
-		types.ColorWhite, types.ColorBlue,
-		self.GetLocation().X, self.GetLocation().Y, self.GetLocation().Z,
-		types.ColorWhite,
-		self.GetDescription())
-
-	extraNewLine := ""
-
-	if len(players) > 0 {
-		str = fmt.Sprintf("%s %sAlso here:", str, types.ColorBlue)
-
-		names := make([]string, len(players))
-		for i, char := range players {
-			names[i] = types.Colorize(types.ColorWhite, char.GetName())
-		}
-		str = fmt.Sprintf("%s %s \r\n", str, strings.Join(names, types.Colorize(types.ColorBlue, ", ")))
-
-		extraNewLine = "\r\n"
-	}
-
-	if len(npcs) > 0 {
-		str = fmt.Sprintf("%s %s", str, types.Colorize(types.ColorBlue, "NPCs: "))
-
-		names := make([]string, len(npcs))
-		for i, npc := range npcs {
-			names[i] = types.Colorize(types.ColorWhite, npc.GetName())
-		}
-		str = fmt.Sprintf("%s %s \r\n", str, strings.Join(names, types.Colorize(types.ColorBlue, ", ")))
-
-		extraNewLine = "\r\n"
-	}
-
-	if len(items) > 0 {
-		itemMap := make(map[string]int)
-		var nameList []string
-
-		for _, item := range items {
-			if item == nil {
-				continue
-			}
-
-			_, found := itemMap[item.GetName()]
-			if !found {
-				nameList = append(nameList, item.GetName())
-			}
-			itemMap[item.GetName()]++
-		}
-
-		sort.Strings(nameList)
-
-		str = str + " " + types.Colorize(types.ColorBlue, "Items: ")
-
-		var names []string
-		for _, name := range nameList {
-			if itemMap[name] > 1 {
-				name = fmt.Sprintf("%s x%v", name, itemMap[name])
-			}
-			names = append(names, types.Colorize(types.ColorWhite, name))
-		}
-		str = str + strings.Join(names, types.Colorize(types.ColorBlue, ", ")) + "\r\n"
-
-		extraNewLine = "\r\n"
-	}
-
-	str = str + extraNewLine + " " + types.Colorize(types.ColorBlue, "Exits: ")
-
-	var exitList []string
-	for _, direction := range self.GetExits() {
-		exitList = append(exitList, utils.DirectionToExitString(direction))
-	}
-
-	if len(exitList) == 0 {
-		str = str + types.Colorize(types.ColorWhite, "None")
-	} else {
-		str = str + strings.Join(exitList, " ")
-	}
-
-	if len(self.GetLinks()) > 0 {
-		str = fmt.Sprintf("%s\r\n\r\n %s %s",
-			str,
-			types.Colorize(types.ColorBlue, "Other exits:"),
-			types.Colorize(types.ColorWhite, strings.Join(self.LinkNames(), ", ")),
-		)
-	}
-
-	str = str + "\r\n"
-
-	return str
 }
 
 func (self *Room) HasExit(dir types.Direction) bool {

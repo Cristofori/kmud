@@ -113,11 +113,10 @@ func (self *Pc) IsOnline() bool {
 }
 
 func (self *Character) SetRoomId(id types.Id) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if id != self.RoomId {
+	if id != self.GetRoomId() {
+		self.WriteLock()
 		self.RoomId = id
+		self.WriteUnlock()
 		self.modified()
 	}
 }
