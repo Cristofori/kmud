@@ -18,8 +18,6 @@ type Room struct {
 	Location    types.Coordinate
 
 	Exits map[types.Direction]*Exit
-
-	Properties map[string]string
 }
 
 func NewRoom(zoneId types.Id, location types.Coordinate) *Room {
@@ -203,42 +201,6 @@ func (self *Room) GetExits() []types.Direction {
 	}
 
 	return exits
-}
-
-func (self *Room) SetProperty(name, value string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if self.Properties == nil {
-		self.Properties = map[string]string{}
-	}
-
-	if self.Properties[name] != value {
-		self.Properties[name] = value
-		self.modified()
-	}
-}
-
-func (self *Room) GetProperty(name string) string {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	return self.Properties[name]
-}
-
-func (self *Room) GetProperties() map[string]string {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	return self.Properties
-}
-
-func (self *Room) RemoveProperty(key string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	delete(self.Properties, key)
-	self.modified()
 }
 
 func (self *Room) SetLocked(dir types.Direction, locked bool) {

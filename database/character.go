@@ -15,7 +15,7 @@ type Character struct {
 	Name      string
 	Health    int
 	HitPoints int
-	Skills    map[string]bool
+	Skills    utils.Set
 }
 
 type Pc struct {
@@ -172,10 +172,10 @@ func (self *Character) AddSkill(id types.Id) {
 		defer self.WriteUnlock()
 
 		if self.Skills == nil {
-			self.Skills = map[string]bool{}
+			self.Skills = utils.Set{}
 		}
 
-		self.Skills[id.Hex()] = true
+		self.Skills.Insert(id.Hex())
 		self.modified()
 	}
 }
@@ -185,7 +185,7 @@ func (self *Character) RemoveSkill(id types.Id) {
 		self.WriteLock()
 		defer self.WriteUnlock()
 
-		delete(self.Skills, id.Hex())
+		self.Skills.Remove(id.Hex())
 		self.modified()
 	}
 }
@@ -194,14 +194,13 @@ func (self *Character) HasSkill(id types.Id) bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
-	_, found := self.Skills[id.Hex()]
-	return found
+	return self.Skills.Contains(id.Hex())
 }
 
 func (self *Character) GetSkills() []types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-	return idMapToList(self.Skills)
+	return idSetToList(self.Skills)
 }
 
 func (self *Npc) SetConversation(conversation string) {

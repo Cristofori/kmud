@@ -153,9 +153,6 @@ type Room interface {
 	SetTitle(string)
 	GetDescription() string
 	SetDescription(string)
-	GetProperties() map[string]string
-	SetProperty(string, string)
-	RemoveProperty(string)
 	SetLink(string, Id)
 	RemoveLink(string)
 	GetLinks() map[string]Id

@@ -65,18 +65,6 @@ func modified(id types.Id) {
 	modifiedObjectChannel <- id
 }
 
-func idMapToList(m map[string]bool) []types.Id {
-	ids := make([]types.Id, len(m))
-
-	i := 0
-	for id := range m {
-		ids[i] = bson.ObjectIdHex(id)
-		i++
-	}
-
-	return ids
-}
-
 func idSetToList(set utils.Set) []types.Id {
 	ids := make([]types.Id, len(set))
 
@@ -88,5 +76,3 @@ func idSetToList(set utils.Set) []types.Id {
 
 	return ids
 }
-
-// vim: nocindent
