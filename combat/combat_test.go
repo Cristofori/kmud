@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/Cristofori/kmud/events"
-	"github.com/Cristofori/kmud/types"
+	"github.com/Cristofori/kmud/testutils"
 	. "gopkg.in/check.v1"
 )
 
@@ -20,8 +20,8 @@ func init() {
 }
 
 func (s *CombatSuite) TestCombatLoop(c *C) {
-	char1 := types.NewMockPC()
-	char2 := types.NewMockPC()
+	char1 := testutils.NewMockPC()
+	char2 := testutils.NewMockPC()
 	char1.RoomId = char2.RoomId
 
 	eventChannel1 := events.Register(char1)

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Cristofori/kmud/types"
+	"github.com/Cristofori/kmud/testutils"
 	. "gopkg.in/check.v1"
 )
 
@@ -16,7 +16,7 @@ var _ = Suite(&EventSuite{})
 
 func (s *EventSuite) TestEventLoop(c *C) {
 
-	char := types.NewMockPC()
+	char := testutils.NewMockPC()
 
 	eventChannel := Register(char)
 

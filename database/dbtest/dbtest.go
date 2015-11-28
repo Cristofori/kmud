@@ -85,7 +85,7 @@ func Test_ThreadSafety(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 	database.Init(&TestSession{}, "unit_dbtest")
 
-	char := database.NewPc("test", types.MockId(""), types.MockId(""))
+	char := database.NewPc("test", testutils.MockId(""), testutils.MockId(""))
 
 	var wg sync.WaitGroup
 	wg.Add(2)

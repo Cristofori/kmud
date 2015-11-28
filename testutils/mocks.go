@@ -1,6 +1,9 @@
-package types
+package testutils
 
-import "gopkg.in/mgo.v2/bson"
+import (
+	"github.com/Cristofori/kmud/types"
+	"gopkg.in/mgo.v2/bson"
+)
 
 type MockId string
 
@@ -13,11 +16,10 @@ func (self MockId) Hex() string {
 }
 
 type MockIdentifiable struct {
-	Id   Id
-	Type ObjectType
+	Id types.Id
 }
 
-func (self MockIdentifiable) GetId() Id {
+func (self MockIdentifiable) GetId() types.Id {
 	return self.Id
 }
 
@@ -64,7 +66,7 @@ type MockZone struct {
 
 func NewMockZone() *MockZone {
 	return &MockZone{
-		MockIdentifiable{Id: bson.NewObjectId(), Type: ZoneType},
+		MockIdentifiable{Id: bson.NewObjectId()},
 	}
 }
 
@@ -74,7 +76,7 @@ type MockRoom struct {
 
 func NewMockRoom() *MockRoom {
 	return &MockRoom{
-		MockIdentifiable{Id: bson.NewObjectId(), Type: RoomType},
+		MockIdentifiable{Id: bson.NewObjectId()},
 	}
 }
 
@@ -84,20 +86,38 @@ type MockUser struct {
 
 func NewMockUser() *MockUser {
 	return &MockUser{
-		MockIdentifiable{Id: bson.NewObjectId(), Type: UserType},
+		MockIdentifiable{Id: bson.NewObjectId()},
 	}
+}
+
+type MockContainer struct {
+}
+
+func (*MockContainer) AddCash(int) {
+}
+
+func (*MockContainer) GetCash() int {
+	return 0
+}
+
+func (*MockContainer) RemoveCash(int) {
+}
+
+func (*MockContainer) AddItem(types.Id) {
+}
+
+func (*MockContainer) RemoveItem(types.Id) bool {
+	return true
+}
+
+func (*MockContainer) GetItems() []types.Id {
+	return []types.Id{}
 }
 
 type MockCharacter struct {
 	MockObject
 	MockNameable
-}
-
-func (*MockCharacter) AddCash(int) {
-}
-
-func (*MockCharacter) GetCash() int {
-	return 0
+	MockContainer
 }
 
 func (*MockCharacter) GetHealth() int {
@@ -117,29 +137,19 @@ func (*MockCharacter) Heal(int) {
 func (*MockCharacter) Hit(int) {
 }
 
-func (*MockCharacter) AddItem(Id) {
-}
-
-func (*MockCharacter) RemoveItem(Id) {
-}
-
-func (*MockCharacter) GetItems() []Id {
-	return []Id{}
-}
-
 func (*MockCharacter) SetHitPoints(int) {
 }
 
 type MockPC struct {
 	MockCharacter
-	RoomId Id
+	RoomId types.Id
 }
 
 func NewMockPC() *MockPC {
 	return &MockPC{
 		MockCharacter: MockCharacter{
 			MockObject: MockObject{
-				MockIdentifiable: MockIdentifiable{Id: bson.NewObjectId(), Type: PcType},
+				MockIdentifiable: MockIdentifiable{Id: bson.NewObjectId()},
 			},
 			MockNameable: MockNameable{Name: "Mock PC"},
 		},
@@ -147,7 +157,7 @@ func NewMockPC() *MockPC {
 	}
 }
 
-func (self MockPC) GetRoomId() Id {
+func (self MockPC) GetRoomId() types.Id {
 	return self.RoomId
 }
 
@@ -155,12 +165,12 @@ func (self MockPC) IsOnline() bool {
 	return true
 }
 
-func (self MockPC) SetRoomId(Id) {
+func (self MockPC) SetRoomId(types.Id) {
 }
 
-func (self MockPC) GetSkills() []Id {
-	return []Id{}
+func (self MockPC) GetSkills() []types.Id {
+	return []types.Id{}
 }
 
-func (self MockPC) AddSkill(Id) {
+func (self MockPC) AddSkill(types.Id) {
 }
