@@ -129,8 +129,12 @@ func (self *User) SetWindowSize(width int, height int) {
 	self.windowHeight = height
 }
 
+const MinWidth = 60
+const MinHeight = 20
+
 func (self *User) GetWindowSize() (width int, height int) {
-	return self.windowWidth, self.windowHeight
+	return utils.Max(self.windowWidth, MinWidth),
+		utils.Max(self.windowHeight, MinHeight)
 }
 
 func (self *User) SetTerminalType(tt string) {

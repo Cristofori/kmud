@@ -98,7 +98,9 @@ func (self *Menu) Print(comm types.Communicable) {
 	title := types.Colorize(types.ColorBlue, self.title)
 	comm.WriteLine(fmt.Sprintf("%s %s %s", border, title, border))
 
-	for _, action := range self.actions {
+	options := make([]string, len(self.actions))
+
+	for i, action := range self.actions {
 		index := strings.Index(strings.ToLower(action.text), action.key)
 
 		actionText := ""
@@ -123,6 +125,10 @@ func (self *Menu) Print(comm types.Communicable) {
 				action.text[index+keyLength:])
 		}
 
-		comm.WriteLine(fmt.Sprintf("  %s", actionText))
+		options[i] = fmt.Sprintf("  %s", actionText)
 	}
+
+	width, height := comm.GetWindowSize()
+	pages := Paginate(options, width, height/2)
+	comm.Write(pages[0])
 }

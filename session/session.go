@@ -168,6 +168,10 @@ func (self *Session) GetInput(prompt string) string {
 	return self.getUserInput(CleanUserInput, prompt)
 }
 
+func (self *Session) GetWindowSize() (int, int) {
+	return self.user.GetWindowSize()
+}
+
 // getUserInput allows us to retrieve user input in a way that doesn't block the
 // event loop by using channels and a separate Go routine to grab
 // either the next user input or the next event.

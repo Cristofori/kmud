@@ -164,6 +164,10 @@ func (self *connectionHandler) GetInput(prompt string) string {
 	return utils.GetUserInput(self.conn, prompt, types.ColorModeNone)
 }
 
+func (sefl *connectionHandler) GetWindowSize() (int, int) {
+	return 80, 80
+}
+
 func (self *connectionHandler) mainMenu() {
 	utils.ExecMenu(
 		"MUD",

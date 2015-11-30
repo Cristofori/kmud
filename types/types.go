@@ -181,6 +181,7 @@ type Communicable interface {
 	WriteLine(string)
 	Write(string)
 	GetInput(prompt string) string
+	GetWindowSize() (int, int)
 }
 
 type User interface {
@@ -192,7 +193,6 @@ type User interface {
 	SetConnection(net.Conn)
 	GetConnection() net.Conn
 	SetWindowSize(int, int)
-	GetWindowSize() (int, int)
 	SetTerminalType(string)
 	GetTerminalType() string
 	GetColorMode() ColorMode
