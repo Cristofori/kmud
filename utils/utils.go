@@ -398,8 +398,8 @@ func Paginate(list []string, width, height int) []string {
 
 	page := ""
 
-	for i, _ := range columns[0] {
-		for j, _ := range columns {
+	for i := range columns[0] {
+		for j := range columns {
 			column := columns[j]
 
 			if i < len(column) {
