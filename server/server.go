@@ -371,9 +371,9 @@ func (self *connectionHandler) Handle() {
 								return
 							}
 
-							width := (255 * data[0]) + data[1]
-							height := (255 * data[2]) + data[3]
-							self.user.SetWindowSize(int(width), int(height))
+							width := int((255 * data[0])) + int(data[1])
+							height := int((255 * data[2])) + int(data[3])
+							self.user.SetWindowSize(width, height)
 
 						case telnet.TT:
 							self.user.SetTerminalType(string(data))
