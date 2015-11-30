@@ -397,4 +397,70 @@ func Test_Atoir(t *testing.T) {
 	}
 }
 
-// vim:nocindent
+func Test_Min(t *testing.T) {
+	tests := []struct {
+		x      int
+		y      int
+		output int
+	}{
+		{0, 1, 0},
+		{-10, 10, -10},
+		{100, 200, 100},
+		{200, 100, 100},
+		{0, 0, 0},
+		{1, 1, 1},
+		{-1, -1, -1},
+	}
+
+	for _, test := range tests {
+		output := Min(test.x, test.y)
+		if output != test.output {
+			t.Errorf("Min(%v, %v) = %v, expected %v", test.x, test.y, output, test.output)
+		}
+	}
+}
+
+func Test_Max(t *testing.T) {
+	tests := []struct {
+		x      int
+		y      int
+		output int
+	}{
+		{0, 1, 1},
+		{-10, 10, 10},
+		{100, 200, 200},
+		{200, 100, 200},
+		{0, 0, 0},
+		{1, 1, 1},
+		{-1, -1, -1},
+	}
+
+	for _, test := range tests {
+		output := Max(test.x, test.y)
+		if output != test.output {
+			t.Errorf("Max(%v, %v) = %v, expected %v", test.x, test.y, output, test.output)
+		}
+	}
+}
+
+func Test_Bound(t *testing.T) {
+	tests := []struct {
+		input  int
+		lower  int
+		upper  int
+		output int
+	}{
+		{5, 0, 10, 5},
+		{-10, 0, 10, 0},
+		{20, 0, 10, 10},
+		{-15, -20, -10, -15},
+		{19, 10, 20, 19},
+	}
+
+	for _, test := range tests {
+		output := Bound(test.input, test.lower, test.upper)
+		if output != test.output {
+			t.Errorf("Bound(%v, %v, %v) = %v, expected %v", test.input, test.lower, test.upper, output, test.output)
+		}
+	}
+}

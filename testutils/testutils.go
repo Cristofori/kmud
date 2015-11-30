@@ -67,6 +67,10 @@ func (self *TestCommunicable) GetInput(prompt string) string {
 	return utils.Simplify(string(buf[:n]))
 }
 
+func (self *TestCommunicable) GetWindowSize() (int, int) {
+	return 80, 40
+}
+
 func TestSettersAndGetters(object interface{}, t *testing.T) bool {
 	objType := reflect.TypeOf(object)
 
