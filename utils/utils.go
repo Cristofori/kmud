@@ -363,9 +363,61 @@ func DirectionToExitString(direction types.Direction) string {
 	panic("Unexpected code path")
 }
 
-// TODO: placeholder
-func Columnize(list []string, width int) string {
-	return "\t" + strings.Join(list, "\r\n\t")
+func Paginate(list []string, width, height int) []string {
+	columns := [][]string{}
+	widths := []int{}
+	totalWidth := 0
+
+	index := 0
+	for {
+		column := []string{}
+		for ; index < (height*(len(columns)+1)) && index < len(list); index++ {
+			column = append(column, list[index])
+		}
+
+		columnWidth := 0
+		for _, item := range column {
+			if len(item) > columnWidth {
+				columnWidth = len(item)
+			}
+		}
+		columnWidth += 2 // Padding between columns
+
+		if (columnWidth + totalWidth) > width {
+			break
+		}
+
+		totalWidth += columnWidth
+		widths = append(widths, columnWidth)
+		columns = append(columns, column)
+
+		if index >= len(list) {
+			break
+		}
+	}
+
+	page := ""
+
+	for i, _ := range columns[0] {
+		for j, _ := range columns {
+			column := columns[j]
+
+			if i < len(column) {
+				item := column[i]
+				page += item + strings.Repeat(" ", widths[j]-len(item))
+			}
+		}
+
+		page += "\r\n"
+	}
+
+	pages := []string{page}
+
+	if index < len(list) {
+		pages = append(pages, Paginate(list[index:], width, height)...)
+	}
+
+	return pages
 }
 
 func Atois(strings []string) ([]int, error) {

@@ -126,5 +126,3 @@ func (self *Menu) Print(comm types.Communicable) {
 		comm.WriteLine(fmt.Sprintf("  %s", actionText))
 	}
 }
-
-// vim: nocindent

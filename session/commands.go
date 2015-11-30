@@ -3,6 +3,7 @@ package session
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -42,8 +43,14 @@ func init() {
 							names = append(names, name)
 						}
 					}
-					width, _ := s.user.GetWindowSize()
-					s.printLine(utils.Columnize(names, width))
+					sort.Strings(names)
+					width, height := s.user.GetWindowSize()
+
+					pages := utils.Paginate(names, width, height/2)
+
+					for _, page := range pages {
+						s.printLine(page)
+					}
 				} else if len(args) == 1 {
 					command, found := commands[args[0]]
 					if found {
