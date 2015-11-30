@@ -10,20 +10,29 @@ import (
 type Menu struct {
 	actions     []action
 	title       string
-	prompt      string
 	exitHandler func()
 }
 
 func ExecMenu(title string, comm types.Communicable, build func(*Menu)) {
+	pageIndex := 0
+	pageCount := 1
+
 	for {
 		var menu Menu
 		menu.title = title
-		menu.prompt = "> "
 		build(&menu)
 
-		menu.Print(comm)
+		pageIndex = Bound(pageIndex, 0, pageCount-1)
+		pageCount = menu.Print(comm, pageIndex)
 
-		input := comm.GetInput(types.Colorize(types.ColorWhite, menu.prompt))
+		prompt := ""
+		if pageCount > 1 {
+			prompt = fmt.Sprintf("Page %v of %v > ", pageIndex+1, pageCount)
+		} else {
+			prompt = "> "
+		}
+
+		input := comm.GetInput(types.Colorize(types.ColorWhite, prompt))
 
 		if input == "" {
 			if menu.exitHandler != nil {
@@ -32,14 +41,20 @@ func ExecMenu(title string, comm types.Communicable, build func(*Menu)) {
 			return
 		}
 
-		action := menu.getAction(input)
+		if input == ">" {
+			pageIndex++
+		} else if input == "<" {
+			pageIndex--
+		} else {
+			action := menu.getAction(input)
 
-		if action.handler != nil {
-			if !action.handler() {
-				return
+			if action.handler != nil {
+				if !action.handler() {
+					return
+				}
+			} else if input != "?" && input != "help" {
+				comm.WriteLine(types.Colorize(types.ColorRed, "Invalid selection"))
 			}
-		} else if input != "?" && input != "help" {
-			comm.WriteLine(types.Colorize(types.ColorRed, "Invalid selection"))
 		}
 	}
 }
@@ -73,10 +88,6 @@ func (self *Menu) GetData(choice string) types.Id {
 	return nil
 }
 
-func (self *Menu) GetPrompt() string {
-	return self.prompt
-}
-
 func (self *Menu) getAction(key string) action {
 	key = strings.ToLower(key)
 
@@ -93,7 +104,7 @@ func (self *Menu) HasAction(key string) bool {
 	return action.key != ""
 }
 
-func (self *Menu) Print(comm types.Communicable) {
+func (self *Menu) Print(comm types.Communicable, page int) int {
 	border := types.Colorize(types.ColorWhite, "-=-=-")
 	title := types.Colorize(types.ColorBlue, self.title)
 	comm.WriteLine(fmt.Sprintf("%s %s %s", border, title, border))
@@ -130,5 +141,7 @@ func (self *Menu) Print(comm types.Communicable) {
 
 	width, height := comm.GetWindowSize()
 	pages := Paginate(options, width, height/2)
-	comm.Write(pages[0])
+
+	comm.Write(pages[page])
+	return len(pages)
 }

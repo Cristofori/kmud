@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+var ColorRegex = regexp.MustCompile("([@#][0-6]|@@|##)")
+
 type ColorMode int
 
 const (
@@ -123,8 +125,6 @@ func Colorize(color Color, text string) string {
 
 // Strips MUD color codes and replaces them with ansi color codes
 func ProcessColors(text string, cm ColorMode) string {
-	regex := regexp.MustCompile("([@#][0-6]|@@|##)")
-
 	lookup := map[Color]bool{}
 
 	lookup[ColorRed] = true
@@ -156,8 +156,12 @@ func ProcessColors(text string, cm ColorMode) string {
 		return match
 	}
 
-	after := regex.ReplaceAllStringFunc(text, replace)
+	after := ColorRegex.ReplaceAllStringFunc(text, replace)
 	return after
+}
+
+func StripColors(text string) string {
+	return ColorRegex.ReplaceAllString(text, "")
 }
 
 // vim: nocindent

@@ -364,6 +364,10 @@ func DirectionToExitString(direction types.Direction) string {
 }
 
 func Paginate(list []string, width, height int) []string {
+	itemLength := func(item string) int {
+		return len(types.StripColors(item))
+	}
+
 	columns := [][]string{}
 	widths := []int{}
 	totalWidth := 0
@@ -378,12 +382,13 @@ func Paginate(list []string, width, height int) []string {
 		columnWidth := 0
 		for _, item := range column {
 			if len(item) > columnWidth {
-				columnWidth = len(item)
+				columnWidth = itemLength(item)
 			}
 		}
 		columnWidth += 2 // Padding between columns
 
 		if (columnWidth + totalWidth) > width {
+			index -= len(column)
 			break
 		}
 
@@ -404,7 +409,7 @@ func Paginate(list []string, width, height int) []string {
 
 			if i < len(column) {
 				item := column[i]
-				page += item + strings.Repeat(" ", widths[j]-len(item))
+				page += item + strings.Repeat(" ", widths[j]-itemLength(item))
 			}
 		}
 
@@ -458,4 +463,14 @@ func Max(x, y int) int {
 		return x
 	}
 	return y
+}
+
+func Bound(x, lower, upper int) int {
+	if x < lower {
+		return lower
+	}
+	if x > upper {
+		return upper
+	}
+	return x
 }
