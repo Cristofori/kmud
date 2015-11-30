@@ -474,3 +474,18 @@ func Bound(x, lower, upper int) int {
 	}
 	return x
 }
+
+func Filter(list []string, pattern string) []string {
+	if pattern == "" {
+		return list
+	}
+	filtered := []string{}
+
+	for _, item := range list {
+		if strings.Contains(strings.ToLower(item), strings.ToLower(pattern)) {
+			filtered = append(filtered, item)
+		}
+	}
+
+	return filtered
+}

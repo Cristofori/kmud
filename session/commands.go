@@ -821,7 +821,7 @@ func init() {
 			admin: true,
 			exec: func(self *command, s *Session, args []string) {
 				utils.ExecMenu("Menu Test", s, func(menu *utils.Menu) {
-					for i := 0; i < 200; i++ {
+					for i := 0; i < 500; i++ {
 						menu.AddAction(strconv.Itoa(i+1), "Test Item", func() bool {
 							return false
 						})

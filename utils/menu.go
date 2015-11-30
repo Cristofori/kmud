@@ -16,6 +16,7 @@ type Menu struct {
 func ExecMenu(title string, comm types.Communicable, build func(*Menu)) {
 	pageIndex := 0
 	pageCount := 1
+	filter := ""
 
 	for {
 		var menu Menu
@@ -23,11 +24,12 @@ func ExecMenu(title string, comm types.Communicable, build func(*Menu)) {
 		build(&menu)
 
 		pageIndex = Bound(pageIndex, 0, pageCount-1)
-		pageCount = menu.Print(comm, pageIndex)
+		pageCount = menu.Print(comm, pageIndex, filter)
+		filter = ""
 
 		prompt := ""
 		if pageCount > 1 {
-			prompt = fmt.Sprintf("Page %v of %v > ", pageIndex+1, pageCount)
+			prompt = fmt.Sprintf("Page %v of %v (<, >, <<, >>)\r\n> ", pageIndex+1, pageCount)
 		} else {
 			prompt = "> "
 		}
@@ -45,6 +47,12 @@ func ExecMenu(title string, comm types.Communicable, build func(*Menu)) {
 			pageIndex++
 		} else if input == "<" {
 			pageIndex--
+		} else if input == ">>" {
+			pageIndex = pageCount - 1
+		} else if input == "<<" {
+			pageIndex = 0
+		} else if input[0] == '/' {
+			filter = input[1:]
 		} else {
 			action := menu.getAction(input)
 
@@ -104,10 +112,16 @@ func (self *Menu) HasAction(key string) bool {
 	return action.key != ""
 }
 
-func (self *Menu) Print(comm types.Communicable, page int) int {
+func (self *Menu) Print(comm types.Communicable, page int, filter string) int {
 	border := types.Colorize(types.ColorWhite, "-=-=-")
 	title := types.Colorize(types.ColorBlue, self.title)
-	comm.WriteLine(fmt.Sprintf("%s %s %s", border, title, border))
+	header := fmt.Sprintf("%s %s %s", border, title, border)
+
+	if filter != "" {
+		header = fmt.Sprintf("%s (/%s)", header, filter)
+	}
+
+	comm.WriteLine(header)
 
 	options := make([]string, len(self.actions))
 
@@ -139,9 +153,16 @@ func (self *Menu) Print(comm types.Communicable, page int) int {
 		options[i] = fmt.Sprintf("  %s", actionText)
 	}
 
+	options = Filter(options, filter)
+
 	width, height := comm.GetWindowSize()
 	pages := Paginate(options, width, height/2)
 
-	comm.Write(pages[page])
+	if len(options) == 0 && filter != "" {
+		comm.WriteLine("No items match your search")
+	} else {
+		comm.Write(pages[page])
+	}
+
 	return len(pages)
 }
