@@ -37,13 +37,17 @@ func (t *Telnet) Write(p []byte) (int, error) {
 }
 
 func (t *Telnet) Read(p []byte) (int, error) {
-	t.fill()
-	if t.err != nil {
-		return 0, t.err
-	}
+	for {
+		t.fill()
+		if t.err != nil {
+			return 0, t.err
+		}
 
-	n, e := t.processor.Read(p)
-	return n, e
+		n, err := t.processor.Read(p)
+		if n > 0 {
+			return n, err
+		}
+	}
 }
 
 func (t *Telnet) Data(code TelnetCode) []byte {
@@ -479,5 +483,3 @@ func CodeToString(code TelnetCode) string {
 
 	return ""
 }
-
-// vim: nocindent

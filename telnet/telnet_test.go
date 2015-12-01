@@ -182,5 +182,3 @@ func Test_Processor(t *testing.T) {
 		t.Errorf("Bufio failure %v != %v", bytes, data)
 	}
 }
-
-// vim: nocindent
