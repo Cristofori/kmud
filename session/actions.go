@@ -127,7 +127,7 @@ var actions = map[string]action{
 				}
 
 				if target != nil {
-					s.printLineColor(types.ColorRed, "Casting %s on %s", skill.GetName(), target.GetName())
+					s.WriteLineColor(types.ColorRed, "Casting %s on %s", skill.GetName(), target.GetName())
 					combat.StartFight(s.pc, skill, target)
 				}
 			}

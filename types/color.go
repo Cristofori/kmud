@@ -123,31 +123,29 @@ func Colorize(color Color, text string) string {
 	return fmt.Sprintf("%s%s%s", string(color), text, string(ColorNormal))
 }
 
+var Lookup = map[Color]bool{
+	ColorRed:         true,
+	ColorGreen:       true,
+	ColorYellow:      true,
+	ColorBlue:        true,
+	ColorMagenta:     true,
+	ColorCyan:        true,
+	ColorWhite:       true,
+	ColorDarkRed:     true,
+	ColorDarkGreen:   true,
+	ColorDarkYellow:  true,
+	ColorDarkBlue:    true,
+	ColorDarkMagenta: true,
+	ColorDarkCyan:    true,
+	ColorBlack:       true,
+	ColorGray:        true,
+	ColorNormal:      true,
+}
+
 // Strips MUD color codes and replaces them with ansi color codes
 func ProcessColors(text string, cm ColorMode) string {
-	lookup := map[Color]bool{}
-
-	lookup[ColorRed] = true
-	lookup[ColorGreen] = true
-	lookup[ColorYellow] = true
-	lookup[ColorBlue] = true
-	lookup[ColorMagenta] = true
-	lookup[ColorCyan] = true
-	lookup[ColorWhite] = true
-
-	lookup[ColorDarkRed] = true
-	lookup[ColorDarkGreen] = true
-	lookup[ColorDarkYellow] = true
-	lookup[ColorDarkBlue] = true
-	lookup[ColorDarkMagenta] = true
-	lookup[ColorDarkCyan] = true
-	lookup[ColorBlack] = true
-
-	lookup[ColorGray] = true
-	lookup[ColorNormal] = true
-
 	replace := func(match string) string {
-		_, found := lookup[Color(match)]
+		found := Lookup[Color(match)]
 
 		if found {
 			return getAnsiCode(cm, Color(match))
@@ -163,5 +161,3 @@ func ProcessColors(text string, cm ColorMode) string {
 func StripColors(text string) string {
 	return ColorRegex.ReplaceAllString(text, "")
 }
-
-// vim: nocindent

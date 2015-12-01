@@ -78,7 +78,7 @@ func (self *Session) Exec() {
 	defer events.Unregister(self.pc)
 	defer model.Logout(self.pc)
 
-	self.printLineColor(types.ColorWhite, "Welcome, "+self.pc.GetName())
+	self.WriteLine("Welcome, " + self.pc.GetName())
 	self.printRoom()
 
 	// Main routine in charge of actually reading input from the connection object,
@@ -131,16 +131,16 @@ func (self *Session) Exec() {
 	}
 }
 
-func (self *Session) printLineColor(color types.Color, line string, a ...interface{}) {
-	self.user.WriteLine(types.Colorize(color, fmt.Sprintf(line, a...)))
+func (self *Session) WriteLine(line string) {
+	self.printLine(line)
+}
+
+func (self *Session) WriteLineColor(color types.Color, line string, a ...interface{}) {
+	self.printLine(types.Colorize(color, fmt.Sprintf(line, a...)))
 }
 
 func (self *Session) printLine(line string, a ...interface{}) {
-	self.WriteLine(fmt.Sprintf(line, a...))
-}
-
-func (self *Session) WriteLine(line string) {
-	self.printLineColor(types.ColorWhite, line)
+	self.Write(fmt.Sprintf(line+"\r\n", a...))
 }
 
 func (self *Session) Write(text string) {
@@ -148,7 +148,7 @@ func (self *Session) Write(text string) {
 }
 
 func (self *Session) printError(err string, a ...interface{}) {
-	self.printLineColor(types.ColorRed, err, a...)
+	self.WriteLineColor(types.ColorRed, err, a...)
 }
 
 func (self *Session) printRoom() {
@@ -199,7 +199,7 @@ func (self *Session) getUserInputP(inputMode userInputMode, prompter utils.Promp
 
 					if oldHps != newHps {
 						self.clearLine()
-						self.user.Write(prompter.GetPrompt())
+						self.Write(prompter.GetPrompt())
 					}
 				}
 			}
@@ -207,7 +207,7 @@ func (self *Session) getUserInputP(inputMode userInputMode, prompter utils.Promp
 			message := event.ToString(self.pc)
 			if message != "" {
 				self.asyncMessage(message)
-				self.user.Write(prompter.GetPrompt())
+				self.Write(prompter.GetPrompt())
 			}
 
 		case quitMessage := <-self.panicChannel:

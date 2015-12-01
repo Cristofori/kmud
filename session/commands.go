@@ -212,8 +212,8 @@ func init() {
 					s.printLine("Current zone: " + types.Colorize(types.ColorBlue, s.currentZone().GetName()))
 				} else if len(args) == 1 {
 					if args[0] == "list" {
-						s.printLineColor(types.ColorBlue, "Zones")
-						s.printLineColor(types.ColorBlue, "-----")
+						s.WriteLineColor(types.ColorBlue, "Zones")
+						s.WriteLineColor(types.ColorBlue, "-----")
 						for _, zone := range model.GetZones() {
 							s.printLine(zone.GetName())
 						}
@@ -374,22 +374,22 @@ func init() {
 		"colors": {
 			admin: false,
 			exec: func(self *command, s *Session, args []string) {
-				s.printLineColor(types.ColorNormal, "Normal")
-				s.printLineColor(types.ColorRed, "Red")
-				s.printLineColor(types.ColorDarkRed, "Dark Red")
-				s.printLineColor(types.ColorGreen, "Green")
-				s.printLineColor(types.ColorDarkGreen, "Dark Green")
-				s.printLineColor(types.ColorBlue, "Blue")
-				s.printLineColor(types.ColorDarkBlue, "Dark Blue")
-				s.printLineColor(types.ColorYellow, "Yellow")
-				s.printLineColor(types.ColorDarkYellow, "Dark Yellow")
-				s.printLineColor(types.ColorMagenta, "Magenta")
-				s.printLineColor(types.ColorDarkMagenta, "Dark Magenta")
-				s.printLineColor(types.ColorCyan, "Cyan")
-				s.printLineColor(types.ColorDarkCyan, "Dark Cyan")
-				s.printLineColor(types.ColorBlack, "Black")
-				s.printLineColor(types.ColorWhite, "White")
-				s.printLineColor(types.ColorGray, "Gray")
+				s.WriteLineColor(types.ColorNormal, "Normal")
+				s.WriteLineColor(types.ColorRed, "Red")
+				s.WriteLineColor(types.ColorDarkRed, "Dark Red")
+				s.WriteLineColor(types.ColorGreen, "Green")
+				s.WriteLineColor(types.ColorDarkGreen, "Dark Green")
+				s.WriteLineColor(types.ColorBlue, "Blue")
+				s.WriteLineColor(types.ColorDarkBlue, "Dark Blue")
+				s.WriteLineColor(types.ColorYellow, "Yellow")
+				s.WriteLineColor(types.ColorDarkYellow, "Dark Yellow")
+				s.WriteLineColor(types.ColorMagenta, "Magenta")
+				s.WriteLineColor(types.ColorDarkMagenta, "Dark Magenta")
+				s.WriteLineColor(types.ColorCyan, "Cyan")
+				s.WriteLineColor(types.ColorDarkCyan, "Dark Cyan")
+				s.WriteLineColor(types.ColorBlack, "Black")
+				s.WriteLineColor(types.ColorWhite, "White")
+				s.WriteLineColor(types.ColorGray, "Gray")
 			},
 		},
 		"cm": cAlias("colormode"),
