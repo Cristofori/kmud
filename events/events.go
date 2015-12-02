@@ -208,8 +208,8 @@ func (self EmoteEvent) IsFor(receiver EventReceiver) bool {
 
 // Tell
 func (self TellEvent) ToString(receiver EventReceiver) string {
-	return types.Colorize(types.ColorMagenta, fmt.Sprintf("Message from %s: ", self.From.GetName())) +
-		types.Colorize(types.ColorWhite, self.Message)
+	return types.Colorize(types.ColorMagenta,
+		fmt.Sprintf("Message from %s: %s", self.From.GetName(), types.Colorize(types.ColorWhite, self.Message)))
 }
 
 func (self TellEvent) IsFor(receiver EventReceiver) bool {

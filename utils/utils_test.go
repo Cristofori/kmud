@@ -144,9 +144,9 @@ func Test_ValidateName(t *testing.T) {
 		{"testing", true},
 		{"*(!(@#*$", false},
 		{"Abc1abc", true},
-		{"123456789012", true},
+		{"123456789012", false},
 		{"aslsidjfljll", true},
-		{"1slsidjfljll", true},
+		{"1slsidjfljll", false},
 		{"aslsidjfljl3", true},
 	}
 
@@ -187,14 +187,14 @@ func Test_Argify(t *testing.T) {
 	tests := []struct {
 		input   string
 		output1 string
-		output2 []string
+		output2 string
 	}{
-		{"", "", []string{}},
-		{"test", "test", []string{}},
-		{"test two", "test", []string{"two"}},
-		{"test one two", "test", []string{"one", "two"}},
+		{"", "", ""},
+		{"test", "test", ""},
+		{"test two", "test", "two"},
+		{"test one two", "test", "one two"},
 		{"this is a somewhat longer test that should also work",
-			"this", []string{"is", "a", "somewhat", "longer", "test", "that", "should", "also", "work"}},
+			"this", "is a somewhat longer test that should also work"},
 	}
 
 	for _, test := range tests {

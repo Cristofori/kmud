@@ -392,17 +392,6 @@ func DeleteItem(itemId types.Id) {
 	db.DeleteObject(itemId)
 }
 
-func MoveCharacterToLocation(character types.Character, zone types.Zone, location types.Coordinate) (types.Room, error) {
-	newRoom := GetRoomByLocation(location, zone.GetId())
-
-	if newRoom == nil {
-		return nil, errors.New("Invalid location")
-	}
-
-	MoveCharacterToRoom(character, newRoom)
-	return newRoom, nil
-}
-
 func MoveCharacterToRoom(character types.Character, newRoom types.Room) {
 	oldRoomId := character.GetRoomId()
 	character.SetRoomId(newRoom.GetId())
@@ -418,19 +407,19 @@ func MoveCharacterToRoom(character types.Character, newRoom types.Room) {
 	events.Broadcast(events.EnterEvent{Character: character, RoomId: newRoom.GetId(), Direction: dir})
 }
 
-func MoveCharacter(character types.Character, direction types.Direction) (types.Room, error) {
+func MoveCharacter(character types.Character, direction types.Direction) error {
 	room := GetRoom(character.GetRoomId())
 
 	if room == nil {
-		return room, errors.New("Character doesn't appear to be in any room")
+		return errors.New("Character doesn't appear to be in any room")
 	}
 
 	if !room.HasExit(direction) {
-		return room, errors.New("Attempted to move through an exit that the room does not contain")
+		return errors.New("Attempted to move through an exit that the room does not contain")
 	}
 
 	if room.IsLocked(direction) {
-		return room, errors.New("That way is locked")
+		return errors.New("That way is locked")
 	}
 
 	newLocation := room.NextLocation(direction)
@@ -444,7 +433,7 @@ func MoveCharacter(character types.Character, direction types.Direction) (types.
 		room, err = CreateRoom(GetZone(room.GetZoneId()), newLocation)
 
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		switch direction {
@@ -475,7 +464,8 @@ func MoveCharacter(character types.Character, direction types.Direction) (types.
 		room = newRoom
 	}
 
-	return MoveCharacterToLocation(character, GetZone(room.GetZoneId()), room.GetLocation())
+	MoveCharacterToRoom(character, room)
+	return nil
 }
 
 func BroadcastMessage(from types.Character, message string) {

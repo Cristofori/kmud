@@ -124,17 +124,17 @@ func FormatName(name string) string {
 	return string(runes)
 }
 
-func Argify(data string) (string, []string) {
+func Argify(data string) (string, string) {
 	fields := strings.Fields(data)
 
 	if len(fields) == 0 {
-		return "", []string{}
+		return "", ""
 	}
 
-	arg1 := Simplify(fields[0])
-	args := fields[1:]
+	command := Simplify(fields[0])
+	params := strings.TrimSpace(data[len(command):])
 
-	return arg1, args
+	return command, params
 }
 
 func rowEmpty(row string) bool {
@@ -183,10 +183,10 @@ func ValidateName(name string) error {
 		return errors.New(fmt.Sprintf("Names must be between %v and %v letters long", MinSize, MaxSize))
 	}
 
-	regex := regexp.MustCompile("^[a-zA-Z0-9]*$")
+	regex := regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9]*$")
 
 	if !regex.MatchString(name) {
-		return errors.New("Names may only contain letters or numbers (A-Z, 0-9)")
+		return errors.New("Names may only contain letters or numbers (A-Z, 0-9), and must begin with a letter")
 	}
 
 	return nil

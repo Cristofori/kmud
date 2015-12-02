@@ -14,21 +14,21 @@ import (
 
 type action struct {
 	alias string
-	exec  func(*Session, []string)
+	exec  func(*Session, string)
 }
 
 var actions = map[string]action{
 	"l": aAlias("look"),
 	"look": {
-		exec: func(s *Session, args []string) {
-			if len(args) == 0 {
-				s.printRoom()
-			} else if len(args) == 1 {
-				arg := types.StringToDirection(args[0])
+		exec: func(s *Session, arg string) {
+			if arg == "" {
+				s.PrintRoom()
+			} else {
+				dir := types.StringToDirection(arg)
 
-				if arg == types.DirectionNone {
-					charList := model.CharactersIn(s.room.GetId())
-					index := utils.BestMatch(args[0], charList.Names())
+				if dir == types.DirectionNone {
+					charList := model.CharactersIn(s.pc.GetRoomId())
+					index := utils.BestMatch(arg, charList.Names())
 
 					if index == -2 {
 						s.printError("Which one do you mean?")
@@ -37,8 +37,8 @@ var actions = map[string]action{
 						s.printLine("Looking at: %s", char.GetName())
 						s.printLine("    Health: %v/%v", char.GetHitPoints(), char.GetHealth())
 					} else {
-						itemList := model.ItemsIn(s.room)
-						index = utils.BestMatch(args[0], itemList.Names())
+						itemList := model.ItemsIn(s.GetRoom())
+						index = utils.BestMatch(arg, itemList.Names())
 
 						if index == -1 {
 							s.printLine("Nothing to see")
@@ -49,11 +49,11 @@ var actions = map[string]action{
 						}
 					}
 				} else {
-					if s.room.HasExit(arg) {
-						loc := s.room.NextLocation(arg)
-						roomToSee := model.GetRoomByLocation(loc, s.room.GetZoneId())
+					if s.GetRoom().HasExit(dir) {
+						loc := s.GetRoom().NextLocation(dir)
+						roomToSee := model.GetRoomByLocation(loc, s.GetRoom().GetZoneId())
 						if roomToSee != nil {
-							s.PrintRoom(roomToSee)
+							s.printRoom(roomToSee)
 						} else {
 							s.printLine("Nothing to see")
 						}
@@ -66,9 +66,9 @@ var actions = map[string]action{
 	},
 	"a": aAlias("attack"),
 	"attack": {
-		exec: func(s *Session, args []string) {
-			charList := model.CharactersIn(s.room.GetId())
-			index := utils.BestMatch(args[0], charList.Names())
+		exec: func(s *Session, arg string) {
+			charList := model.CharactersIn(s.pc.GetRoomId())
+			index := utils.BestMatch(arg, charList.Names())
 
 			if index == -1 {
 				s.printError("Not found")
@@ -86,10 +86,12 @@ var actions = map[string]action{
 	},
 	"c": aAlias("cast"),
 	"cast": {
-		exec: func(s *Session, args []string) {
+		exec: func(s *Session, arg string) {
 			usage := func() {
 				s.printError("Usage: cast <spell> [target]")
 			}
+
+			args := strings.Split(arg, " ")
 
 			if len(args) == 0 || len(args) > 2 {
 				usage()
@@ -114,7 +116,7 @@ var actions = map[string]action{
 				if len(args) == 1 {
 					target = s.pc
 				} else if len(args) == 2 {
-					charList := model.CharactersIn(s.room.GetId())
+					charList := model.CharactersIn(s.pc.GetRoomId())
 					index := utils.BestMatch(args[1], charList.Names())
 
 					if index == -1 {
@@ -135,7 +137,7 @@ var actions = map[string]action{
 	},
 	"sb": aAlias("skillbook"),
 	"skillbook": {
-		exec: func(s *Session, args []string) {
+		exec: func(s *Session, arg string) {
 			utils.ExecMenu("Skill Book", s, func(menu *utils.Menu) {
 				menu.AddAction("a", "Add", func() bool {
 					utils.ExecMenu("Select a skill to add", s, func(menu *utils.Menu) {
@@ -163,14 +165,14 @@ var actions = map[string]action{
 		},
 	},
 	"talk": {
-		exec: func(s *Session, args []string) {
-			if len(args) != 1 {
+		exec: func(s *Session, arg string) {
+			if arg == "" {
 				s.printError("Usage: talk <NPC name>")
 				return
 			}
 
-			npcList := model.NpcsIn(s.room.GetId())
-			index := utils.BestMatch(args[0], npcList.Characters().Names())
+			npcList := model.NpcsIn(s.pc.GetRoomId())
+			index := utils.BestMatch(arg, npcList.Characters().Names())
 
 			if index == -1 {
 				s.printError("Not found")
@@ -183,18 +185,18 @@ var actions = map[string]action{
 		},
 	},
 	"drop": {
-		exec: func(s *Session, args []string) {
+		exec: func(s *Session, arg string) {
 			dropUsage := func() {
 				s.printError("Usage: drop <item name>")
 			}
 
-			if len(args) != 1 {
+			if arg == "" {
 				dropUsage()
 				return
 			}
 
 			characterItems := model.GetItems(s.pc.GetItems())
-			index := utils.BestMatch(args[0], characterItems.Names())
+			index := utils.BestMatch(arg, characterItems.Names())
 
 			if index == -1 {
 				s.printError("Not found")
@@ -203,7 +205,7 @@ var actions = map[string]action{
 			} else {
 				item := characterItems[index]
 				s.pc.RemoveItem(item.GetId())
-				s.room.AddItem(item.GetId())
+				s.GetRoom().AddItem(item.GetId())
 				s.printLine("Dropped %s", item.GetName())
 			}
 		},
@@ -212,27 +214,27 @@ var actions = map[string]action{
 	"t":    aAlias("get"),
 	"g":    aAlias("g"),
 	"get": {
-		exec: func(s *Session, args []string) {
+		exec: func(s *Session, arg string) {
 			takeUsage := func() {
 				s.printError("Usage: take <item name>")
 			}
 
-			if len(args) != 1 {
+			if arg == "" {
 				takeUsage()
 				return
 			}
 
-			itemsInRoom := model.GetItems(s.room.GetItems())
-			index := utils.BestMatch(args[0], itemsInRoom.Names())
+			itemsInRoom := model.GetItems(s.GetRoom().GetItems())
+			index := utils.BestMatch(arg, itemsInRoom.Names())
 
 			if index == -2 {
 				s.printError("Which one do you mean?")
 			} else if index == -1 {
-				s.printError("Item %s not found", args[0])
+				s.printError("Item %s not found", arg)
 			} else {
 				item := itemsInRoom[index]
 				s.pc.AddItem(item.GetId())
-				s.room.RemoveItem(item.GetId())
+				s.GetRoom().RemoveItem(item.GetId())
 				s.printLine("Picked up %s", item.GetName())
 			}
 		},
@@ -240,7 +242,7 @@ var actions = map[string]action{
 	"i":   aAlias("inventory"),
 	"inv": aAlias("inv"),
 	"inventory": {
-		exec: func(s *Session, args []string) {
+		exec: func(s *Session, arg string) {
 			itemIds := s.pc.GetItems()
 
 			if len(itemIds) == 0 {
@@ -254,76 +256,73 @@ var actions = map[string]action{
 		},
 	},
 	"help": {
-		exec: func(s *Session, args []string) {
+		exec: func(s *Session, arg string) {
 			s.printLine("HELP!")
 		},
 	},
 	"ls": {
-		exec: func(s *Session, args []string) {
+		exec: func(s *Session, arg string) {
 			s.printLine("Where do you think you are?!")
 		},
 	},
 	"stop": {
-		exec: func(s *Session, args []string) {
+		exec: func(s *Session, arg string) {
 			combat.StopFight(s.pc)
 		},
 	},
 	"go": {
-		exec: func(s *Session, args []string) {
-			if len(args) != 1 {
+		exec: func(s *Session, arg string) {
+			if arg == "" {
 				s.printError("Usage: go <name>")
 				return
 			}
 
-			links := s.room.GetLinks()
-			linkNames := s.room.LinkNames()
-			index := utils.BestMatch(args[0], linkNames)
+			links := s.GetRoom().GetLinks()
+			linkNames := s.GetRoom().LinkNames()
+			index := utils.BestMatch(arg, linkNames)
 
 			if index == -2 {
 				s.printError("Which one do you mean?")
 			} else if index == -1 {
-				s.printError("Exit %s not found", args[0])
+				s.printError("Exit %s not found", arg)
 			} else {
 				destId := links[linkNames[index]]
 				newRoom := model.GetRoom(destId)
-
 				model.MoveCharacterToRoom(s.pc, newRoom)
-
-				s.room = newRoom
-				s.printRoom()
+				s.PrintRoom()
 			}
 		},
 	},
 	"lock": {
-		exec: func(s *Session, args []string) {
-			if len(args) != 1 {
+		exec: func(s *Session, arg string) {
+			if arg == "" {
 				s.printError("Usage: lock <direction>")
 			}
-			handleLock(s, args[0], true)
+			handleLock(s, arg, true)
 		},
 	},
 	"unlock": {
-		exec: func(s *Session, args []string) {
-			if len(args) != 1 {
+		exec: func(s *Session, arg string) {
+			if arg == "" {
 				s.printError("Usage: unlock <direction>")
 			}
-			handleLock(s, args[0], false)
+			handleLock(s, arg, false)
 		},
 	},
 	"buy": {
-		exec: func(s *Session, args []string) {
-			store := model.StoreIn(s.room.GetId())
+		exec: func(s *Session, arg string) {
+			store := model.StoreIn(s.pc.GetRoomId())
 			if store == nil {
 				s.printError("There is no store here")
 				return
 			}
 
-			if len(args) != 1 {
+			if arg == "" {
 				s.printError("Usage: buy <item name>")
 			}
 
 			items := model.GetItems(store.GetItems())
-			index, err := strconv.Atoi(args[0])
+			index, err := strconv.Atoi(arg)
 			var item types.Item
 
 			if err == nil {
@@ -334,7 +333,7 @@ var actions = map[string]action{
 					s.printError("Invalid selection")
 				}
 			} else {
-				index := utils.BestMatch(args[0], items.Names())
+				index := utils.BestMatch(arg, items.Names())
 
 				if index == -1 {
 					s.printError("Not found")
@@ -364,19 +363,19 @@ var actions = map[string]action{
 		},
 	},
 	"sell": {
-		exec: func(s *Session, args []string) {
-			store := model.StoreIn(s.room.GetId())
+		exec: func(s *Session, arg string) {
+			store := model.StoreIn(s.pc.GetRoomId())
 			if store == nil {
 				s.printError("There is no store here")
 				return
 			}
 
-			if len(args) != 1 {
+			if arg == "" {
 				s.printError("Usage: sell <item name>")
 			}
 
 			items := model.GetItems(s.pc.GetItems())
-			index := utils.BestMatch(args[0], items.Names())
+			index := utils.BestMatch(arg, items.Names())
 
 			if index == -1 {
 				s.printError("Not found")
@@ -401,8 +400,8 @@ var actions = map[string]action{
 		},
 	},
 	"store": {
-		exec: func(s *Session, args []string) {
-			store := model.StoreIn(s.room.GetId())
+		exec: func(s *Session, arg string) {
+			store := model.StoreIn(s.pc.GetRoomId())
 			if store == nil {
 				s.printError("There is no store here")
 				return
@@ -430,17 +429,17 @@ func handleLock(s *Session, arg string, locked bool) {
 	if dir == types.DirectionNone {
 		s.printError("Invalid direction")
 	} else {
-		s.room.SetLocked(dir, locked)
+		s.GetRoom().SetLocked(dir, locked)
 
 		events.Broadcast(events.LockEvent{
-			RoomId: s.room.GetId(),
+			RoomId: s.pc.GetRoomId(),
 			Exit:   dir,
 			Locked: locked,
 		})
 
 		// Lock on both sides
-		location := s.room.NextLocation(dir)
-		otherRoom := model.GetRoomByLocation(location, s.room.GetZoneId())
+		location := s.GetRoom().NextLocation(dir)
+		otherRoom := model.GetRoomByLocation(location, s.GetRoom().GetZoneId())
 
 		if otherRoom != nil {
 			otherRoom.SetLocked(dir.Opposite(), locked)

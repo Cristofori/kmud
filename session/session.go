@@ -21,7 +21,6 @@ type Session struct {
 	conn io.ReadWriter
 	user types.User
 	pc   types.PC
-	room types.Room
 
 	prompt string
 	states map[string]string
@@ -44,7 +43,6 @@ func NewSession(conn io.ReadWriter, user types.User, pc types.PC) *Session {
 	session.conn = conn
 	session.user = user
 	session.pc = pc
-	session.room = model.GetRoom(pc.GetRoomId())
 
 	session.prompt = "%h/%H> "
 	session.states = map[string]string{}
@@ -79,7 +77,7 @@ func (self *Session) Exec() {
 	defer model.Logout(self.pc)
 
 	self.WriteLine("Welcome, " + self.pc.GetName())
-	self.printRoom()
+	self.PrintRoom()
 
 	// Main routine in charge of actually reading input from the connection object,
 	// also has built in throttling to limit how fast we are allowed to process
@@ -149,10 +147,6 @@ func (self *Session) Write(text string) {
 
 func (self *Session) printError(err string, a ...interface{}) {
 	self.WriteLineColor(types.ColorRed, err, a...)
-}
-
-func (self *Session) printRoom() {
-	self.PrintRoom(self.room)
 }
 
 func (self *Session) clearLine() {
@@ -272,19 +266,18 @@ func (self *Session) GetPrompt() string {
 }
 
 func (self *Session) currentZone() types.Zone {
-	return model.GetZone(self.room.GetZoneId())
+	return model.GetZone(self.GetRoom().GetZoneId())
 }
 
-func (self *Session) handleAction(action string, args []string) {
-	if len(args) == 0 {
+func (self *Session) handleAction(action string, arg string) {
+	if arg == "" {
 		direction := types.StringToDirection(action)
 
 		if direction != types.DirectionNone {
-			if self.room.HasExit(direction) {
-				newRoom, err := model.MoveCharacter(self.pc, direction)
+			if self.GetRoom().HasExit(direction) {
+				err := model.MoveCharacter(self.pc, direction)
 				if err == nil {
-					self.room = newRoom
-					self.printRoom()
+					self.PrintRoom()
 				} else {
 					self.printError(err.Error())
 				}
@@ -303,13 +296,13 @@ func (self *Session) handleAction(action string, args []string) {
 		if handler.alias != "" {
 			handler = actions[handler.alias]
 		}
-		handler.exec(self, args)
+		handler.exec(self, arg)
 	} else {
 		self.printError("You can't do that")
 	}
 }
 
-func (self *Session) handleCommand(name string, args []string) {
+func (self *Session) handleCommand(name string, arg string) {
 	if len(name) == 0 {
 		return
 	}
@@ -329,15 +322,23 @@ func (self *Session) handleCommand(name string, args []string) {
 		if command.admin && !self.user.IsAdmin() {
 			self.printError("You don't have permission to do that")
 		} else {
-			command.exec(command, self, args)
+			command.exec(command, self, arg)
 		}
 	} else {
 		self.printError("Unrecognized command: %s", name)
 	}
 }
 
-func (self *Session) PrintRoom(room types.Room) {
-	pcs := model.PlayerCharactersIn(self.room.GetId(), self.pc.GetId())
+func (self *Session) GetRoom() types.Room {
+	return model.GetRoom(self.pc.GetRoomId())
+}
+
+func (self *Session) PrintRoom() {
+	self.printRoom(self.GetRoom())
+}
+
+func (self *Session) printRoom(room types.Room) {
+	pcs := model.PlayerCharactersIn(self.pc.GetRoomId(), self.pc.GetId())
 	npcs := model.NpcsIn(room.GetId())
 	items := model.GetItems(room.GetItems())
 	store := model.StoreIn(room.GetId())
