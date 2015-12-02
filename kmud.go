@@ -1,15 +1,18 @@
 package main
 
 import (
+	"math/rand"
 	"os"
 	"os/signal"
 	"runtime"
+	"time"
 
 	"github.com/Cristofori/kmud/server"
 )
 
 func main() {
-	runtime.GOMAXPROCS(8)
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	rand.Seed(time.Now().UnixNano())
 
 	go signalHandler()
 
