@@ -430,7 +430,9 @@ func MoveCharacter(character types.Character, direction types.Direction) error {
 		fmt.Printf("No room found at location %v %v, creating a new one (%s)\n", zone.GetName(), newLocation, character.GetName())
 
 		var err error
-		room, err = CreateRoom(GetZone(room.GetZoneId()), newLocation)
+		newRoom, err = CreateRoom(GetZone(room.GetZoneId()), newLocation)
+		newRoom.SetTitle(room.GetTitle())
+		newRoom.SetDescription(room.GetDescription())
 
 		if err != nil {
 			return err
@@ -438,33 +440,31 @@ func MoveCharacter(character types.Character, direction types.Direction) error {
 
 		switch direction {
 		case types.DirectionNorth:
-			room.SetExitEnabled(types.DirectionSouth, true)
+			newRoom.SetExitEnabled(types.DirectionSouth, true)
 		case types.DirectionNorthEast:
-			room.SetExitEnabled(types.DirectionSouthWest, true)
+			newRoom.SetExitEnabled(types.DirectionSouthWest, true)
 		case types.DirectionEast:
-			room.SetExitEnabled(types.DirectionWest, true)
+			newRoom.SetExitEnabled(types.DirectionWest, true)
 		case types.DirectionSouthEast:
-			room.SetExitEnabled(types.DirectionNorthWest, true)
+			newRoom.SetExitEnabled(types.DirectionNorthWest, true)
 		case types.DirectionSouth:
-			room.SetExitEnabled(types.DirectionNorth, true)
+			newRoom.SetExitEnabled(types.DirectionNorth, true)
 		case types.DirectionSouthWest:
-			room.SetExitEnabled(types.DirectionNorthEast, true)
+			newRoom.SetExitEnabled(types.DirectionNorthEast, true)
 		case types.DirectionWest:
-			room.SetExitEnabled(types.DirectionEast, true)
+			newRoom.SetExitEnabled(types.DirectionEast, true)
 		case types.DirectionNorthWest:
-			room.SetExitEnabled(types.DirectionSouthEast, true)
+			newRoom.SetExitEnabled(types.DirectionSouthEast, true)
 		case types.DirectionUp:
-			room.SetExitEnabled(types.DirectionDown, true)
+			newRoom.SetExitEnabled(types.DirectionDown, true)
 		case types.DirectionDown:
-			room.SetExitEnabled(types.DirectionUp, true)
+			newRoom.SetExitEnabled(types.DirectionUp, true)
 		default:
 			panic("Unexpected code path")
 		}
-	} else {
-		room = newRoom
 	}
 
-	MoveCharacterToRoom(character, room)
+	MoveCharacterToRoom(character, newRoom)
 	return nil
 }
 

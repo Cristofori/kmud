@@ -944,7 +944,7 @@ func quickRoom(s *Session, command string) {
 
 	room.SetExitEnabled(dir, true)
 	s.handleAction(command, "")
-	room.SetExitEnabled(dir.Opposite(), true)
+	s.GetRoom().SetExitEnabled(dir.Opposite(), true)
 }
 
 func getNpcName(s *Session) string {
