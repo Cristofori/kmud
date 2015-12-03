@@ -967,23 +967,18 @@ func getNpcName(s *Session) string {
 }
 
 func whisper(self *command, s *Session, arg string) {
-	args := strings.Split(arg, " ")
-	fmt.Println("Args:", args)
-
-	if len(args) < 2 {
-		self.Usage(s)
-		return
-	}
-
 	name, message := utils.Argify(arg)
-	targetChar := model.GetPlayerCharacterByName(name)
+	if message == "" {
+		self.Usage(s)
+	} else {
+		targetChar := model.GetPlayerCharacterByName(name)
 
-	if targetChar == nil || !targetChar.IsOnline() {
-		s.printError("Player '%s' not found", name)
-		return
+		if targetChar != nil && targetChar.IsOnline() {
+			model.Tell(s.pc, targetChar, message)
+		} else {
+			s.printError("Player '%s' not found", name)
+		}
 	}
-
-	model.Tell(s.pc, targetChar, message)
 }
 
 func specificAreaMenu(s *Session, area types.Area) {
