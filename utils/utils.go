@@ -381,13 +381,15 @@ func Paginate(list []string, width, height int) []string {
 
 		columnWidth := 0
 		for _, item := range column {
-			if len(item) > columnWidth {
-				columnWidth = itemLength(item)
+			length := itemLength(item)
+			if length > columnWidth {
+				columnWidth = length
 			}
 		}
 		columnWidth += 2 // Padding between columns
 
 		if (columnWidth + totalWidth) > width {
+			// Column doesn't fit, drop it
 			index -= len(column)
 			break
 		}
