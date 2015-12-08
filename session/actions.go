@@ -91,16 +91,16 @@ var actions = map[string]action{
 				s.printError("Usage: cast <spell> [target]")
 			}
 
-			args := strings.Split(arg, " ")
+			spell, targetName := utils.Argify(arg)
 
-			if len(args) == 0 || len(args) > 2 {
+			if spell == "" {
 				usage()
 				return
 			}
 
 			var skill types.Skill
 			skills := model.GetSkills(s.pc.GetSkills())
-			index := utils.BestMatch(args[0], skills.Names())
+			index := utils.BestMatch(spell, skills.Names())
 
 			if index == -1 {
 				s.printError("Skill not found")
@@ -113,11 +113,11 @@ var actions = map[string]action{
 			if skill != nil {
 				var target types.Character
 
-				if len(args) == 1 {
+				if targetName == "" {
 					target = s.pc
-				} else if len(args) == 2 {
+				} else {
 					charList := model.CharactersIn(s.pc.GetRoomId())
-					index := utils.BestMatch(args[1], charList.Names())
+					index := utils.BestMatch(targetName, charList.Names())
 
 					if index == -1 {
 						s.printError("Target not found")

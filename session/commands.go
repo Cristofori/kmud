@@ -6,8 +6,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Cristofori/kmud/combat"
+	"github.com/Cristofori/kmud/engine"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
@@ -794,6 +796,39 @@ func init() {
 						})
 					}
 				})
+			},
+		},
+		"path": {
+			admin: true,
+			usage: "/path <coordinates>",
+			exec: func(self *command, s *Session, arg string) {
+				coords, err := utils.Atois(strings.Fields(arg))
+				if err == nil {
+					if len(coords) == 3 {
+						x, y, z := coords[0], coords[1], coords[2]
+						room := model.GetRoomByLocation(types.Coordinate{X: x, Y: y, Z: z}, s.GetRoom().GetZoneId())
+						if room != nil {
+							path := engine.FindPath(s.GetRoom(), room)
+							/*
+								s.WriteLine("Path:")
+								for _, room := range path {
+									s.WriteLine(fmt.Sprintf("%v", room.GetLocation()))
+								}
+							*/
+							for _, room := range path {
+								time.Sleep(200 * time.Millisecond)
+								model.MoveCharacterToRoom(s.pc, room)
+								s.PrintRoom()
+							}
+						} else {
+							s.printError("No room found at the given coordinates")
+						}
+					} else {
+						self.Usage(s)
+					}
+				} else {
+					self.Usage(s)
+				}
 			},
 		},
 	}

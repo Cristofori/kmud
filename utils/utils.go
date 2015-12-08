@@ -467,6 +467,13 @@ func Max(x, y int) int {
 	return y
 }
 
+func Abs(x int) int {
+	if x < 0 {
+		x = -x
+	}
+	return x
+}
+
 func Bound(x, lower, upper int) int {
 	if x < lower {
 		return lower

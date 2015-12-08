@@ -244,6 +244,27 @@ func GetRoomByLocation(coordinate types.Coordinate, zoneId types.Id) types.Room 
 	return nil
 }
 
+func GetNeighbors(room types.Room) []types.Room {
+	neighbors := []types.Room{}
+
+	for _, dir := range room.GetExits() {
+		coords := room.NextLocation(dir)
+		neighbor := GetRoomByLocation(coords, room.GetZoneId())
+		if neighbor != nil {
+			neighbors = append(neighbors, neighbor)
+		}
+	}
+
+	for _, id := range room.GetLinks() {
+		neighbor := GetRoom(id)
+		if neighbor != nil {
+			neighbors = append(neighbors, neighbor)
+		}
+	}
+
+	return neighbors
+}
+
 func GetZone(id types.Id) types.Zone {
 	return fetch(id, types.ZoneType).(types.Zone)
 }

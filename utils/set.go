@@ -14,3 +14,7 @@ func (self Set) Insert(key string) {
 func (self Set) Remove(key string) {
 	delete(self, key)
 }
+
+func (self Set) Size() int {
+	return len(self)
+}
