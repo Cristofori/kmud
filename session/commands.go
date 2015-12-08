@@ -815,10 +815,14 @@ func init() {
 									s.WriteLine(fmt.Sprintf("%v", room.GetLocation()))
 								}
 							*/
-							for _, room := range path {
-								time.Sleep(200 * time.Millisecond)
-								model.MoveCharacterToRoom(s.pc, room)
-								s.PrintRoom()
+							if len(path) > 0 {
+								for _, room := range path {
+									time.Sleep(200 * time.Millisecond)
+									model.MoveCharacterToRoom(s.pc, room)
+									s.PrintRoom()
+								}
+							} else {
+								s.printError("No path found")
 							}
 						} else {
 							s.printError("No room found at the given coordinates")
