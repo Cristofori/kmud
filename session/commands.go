@@ -804,8 +804,14 @@ func init() {
 			exec: func(self *command, s *Session, arg string) {
 				coords, err := utils.Atois(strings.Fields(arg))
 				if err == nil {
-					if len(coords) == 3 {
-						x, y, z := coords[0], coords[1], coords[2]
+					if len(coords) == 2 || len(coords) == 3 {
+						x, y := coords[0], coords[1]
+
+						z := s.GetRoom().GetLocation().Z
+						if len(coords) == 3 {
+							z = coords[2]
+						}
+
 						room := model.GetRoomByLocation(types.Coordinate{X: x, Y: y, Z: z}, s.GetRoom().GetZoneId())
 						if room != nil {
 							path := engine.FindPath(s.GetRoom(), room)
@@ -820,6 +826,7 @@ func init() {
 									time.Sleep(200 * time.Millisecond)
 									model.MoveCharacterToRoom(s.pc, room)
 									s.PrintRoom()
+									s.handleCommand("map", "")
 								}
 							} else {
 								s.printError("No path found")
