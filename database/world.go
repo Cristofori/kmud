@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -14,12 +15,11 @@ type Time struct {
 	sec  int
 }
 
-const _TIME_MULTIPLIER = 3
-
-// Returns the World object. There should only ever be one of these
-func GetWorld() *World {
-	return nil
+func (self Time) String() string {
+	return fmt.Sprintf("%02d:%02d:%02d", self.hour, self.min, self.sec)
 }
+
+const _TIME_MULTIPLIER = 3
 
 // Returns the time of day
 func GetTime() Time {

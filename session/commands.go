@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Cristofori/kmud/combat"
+	"github.com/Cristofori/kmud/database"
 	"github.com/Cristofori/kmud/engine"
 	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
@@ -840,6 +841,13 @@ func init() {
 				} else {
 					self.Usage(s)
 				}
+			},
+		},
+		"time": {
+			admin: false,
+			usage: "/time",
+			exec: func(self *command, s *Session, arg string) {
+				s.printLine("%v", database.GetTime())
 			},
 		},
 	}
