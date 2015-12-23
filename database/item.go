@@ -38,5 +38,3 @@ func (self *Item) GetValue() int {
 	defer self.ReadUnlock()
 	return self.Value
 }
-
-// vim: nocindent

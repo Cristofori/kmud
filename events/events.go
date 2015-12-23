@@ -14,6 +14,17 @@ type EventReceiver interface {
 	types.Locateable
 }
 
+type SimpleReceiver struct {
+}
+
+func (*SimpleReceiver) GetId() types.Id {
+	return nil
+}
+
+func (*SimpleReceiver) GetRoomId() types.Id {
+	return nil
+}
+
 type eventListener struct {
 	Channel  chan Event
 	Receiver EventReceiver

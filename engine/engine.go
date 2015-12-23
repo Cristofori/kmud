@@ -26,21 +26,10 @@ func Start() {
 	}
 }
 
-type worldEventReceiver struct {
-}
-
-func (*worldEventReceiver) GetId() types.Id {
-	return nil
-}
-
-func (*worldEventReceiver) GetRoomId() types.Id {
-	return nil
-}
-
 func manageWorld() {
 	world := model.GetWorld()
 
-	wer := &worldEventReceiver{}
+	wer := &events.SimpleReceiver{}
 
 	eventChannel := events.Register(wer)
 
