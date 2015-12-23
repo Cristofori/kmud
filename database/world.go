@@ -3,41 +3,45 @@ package database
 import (
 	"fmt"
 	"time"
+
+	"github.com/Cristofori/kmud/types"
 )
 
 type World struct {
 	DbObject `bson:",inline"`
+	Time     time.Time
 }
 
-type Time struct {
+func NewWorld() *World {
+	world := &World{Time: time.Now()}
+
+	world.init(world)
+	return world
+}
+
+type _time struct {
 	hour int
 	min  int
 	sec  int
 }
 
-func (self Time) String() string {
+func (self _time) String() string {
 	return fmt.Sprintf("%02d:%02d:%02d", self.hour, self.min, self.sec)
 }
 
 const _TIME_MULTIPLIER = 3
 
-// Returns the time of day
-func GetTime() Time {
-	hour, min, sec := time.Now().Clock()
+func (self *World) GetTime() types.Time {
+	self.ReadLock()
+	defer self.ReadUnlock()
 
-	const SecondsInADay = 60 * 60 * 24
+	hour, min, sec := self.Time.Clock()
+	return _time{hour: hour, min: min, sec: sec}
+}
 
-	totalSeconds := sec + (min * 60) + (hour * 60 * 60)
-	totalSeconds = totalSeconds * _TIME_MULTIPLIER
+func (self *World) AdvanceTime() {
+	self.WriteLock()
+	defer self.WriteUnlock()
 
-	hour = totalSeconds / (60 * 60)
-	hour = hour % 24
-	totalSeconds = totalSeconds % (60 * 60)
-
-	min = totalSeconds / 60
-	totalSeconds = totalSeconds % 60
-
-	sec = totalSeconds
-
-	return Time{hour: hour, min: min, sec: sec}
+	self.Time = self.Time.Add(3 * time.Second)
 }

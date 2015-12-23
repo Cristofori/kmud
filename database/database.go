@@ -12,23 +12,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-// Field names
-const (
-	fId           = "_id"
-	fName         = "name"
-	fCharacterIds = "characterids"
-	fRoom         = "room"
-	fLocation     = "location"
-	fDefault      = "default"
-)
-
-// MongDB operations
-const (
-	SET  = "$set"
-	PUSH = "$push"
-	PULL = "$pull"
-)
-
 type Session interface {
 	DB(string) Database
 }

@@ -15,6 +15,8 @@ const (
 )
 
 func Start() {
+	manageWorld()
+
 	for _, npc := range model.GetNpcs() {
 		manageNpc(npc)
 	}
@@ -22,6 +24,36 @@ func Start() {
 	for _, spawner := range model.GetSpawners() {
 		manageSpawner(spawner)
 	}
+}
+
+type worldEventReceiver struct {
+}
+
+func (*worldEventReceiver) GetId() types.Id {
+	return nil
+}
+
+func (*worldEventReceiver) GetRoomId() types.Id {
+	return nil
+}
+
+func manageWorld() {
+	world := model.GetWorld()
+
+	wer := &worldEventReceiver{}
+
+	eventChannel := events.Register(wer)
+
+	go func() {
+		defer events.Unregister(wer)
+		for {
+			event := <-eventChannel
+			switch event.(type) {
+			case events.TickEvent:
+				world.AdvanceTime()
+			}
+		}
+	}()
 }
 
 func manageNpc(npc types.NPC) {

@@ -674,6 +674,14 @@ func DeleteStore(id types.Id) {
 	db.DeleteObject(id)
 }
 
+func GetWorld() types.World {
+	id := db.FindOne(types.WorldType, bson.M{})
+	if id == nil {
+		return db.NewWorld()
+	}
+	return fetch(id, types.WorldType).(types.World)
+}
+
 func fetch(id types.Id, typ types.ObjectType) types.Object {
 	if ds.ContainsId(id) {
 		return ds.Get(id)
@@ -702,6 +710,8 @@ func fetch(id types.Id, typ types.ObjectType) types.Object {
 		object = &db.Skill{}
 	case types.StoreType:
 		object = &db.Store{}
+	case types.WorldType:
+		object = &db.World{}
 	default:
 		panic(fmt.Sprintf("unrecognized object type: %v", typ))
 	}

@@ -403,6 +403,11 @@ func (self *Server) Start() {
 	utils.HandleError(err)
 
 	database.Init(database.NewMongoSession(session.Copy()), "mud")
+}
+
+func (self *Server) Bootstrap() {
+	// Create the world object if necessary
+	model.GetWorld()
 
 	// If there are no rooms at all create one
 	rooms := model.GetRooms()
@@ -440,6 +445,7 @@ func (self *Server) Listen() {
 
 func (self *Server) Exec() {
 	self.Start()
+	self.Bootstrap()
 	engine.Start()
 	self.Listen()
 }

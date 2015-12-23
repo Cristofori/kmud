@@ -24,6 +24,7 @@ const (
 	ItemType    ObjectType = "Item"
 	SkillType   ObjectType = "Skill"
 	StoreType   ObjectType = "Store"
+	WorldType   ObjectType = "World"
 )
 
 type Identifiable interface {
@@ -176,6 +177,15 @@ type Zone interface {
 }
 
 type ZoneList []Zone
+
+type Time interface {
+	String() string
+}
+
+type World interface {
+	GetTime() Time
+	AdvanceTime()
+}
 
 type Communicable interface {
 	WriteLine(string)

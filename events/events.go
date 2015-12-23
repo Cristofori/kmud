@@ -9,32 +9,37 @@ import (
 	"github.com/Cristofori/kmud/utils"
 )
 
-type eventListener struct {
-	Channel   chan Event
-	Character types.Character
+type EventReceiver interface {
+	types.Identifiable
+	types.Locateable
 }
 
-var _listeners map[types.Character]chan Event
+type eventListener struct {
+	Channel  chan Event
+	Receiver EventReceiver
+}
+
+var _listeners map[EventReceiver]chan Event
 
 var eventMessages chan interface{}
 
 type register eventListener
 
 type unregister struct {
-	Character types.Character
+	Receiver EventReceiver
 }
 
 type broadcast struct {
 	Event Event
 }
 
-func Register(receiver types.Character) chan Event {
-	listener := eventListener{Character: receiver, Channel: make(chan Event)}
+func Register(receiver EventReceiver) chan Event {
+	listener := eventListener{Receiver: receiver, Channel: make(chan Event)}
 	eventMessages <- register(listener)
 	return listener.Channel
 }
 
-func Unregister(char types.Character) {
+func Unregister(char EventReceiver) {
 	eventMessages <- unregister{char}
 }
 
@@ -43,21 +48,21 @@ func Broadcast(event Event) {
 }
 
 func init() {
-	_listeners = map[types.Character]chan Event{}
+	_listeners = map[EventReceiver]chan Event{}
 	eventMessages = make(chan interface{}, 1)
 
 	go func() {
 		for message := range eventMessages {
-			switch m := message.(type) {
+			switch msg := message.(type) {
 			case register:
-				_listeners[m.Character] = m.Channel
+				_listeners[msg.Receiver] = msg.Channel
 			case unregister:
-				delete(_listeners, m.Character)
+				delete(_listeners, msg.Receiver)
 			case broadcast:
 				for char, channel := range _listeners {
-					if m.Event.IsFor(char) {
+					if msg.Event.IsFor(char) {
 						go func(c chan Event) {
-							c <- m.Event
+							c <- msg.Event
 						}(channel)
 					}
 				}
@@ -77,11 +82,6 @@ func init() {
 			Broadcast(TickEvent{})
 		}
 	}()
-}
-
-type EventReceiver interface {
-	types.Identifiable
-	types.Locateable
 }
 
 type Event interface {
