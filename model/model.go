@@ -6,7 +6,6 @@ import (
 	"sort"
 
 	db "github.com/Cristofori/kmud/database"
-	ds "github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/events"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
@@ -55,11 +54,11 @@ func DeleteUser(userId types.Id) {
 }
 
 func GetPlayerCharacter(id types.Id) types.PC {
-	return fetch(id, types.PcType).(types.PC)
+	return db.Retrieve(id, types.PcType).(types.PC)
 }
 
 func GetNpc(id types.Id) types.NPC {
-	return fetch(id, types.NpcType).(types.NPC)
+	return db.Retrieve(id, types.NpcType).(types.NPC)
 }
 
 func GetCharacterByName(name string) types.Character {
@@ -207,7 +206,7 @@ func CreateRoom(zone types.Zone, location types.Coordinate) (types.Room, error) 
 }
 
 func GetRoom(id types.Id) types.Room {
-	return fetch(id, types.RoomType).(types.Room)
+	return db.Retrieve(id, types.RoomType).(types.Room)
 }
 
 func GetRooms() types.RoomList {
@@ -266,7 +265,7 @@ func GetNeighbors(room types.Room) []types.Room {
 }
 
 func GetZone(id types.Id) types.Zone {
-	return fetch(id, types.ZoneType).(types.Zone)
+	return db.Retrieve(id, types.ZoneType).(types.Zone)
 }
 
 func GetZones() types.ZoneList {
@@ -317,7 +316,7 @@ func GetAreas(zone types.Zone) types.AreaList {
 }
 
 func GetArea(id types.Id) types.Area {
-	return fetch(id, types.AreaType).(types.Area)
+	return db.Retrieve(id, types.AreaType).(types.Area)
 }
 
 func CreateArea(name string, zone types.Zone) (types.Area, error) {
@@ -379,15 +378,32 @@ func DeleteRoom(room types.Room) {
 }
 
 func GetUser(id types.Id) types.User {
-	return fetch(id, types.UserType).(types.User)
+	return db.Retrieve(id, types.UserType).(types.User)
 }
 
-func CreateItem(name string) types.Item {
-	return db.NewItem(name)
+func CreateTemplate(name string) types.Template {
+	return db.NewTemplate(name)
+}
+
+func GetAllTemplates() types.TemplateList {
+	ids := db.FindAll(types.TemplateType)
+	templates := make(types.TemplateList, len(ids))
+	for i, id := range ids {
+		templates[i] = GetTemplate(id)
+	}
+	return templates
+}
+
+func GetTemplate(id types.Id) types.Template {
+	return db.Retrieve(id, types.TemplateType).(types.Template)
+}
+
+func CreateItem(templateId types.Id) types.Item {
+	return db.NewItem(templateId)
 }
 
 func GetItem(id types.Id) types.Item {
-	return fetch(id, types.ItemType).(types.Item)
+	return db.Retrieve(id, types.ItemType).(types.Item)
 }
 
 func GetItems(itemIds []types.Id) types.ItemList {
@@ -594,7 +610,7 @@ func GetSpawners() types.SpawnerList {
 }
 
 func GetSpawner(id types.Id) types.Spawner {
-	return fetch(id, types.SpawnerType).(types.Spawner)
+	return db.Retrieve(id, types.SpawnerType).(types.Spawner)
 }
 
 func GetAreaSpawners(areaId types.Id) types.SpawnerList {
@@ -616,7 +632,7 @@ func GetSpawnerNpcs(spawnerId types.Id) types.NPCList {
 }
 
 func GetSkill(id types.Id) types.Skill {
-	return fetch(id, types.SkillType).(types.Skill)
+	return db.Retrieve(id, types.SkillType).(types.Skill)
 }
 
 func GetSkillByName(name string) types.Skill {
@@ -662,7 +678,7 @@ func StoreIn(roomId types.Id) types.Store {
 }
 
 func GetStore(id types.Id) types.Store {
-	return fetch(id, types.StoreType).(types.Store)
+	return db.Retrieve(id, types.StoreType).(types.Store)
 }
 
 func CreateStore(name string, roomId types.Id) types.Store {
@@ -679,48 +695,5 @@ func GetWorld() types.World {
 	if id == nil {
 		return db.NewWorld()
 	}
-	return fetch(id, types.WorldType).(types.World)
-}
-
-func fetch(id types.Id, typ types.ObjectType) types.Object {
-	if ds.ContainsId(id) {
-		return ds.Get(id)
-	}
-
-	var object types.Object
-
-	switch typ {
-	case types.PcType:
-		object = &db.Pc{}
-	case types.NpcType:
-		object = &db.Npc{}
-	case types.SpawnerType:
-		object = &db.Spawner{}
-	case types.UserType:
-		object = &db.User{}
-	case types.ZoneType:
-		object = &db.Zone{}
-	case types.AreaType:
-		object = &db.Area{}
-	case types.RoomType:
-		object = &db.Room{}
-	case types.ItemType:
-		object = &db.Item{}
-	case types.SkillType:
-		object = &db.Skill{}
-	case types.StoreType:
-		object = &db.Store{}
-	case types.WorldType:
-		object = &db.World{}
-	default:
-		panic(fmt.Sprintf("unrecognized object type: %v", typ))
-	}
-
-	object = db.Retrieve(id, object)
-
-	if object != nil {
-		ds.Set(object)
-	}
-
-	return object
+	return db.Retrieve(id, types.WorldType).(types.World)
 }

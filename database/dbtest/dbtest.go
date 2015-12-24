@@ -169,8 +169,11 @@ func Test_PlayerCharacter(t *testing.T) {
 
 	testutils.Assert(character.GetCash() == cashAmount*2, t, "Call to character.AddCash() failed", cashAmount*2, character.GetCash())
 
-	item1 := database.NewItem("test_item1")
-	item2 := database.NewItem("test_item2")
+	template1 := database.NewTemplate("test_item1")
+	template2 := database.NewTemplate("test_item2")
+
+	item1 := database.NewItem(template1.GetId())
+	item2 := database.NewItem(template2.GetId())
 
 	character.AddItem(item1.GetId())
 
@@ -252,8 +255,11 @@ func Test_Room(t *testing.T) {
 		testutils.Assert(!room.HasExit(dir), t, "Call to room.SetExitEnabled(false) failed")
 	}
 
-	item1 := database.NewItem("test_item1")
-	item2 := database.NewItem("test_item2")
+	template1 := database.NewTemplate("test_item1")
+	template2 := database.NewTemplate("test_item2")
+
+	item1 := database.NewItem(template1.GetId())
+	item2 := database.NewItem(template2.GetId())
 
 	room.AddItem(item1.GetId())
 	testutils.Assert(room.HasItem(item1.GetId()), t, "Call to room.AddItem(item1) faled")
@@ -286,9 +292,8 @@ func Test_Room(t *testing.T) {
 
 func Test_Item(t *testing.T) {
 	name := "test_item"
-	item := database.NewItem(name)
+	template := database.NewTemplate(name)
+	item := database.NewItem(template.GetId())
 
 	testutils.Assert(item.GetName() == name, t, "Item didn't get created with correct name", name, item.GetName())
 }
-
-// vim: nocindent

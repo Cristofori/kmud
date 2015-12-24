@@ -238,10 +238,9 @@ func (self *Session) getInt(prompt string, min, max int) (int, bool) {
 
 		if err != nil {
 			self.printError(err.Error())
-			return 0, false
+		} else {
+			return val, true
 		}
-
-		return val, true
 	}
 }
 

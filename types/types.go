@@ -14,17 +14,18 @@ type Id interface {
 type ObjectType string
 
 const (
-	NpcType     ObjectType = "Npc"
-	PcType      ObjectType = "Pc"
-	SpawnerType ObjectType = "Spawner"
-	UserType    ObjectType = "User"
-	ZoneType    ObjectType = "Zone"
-	AreaType    ObjectType = "Area"
-	RoomType    ObjectType = "Room"
-	ItemType    ObjectType = "Item"
-	SkillType   ObjectType = "Skill"
-	StoreType   ObjectType = "Store"
-	WorldType   ObjectType = "World"
+	NpcType      ObjectType = "Npc"
+	PcType       ObjectType = "Pc"
+	SpawnerType  ObjectType = "Spawner"
+	UserType     ObjectType = "User"
+	ZoneType     ObjectType = "Zone"
+	AreaType     ObjectType = "Area"
+	RoomType     ObjectType = "Room"
+	TemplateType ObjectType = "Template"
+	ItemType     ObjectType = "Item"
+	SkillType    ObjectType = "Skill"
+	StoreType    ObjectType = "Store"
+	WorldType    ObjectType = "World"
 )
 
 type Identifiable interface {
@@ -225,9 +226,39 @@ func (self UserList) Swap(i, j int) {
 	self[i], self[j] = self[j], self[i]
 }
 
-type Item interface {
+type Template interface {
 	Object
 	Nameable
+	SetValue(int)
+	GetValue() int
+}
+
+type TemplateList []Template
+
+func (self TemplateList) Names() []string {
+	names := make([]string, len(self))
+	for i, item := range self {
+		names[i] = item.GetName()
+	}
+	return names
+}
+
+func (self TemplateList) Len() int {
+	return len(self)
+}
+
+func (self TemplateList) Less(i, j int) bool {
+	return naturalsort.NaturalLessThan(self[i].GetName(), self[j].GetName())
+}
+
+func (self TemplateList) Swap(i, j int) {
+	self[i], self[j] = self[j], self[i]
+}
+
+type Item interface {
+	Object
+	GetTemplateId() Id
+	GetName() string
 	GetValue() int
 }
 

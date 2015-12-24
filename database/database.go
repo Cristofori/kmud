@@ -96,15 +96,51 @@ func getCollectionOfObject(obj types.Object) Collection {
 	return getCollection(types.ObjectType(name))
 }
 
-func Retrieve(id types.Id, object types.Object) types.Object {
+func Retrieve(id types.Id, typ types.ObjectType) types.Object {
+	if datastore.ContainsId(id) {
+		return datastore.Get(id)
+	}
+
+	var object types.Object
+
+	switch typ {
+	case types.PcType:
+		object = &Pc{}
+	case types.NpcType:
+		object = &Npc{}
+	case types.SpawnerType:
+		object = &Spawner{}
+	case types.UserType:
+		object = &User{}
+	case types.ZoneType:
+		object = &Zone{}
+	case types.AreaType:
+		object = &Area{}
+	case types.RoomType:
+		object = &Room{}
+	case types.TemplateType:
+		object = &Template{}
+	case types.ItemType:
+		object = &Item{}
+	case types.SkillType:
+		object = &Skill{}
+	case types.StoreType:
+		object = &Store{}
+	case types.WorldType:
+		object = &World{}
+	default:
+		panic(fmt.Sprintf("unrecognized object type: %v", typ))
+	}
+
 	c := getCollectionOfObject(object)
 	err := c.FindId(id).One(object)
 
-	if err == nil {
-		return object
+	if err != nil || object == nil {
+		return nil
 	}
 
-	return nil
+	datastore.Set(object)
+	return object
 }
 
 func RetrieveObjects(t types.ObjectType, objects interface{}) {

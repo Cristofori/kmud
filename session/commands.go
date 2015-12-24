@@ -460,17 +460,26 @@ func init() {
 				s.PrintRoom()
 			},
 		},
-		"create": {
+		"items": {
 			admin: true,
-			usage: "Usage: /create <item name>",
+			usage: "Usage: /items",
 			exec: func(self *command, s *Session, arg string) {
-				if arg == "" {
-					self.Usage(s)
-				} else {
-					item := model.CreateItem(arg)
-					s.GetRoom().AddItem(item.GetId())
-					s.printLine("Item created")
-				}
+				utils.ExecMenu("Items", s, func(menu *utils.Menu) {
+					menu.AddAction("n", "New", func() bool {
+						name := s.getRawUserInput("Item name: ")
+						if name != "" {
+							model.CreateTemplate(name)
+						}
+						return true
+					})
+
+					for i, template := range model.GetAllTemplates() {
+						menu.AddAction(strconv.Itoa(i+1), template.GetName(), func() bool {
+							templateMenu(s, template)
+							return true
+						})
+					}
+				})
 			},
 		},
 		"destroyitem": {
@@ -930,6 +939,33 @@ func specificNpcMenu(s *Session, npc types.NPC) {
 
 		menu.AddAction("o", fmt.Sprintf("Roaming - %s", roamingState), func() bool {
 			npc.SetRoaming(!npc.GetRoaming())
+			return true
+		})
+	})
+}
+
+func templateMenu(s *Session, template types.Template) {
+	utils.ExecMenu(template.GetName(), s, func(menu *utils.Menu) {
+		menu.AddAction("v", fmt.Sprintf("Value - %v", template.GetValue()), func() bool {
+			value, valid := s.getInt("New value: ", 0, math.MaxInt32)
+			if valid {
+				template.SetValue(value)
+			}
+			return true
+		})
+
+		menu.AddAction("n", "Name", func() bool {
+			name := s.getRawUserInput("New name: ")
+			if name != "" {
+				template.SetName(name)
+			}
+			return true
+		})
+
+		menu.AddAction("c", "Create", func() bool {
+			item := model.CreateItem(template.GetId())
+			s.pc.AddItem(item.GetId())
+			s.printLine("Item created")
 			return true
 		})
 	})
