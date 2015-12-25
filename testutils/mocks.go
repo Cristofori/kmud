@@ -110,6 +110,13 @@ func (*MockContainer) RemoveItem(types.Id) bool {
 	return true
 }
 
+func (*MockContainer) GetCapacity() int {
+	return 0
+}
+
+func (*MockContainer) SetCapacity(int) {
+}
+
 func (*MockContainer) GetItems() []types.Id {
 	return []types.Id{}
 }

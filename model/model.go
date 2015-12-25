@@ -391,6 +391,7 @@ func GetAllTemplates() types.TemplateList {
 	for i, id := range ids {
 		templates[i] = GetTemplate(id)
 	}
+	sort.Sort(templates)
 	return templates
 }
 

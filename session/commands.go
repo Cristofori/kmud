@@ -468,7 +468,8 @@ func init() {
 					menu.AddAction("n", "New", func() bool {
 						name := s.getRawUserInput("Item name: ")
 						if name != "" {
-							model.CreateTemplate(name)
+							template := model.CreateTemplate(name)
+							templateMenu(s, template)
 						}
 						return true
 					})
@@ -946,6 +947,18 @@ func specificNpcMenu(s *Session, npc types.NPC) {
 
 func templateMenu(s *Session, template types.Template) {
 	utils.ExecMenu(template.GetName(), s, func(menu *utils.Menu) {
+		menu.AddAction("c", "Create", func() bool {
+			item := model.CreateItem(template.GetId())
+			s.pc.AddItem(item.GetId())
+			s.printLine("Item created")
+			return true
+		})
+
+		menu.AddAction("d", "Delete", func() bool {
+			// TODO - Delete template and all items referring to it (with appropriate warning)
+			return false
+		})
+
 		menu.AddAction("v", fmt.Sprintf("Value - %v", template.GetValue()), func() bool {
 			value, valid := s.getInt("New value: ", 0, math.MaxInt32)
 			if valid {
@@ -962,10 +975,19 @@ func templateMenu(s *Session, template types.Template) {
 			return true
 		})
 
-		menu.AddAction("c", "Create", func() bool {
-			item := model.CreateItem(template.GetId())
-			s.pc.AddItem(item.GetId())
-			s.printLine("Item created")
+		menu.AddAction("w", fmt.Sprintf("Weight - %v", template.GetWeight()), func() bool {
+			weight, valid := s.getInt("New weight: ", 0, math.MaxInt32)
+			if valid {
+				template.SetWeight(weight)
+			}
+			return true
+		})
+
+		menu.AddAction("a", fmt.Sprintf("Capacity - %v", template.GetCapacity()), func() bool {
+			capacity, valid := s.getInt("New capacity: ", 0, math.MaxInt32)
+			if valid {
+				template.SetCapacity(capacity)
+			}
 			return true
 		})
 	})

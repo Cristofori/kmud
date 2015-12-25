@@ -9,6 +9,8 @@ type Template struct {
 	DbObject `bson:",inline"`
 	Name     string
 	Value    int
+	Weight   int
+	Capacity int
 }
 
 type Item struct {
@@ -32,6 +34,8 @@ func NewItem(templateId types.Id) *Item {
 	item.init(item)
 	return item
 }
+
+// Template
 
 func (self *Template) GetName() string {
 	self.ReadLock()
@@ -64,6 +68,38 @@ func (self *Template) GetValue() int {
 	return self.Value
 }
 
+func (self *Template) GetWeight() int {
+	self.ReadLock()
+	defer self.ReadUnlock()
+	return self.Weight
+}
+
+func (self *Template) SetWeight(weight int) {
+	if weight != self.GetWeight() {
+		self.WriteLock()
+		self.Weight = weight
+		self.WriteUnlock()
+		self.modified()
+	}
+}
+
+func (self *Template) GetCapacity() int {
+	self.ReadLock()
+	defer self.ReadUnlock()
+	return self.Capacity
+}
+
+func (self *Template) SetCapacity(capacity int) {
+	if capacity != self.GetCapacity() {
+		self.WriteLock()
+		self.Capacity = capacity
+		self.WriteUnlock()
+		self.modified()
+	}
+}
+
+// Item
+
 func (self *Item) GetTemplateId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
@@ -82,4 +118,18 @@ func (self *Item) GetName() string {
 
 func (self *Item) GetValue() int {
 	return self.GetTemplate().GetValue()
+}
+
+func (self *Item) GetWeight() int {
+	weight := self.GetTemplate().GetWeight()
+
+	for _, id := range self.GetItems() {
+		item := Retrieve(id, types.ItemType).(types.Item)
+		weight += item.GetWeight()
+	}
+	return weight
+}
+
+func (self *Item) GetCapacity() int {
+	return self.GetTemplate().GetCapacity()
 }

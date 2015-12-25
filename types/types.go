@@ -63,6 +63,8 @@ type Container interface {
 	AddCash(int)
 	RemoveCash(int)
 	GetCash() int
+	SetCapacity(int)
+	GetCapacity() int
 }
 
 type Object interface {
@@ -231,6 +233,10 @@ type Template interface {
 	Nameable
 	SetValue(int)
 	GetValue() int
+	SetWeight(int)
+	GetWeight() int
+	GetCapacity() int
+	SetCapacity(int)
 }
 
 type TemplateList []Template
@@ -260,6 +266,7 @@ type Item interface {
 	GetTemplateId() Id
 	GetName() string
 	GetValue() int
+	GetWeight() int
 }
 
 type ItemList []Item

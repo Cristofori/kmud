@@ -9,6 +9,7 @@ type Container struct {
 	DbObject  `bson:",inline"`
 	Inventory utils.Set
 	Cash      int
+	Capacity  int
 }
 
 func (self *Container) AddItem(id types.Id) {
@@ -73,4 +74,20 @@ func (self *Container) AddCash(amount int) {
 
 func (self *Container) RemoveCash(amount int) {
 	self.SetCash(self.GetCash() - amount)
+}
+
+func (self *Container) GetCapacity() int {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Capacity
+}
+
+func (self *Container) SetCapacity(limit int) {
+	if limit != self.GetCapacity() {
+		self.WriteLock()
+		self.Capacity = limit
+		self.WriteUnlock()
+		self.modified()
+	}
 }
