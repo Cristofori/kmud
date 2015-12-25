@@ -7,7 +7,6 @@ type Exit struct {
 }
 
 type Room struct {
-	DbObject  `bson:",inline"`
 	Container `bson:",inline"`
 
 	ZoneId      types.Id
@@ -222,27 +221,4 @@ func (self *Room) IsLocked(dir types.Direction) bool {
 	}
 
 	return false
-}
-
-func (self *Room) AddItem(id types.Id) {
-	self.Container.AddItem(id)
-	self.modified()
-}
-
-func (self *Room) RemoveItem(id types.Id) bool {
-	self.modified()
-	return self.Container.RemoveItem(id)
-}
-
-func (self *Room) SetCash(cash int) {
-	self.Container.SetCash(cash)
-	self.modified()
-}
-
-func (self *Room) AddCash(amount int) {
-	self.SetCash(self.GetCash() + amount)
-}
-
-func (self *Room) RemoveCash(amount int) {
-	self.SetCash(self.GetCash() - amount)
 }

@@ -8,7 +8,6 @@ import (
 )
 
 type Character struct {
-	DbObject  `bson:",inline"`
 	Container `bson:",inline"`
 
 	RoomId    types.Id `bson:",omitempty"`
@@ -141,29 +140,6 @@ func (self *Pc) GetUserId() types.Id {
 	defer self.ReadUnlock()
 
 	return self.UserId
-}
-
-func (self *Character) SetCash(cash int) {
-	self.Container.SetCash(cash)
-	self.modified()
-}
-
-func (self *Character) AddCash(amount int) {
-	self.SetCash(self.GetCash() + amount)
-}
-
-func (self *Character) RemoveCash(amount int) {
-	self.SetCash(self.GetCash() - amount)
-}
-
-func (self *Character) AddItem(id types.Id) {
-	self.Container.AddItem(id)
-	self.modified()
-}
-
-func (self *Character) RemoveItem(id types.Id) bool {
-	self.modified()
-	return self.Container.RemoveItem(id)
 }
 
 func (self *Character) AddSkill(id types.Id) {

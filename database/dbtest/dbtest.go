@@ -12,8 +12,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-// import "fmt"
-
 type TestSession struct {
 }
 

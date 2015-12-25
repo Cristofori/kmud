@@ -1,36 +1,14 @@
 package database
 
 import (
-	"sync"
-
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 )
 
-type Locker struct {
-	mutex sync.RWMutex
-}
-
 type Container struct {
-	Locker    `bson:",omitempty"`
+	DbObject  `bson:",inline"`
 	Inventory utils.Set
 	Cash      int
-}
-
-func (self *Locker) ReadLock() {
-	self.mutex.RLock()
-}
-
-func (self *Locker) ReadUnlock() {
-	self.mutex.RUnlock()
-}
-
-func (self *Locker) WriteLock() {
-	self.mutex.Lock()
-}
-
-func (self *Locker) WriteUnlock() {
-	self.mutex.Unlock()
 }
 
 func (self *Container) AddItem(id types.Id) {
@@ -44,6 +22,7 @@ func (self *Container) AddItem(id types.Id) {
 
 		self.Inventory.Insert(id.Hex())
 	}
+	self.modified()
 }
 
 func (self *Container) HasItem(id types.Id) bool {
@@ -59,6 +38,7 @@ func (self *Container) RemoveItem(id types.Id) bool {
 		defer self.WriteUnlock()
 
 		delete(self.Inventory, id.Hex())
+		self.modified()
 		return true
 	}
 	return false
@@ -76,6 +56,7 @@ func (self *Container) SetCash(cash int) {
 
 	if cash != self.Cash {
 		self.Cash = cash
+		self.modified()
 	}
 }
 
@@ -84,4 +65,12 @@ func (self *Container) GetCash() int {
 	defer self.ReadUnlock()
 
 	return self.Cash
+}
+
+func (self *Container) AddCash(amount int) {
+	self.SetCash(self.GetCash() + amount)
+}
+
+func (self *Container) RemoveCash(amount int) {
+	self.SetCash(self.GetCash() - amount)
 }

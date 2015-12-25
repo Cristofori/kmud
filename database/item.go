@@ -12,7 +12,8 @@ type Template struct {
 }
 
 type Item struct {
-	DbObject   `bson:",inline"`
+	Container `bson:",inline"`
+
 	TemplateId types.Id
 }
 

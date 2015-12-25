@@ -6,7 +6,6 @@ import (
 )
 
 type Store struct {
-	DbObject  `bson:",inline"`
 	Container `bson:",inline"`
 
 	Name   string
@@ -37,27 +36,4 @@ func (self *Store) SetName(name string) {
 		self.WriteUnlock()
 		self.modified()
 	}
-}
-
-func (self *Store) AddItem(id types.Id) {
-	self.Container.AddItem(id)
-	self.modified()
-}
-
-func (self *Store) RemoveItem(id types.Id) bool {
-	self.modified()
-	return self.Container.RemoveItem(id)
-}
-
-func (self *Store) SetCash(cash int) {
-	self.Container.SetCash(cash)
-	self.modified()
-}
-
-func (self *Store) AddCash(amount int) {
-	self.SetCash(self.GetCash() + amount)
-}
-
-func (self *Store) RemoveCash(amount int) {
-	self.SetCash(self.GetCash() - amount)
 }

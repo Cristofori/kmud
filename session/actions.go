@@ -240,7 +240,7 @@ var actions = map[string]action{
 		},
 	},
 	"i":   aAlias("inventory"),
-	"inv": aAlias("inv"),
+	"inv": aAlias("inventory"),
 	"inventory": {
 		exec: func(s *Session, arg string) {
 			itemIds := s.pc.GetItems()
