@@ -121,6 +121,9 @@ func Test_FormatName(t *testing.T) {
 		{"ASDF", "Asdf"},
 		{"Bob", "Bob"},
 		{"aBcDeFg", "Abcdefg"},
+		{"foo bar", "Foo Bar"},
+		{"foO   bAr", "Foo Bar"},
+		{"foo \n  bar", "Foo Bar"},
 	}
 
 	for _, test := range tests {

@@ -119,9 +119,14 @@ func FormatName(name string) string {
 		return name
 	}
 
-	runes := []rune(Simplify(name))
-	runes[0] = unicode.ToUpper(runes[0])
-	return string(runes)
+	fields := strings.Fields(name)
+	for i, field := range fields {
+		runes := []rune(strings.ToLower(field))
+		runes[0] = unicode.ToUpper(runes[0])
+		fields[i] = string(runes)
+	}
+
+	return strings.Join(fields, " ")
 }
 
 func Argify(data string) (string, string) {
