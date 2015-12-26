@@ -56,6 +56,12 @@ func Init(session Session, dbName string) {
 	_dbName = dbName
 }
 
+func dbinit(obj types.Object) {
+	obj.SetId(bson.NewObjectId())
+	datastore.Set(obj)
+	commitObject(obj.GetId())
+}
+
 func watchModifiedObjects() {
 	go func() {
 		timeout := make(chan bool)

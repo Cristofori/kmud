@@ -24,7 +24,7 @@ func NewTemplate(name string) *Template {
 	template := &Template{
 		Name: utils.FormatName(name),
 	}
-	template.init(template)
+	dbinit(template)
 	return template
 }
 
@@ -32,7 +32,7 @@ func NewItem(templateId types.Id) *Item {
 	item := &Item{
 		TemplateId: templateId,
 	}
-	item.init(item)
+	dbinit(item)
 	return item
 }
 

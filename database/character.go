@@ -47,7 +47,7 @@ func NewPc(name string, userId types.Id, roomId types.Id) *Pc {
 	}
 
 	pc.initCharacter(name, types.PcType, roomId)
-	pc.init(pc)
+	dbinit(pc)
 	return pc
 }
 
@@ -57,7 +57,7 @@ func NewNpc(name string, roomId types.Id, spawnerId types.Id) *Npc {
 	}
 
 	npc.initCharacter(name, types.NpcType, roomId)
-	npc.init(npc)
+	dbinit(npc)
 	return npc
 }
 
@@ -68,7 +68,7 @@ func NewSpawner(name string, areaId types.Id) *Spawner {
 	}
 
 	spawner.initCharacter(name, types.SpawnerType, nil)
-	spawner.init(spawner)
+	dbinit(spawner)
 	return spawner
 }
 

@@ -3,7 +3,6 @@ package database
 import (
 	"sync"
 
-	"github.com/Cristofori/kmud/datastore"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 	"gopkg.in/mgo.v2/bson"
@@ -16,14 +15,11 @@ type DbObject struct {
 	destroyed bool
 }
 
-func (self *DbObject) init(obj types.Object) {
-	self.Id = bson.NewObjectId()
-	datastore.Set(obj)
-	commitObject(self.Id)
+func (self *DbObject) SetId(id types.Id) {
+	self.Id = id
 }
 
 func (self *DbObject) GetId() types.Id {
-	// Not mutex-protected since the ID should never change
 	return self.Id
 }
 

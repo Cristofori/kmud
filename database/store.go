@@ -18,7 +18,7 @@ func NewStore(name string, roomId types.Id) *Store {
 		RoomId: roomId,
 	}
 
-	store.init(store)
+	dbinit(store)
 	return store
 }
 

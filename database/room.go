@@ -29,7 +29,7 @@ func NewRoom(zoneId types.Id, location types.Coordinate) *Room {
 		ZoneId:   zoneId,
 	}
 
-	room.init(room)
+	dbinit(room)
 	return room
 }
 

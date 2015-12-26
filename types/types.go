@@ -71,6 +71,7 @@ type Object interface {
 	Identifiable
 	ReadLockable
 	Destroyable
+	SetId(Id)
 }
 
 type Character interface {

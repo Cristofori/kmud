@@ -18,7 +18,7 @@ func NewArea(name string, zone types.Id) *Area {
 		Name:   utils.FormatName(name),
 	}
 
-	area.init(area)
+	dbinit(area)
 	return area
 }
 

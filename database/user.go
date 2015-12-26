@@ -35,7 +35,7 @@ func NewUser(name string, password string) *User {
 		windowHeight: 40,
 	}
 
-	user.init(user)
+	dbinit(user)
 	return user
 }
 

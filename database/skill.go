@@ -24,7 +24,7 @@ func NewSkill(name string, power int) *Skill {
 		Variance: 0,
 	}
 
-	skill.init(skill)
+	dbinit(skill)
 	return skill
 }
 

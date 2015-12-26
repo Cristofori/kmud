@@ -13,7 +13,7 @@ func NewZone(name string) *Zone {
 		Name: utils.FormatName(name),
 	}
 
-	zone.init(zone)
+	dbinit(zone)
 	return zone
 }
 
@@ -33,5 +33,3 @@ func (self *Zone) SetName(name string) {
 		self.modified()
 	}
 }
-
-// vim: nocindent

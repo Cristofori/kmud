@@ -9,8 +9,6 @@ import (
 	"github.com/Cristofori/kmud/utils"
 )
 
-// import "fmt"
-
 type TestWriter struct {
 	Wrote string
 }

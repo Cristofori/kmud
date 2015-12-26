@@ -15,7 +15,7 @@ type World struct {
 func NewWorld() *World {
 	world := &World{Time: time.Now()}
 
-	world.init(world)
+	dbinit(world)
 	return world
 }
 

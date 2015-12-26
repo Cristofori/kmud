@@ -23,6 +23,9 @@ func (self MockIdentifiable) GetId() types.Id {
 	return self.Id
 }
 
+func (self MockObject) SetId(types.Id) {
+}
+
 type MockNameable struct {
 	Name string
 }
