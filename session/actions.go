@@ -421,6 +421,73 @@ var actions = map[string]action{
 			s.printLine("")
 		},
 	},
+	"o": aAlias("open"),
+	"open": {
+		exec: func(s *Session, arg string) {
+			items := model.ItemsIn(s.GetRoom())
+			containers := types.ItemList{}
+
+			for _, item := range items {
+				if item.GetCapacity() > 0 {
+					containers = append(containers, item)
+				}
+			}
+
+			if len(containers) == 0 {
+				s.printError("There's nothing here to open")
+			} else {
+				index := utils.BestMatch(arg, containers.Names())
+
+				if index == -2 {
+					s.printError("Which one do you mean?")
+				} else if index != -1 {
+					container := containers[index]
+
+					utils.ExecMenu(container.GetName(), s, func(menu *utils.Menu) {
+						menu.AddAction("d", "Deposit", func() bool {
+							if len(s.pc.GetItems()) == 0 {
+								s.printError("You have nothing to deposit")
+							} else {
+								utils.ExecMenu(fmt.Sprintf("Deposit into %s", container.GetName()), s, func(menu *utils.Menu) {
+									for i, item := range model.GetItems(s.pc.GetItems()) {
+										locItem := item
+										menu.AddAction(strconv.Itoa(i+1), item.GetName(), func() bool {
+											if s.pc.RemoveItem(locItem.GetId()) {
+												container.AddItem(locItem.GetId())
+											}
+											return len(s.pc.GetItems()) > 0
+										})
+									}
+								})
+							}
+
+							return true
+						})
+
+						menu.AddAction("w", "Withdraw", func() bool {
+							if len(container.GetItems()) == 0 {
+								s.printError("There is nothing to withdraw")
+							} else {
+								utils.ExecMenu(fmt.Sprintf("Withdraw from %s", container.GetName()), s, func(menu *utils.Menu) {
+									for i, item := range model.GetItems(container.GetItems()) {
+										locItem := item
+										menu.AddAction(strconv.Itoa(i+1), item.GetName(), func() bool {
+											if container.RemoveItem(locItem.GetId()) {
+												s.pc.AddItem(locItem.GetId())
+											}
+											return len(container.GetItems()) > 0
+										})
+									}
+								})
+							}
+
+							return true
+						})
+					})
+				}
+			}
+		},
+	},
 }
 
 func handleLock(s *Session, arg string, locked bool) {

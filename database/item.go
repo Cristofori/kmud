@@ -17,6 +17,7 @@ type Item struct {
 	Container `bson:",inline"`
 
 	TemplateId types.Id
+	Locked     bool
 }
 
 func NewTemplate(name string) *Template {
@@ -132,4 +133,20 @@ func (self *Item) GetWeight() int {
 
 func (self *Item) GetCapacity() int {
 	return self.GetTemplate().GetCapacity()
+}
+
+func (self *Item) IsLocked() bool {
+	self.ReadLock()
+	defer self.ReadUnlock()
+
+	return self.Locked
+}
+
+func (self *Item) SetLocked(locked bool) {
+	if locked != self.IsLocked() {
+		self.WriteLock()
+		self.Locked = locked
+		self.WriteUnlock()
+		self.modified()
+	}
 }

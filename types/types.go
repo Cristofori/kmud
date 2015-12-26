@@ -263,10 +263,13 @@ func (self TemplateList) Swap(i, j int) {
 
 type Item interface {
 	Object
+	Container
 	GetTemplateId() Id
 	GetName() string
 	GetValue() int
 	GetWeight() int
+	SetLocked(bool)
+	IsLocked() bool
 }
 
 type ItemList []Item

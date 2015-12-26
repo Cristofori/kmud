@@ -475,8 +475,9 @@ func init() {
 					})
 
 					for i, template := range model.GetAllTemplates() {
+						t := template
 						menu.AddAction(strconv.Itoa(i+1), template.GetName(), func() bool {
-							templateMenu(s, template)
+							templateMenu(s, t)
 							return true
 						})
 					}
