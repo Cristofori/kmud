@@ -492,7 +492,7 @@ func init() {
 					self.Usage(s)
 					return
 				} else {
-					itemsInRoom := model.GetItems(s.GetRoom().GetItems())
+					itemsInRoom := s.GetRoom().GetItems()
 					name := strings.ToLower(arg)
 
 					for _, item := range itemsInRoom {

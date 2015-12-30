@@ -59,7 +59,7 @@ type Loginable interface {
 type Container interface {
 	AddItem(Id)
 	RemoveItem(Id) bool
-	GetItems() []Id
+	GetItems() ItemList
 	AddCash(int)
 	RemoveCash(int)
 	GetCash() int

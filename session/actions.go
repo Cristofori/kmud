@@ -37,7 +37,7 @@ var actions = map[string]action{
 						s.printLine("Looking at: %s", char.GetName())
 						s.printLine("    Health: %v/%v", char.GetHitPoints(), char.GetHealth())
 					} else {
-						itemList := model.ItemsIn(s.GetRoom())
+						itemList := s.GetRoom().GetItems()
 						index = utils.BestMatch(arg, itemList.Names())
 
 						if index == -1 {
@@ -45,7 +45,12 @@ var actions = map[string]action{
 						} else if index == -2 {
 							s.printError("Which one do you mean?")
 						} else {
-							s.printLine("Looking at: %s", itemList[index].GetName())
+							item := itemList[index]
+							s.printLine("Looking at: %s", item.GetName())
+							contents := item.GetItems()
+							if len(contents) > 0 {
+								s.printLine("Contents: %s", strings.Join(contents.Names(), ", "))
+							}
 						}
 					}
 				} else {
@@ -195,7 +200,7 @@ var actions = map[string]action{
 				return
 			}
 
-			characterItems := model.GetItems(s.pc.GetItems())
+			characterItems := s.pc.GetItems()
 			index := utils.BestMatch(arg, characterItems.Names())
 
 			if index == -1 {
@@ -224,7 +229,7 @@ var actions = map[string]action{
 				return
 			}
 
-			itemsInRoom := model.GetItems(s.GetRoom().GetItems())
+			itemsInRoom := s.GetRoom().GetItems()
 			index := utils.BestMatch(arg, itemsInRoom.Names())
 
 			if index == -2 {
@@ -243,12 +248,11 @@ var actions = map[string]action{
 	"inv": aAlias("inventory"),
 	"inventory": {
 		exec: func(s *Session, arg string) {
-			itemIds := s.pc.GetItems()
+			items := s.pc.GetItems()
 
-			if len(itemIds) == 0 {
+			if len(items) == 0 {
 				s.printLine("You aren't carrying anything")
 			} else {
-				items := model.GetItems(itemIds)
 				s.printLine("You are carrying: %s", strings.Join(items.Names(), ", "))
 			}
 
@@ -321,7 +325,7 @@ var actions = map[string]action{
 				s.printError("Usage: buy <item name>")
 			}
 
-			items := model.GetItems(store.GetItems())
+			items := store.GetItems()
 			index, err := strconv.Atoi(arg)
 			var item types.Item
 
@@ -374,7 +378,7 @@ var actions = map[string]action{
 				s.printError("Usage: sell <item name>")
 			}
 
-			items := model.GetItems(s.pc.GetItems())
+			items := s.pc.GetItems()
 			index := utils.BestMatch(arg, items.Names())
 
 			if index == -1 {
@@ -409,12 +413,12 @@ var actions = map[string]action{
 
 			s.printLine("\r\nStore cash: %v", store.GetCash())
 
-			itemIds := store.GetItems()
-			if len(itemIds) == 0 {
+			items := store.GetItems()
+			if len(items) == 0 {
 				s.printLine("This store is empty")
 			}
 
-			for i, item := range model.GetItems(itemIds) {
+			for i, item := range items {
 				s.printLine("[%v] %s - %v", i+1, item.GetName(), item.GetValue())
 			}
 
@@ -424,7 +428,7 @@ var actions = map[string]action{
 	"o": aAlias("open"),
 	"open": {
 		exec: func(s *Session, arg string) {
-			items := model.ItemsIn(s.GetRoom())
+			items := s.GetRoom().GetItems()
 			containers := types.ItemList{}
 
 			for _, item := range items {
@@ -449,7 +453,7 @@ var actions = map[string]action{
 								s.printError("You have nothing to deposit")
 							} else {
 								utils.ExecMenu(fmt.Sprintf("Deposit into %s", container.GetName()), s, func(menu *utils.Menu) {
-									for i, item := range model.GetItems(s.pc.GetItems()) {
+									for i, item := range s.pc.GetItems() {
 										locItem := item
 										menu.AddAction(strconv.Itoa(i+1), item.GetName(), func() bool {
 											if s.pc.RemoveItem(locItem.GetId()) {
@@ -469,7 +473,7 @@ var actions = map[string]action{
 								s.printError("There is nothing to withdraw")
 							} else {
 								utils.ExecMenu(fmt.Sprintf("Withdraw from %s", container.GetName()), s, func(menu *utils.Menu) {
-									for i, item := range model.GetItems(container.GetItems()) {
+									for i, item := range container.GetItems() {
 										locItem := item
 										menu.AddAction(strconv.Itoa(i+1), item.GetName(), func() bool {
 											if container.RemoveItem(locItem.GetId()) {

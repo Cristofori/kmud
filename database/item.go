@@ -124,8 +124,7 @@ func (self *Item) GetValue() int {
 func (self *Item) GetWeight() int {
 	weight := self.GetTemplate().GetWeight()
 
-	for _, id := range self.GetItems() {
-		item := Retrieve(id, types.ItemType).(types.Item)
+	for _, item := range self.GetItems() {
 		weight += item.GetWeight()
 	}
 	return weight

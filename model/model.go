@@ -407,21 +407,6 @@ func GetItem(id types.Id) types.Item {
 	return db.Retrieve(id, types.ItemType).(types.Item)
 }
 
-func GetItems(itemIds []types.Id) types.ItemList {
-	items := make(types.ItemList, len(itemIds))
-
-	for i, itemId := range itemIds {
-		items[i] = GetItem(itemId)
-	}
-
-	sort.Sort(items)
-	return items
-}
-
-func ItemsIn(room types.Room) types.ItemList {
-	return GetItems(room.GetItems())
-}
-
 func DeleteItemId(itemId types.Id) {
 	DeleteItem(itemId)
 }

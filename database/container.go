@@ -3,6 +3,7 @@ package database
 import (
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type Container struct {
@@ -45,10 +46,19 @@ func (self *Container) RemoveItem(id types.Id) bool {
 	return false
 }
 
-func (self *Container) GetItems() []types.Id {
+func (self *Container) GetItems() types.ItemList {
 	self.ReadLock()
 	defer self.ReadUnlock()
-	return idSetToList(self.Inventory)
+
+	items := make(types.ItemList, len(self.Inventory))
+
+	i := 0
+	for id := range self.Inventory {
+		items[i] = Retrieve(bson.ObjectIdHex(id), types.ItemType).(types.Item)
+		i++
+	}
+
+	return items
 }
 
 func (self *Container) SetCash(cash int) {
