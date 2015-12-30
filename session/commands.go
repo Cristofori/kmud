@@ -860,6 +860,32 @@ func init() {
 				s.printLine("%v", model.GetWorld().GetTime())
 			},
 		},
+		"join": {
+			admin: true,
+			usage: "/join <player name>",
+			exec: func(self *command, s *Session, arg string) {
+				target := model.GetCharacterByName(arg)
+				if target == nil {
+					s.printError("Target not found")
+				} else {
+					model.MoveCharacterToRoom(s.pc, model.GetRoom(target.GetRoomId()))
+					s.PrintRoom()
+				}
+			},
+		},
+		"bring": {
+			admin: true,
+			usage: "/bring <player name>",
+			exec: func(self *command, s *Session, arg string) {
+				// TODO - The target receives no indication that they've been moved
+				target := model.GetCharacterByName(arg)
+				if target == nil {
+					s.printError("Target not found")
+				} else {
+					model.MoveCharacterToRoom(target, s.GetRoom())
+				}
+			},
+		},
 	}
 }
 
