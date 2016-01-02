@@ -88,6 +88,7 @@ type Character interface {
 	SetHealth(int)
 	GetSkills() []Id
 	AddSkill(Id)
+	GetWeight() int
 }
 
 type CharacterList []Character

@@ -12,9 +12,11 @@ type Character struct {
 
 	RoomId    types.Id `bson:",omitempty"`
 	Name      string
-	Health    int
 	HitPoints int
 	Skills    utils.Set
+
+	Strength int
+	Vitality int
 }
 
 type Pc struct {
@@ -75,9 +77,11 @@ func NewSpawner(name string, areaId types.Id) *Spawner {
 func (self *Character) initCharacter(name string, objType types.ObjectType, roomId types.Id) {
 	self.RoomId = roomId
 	self.Cash = 0
-	self.Health = 100
 	self.HitPoints = 100
 	self.Name = utils.FormatName(name)
+
+	self.Strength = 10
+	self.Vitality = 100
 }
 
 func (self *Character) GetName() string {
@@ -94,6 +98,24 @@ func (self *Character) SetName(name string) {
 		self.WriteUnlock()
 		self.modified()
 	}
+}
+
+func (self *Character) GetCapacity() int {
+	return self.GetStrength() * 10
+}
+
+func (self *Character) GetWeight() int {
+	weight := 0
+	for _, item := range self.GetItems() {
+		weight += item.GetWeight()
+	}
+	return weight
+}
+
+func (self *Character) GetStrength() int {
+	self.ReadLock()
+	defer self.ReadUnlock()
+	return self.Strength
 }
 
 func (self *Pc) SetOnline(online bool) {
@@ -211,11 +233,11 @@ func (self *Character) SetHealth(health int) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
-	if health != self.Health {
-		self.Health = health
+	if health != self.Vitality {
+		self.Vitality = health
 
-		if self.HitPoints > self.Health {
-			self.HitPoints = self.Health
+		if self.HitPoints > self.Vitality {
+			self.HitPoints = self.Vitality
 		}
 
 		self.modified()
@@ -226,15 +248,15 @@ func (self *Character) GetHealth() int {
 	self.ReadLock()
 	defer self.ReadUnlock()
 
-	return self.Health
+	return self.Vitality
 }
 
 func (self *Character) SetHitPoints(hitpoints int) {
 	self.WriteLock()
 	defer self.WriteUnlock()
 
-	if hitpoints > self.Health {
-		hitpoints = self.Health
+	if hitpoints > self.Vitality {
+		hitpoints = self.Vitality
 	}
 
 	if hitpoints != self.HitPoints {

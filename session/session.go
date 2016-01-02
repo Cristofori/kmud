@@ -129,8 +129,12 @@ func (self *Session) Exec() {
 	}
 }
 
+func (self *Session) WriteLinef(line string, a ...interface{}) {
+	self.WriteLineColor(types.ColorWhite, line, a...)
+}
+
 func (self *Session) WriteLine(line string) {
-	self.printLine(line)
+	self.WriteLineColor(types.ColorWhite, line)
 }
 
 func (self *Session) WriteLineColor(color types.Color, line string, a ...interface{}) {

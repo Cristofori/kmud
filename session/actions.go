@@ -34,8 +34,8 @@ var actions = map[string]action{
 						s.printError("Which one do you mean?")
 					} else if index != -1 {
 						char := charList[index]
-						s.printLine("Looking at: %s", char.GetName())
-						s.printLine("    Health: %v/%v", char.GetHitPoints(), char.GetHealth())
+						s.WriteLinef("Looking at: %s", char.GetName())
+						s.WriteLinef("    Health: %v/%v", char.GetHitPoints(), char.GetHealth())
 					} else {
 						itemList := s.GetRoom().GetItems()
 						index = utils.BestMatch(arg, itemList.Names())
@@ -46,10 +46,12 @@ var actions = map[string]action{
 							s.printError("Which one do you mean?")
 						} else {
 							item := itemList[index]
-							s.printLine("Looking at: %s", item.GetName())
+							s.WriteLinef("Looking at: %s", item.GetName())
 							contents := item.GetItems()
 							if len(contents) > 0 {
-								s.printLine("Contents: %s", strings.Join(contents.Names(), ", "))
+								s.WriteLinef("Contents: %s", strings.Join(contents.Names(), ", "))
+							} else {
+								s.WriteLine("(empty)")
 							}
 						}
 					}
@@ -251,12 +253,17 @@ var actions = map[string]action{
 			items := s.pc.GetItems()
 
 			if len(items) == 0 {
-				s.printLine("You aren't carrying anything")
+				s.WriteLinef("You aren't carrying anything")
 			} else {
-				s.printLine("You are carrying: %s", strings.Join(items.Names(), ", "))
+				names := make([]string, len(items))
+				for i, item := range items {
+					names[i] = fmt.Sprintf("%s (%v)", item.GetName(), item.GetWeight())
+				}
+				s.WriteLinef("You are carrying: %s", strings.Join(names, ", "))
 			}
 
-			s.printLine("Cash: %v", s.pc.GetCash())
+			s.WriteLinef("Cash: %v", s.pc.GetCash())
+			s.WriteLinef("Weight: %v/%v", s.pc.GetWeight(), s.pc.GetCapacity())
 		},
 	},
 	"help": {
