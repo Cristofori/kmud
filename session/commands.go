@@ -982,7 +982,15 @@ func templateMenu(s *Session, template types.Template) {
 		})
 
 		menu.AddAction("d", "Delete", func() bool {
-			// TODO - Delete template and all items referring to it (with appropriate warning)
+			items := model.GetTemplateItems(template.GetId())
+			if len(items) > 0 {
+				if !s.getConfirmation(fmt.Sprintf("%v associated items will also be deleted, proceed? ", len(items))) {
+					return true
+				}
+			}
+
+			model.DeleteTemplate(template.GetId())
+
 			return false
 		})
 

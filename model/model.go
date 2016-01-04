@@ -399,6 +399,20 @@ func GetTemplate(id types.Id) types.Template {
 	return db.Retrieve(id, types.TemplateType).(types.Template)
 }
 
+func DeleteTemplate(id types.Id) {
+	DeleteItems(GetTemplateItems(id))
+	// db.DeleteObject(id)
+}
+
+func GetTemplateItems(templateId types.Id) types.ItemList {
+	ids := db.Find(types.ItemType, bson.M{"templateid": templateId})
+	items := make(types.ItemList, len(ids))
+	for i, id := range ids {
+		items[i] = db.Retrieve(id, types.ItemType).(types.Item)
+	}
+	return items
+}
+
 func CreateItem(templateId types.Id) types.Item {
 	return db.NewItem(templateId)
 }
@@ -407,12 +421,19 @@ func GetItem(id types.Id) types.Item {
 	return db.Retrieve(id, types.ItemType).(types.Item)
 }
 
-func DeleteItemId(itemId types.Id) {
-	DeleteItem(itemId)
+func DeleteItem(itemId types.Id) {
+	// Pc, Npc, Item
+	ids := db.Find(types.PcType, bson.M{"inventory": bson.M{"$in": itemId}})
+
+	fmt.Println("Containers ids:", ids)
+
+	// db.DeleteObject(itemId)
 }
 
-func DeleteItem(itemId types.Id) {
-	db.DeleteObject(itemId)
+func DeleteItems(items types.ItemList) {
+	for _, item := range items {
+		DeleteItem(item.GetId())
+	}
 }
 
 func MoveCharacterToRoom(character types.Character, newRoom types.Room) {
