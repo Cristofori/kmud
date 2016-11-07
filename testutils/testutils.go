@@ -5,8 +5,6 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-
-	"github.com/Cristofori/kmud/utils"
 )
 
 type TestWriter struct {
@@ -62,7 +60,7 @@ func (self *TestCommunicable) GetInput(prompt string) string {
 	self.Write(prompt)
 	buf := make([]byte, 1024)
 	n, _ := self.Read(buf)
-	return utils.Simplify(string(buf[:n]))
+	return strings.ToLower(strings.TrimSpace(string(buf[:n])))
 }
 
 func (self *TestCommunicable) GetWindowSize() (int, int) {

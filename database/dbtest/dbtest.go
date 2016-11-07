@@ -105,7 +105,7 @@ func Test_ThreadSafety(t *testing.T) {
 }
 
 func Test_User(t *testing.T) {
-	user := database.NewUser("testuser", "")
+	user := database.NewUser("testuser", "", false)
 
 	if user.IsOnline() {
 		t.Errorf("Newly created user shouldn't be online")

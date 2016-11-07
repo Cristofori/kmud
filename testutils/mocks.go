@@ -120,8 +120,8 @@ func (*MockContainer) GetCapacity() int {
 func (*MockContainer) SetCapacity(int) {
 }
 
-func (*MockContainer) GetItems() []types.Id {
-	return []types.Id{}
+func (*MockContainer) GetItems() types.ItemList {
+	return types.ItemList{}
 }
 
 type MockCharacter struct {
@@ -148,6 +148,10 @@ func (*MockCharacter) Hit(int) {
 }
 
 func (*MockCharacter) SetHitPoints(int) {
+}
+
+func (*MockCharacter) GetWeight() int {
+	return 0
 }
 
 type MockPC struct {

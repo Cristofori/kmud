@@ -16,16 +16,6 @@ func CreateUser(name string, password string, admin bool) types.User {
 	return db.NewUser(name, password, admin)
 }
 
-func GetOrCreateUser(name string, password string, admin bool) types.User {
-	user := GetUserByName(name)
-
-	if user == nil {
-		user = CreateUser(name, password, admin)
-	}
-
-	return user
-}
-
 func GetUsers() types.UserList {
 	ids := db.FindAll(types.UserType)
 	users := make(types.UserList, len(ids))
