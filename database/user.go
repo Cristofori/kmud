@@ -25,11 +25,12 @@ type User struct {
 	terminalType string
 }
 
-func NewUser(name string, password string) *User {
+func NewUser(name string, password string, admin bool) *User {
 	user := &User{
 		Name:         utils.FormatName(name),
 		Password:     hash(password),
 		ColorMode:    types.ColorModeNone,
+		Admin:        admin,
 		online:       false,
 		windowWidth:  80,
 		windowHeight: 40,
