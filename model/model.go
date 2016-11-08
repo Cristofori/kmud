@@ -416,18 +416,48 @@ func GetItem(id types.Id) types.Item {
 }
 
 func DeleteItem(itemId types.Id) {
-	// Pc, Npc, Item
-	ids := db.Find(types.PcType, bson.M{"inventory": bson.M{"$in": itemId}})
-
-	fmt.Println("Containers ids:", ids)
-
-	// db.DeleteObject(itemId)
+	db.DeleteObject(itemId)
 }
 
 func DeleteItems(items types.ItemList) {
 	for _, item := range items {
 		DeleteItem(item.GetId())
 	}
+}
+
+func ItemsIn(containerId types.Id) types.ItemList {
+	ids := db.Find(types.ItemType, bson.M{"containerid": containerId})
+	items := make(types.ItemList, len(ids))
+
+	for i, id := range ids {
+		items[i] = GetItem(id)
+	}
+
+	return items
+}
+
+func CountItemsIn(containerId types.Id) int {
+	return len(db.Find(types.ItemType, bson.M{"containerid": containerId}))
+}
+
+func ItemWeight(item types.Item) int {
+	template := GetTemplate(item.GetTemplateId())
+	weight := template.GetWeight()
+	items := ItemsIn(item.GetId())
+	for _, item := range items {
+		weight += ItemWeight(item)
+	}
+
+	return weight
+}
+
+func CharacterWeight(character types.Character) int {
+	items := ItemsIn(character.GetId())
+	weight := 0
+	for _, item := range items {
+		weight += ItemWeight(item)
+	}
+	return weight
 }
 
 func MoveCharacterToRoom(character types.Character, newRoom types.Room) {

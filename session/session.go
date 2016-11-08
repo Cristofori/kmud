@@ -343,7 +343,7 @@ func (self *Session) PrintRoom() {
 func (self *Session) printRoom(room types.Room) {
 	pcs := model.PlayerCharactersIn(self.pc.GetRoomId(), self.pc.GetId())
 	npcs := model.NpcsIn(room.GetId())
-	items := room.GetItems()
+	items := model.ItemsIn(room.GetId())
 	store := model.StoreIn(room.GetId())
 
 	var area types.Area

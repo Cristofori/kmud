@@ -37,7 +37,7 @@ var actions = map[string]action{
 						s.WriteLinef("Looking at: %s", char.GetName())
 						s.WriteLinef("    Health: %v/%v", char.GetHitPoints(), char.GetHealth())
 					} else {
-						itemList := s.GetRoom().GetItems()
+						itemList := model.ItemsIn(s.GetRoom().GetId())
 						index = utils.BestMatch(arg, itemList.Names())
 
 						if index == -1 {
@@ -47,7 +47,7 @@ var actions = map[string]action{
 						} else {
 							item := itemList[index]
 							s.WriteLinef("Looking at: %s", item.GetName())
-							contents := item.GetItems()
+							contents := model.ItemsIn(item.GetId())
 							if len(contents) > 0 {
 								s.WriteLinef("Contents: %s", strings.Join(contents.Names(), ", "))
 							} else {
@@ -202,7 +202,7 @@ var actions = map[string]action{
 				return
 			}
 
-			characterItems := s.pc.GetItems()
+			characterItems := model.ItemsIn(s.pc.GetId())
 			index := utils.BestMatch(arg, characterItems.Names())
 
 			if index == -1 {
@@ -211,8 +211,7 @@ var actions = map[string]action{
 				s.printError("Which one do you mean?")
 			} else {
 				item := characterItems[index]
-				s.pc.RemoveItem(item.GetId())
-				s.GetRoom().AddItem(item.GetId())
+				item.SetContainerId(s.GetRoom().GetId())
 				s.printLine("Dropped %s", item.GetName())
 			}
 		},
@@ -231,7 +230,7 @@ var actions = map[string]action{
 				return
 			}
 
-			itemsInRoom := s.GetRoom().GetItems()
+			itemsInRoom := model.ItemsIn(s.GetRoom().GetId())
 			index := utils.BestMatch(arg, itemsInRoom.Names())
 
 			if index == -2 {
@@ -240,8 +239,7 @@ var actions = map[string]action{
 				s.printError("Item %s not found", arg)
 			} else {
 				item := itemsInRoom[index]
-				s.pc.AddItem(item.GetId())
-				s.GetRoom().RemoveItem(item.GetId())
+				item.SetContainerId(s.pc.GetId())
 				s.printLine("Picked up %s", item.GetName())
 			}
 		},
@@ -250,20 +248,21 @@ var actions = map[string]action{
 	"inv": aAlias("inventory"),
 	"inventory": {
 		exec: func(s *Session, arg string) {
-			items := s.pc.GetItems()
+			items := model.ItemsIn(s.pc.GetId())
 
 			if len(items) == 0 {
 				s.WriteLinef("You aren't carrying anything")
 			} else {
 				names := make([]string, len(items))
 				for i, item := range items {
-					names[i] = fmt.Sprintf("%s (%v)", item.GetName(), item.GetWeight())
+					template := model.GetTemplate(item.GetTemplateId())
+					names[i] = fmt.Sprintf("%s (%v)", item.GetName(), template.GetWeight())
 				}
 				s.WriteLinef("You are carrying: %s", strings.Join(names, ", "))
 			}
 
 			s.WriteLinef("Cash: %v", s.pc.GetCash())
-			s.WriteLinef("Weight: %v/%v", s.pc.GetWeight(), s.pc.GetCapacity())
+			s.WriteLinef("Weight: %v/%v", model.CharacterWeight(s.pc), s.pc.GetCapacity())
 		},
 	},
 	"help": {
@@ -332,7 +331,7 @@ var actions = map[string]action{
 				s.printError("Usage: buy <item name>")
 			}
 
-			items := store.GetItems()
+			items := model.ItemsIn(store.GetId())
 			index, err := strconv.Atoi(arg)
 			var item types.Item
 
@@ -359,8 +358,8 @@ var actions = map[string]action{
 				confirmed := s.getConfirmation(fmt.Sprintf("Buy %s for %v? ", item.GetName(), item.GetValue()))
 
 				if confirmed {
-					if store.RemoveItem(item.GetId()) {
-						s.pc.AddItem(item.GetId())
+					// TODO - Transferring the item and money should be guarded by some kind of global session transaction
+					if item.SetContainerId(s.pc.GetId()) {
 						s.pc.RemoveCash(item.GetValue())
 						store.AddCash(item.GetValue())
 						s.printLine(types.Colorize(types.ColorGreen, "Bought %s"), item.GetName())
@@ -385,7 +384,7 @@ var actions = map[string]action{
 				s.printError("Usage: sell <item name>")
 			}
 
-			items := s.pc.GetItems()
+			items := model.ItemsIn(s.pc.GetId())
 			index := utils.BestMatch(arg, items.Names())
 
 			if index == -1 {
@@ -398,8 +397,8 @@ var actions = map[string]action{
 				confirmed := s.getConfirmation(fmt.Sprintf("Sell %s for %v? ", item.GetName(), item.GetValue()))
 
 				if confirmed {
-					if s.pc.RemoveItem(item.GetId()) {
-						store.AddItem(item.GetId())
+					// TODO - Transferring the item and money should be guarded by some kind of global session transaction
+					if item.SetContainerId(store.GetId()) {
 						store.RemoveCash(item.GetValue())
 						s.pc.AddCash(item.GetValue())
 						s.printLine(types.Colorize(types.ColorGreen, "Sold %s"), item.GetName())
@@ -420,7 +419,7 @@ var actions = map[string]action{
 
 			s.printLine("\r\nStore cash: %v", store.GetCash())
 
-			items := store.GetItems()
+			items := model.ItemsIn(store.GetId())
 			if len(items) == 0 {
 				s.printLine("This store is empty")
 			}
@@ -435,7 +434,7 @@ var actions = map[string]action{
 	"o": aAlias("open"),
 	"open": {
 		exec: func(s *Session, arg string) {
-			items := s.GetRoom().GetItems()
+			items := model.ItemsIn(s.GetRoom().GetId())
 			containers := types.ItemList{}
 
 			for _, item := range items {
@@ -456,17 +455,15 @@ var actions = map[string]action{
 
 					utils.ExecMenu(container.GetName(), s, func(menu *utils.Menu) {
 						menu.AddAction("d", "Deposit", func() bool {
-							if len(s.pc.GetItems()) == 0 {
+							if model.CountItemsIn(s.pc.GetId()) == 0 {
 								s.printError("You have nothing to deposit")
 							} else {
 								utils.ExecMenu(fmt.Sprintf("Deposit into %s", container.GetName()), s, func(menu *utils.Menu) {
-									for i, item := range s.pc.GetItems() {
+									for i, item := range model.ItemsIn(s.pc.GetId()) {
 										locItem := item
 										menu.AddAction(strconv.Itoa(i+1), item.GetName(), func() bool {
-											if s.pc.RemoveItem(locItem.GetId()) {
-												container.AddItem(locItem.GetId())
-											}
-											return len(s.pc.GetItems()) > 0
+											locItem.SetContainerId(container.GetId())
+											return model.CountItemsIn(s.pc.GetId()) > 0
 										})
 									}
 								})
@@ -476,17 +473,15 @@ var actions = map[string]action{
 						})
 
 						menu.AddAction("w", "Withdraw", func() bool {
-							if len(container.GetItems()) == 0 {
+							if model.CountItemsIn(container.GetId()) == 0 {
 								s.printError("There is nothing to withdraw")
 							} else {
 								utils.ExecMenu(fmt.Sprintf("Withdraw from %s", container.GetName()), s, func(menu *utils.Menu) {
-									for i, item := range container.GetItems() {
+									for i, item := range model.ItemsIn(container.GetId()) {
 										locItem := item
 										menu.AddAction(strconv.Itoa(i+1), item.GetName(), func() bool {
-											if container.RemoveItem(locItem.GetId()) {
-												s.pc.AddItem(locItem.GetId())
-											}
-											return len(container.GetItems()) > 0
+											locItem.SetContainerId(s.pc.GetId())
+											return model.CountItemsIn(container.GetId()) > 0
 										})
 									}
 								})

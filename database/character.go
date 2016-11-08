@@ -104,14 +104,6 @@ func (self *Character) GetCapacity() int {
 	return self.GetStrength() * 10
 }
 
-func (self *Character) GetWeight() int {
-	weight := 0
-	for _, item := range self.GetItems() {
-		weight += item.GetWeight()
-	}
-	return weight
-}
-
 func (self *Character) GetStrength() int {
 	self.ReadLock()
 	defer self.ReadUnlock()
@@ -143,7 +135,6 @@ func (self *Character) SetRoomId(id types.Id) {
 func (self *Character) GetRoomId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.RoomId
 }
 

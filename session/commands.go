@@ -492,12 +492,11 @@ func init() {
 					self.Usage(s)
 					return
 				} else {
-					itemsInRoom := s.GetRoom().GetItems()
+					itemsInRoom := model.ItemsIn(s.GetRoom().GetId())
 					name := strings.ToLower(arg)
 
 					for _, item := range itemsInRoom {
 						if strings.ToLower(item.GetName()) == name {
-							s.GetRoom().RemoveItem(item.GetId())
 							model.DeleteItem(item.GetId())
 							s.printLine("Item destroyed")
 							return
@@ -976,7 +975,7 @@ func templateMenu(s *Session, template types.Template) {
 	utils.ExecMenu(template.GetName(), s, func(menu *utils.Menu) {
 		menu.AddAction("c", "Create", func() bool {
 			item := model.CreateItem(template.GetId())
-			s.pc.AddItem(item.GetId())
+			item.SetContainerId(s.pc.GetId())
 			s.printLine("Item created")
 			return true
 		})

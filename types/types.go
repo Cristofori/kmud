@@ -57,9 +57,6 @@ type Loginable interface {
 }
 
 type Container interface {
-	AddItem(Id)
-	RemoveItem(Id) bool
-	GetItems() ItemList
 	AddCash(int)
 	RemoveCash(int)
 	GetCash() int
@@ -88,7 +85,6 @@ type Character interface {
 	SetHealth(int)
 	GetSkills() []Id
 	AddSkill(Id)
-	GetWeight() int
 }
 
 type CharacterList []Character
@@ -269,9 +265,10 @@ type Item interface {
 	GetTemplateId() Id
 	GetName() string
 	GetValue() int
-	GetWeight() int
 	SetLocked(bool)
 	IsLocked() bool
+	GetContainerId() Id
+	SetContainerId(Id) bool
 }
 
 type ItemList []Item
