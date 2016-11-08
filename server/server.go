@@ -123,7 +123,8 @@ func newUser(conn *wrappedConnection) types.User {
 			}
 			conn.WontEcho()
 
-			user = model.CreateUser(name, password)
+			admin := model.UserCount() == 0
+			user = model.CreateUser(name, password, admin)
 			return user
 		}
 	}

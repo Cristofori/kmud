@@ -12,18 +12,8 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func CreateUser(name string, password string) types.User {
-	return db.NewUser(name, password)
-}
-
-func GetOrCreateUser(name string, password string) types.User {
-	user := GetUserByName(name)
-
-	if user == nil {
-		user = CreateUser(name, password)
-	}
-
-	return user
+func CreateUser(name string, password string, admin bool) types.User {
+	return db.NewUser(name, password, admin)
 }
 
 func GetUsers() types.UserList {
@@ -35,6 +25,10 @@ func GetUsers() types.UserList {
 	}
 
 	return users
+}
+
+func UserCount() int {
+	return len(db.FindAll(types.UserType))
 }
 
 func GetUserByName(username string) types.User {

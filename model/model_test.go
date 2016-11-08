@@ -44,19 +44,10 @@ func (s *ModelSuite) TestUserFunctions(c *C) {
 	name1 := "Test_name1"
 	password1 := "test_password2"
 
-	user1 := CreateUser(name1, password1)
+	user1 := CreateUser(name1, password1, false)
 
 	c.Assert(user1.GetName(), Equals, name1)
 	c.Assert(user1.VerifyPassword(password1), Equals, true)
-
-	user2 := GetOrCreateUser(name1, password1)
-	c.Assert(user1, Equals, user2)
-
-	name2 := "test_name2"
-	password2 := "test_password2"
-	user3 := GetOrCreateUser(name2, password2)
-	c.Assert(user3, Not(Equals), user2)
-	c.Assert(user3, Not(Equals), user1)
 
 	userByName := GetUserByName(name1)
 	c.Assert(userByName, Equals, user1)
