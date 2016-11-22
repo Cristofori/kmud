@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
@@ -52,8 +53,8 @@ func (self *TestCommunicable) Write(text string) {
 	self.TestReadWriter.Write([]byte(text))
 }
 
-func (self *TestCommunicable) WriteLine(line string) {
-	self.Write(line + "\n")
+func (self *TestCommunicable) WriteLine(line string, a ...interface{}) {
+	self.Write(fmt.Sprintf(line, a...) + "\n")
 }
 
 func (self *TestCommunicable) GetInput(prompt string) string {

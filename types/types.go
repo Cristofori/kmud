@@ -268,7 +268,7 @@ type Item interface {
 	SetLocked(bool)
 	IsLocked() bool
 	GetContainerId() Id
-	SetContainerId(Id) bool
+	SetContainerId(Id, Id) bool
 }
 
 type ItemList []Item

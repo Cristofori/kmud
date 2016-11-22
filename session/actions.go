@@ -211,8 +211,11 @@ var actions = map[string]action{
 				s.printError("Which one do you mean?")
 			} else {
 				item := characterItems[index]
-				item.SetContainerId(s.GetRoom().GetId())
-				s.WriteLine("Dropped %s", item.GetName())
+				if item.SetContainerId(s.GetRoom().GetId(), s.pc.GetId()) {
+					s.WriteLine("Dropped %s", item.GetName())
+				} else {
+					s.printError("Not found")
+				}
 			}
 		},
 	},
@@ -236,11 +239,14 @@ var actions = map[string]action{
 			if index == -2 {
 				s.printError("Which one do you mean?")
 			} else if index == -1 {
-				s.printError("Item %s not found", arg)
+				s.printError("Not found")
 			} else {
 				item := itemsInRoom[index]
-				item.SetContainerId(s.pc.GetId())
-				s.WriteLine("Picked up %s", item.GetName())
+				if item.SetContainerId(s.pc.GetId(), s.GetRoom().GetId()) {
+					s.WriteLine("Picked up %s", item.GetName())
+				} else {
+					s.printError("Not found")
+				}
 			}
 		},
 	},
@@ -359,12 +365,12 @@ var actions = map[string]action{
 
 				if confirmed {
 					// TODO - Transferring the item and money should be guarded by some kind of global session transaction
-					if item.SetContainerId(s.pc.GetId()) {
+					if item.SetContainerId(s.pc.GetId(), store.GetId()) {
 						s.pc.RemoveCash(item.GetValue())
 						store.AddCash(item.GetValue())
 						s.WriteLineColor(types.ColorGreen, "Bought %s", item.GetName())
 					} else {
-						s.printError("That item is no longer available")
+						s.printError("Transaction failed")
 					}
 				} else {
 					s.printError("Purchase canceled")
@@ -398,13 +404,15 @@ var actions = map[string]action{
 
 				if confirmed {
 					// TODO - Transferring the item and money should be guarded by some kind of global session transaction
-					if item.SetContainerId(store.GetId()) {
+					if item.SetContainerId(store.GetId(), s.pc.GetId()) {
 						store.RemoveCash(item.GetValue())
 						s.pc.AddCash(item.GetValue())
 						s.WriteLineColor(types.ColorGreen, "Sold %s", item.GetName())
 					} else {
 						s.printError("Transaction failed")
 					}
+				} else {
+					s.printError("Sale canceled")
 				}
 			}
 		},
@@ -462,7 +470,11 @@ var actions = map[string]action{
 									for i, item := range model.ItemsIn(s.pc.GetId()) {
 										locItem := item
 										menu.AddActionI(i, item.GetName(), func() bool {
-											locItem.SetContainerId(container.GetId())
+											if locItem.SetContainerId(container.GetId(), s.pc.GetId()) {
+												s.WriteLine("Item deposited")
+											} else {
+												s.printError("Failed to deposit item")
+											}
 											return model.CountItemsIn(s.pc.GetId()) > 0
 										})
 									}
@@ -475,8 +487,11 @@ var actions = map[string]action{
 						for i, item := range model.ItemsIn(container.GetId()) {
 							locItem := item
 							menu.AddActionI(i, item.GetName(), func() bool {
-								locItem.SetContainerId(s.pc.GetId())
-								s.WriteLine("Took %s from %s", locItem.GetName(), container.GetName())
+								if locItem.SetContainerId(s.pc.GetId(), container.GetId()) {
+									s.WriteLine("Took %s from %s", locItem.GetName(), container.GetName())
+								} else {
+									s.printError("Failed to take item")
+								}
 								return true
 							})
 						}

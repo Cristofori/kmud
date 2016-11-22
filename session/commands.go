@@ -974,7 +974,7 @@ func templateMenu(s *Session, template types.Template) {
 	utils.ExecMenu(template.GetName(), s, func(menu *utils.Menu) {
 		menu.AddAction("c", "Create", func() bool {
 			item := model.CreateItem(template.GetId())
-			item.SetContainerId(s.pc.GetId())
+			item.SetContainerId(s.pc.GetId(), nil)
 			s.WriteLine("Item created")
 			return true
 		})

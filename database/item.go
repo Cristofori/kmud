@@ -47,21 +47,17 @@ func (self *Template) GetName() string {
 }
 
 func (self *Template) SetName(name string) {
-	if name != self.GetName() {
-		self.WriteLock()
-		self.Name = utils.FormatName(name)
-		self.WriteUnlock()
-		self.modified()
-	}
+	self.WriteLock()
+	defer self.WriteUnlock()
+	self.Name = utils.FormatName(name)
+	self.modified()
 }
 
 func (self *Template) SetValue(value int) {
-	if value != self.GetValue() {
-		self.WriteLock()
-		self.Value = value
-		self.WriteUnlock()
-		self.modified()
-	}
+	self.WriteLock()
+	defer self.WriteUnlock()
+	self.Value = value
+	self.modified()
 }
 
 func (self *Template) GetValue() int {
@@ -77,12 +73,10 @@ func (self *Template) GetWeight() int {
 }
 
 func (self *Template) SetWeight(weight int) {
-	if weight != self.GetWeight() {
-		self.WriteLock()
-		self.Weight = weight
-		self.WriteUnlock()
-		self.modified()
-	}
+	self.WriteLock()
+	defer self.WriteUnlock()
+	self.Weight = weight
+	self.modified()
 }
 
 func (self *Template) GetCapacity() int {
@@ -92,12 +86,10 @@ func (self *Template) GetCapacity() int {
 }
 
 func (self *Template) SetCapacity(capacity int) {
-	if capacity != self.GetCapacity() {
-		self.WriteLock()
-		self.Capacity = capacity
-		self.WriteUnlock()
-		self.modified()
-	}
+	self.WriteLock()
+	defer self.WriteUnlock()
+	self.Capacity = capacity
+	self.modified()
 }
 
 // Item
@@ -134,12 +126,10 @@ func (self *Item) IsLocked() bool {
 }
 
 func (self *Item) SetLocked(locked bool) {
-	if locked != self.IsLocked() {
-		self.WriteLock()
-		self.Locked = locked
-		self.WriteUnlock()
-		self.modified()
-	}
+	self.WriteLock()
+	defer self.WriteUnlock()
+	self.Locked = locked
+	self.modified()
 }
 
 func (self *Item) GetContainerId() types.Id {
@@ -148,15 +138,14 @@ func (self *Item) GetContainerId() types.Id {
 	return self.ContainerId
 }
 
-func (self *Item) SetContainerId(id types.Id) bool {
+func (self *Item) SetContainerId(id types.Id, from types.Id) bool {
 	self.WriteLock()
-
-	if id != self.ContainerId {
-		self.ContainerId = id
+	if from != self.ContainerId {
 		self.WriteUnlock()
-		self.syncModified()
-		return true
+		return false
 	}
+	self.ContainerId = id
 	self.WriteUnlock()
-	return false
+	self.syncModified()
+	return true
 }
