@@ -57,8 +57,8 @@ func (self *DbObject) modified() {
 	modifiedObjectChannel <- self.Id
 }
 
-func modified(id types.Id) {
-	modifiedObjectChannel <- id
+func (self *DbObject) syncModified() {
+	commitObject(self.Id)
 }
 
 func idSetToList(set utils.Set) []types.Id {

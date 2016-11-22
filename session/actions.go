@@ -41,7 +41,7 @@ var actions = map[string]action{
 						index = utils.BestMatch(arg, itemList.Names())
 
 						if index == -1 {
-							s.printLine("Nothing to see")
+							s.WriteLine("Nothing to see")
 						} else if index == -2 {
 							s.printError("Which one do you mean?")
 						} else {
@@ -62,7 +62,7 @@ var actions = map[string]action{
 						if roomToSee != nil {
 							s.printRoom(roomToSee)
 						} else {
-							s.printLine("Nothing to see")
+							s.WriteLine("Nothing to see")
 						}
 					} else {
 						s.printError("You can't look in that direction")
@@ -150,7 +150,7 @@ var actions = map[string]action{
 					utils.ExecMenu("Select a skill to add", s, func(menu *utils.Menu) {
 						for i, skill := range model.GetAllSkills() {
 							sk := skill
-							menu.AddAction(strconv.Itoa(i+1), skill.GetName(), func() bool {
+							menu.AddActionI(i, skill.GetName(), func() bool {
 								s.pc.AddSkill(sk.GetId())
 								return true
 							})
@@ -162,9 +162,9 @@ var actions = map[string]action{
 				skills := model.GetSkills(s.pc.GetSkills())
 				for i, skill := range skills {
 					sk := skill
-					menu.AddAction(strconv.Itoa(i+1), skill.GetName(), func() bool {
-						s.printLine("Skill: %v", sk.GetName())
-						s.printLine("  Damage: %v", sk.GetPower())
+					menu.AddActionI(i, skill.GetName(), func() bool {
+						s.WriteLine("Skill: %v", sk.GetName())
+						s.WriteLine("  Damage: %v", sk.GetPower())
 						return true
 					})
 				}
@@ -187,7 +187,7 @@ var actions = map[string]action{
 				s.printError("Which one do you mean?")
 			} else {
 				npc := npcList[index]
-				s.printLine(npc.PrettyConversation())
+				s.WriteLine(npc.PrettyConversation())
 			}
 		},
 	},
@@ -212,7 +212,7 @@ var actions = map[string]action{
 			} else {
 				item := characterItems[index]
 				item.SetContainerId(s.GetRoom().GetId())
-				s.printLine("Dropped %s", item.GetName())
+				s.WriteLine("Dropped %s", item.GetName())
 			}
 		},
 	},
@@ -240,7 +240,7 @@ var actions = map[string]action{
 			} else {
 				item := itemsInRoom[index]
 				item.SetContainerId(s.pc.GetId())
-				s.printLine("Picked up %s", item.GetName())
+				s.WriteLine("Picked up %s", item.GetName())
 			}
 		},
 	},
@@ -267,12 +267,12 @@ var actions = map[string]action{
 	},
 	"help": {
 		exec: func(s *Session, arg string) {
-			s.printLine("HELP!")
+			s.WriteLine("HELP!")
 		},
 	},
 	"ls": {
 		exec: func(s *Session, arg string) {
-			s.printLine("Where do you think you are?!")
+			s.WriteLine("Where do you think you are?!")
 		},
 	},
 	"stop": {
@@ -362,7 +362,7 @@ var actions = map[string]action{
 					if item.SetContainerId(s.pc.GetId()) {
 						s.pc.RemoveCash(item.GetValue())
 						store.AddCash(item.GetValue())
-						s.printLine(types.Colorize(types.ColorGreen, "Bought %s"), item.GetName())
+						s.WriteLineColor(types.ColorGreen, "Bought %s", item.GetName())
 					} else {
 						s.printError("That item is no longer available")
 					}
@@ -401,7 +401,7 @@ var actions = map[string]action{
 					if item.SetContainerId(store.GetId()) {
 						store.RemoveCash(item.GetValue())
 						s.pc.AddCash(item.GetValue())
-						s.printLine(types.Colorize(types.ColorGreen, "Sold %s"), item.GetName())
+						s.WriteLineColor(types.ColorGreen, "Sold %s", item.GetName())
 					} else {
 						s.printError("Transaction failed")
 					}
@@ -417,18 +417,18 @@ var actions = map[string]action{
 				return
 			}
 
-			s.printLine("\r\nStore cash: %v", store.GetCash())
+			s.WriteLine("\r\nStore cash: %v", store.GetCash())
 
 			items := model.ItemsIn(store.GetId())
 			if len(items) == 0 {
-				s.printLine("This store is empty")
+				s.WriteLine("This store is empty")
 			}
 
 			for i, item := range items {
-				s.printLine("[%v] %s - %v", i+1, item.GetName(), item.GetValue())
+				s.WriteLine("[%v] %s - %v", i+1, item.GetName(), item.GetValue())
 			}
 
-			s.printLine("")
+			s.WriteLine("")
 		},
 	},
 	"o": aAlias("open"),
@@ -461,7 +461,7 @@ var actions = map[string]action{
 								utils.ExecMenu(fmt.Sprintf("Deposit into %s", container.GetName()), s, func(menu *utils.Menu) {
 									for i, item := range model.ItemsIn(s.pc.GetId()) {
 										locItem := item
-										menu.AddAction(strconv.Itoa(i+1), item.GetName(), func() bool {
+										menu.AddActionI(i, item.GetName(), func() bool {
 											locItem.SetContainerId(container.GetId())
 											return model.CountItemsIn(s.pc.GetId()) > 0
 										})
@@ -472,23 +472,14 @@ var actions = map[string]action{
 							return true
 						})
 
-						menu.AddAction("w", "Withdraw", func() bool {
-							if model.CountItemsIn(container.GetId()) == 0 {
-								s.printError("There is nothing to withdraw")
-							} else {
-								utils.ExecMenu(fmt.Sprintf("Withdraw from %s", container.GetName()), s, func(menu *utils.Menu) {
-									for i, item := range model.ItemsIn(container.GetId()) {
-										locItem := item
-										menu.AddAction(strconv.Itoa(i+1), item.GetName(), func() bool {
-											locItem.SetContainerId(s.pc.GetId())
-											return model.CountItemsIn(container.GetId()) > 0
-										})
-									}
-								})
-							}
-
-							return true
-						})
+						for i, item := range model.ItemsIn(container.GetId()) {
+							locItem := item
+							menu.AddActionI(i, item.GetName(), func() bool {
+								locItem.SetContainerId(s.pc.GetId())
+								s.WriteLine("Took %s from %s", locItem.GetName(), container.GetName())
+								return true
+							})
+						}
 					})
 				}
 			}

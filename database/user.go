@@ -2,6 +2,7 @@ package database
 
 import (
 	"crypto/sha1"
+	"fmt"
 	"io"
 	"net"
 	"reflect"
@@ -150,8 +151,8 @@ func (self *User) GetInput(prompt string) string {
 	return utils.GetUserInput(self.conn, prompt, self.GetColorMode())
 }
 
-func (self *User) WriteLine(line string) {
-	utils.WriteLine(self.conn, line, self.GetColorMode())
+func (self *User) WriteLine(line string, a ...interface{}) {
+	utils.WriteLine(self.conn, fmt.Sprintf(line, a...), self.GetColorMode())
 }
 
 func (self *User) Write(text string) {

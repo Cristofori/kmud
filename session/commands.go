@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -23,7 +22,7 @@ type command struct {
 }
 
 func (self *command) Usage(s *Session) {
-	s.printLine(fmt.Sprintf("Usage: %s", self.usage))
+	s.WriteLine(fmt.Sprintf("Usage: %s", self.usage))
 }
 
 var commands map[string]*command
@@ -38,7 +37,7 @@ func init() {
 			usage: "/help <command name>",
 			exec: func(self *command, s *Session, arg string) {
 				if arg == "" {
-					s.printLine("List of commands:")
+					s.WriteLine("List of commands:")
 					var names []string
 					for name, command := range commands {
 						if command.alias == "" {
@@ -51,7 +50,7 @@ func init() {
 					pages := utils.Paginate(names, width, height/2)
 
 					for _, page := range pages {
-						s.printLine(page)
+						s.WriteLine(page)
 					}
 				} else {
 					command, found := commands[arg]
@@ -97,7 +96,7 @@ func init() {
 		"location": {
 			admin: false,
 			exec: func(self *command, s *Session, arg string) {
-				s.printLine("%v", s.GetRoom().GetLocation())
+				s.WriteLine("%v", s.GetRoom().GetLocation())
 			},
 		},
 		"room": {
@@ -148,7 +147,7 @@ func init() {
 									}
 
 									a := area
-									menu.AddAction(strconv.Itoa(i+1), actionText, func() bool {
+									menu.AddActionI(i, actionText, func() bool {
 										s.GetRoom().SetAreaId(a.GetId())
 										return true
 									})
@@ -201,7 +200,7 @@ func init() {
 					}
 				}
 
-				s.printLine(utils.TrimEmptyRows(builder.toString()))
+				s.WriteLine(utils.TrimEmptyRows(builder.toString()))
 			},
 		},
 		"zone": {
@@ -210,12 +209,12 @@ func init() {
 			exec: func(self *command, s *Session, arg string) {
 				subcommand, arg := utils.Argify(arg)
 				if subcommand == "" {
-					s.printLine("Current zone: " + types.Colorize(types.ColorBlue, s.currentZone().GetName()))
+					s.WriteLine("Current zone: " + types.Colorize(types.ColorBlue, s.currentZone().GetName()))
 				} else if subcommand == "list" {
 					s.WriteLineColor(types.ColorBlue, "Zones")
 					s.WriteLineColor(types.ColorBlue, "-----")
 					for _, zone := range model.GetZones() {
-						s.printLine(zone.GetName())
+						s.WriteLine(zone.GetName())
 					}
 				} else if arg != "" {
 					if subcommand == "rename" {
@@ -249,7 +248,7 @@ func init() {
 								s.printError("You can't delete the zone you are in")
 							} else {
 								model.DeleteZone(zone.GetId())
-								s.printLine("Zone deleted")
+								s.WriteLine("Zone deleted")
 							}
 						} else {
 							s.printError("Zone not found")
@@ -307,7 +306,7 @@ func init() {
 
 				if newZone != nil {
 					if newZone.GetId() == s.GetRoom().GetZoneId() {
-						s.printLine("You're already in that zone")
+						s.WriteLine("You're already in that zone")
 					} else {
 						zoneRooms := model.GetRoomsInZone(newZone.GetId())
 						if len(zoneRooms) > 0 {
@@ -344,14 +343,14 @@ func init() {
 			exec: func(self *command, s *Session, arg string) {
 				chars := model.GetOnlinePlayerCharacters()
 
-				s.printLine("")
-				s.printLine("Online Players")
-				s.printLine("--------------")
+				s.WriteLine("")
+				s.WriteLine("Online Players")
+				s.WriteLine("--------------")
 
 				for _, char := range chars {
-					s.printLine(char.GetName())
+					s.WriteLine(char.GetName())
 				}
-				s.printLine("")
+				s.WriteLine("")
 			},
 		},
 		"colors": {
@@ -389,20 +388,20 @@ func init() {
 					case types.ColorModeDark:
 						message = message + "Dark"
 					}
-					s.printLine(message)
+					s.WriteLine(message)
 				} else {
 					switch strings.ToLower(arg) {
 					case "none":
 						s.user.SetColorMode(types.ColorModeNone)
-						s.printLine("Color mode set to: None")
+						s.WriteLine("Color mode set to: None")
 					case "light":
 						s.user.SetColorMode(types.ColorModeLight)
-						s.printLine("Color mode set to: Light")
+						s.WriteLine("Color mode set to: Light")
 					case "dark":
 						s.user.SetColorMode(types.ColorModeDark)
-						s.printLine("Color mode set to: Dark")
+						s.WriteLine("Color mode set to: Dark")
 					default:
-						s.printLine("Valid color modes are: None, Light, Dark")
+						s.WriteLine("Valid color modes are: None, Light, Dark")
 					}
 				}
 			},
@@ -424,7 +423,7 @@ func init() {
 						roomToDelete := model.GetRoomByLocation(loc, s.GetRoom().GetZoneId())
 						if roomToDelete != nil {
 							model.DeleteRoom(roomToDelete)
-							s.printLine("Room destroyed")
+							s.WriteLine("Room destroyed")
 						} else {
 							s.printError("No room in that direction")
 						}
@@ -450,7 +449,7 @@ func init() {
 
 					for i, npc := range npcs {
 						n := npc
-						menu.AddAction(strconv.Itoa(i+1), npc.GetName(), func() bool {
+						menu.AddActionI(i, npc.GetName(), func() bool {
 							specificNpcMenu(s, n)
 							return true
 						})
@@ -476,7 +475,7 @@ func init() {
 
 					for i, template := range model.GetAllTemplates() {
 						t := template
-						menu.AddAction(strconv.Itoa(i+1), template.GetName(), func() bool {
+						menu.AddActionI(i, template.GetName(), func() bool {
 							templateMenu(s, t)
 							return true
 						})
@@ -498,7 +497,7 @@ func init() {
 					for _, item := range itemsInRoom {
 						if strings.ToLower(item.GetName()) == name {
 							model.DeleteItem(item.GetId())
-							s.printLine("Item destroyed")
+							s.WriteLine("Item destroyed")
 							return
 						}
 					}
@@ -510,7 +509,7 @@ func init() {
 		"roomid": {
 			admin: true,
 			exec: func(self *command, s *Session, arg string) {
-				s.printLine("Room ID: %v", s.GetRoom().GetId())
+				s.WriteLine("Room ID: %v", s.GetRoom().GetId())
 			},
 		},
 		"cash": {
@@ -523,7 +522,7 @@ func init() {
 					amount, err := utils.Atoir(arg, 1, math.MaxInt32)
 					if err == nil {
 						s.pc.AddCash(amount)
-						s.printLine("Received: %v monies", amount)
+						s.WriteLine("Received: %v monies", amount)
 					} else {
 						s.printError(err.Error())
 						self.Usage(s)
@@ -545,20 +544,20 @@ func init() {
 				bottomBar := "+" + strings.Repeat("-", int(width)-2) + "+"
 				outline := "|" + strings.Repeat(" ", int(width)-2) + "|"
 
-				s.printLine(topBar)
+				s.WriteLine(topBar)
 
 				for i := 0; i < int(height)-3; i++ {
-					s.printLine(outline)
+					s.WriteLine(outline)
 				}
 
-				s.printLine(bottomBar)
+				s.WriteLine(bottomBar)
 			},
 		},
 		"tt": cAlias("terminaltype"),
 		"terminaltype": {
 			admin: false,
 			exec: func(self *command, s *Session, arg string) {
-				s.printLine("Terminal type: %s", s.user.GetTerminalType())
+				s.WriteLine("Terminal type: %s", s.user.GetTerminalType())
 			},
 		},
 		"silent": {
@@ -576,9 +575,9 @@ func init() {
 				}
 
 				if s.silentMode {
-					s.printLine("Silent mode on")
+					s.WriteLine("Silent mode on")
 				} else {
-					s.printLine("Silent mode off")
+					s.WriteLine("Silent mode off")
 				}
 			},
 		},
@@ -618,7 +617,7 @@ func init() {
 
 					for i, area := range model.GetAreas(s.currentZone()) {
 						a := area
-						menu.AddAction(strconv.Itoa(i+1), area.GetName(), func() bool {
+						menu.AddActionI(i, area.GetName(), func() bool {
 							specificAreaMenu(s, a)
 							return true
 						})
@@ -733,7 +732,7 @@ func init() {
 					} else {
 						npc := npcs[index]
 						combat.Kill(npc)
-						s.printLine("Killed %s", npc.GetName())
+						s.WriteLine("Killed %s", npc.GetName())
 					}
 				}
 			},
@@ -755,8 +754,8 @@ func init() {
 					} else {
 						char := characters[index]
 
-						s.printLine(char.GetName())
-						s.printLine("Health: %v/%v", char.GetHitPoints(), char.GetHealth())
+						s.WriteLine(char.GetName())
+						s.WriteLine("Health: %v/%v", char.GetHitPoints(), char.GetHealth())
 					}
 				}
 			},
@@ -788,7 +787,7 @@ func init() {
 					skills := model.GetAllSkills()
 					for i, skill := range skills {
 						sk := skill
-						menu.AddAction(strconv.Itoa(i+1), skill.GetName(), func() bool {
+						menu.AddActionI(i, skill.GetName(), func() bool {
 							specificSkillMenu(s, sk)
 							return true
 						})
@@ -801,7 +800,7 @@ func init() {
 			exec: func(self *command, s *Session, arg string) {
 				utils.ExecMenu("Menu Test", s, func(menu *utils.Menu) {
 					for i := 0; i < 500; i++ {
-						menu.AddAction(strconv.Itoa(i+1), "Test Item", func() bool {
+						menu.AddActionI(i, "Test Item", func() bool {
 							return false
 						})
 					}
@@ -856,7 +855,7 @@ func init() {
 			admin: false,
 			usage: "/time",
 			exec: func(self *command, s *Session, arg string) {
-				s.printLine("%v", model.GetWorld().GetTime())
+				s.WriteLine("%v", model.GetWorld().GetTime())
 			},
 		},
 		"join": {
@@ -950,7 +949,7 @@ func specificNpcMenu(s *Session, npc types.NPC) {
 				conversation = "<empty>"
 			}
 
-			s.printLine("Conversation: %s", conversation)
+			s.WriteLine("Conversation: %s", conversation)
 			newConversation := s.getRawUserInput("New conversation text: ")
 
 			if newConversation != "" {
@@ -976,7 +975,7 @@ func templateMenu(s *Session, template types.Template) {
 		menu.AddAction("c", "Create", func() bool {
 			item := model.CreateItem(template.GetId())
 			item.SetContainerId(s.pc.GetId())
-			s.printLine("Item created")
+			s.WriteLine("Item created")
 			return true
 		})
 
@@ -1155,7 +1154,7 @@ func spawnerMenu(s *Session, area types.Area) {
 	utils.ExecMenu("Spawners", s, func(menu *utils.Menu) {
 		for i, spawner := range model.GetAreaSpawners(area.GetId()) {
 			sp := spawner
-			menu.AddAction(strconv.Itoa(i+1), spawner.GetName(), func() bool {
+			menu.AddActionI(i, spawner.GetName(), func() bool {
 				specificSpawnerMenu(s, sp)
 				return true
 			})

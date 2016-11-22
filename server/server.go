@@ -153,8 +153,8 @@ func (self *connectionHandler) newPlayer() types.PC {
 	}
 }
 
-func (self *connectionHandler) WriteLine(line string) {
-	utils.WriteLine(self.conn, line, types.ColorModeNone)
+func (self *connectionHandler) WriteLine(line string, a ...interface{}) {
+	utils.WriteLine(self.conn, fmt.Sprintf(line, a...), types.ColorModeNone)
 }
 
 func (self *connectionHandler) Write(text string) {

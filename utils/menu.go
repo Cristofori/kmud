@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Cristofori/kmud/types"
@@ -80,6 +81,10 @@ func (self *Menu) AddAction(key string, text string, handler func() bool) {
 			text:    text,
 			handler: handler,
 		})
+}
+
+func (self *Menu) AddActionI(index int, text string, handler func() bool) {
+	self.AddAction(strconv.Itoa(index+1), text, handler)
 }
 
 func (self *Menu) OnExit(handler func()) {

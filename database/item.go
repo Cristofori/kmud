@@ -150,11 +150,13 @@ func (self *Item) GetContainerId() types.Id {
 
 func (self *Item) SetContainerId(id types.Id) bool {
 	self.WriteLock()
-	defer self.WriteUnlock()
+
 	if id != self.ContainerId {
 		self.ContainerId = id
-		self.modified()
+		self.WriteUnlock()
+		self.syncModified()
 		return true
 	}
+	self.WriteUnlock()
 	return false
 }

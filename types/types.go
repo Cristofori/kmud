@@ -189,7 +189,7 @@ type World interface {
 }
 
 type Communicable interface {
-	WriteLine(string)
+	WriteLine(string, ...interface{})
 	Write(string)
 	GetInput(prompt string) string
 	GetWindowSize() (int, int)
