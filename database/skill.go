@@ -36,64 +36,45 @@ func (self *Skill) GetName() string {
 }
 
 func (self *Skill) SetName(name string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if name != self.Name {
+	self.writeLock(func() {
 		self.Name = name
-		self.modified()
-	}
+	})
 }
 
 func (self *Skill) GetEffect() types.SkillEffect {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Effect
 }
 
 func (self *Skill) SetEffect(effect types.SkillEffect) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if effect != self.Effect {
+	self.writeLock(func() {
 		self.Effect = effect
-		self.modified()
-	}
+	})
 }
 
 func (self *Skill) GetPower() int {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Power
 }
 
 func (self *Skill) SetPower(power int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if power != self.Power {
+	self.writeLock(func() {
 		self.Power = power
-		self.modified()
-	}
+	})
 }
 
 func (self *Skill) GetCost() int {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Cost
 }
 
 func (self *Skill) SetCost(cost int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if cost != self.Cost {
+	self.writeLock(func() {
 		self.Cost = cost
-		self.modified()
-	}
+	})
 }
 
 func (self *Skill) GetVariance() int {
@@ -103,13 +84,9 @@ func (self *Skill) GetVariance() int {
 }
 
 func (self *Skill) SetVariance(variance int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if variance != self.Variance {
+	self.writeLock(func() {
 		self.Variance = variance
-		self.modified()
-	}
+	})
 }
 
 func (self *Skill) GetSpeed() int {
@@ -120,11 +97,7 @@ func (self *Skill) GetSpeed() int {
 }
 
 func (self *Skill) SetSpeed(speed int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if speed != self.Speed {
+	self.writeLock(func() {
 		self.Speed = speed
-		self.modified()
-	}
+	})
 }

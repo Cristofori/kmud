@@ -40,8 +40,7 @@ func (self *World) GetTime() types.Time {
 }
 
 func (self *World) AdvanceTime() {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	self.Time = self.Time.Add(3 * time.Second)
+	self.writeLock(func() {
+		self.Time = self.Time.Add(3 * time.Second)
+	})
 }

@@ -7,9 +7,8 @@ import (
 
 type Area struct {
 	DbObject `bson:",inline"`
-
-	Name   string
-	ZoneId types.Id
+	Name     string
+	ZoneId   types.Id
 }
 
 func NewArea(name string, zone types.Id) *Area {
@@ -17,7 +16,6 @@ func NewArea(name string, zone types.Id) *Area {
 		ZoneId: zone,
 		Name:   utils.FormatName(name),
 	}
-
 	dbinit(area)
 	return area
 }
@@ -25,23 +23,17 @@ func NewArea(name string, zone types.Id) *Area {
 func (self *Area) GetName() string {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Name
 }
 
 func (self *Area) SetName(name string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if name != self.Name {
+	self.writeLock(func() {
 		self.Name = name
-		self.modified()
-	}
+	})
 }
 
 func (self *Area) GetZoneId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.ZoneId
 }

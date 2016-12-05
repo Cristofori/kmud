@@ -47,17 +47,15 @@ func (self *Template) GetName() string {
 }
 
 func (self *Template) SetName(name string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-	self.Name = utils.FormatName(name)
-	self.modified()
+	self.writeLock(func() {
+		self.Name = utils.FormatName(name)
+	})
 }
 
 func (self *Template) SetValue(value int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-	self.Value = value
-	self.modified()
+	self.writeLock(func() {
+		self.Value = value
+	})
 }
 
 func (self *Template) GetValue() int {
@@ -73,10 +71,9 @@ func (self *Template) GetWeight() int {
 }
 
 func (self *Template) SetWeight(weight int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-	self.Weight = weight
-	self.modified()
+	self.writeLock(func() {
+		self.Weight = weight
+	})
 }
 
 func (self *Template) GetCapacity() int {
@@ -86,10 +83,9 @@ func (self *Template) GetCapacity() int {
 }
 
 func (self *Template) SetCapacity(capacity int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-	self.Capacity = capacity
-	self.modified()
+	self.writeLock(func() {
+		self.Capacity = capacity
+	})
 }
 
 // Item
@@ -126,10 +122,9 @@ func (self *Item) IsLocked() bool {
 }
 
 func (self *Item) SetLocked(locked bool) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-	self.Locked = locked
-	self.modified()
+	self.writeLock(func() {
+		self.Locked = locked
+	})
 }
 
 func (self *Item) GetContainerId() types.Id {

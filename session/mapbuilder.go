@@ -172,5 +172,3 @@ func (self *mapTile) addExit(dir types.Direction) {
 		panic("Unexpected direction given to mapTile::addExit()")
 	}
 }
-
-// vim: nocindent

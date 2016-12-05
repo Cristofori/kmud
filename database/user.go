@@ -49,12 +49,9 @@ func (self *User) GetName() string {
 }
 
 func (self *User) SetName(name string) {
-	if name != self.GetName() {
-		self.WriteLock()
+	self.writeLock(func() {
 		self.Name = utils.FormatName(name)
-		self.WriteUnlock()
-		self.modified()
-	}
+	})
 }
 
 func (self *User) SetOnline(online bool) {
@@ -70,19 +67,14 @@ func (self *User) IsOnline() bool {
 }
 
 func (self *User) SetColorMode(cm types.ColorMode) {
-	if cm != self.GetColorMode() {
-		self.WriteLock()
+	self.writeLock(func() {
 		self.ColorMode = cm
-		self.WriteUnlock()
-
-		self.modified()
-	}
+	})
 }
 
 func (self *User) GetColorMode() types.ColorMode {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.ColorMode
 }
 
@@ -94,15 +86,9 @@ func hash(data string) []byte {
 
 // SetPassword SHA1 hashes the password before saving it to the database
 func (self *User) SetPassword(password string) {
-	hashed := hash(password)
-
-	if !reflect.DeepEqual(hashed, self.GetPassword()) {
-		self.WriteLock()
-		self.Password = hashed
-		self.WriteUnlock()
-
-		self.modified()
-	}
+	self.writeLock(func() {
+		self.Password = hash(password)
+	})
 }
 
 func (self *User) VerifyPassword(password string) bool {
@@ -114,7 +100,6 @@ func (self *User) VerifyPassword(password string) bool {
 func (self *User) GetPassword() []byte {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Password
 }
 
@@ -160,11 +145,9 @@ func (self *User) Write(text string) {
 }
 
 func (self *User) SetAdmin(admin bool) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	self.Admin = admin
-	self.modified()
+	self.writeLock(func() {
+		self.Admin = admin
+	})
 }
 
 func (self *User) IsAdmin() bool {

@@ -92,12 +92,9 @@ func (self *Character) GetName() string {
 }
 
 func (self *Character) SetName(name string) {
-	if name != self.GetName() {
-		self.WriteLock()
+	self.writeLock(func() {
 		self.Name = utils.FormatName(name)
-		self.WriteUnlock()
-		self.modified()
-	}
+	})
 }
 
 func (self *Character) GetCapacity() int {
@@ -112,24 +109,20 @@ func (self *Character) GetStrength() int {
 
 func (self *Pc) SetOnline(online bool) {
 	self.WriteLock()
+	defer self.WriteUnlock()
 	self.online = online
-	self.WriteUnlock()
 }
 
 func (self *Pc) IsOnline() bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.online
 }
 
 func (self *Character) SetRoomId(id types.Id) {
-	if id != self.GetRoomId() {
-		self.WriteLock()
+	self.writeLock(func() {
 		self.RoomId = id
-		self.WriteUnlock()
-		self.modified()
-	}
+	})
 }
 
 func (self *Character) GetRoomId() types.Id {
@@ -139,50 +132,38 @@ func (self *Character) GetRoomId() types.Id {
 }
 
 func (self *Pc) SetUserId(id types.Id) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if id != self.UserId {
+	self.writeLock(func() {
 		self.UserId = id
-		self.modified()
-	}
+	})
 }
 
 func (self *Pc) GetUserId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.UserId
 }
 
 func (self *Character) AddSkill(id types.Id) {
-	if !self.HasSkill(id) {
-		self.WriteLock()
-		defer self.WriteUnlock()
-
+	self.writeLock(func() {
+		if !self.HasSkill(id) {
+			return
+		}
 		if self.Skills == nil {
 			self.Skills = utils.Set{}
 		}
-
 		self.Skills.Insert(id.Hex())
-		self.modified()
-	}
+	})
 }
 
 func (self *Character) RemoveSkill(id types.Id) {
-	if self.HasSkill(id) {
-		self.WriteLock()
-		defer self.WriteUnlock()
-
+	self.writeLock(func() {
 		self.Skills.Remove(id.Hex())
-		self.modified()
-	}
+	})
 }
 
 func (self *Character) HasSkill(id types.Id) bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Skills.Contains(id.Hex())
 }
 
@@ -193,13 +174,9 @@ func (self *Character) GetSkills() []types.Id {
 }
 
 func (self *Npc) SetConversation(conversation string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if self.Conversation != conversation {
+	self.writeLock(func() {
 		self.Conversation = conversation
-		self.modified()
-	}
+	})
 }
 
 func (self *Npc) GetConversation() string {
@@ -221,45 +198,32 @@ func (self *Npc) PrettyConversation() string {
 }
 
 func (self *Character) SetHealth(health int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if health != self.Vitality {
+	self.writeLock(func() {
 		self.Vitality = health
-
 		if self.HitPoints > self.Vitality {
 			self.HitPoints = self.Vitality
 		}
-
-		self.modified()
-	}
+	})
 }
 
 func (self *Character) GetHealth() int {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Vitality
 }
 
 func (self *Character) SetHitPoints(hitpoints int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if hitpoints > self.Vitality {
-		hitpoints = self.Vitality
-	}
-
-	if hitpoints != self.HitPoints {
+	self.writeLock(func() {
+		if hitpoints > self.Vitality {
+			hitpoints = self.Vitality
+		}
 		self.HitPoints = hitpoints
-		self.modified()
-	}
+	})
 }
 
 func (self *Character) GetHitPoints() int {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.HitPoints
 }
 
@@ -274,38 +238,29 @@ func (self *Character) Heal(hitpoints int) {
 func (self *Npc) GetRoaming() bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Roaming
 }
 
 func (self *Npc) SetRoaming(roaming bool) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	self.Roaming = roaming
-	self.modified()
+	self.writeLock(func() {
+		self.Roaming = roaming
+	})
 }
 
 func (self *Spawner) SetCount(count int) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	self.Count = count
-	self.modified()
+	self.writeLock(func() {
+		self.Count = count
+	})
 }
 
 func (self *Spawner) GetCount() int {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Count
 }
 
 func (self *Spawner) GetAreaId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.AreaId
 }
-
-// vim: nocindent

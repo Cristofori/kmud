@@ -35,6 +35,13 @@ func (self *DbObject) WriteLock() {
 	self.mutex.Lock()
 }
 
+func (self *DbObject) writeLock(worker func()) {
+	self.WriteLock()
+	defer self.WriteUnlock()
+	defer self.modified()
+	worker()
+}
+
 func (self *DbObject) WriteUnlock() {
 	self.mutex.Unlock()
 }

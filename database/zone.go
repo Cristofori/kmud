@@ -20,16 +20,11 @@ func NewZone(name string) *Zone {
 func (self *Zone) GetName() string {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Name
 }
 
 func (self *Zone) SetName(name string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if name != self.Name {
+	self.writeLock(func() {
 		self.Name = utils.FormatName(name)
-		self.modified()
-	}
+	})
 }

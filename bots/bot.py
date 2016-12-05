@@ -120,5 +120,3 @@ def runaround():
 login(user, password)
 runaround()
 
-# vim: nocindent
-

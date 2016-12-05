@@ -162,5 +162,3 @@ func doCombatStop(attacker types.Character) {
 		events.Broadcast(events.CombatStopEvent{Attacker: attacker, Defender: info.Defender})
 	}
 }
-
-// vim: nocindent

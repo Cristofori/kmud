@@ -84,5 +84,3 @@ type MongoIterator struct {
 func (mi MongoIterator) All(result interface{}) error {
 	return mi.iterator.All(result)
 }
-
-// vim: nocindent

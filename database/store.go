@@ -30,10 +30,7 @@ func (self *Store) GetName() string {
 }
 
 func (self *Store) SetName(name string) {
-	if name != self.GetName() {
-		self.WriteLock()
+	self.writeLock(func() {
 		self.Name = utils.FormatName(name)
-		self.WriteUnlock()
-		self.modified()
-	}
+	})
 }

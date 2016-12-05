@@ -86,5 +86,3 @@ func Test_sort(t *testing.T) {
 		t.Errorf("Wanted                  : %v\n", strings.Join(output, ", "))
 	}
 }
-
-// vim: nocindent

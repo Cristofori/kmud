@@ -72,5 +72,3 @@ for i in range(userCount):
             print 'Timeout, %s' % username
             break
 
-# vim: nocindent
-

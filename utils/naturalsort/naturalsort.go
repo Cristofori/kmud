@@ -84,5 +84,3 @@ func piecesOf(str string) []string {
 
 	return pieces
 }
-
-// vim: nocindent

@@ -42,47 +42,36 @@ func (self *Room) HasExit(dir types.Direction) bool {
 }
 
 func (self *Room) SetExitEnabled(dir types.Direction, enabled bool) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if self.Exits == nil {
-		self.Exits = map[types.Direction]*Exit{}
-	}
-
-	if enabled {
-		self.Exits[dir] = &Exit{}
-	} else {
-		delete(self.Exits, dir)
-	}
-
-	self.modified()
+	self.writeLock(func() {
+		if self.Exits == nil {
+			self.Exits = map[types.Direction]*Exit{}
+		}
+		if enabled {
+			self.Exits[dir] = &Exit{}
+		} else {
+			delete(self.Exits, dir)
+		}
+	})
 }
 
 func (self *Room) SetLink(name string, roomId types.Id) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if self.Links == nil {
-		self.Links = map[string]types.Id{}
-	}
-
-	self.Links[name] = roomId
-
-	self.modified()
+	self.writeLock(func() {
+		if self.Links == nil {
+			self.Links = map[string]types.Id{}
+		}
+		self.Links[name] = roomId
+	})
 }
 
 func (self *Room) RemoveLink(name string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	delete(self.Links, name)
-	self.modified()
+	self.writeLock(func() {
+		delete(self.Links, name)
+	})
 }
 
 func (self *Room) GetLinks() map[string]types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Links
 }
 
@@ -98,87 +87,62 @@ func (self *Room) LinkNames() []string {
 }
 
 func (self *Room) SetTitle(title string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if title != self.Title {
+	self.writeLock(func() {
 		self.Title = title
-		self.modified()
-	}
+	})
 }
 
 func (self *Room) GetTitle() string {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Title
 }
 
 func (self *Room) SetDescription(description string) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if self.Description != description {
+	self.writeLock(func() {
 		self.Description = description
-		self.modified()
-	}
+	})
 }
 
 func (self *Room) GetDescription() string {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Description
 }
 
 func (self *Room) SetLocation(location types.Coordinate) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if location != self.Location {
+	self.writeLock(func() {
 		self.Location = location
-		self.modified()
-	}
+	})
 }
 
 func (self *Room) GetLocation() types.Coordinate {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Location
 }
 
 func (self *Room) SetZoneId(zoneId types.Id) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if zoneId != self.ZoneId {
+	self.writeLock(func() {
 		self.ZoneId = zoneId
-		self.modified()
-	}
+	})
 }
 
 func (self *Room) GetZoneId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.ZoneId
 }
 
 func (self *Room) SetAreaId(areaId types.Id) {
-	self.WriteLock()
-	defer self.WriteUnlock()
-
-	if areaId != self.AreaId {
+	self.writeLock(func() {
 		self.AreaId = areaId
-		self.modified()
-	}
+	})
 }
 
 func (self *Room) GetAreaId() types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.AreaId
 }
 
@@ -203,13 +167,11 @@ func (self *Room) GetExits() []types.Direction {
 }
 
 func (self *Room) SetLocked(dir types.Direction, locked bool) {
-	if self.HasExit(dir) {
-		self.WriteLock()
-		defer self.WriteUnlock()
-
-		self.Exits[dir].Locked = locked
-		self.modified()
-	}
+	self.writeLock(func() {
+		if self.HasExit(dir) {
+			self.Exits[dir].Locked = locked
+		}
+	})
 }
 
 func (self *Room) IsLocked(dir types.Direction) bool {
