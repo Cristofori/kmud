@@ -116,6 +116,7 @@ func (self *Session) Exec() {
 		}
 
 		if input == "." {
+			self.WriteLine(self.lastInput)
 			input = self.lastInput
 		}
 
