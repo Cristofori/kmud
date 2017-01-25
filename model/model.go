@@ -186,8 +186,7 @@ func CreateNpc(name string, roomId types.Id, spawnerId types.Id) types.NPC {
 }
 
 func DeleteCharacter(charId types.Id) {
-	// TODO: Delete (or drop) inventory
-	db.DeleteObject(charId)
+	deleteContainer(charId)
 }
 
 func CreateRoom(zone types.Zone, location types.Coordinate) (types.Room, error) {
@@ -330,7 +329,16 @@ func GetAreaByName(name string) types.Area {
 }
 
 func DeleteArea(areaId types.Id) {
-	// TODO - Remove room references to area
+	rooms := GetAreaRooms(areaId)
+	for _, room := range rooms {
+		room.SetAreaId(nil)
+	}
+
+	spawners := GetAreaSpawners(areaId)
+	for _, spawner := range spawners {
+		db.DeleteObject(spawner.GetId())
+	}
+
 	db.DeleteObject(areaId)
 }
 
@@ -717,8 +725,7 @@ func CreateStore(name string, roomId types.Id) types.Store {
 }
 
 func DeleteStore(id types.Id) {
-	// TODO - Delete or drop items
-	db.DeleteObject(id)
+	deleteContainer(id)
 }
 
 func GetWorld() types.World {
@@ -727,4 +734,12 @@ func GetWorld() types.World {
 		return db.NewWorld()
 	}
 	return db.Retrieve(id, types.WorldType).(types.World)
+}
+
+func deleteContainer(id types.Id) {
+	items := ItemsIn(id)
+	for _, item := range items {
+		db.DeleteObject(item.GetId())
+	}
+	db.DeleteObject(id)
 }
