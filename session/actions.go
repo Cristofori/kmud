@@ -2,7 +2,6 @@ package session
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/Cristofori/kmud/combat"
@@ -15,6 +14,10 @@ import (
 type action struct {
 	alias string
 	exec  func(*Session, string)
+}
+
+func aAlias(name string) action {
+	return action{alias: name}
 }
 
 var actions = map[string]action{
@@ -145,9 +148,9 @@ var actions = map[string]action{
 	"sb": aAlias("skillbook"),
 	"skillbook": {
 		exec: func(s *Session, arg string) {
-			utils.ExecMenu("Skill Book", s, func(menu *utils.Menu) {
+			s.execMenu("Skill Book", func(menu *utils.Menu) {
 				menu.AddAction("a", "Add", func() bool {
-					utils.ExecMenu("Select a skill to add", s, func(menu *utils.Menu) {
+					s.execMenu("Select a skill to add", func(menu *utils.Menu) {
 						for i, skill := range model.GetAllSkills() {
 							sk := skill
 							menu.AddActionI(i, skill.GetName(), func() bool {
@@ -325,7 +328,10 @@ var actions = map[string]action{
 			handleLock(s, arg, false)
 		},
 	},
-	"buy": {
+	"store": aAlias("shop"),
+	"buy":   aAlias("shop"),
+	"sell":  aAlias("shop"),
+	"shop": {
 		exec: func(s *Session, arg string) {
 			store := model.StoreIn(s.pc.GetRoomId())
 			if store == nil {
@@ -333,110 +339,48 @@ var actions = map[string]action{
 				return
 			}
 
-			if arg == "" {
-				s.printError("Usage: buy <item name>")
-			}
-
-			items := model.ItemsIn(store.GetId())
-			index, err := strconv.Atoi(arg)
-			var item types.Item
-
-			if err == nil {
-				index--
-				if index < len(items) && index >= 0 {
-					item = items[index]
-				} else {
-					s.printError("Invalid selection")
-				}
-			} else {
-				index := utils.BestMatch(arg, items.Names())
-
-				if index == -1 {
-					s.printError("Not found")
-				} else if index == -2 {
-					s.printError("Which one do you mean?")
-				} else {
-					item = items[index]
-				}
-			}
-
-			if item != nil {
-				confirmed := s.getConfirmation(fmt.Sprintf("Buy %s for %v? ", item.GetName(), item.GetValue()))
-
-				if confirmed {
-					// TODO - Transferring the item and money should be guarded by some kind of global session transaction
-					if item.SetContainerId(s.pc.GetId(), store.GetId()) {
-						s.pc.RemoveCash(item.GetValue())
-						store.AddCash(item.GetValue())
-						s.WriteLineColor(types.ColorGreen, "Bought %s", item.GetName())
+			s.execMenu("", func(menu *utils.Menu) {
+				menu.SetTitle(fmt.Sprintf("%s - $%v", store.GetName(), store.GetCash()))
+				menu.AddAction("b", "Buy", func() bool {
+					if model.CountItemsIn(store.GetId()) == 0 {
+						s.printError("This store has nothing to sell")
 					} else {
-						s.printError("Transaction failed")
+						s.execMenu("Buy Items", func(menu *utils.Menu) {
+							items := model.ItemsIn(store.GetId())
+							for i, item := range items {
+								menu.AddActionI(i, item.GetName(), func() bool {
+									confirmed := s.getConfirmation(fmt.Sprintf("Buy %s for %v? ", item.GetName(), item.GetValue()))
+									if confirmed && sellItem(s, store, s.pc, item) {
+										s.WriteLineColor(types.ColorGreen, "Bought %s", item.GetName())
+									}
+									return len(model.ItemsIn(store.GetId())) > 0
+								})
+							}
+						})
 					}
-				} else {
-					s.printError("Purchase canceled")
-				}
-			}
-		},
-	},
-	"sell": {
-		exec: func(s *Session, arg string) {
-			store := model.StoreIn(s.pc.GetRoomId())
-			if store == nil {
-				s.printError("There is no store here")
-				return
-			}
+					return true
+				})
 
-			if arg == "" {
-				s.printError("Usage: sell <item name>")
-			}
-
-			items := model.ItemsIn(s.pc.GetId())
-			index := utils.BestMatch(arg, items.Names())
-
-			if index == -1 {
-				s.printError("Not found")
-			} else if index == -2 {
-				s.printError("Which one do you mean?")
-			} else {
-				item := items[index]
-
-				confirmed := s.getConfirmation(fmt.Sprintf("Sell %s for %v? ", item.GetName(), item.GetValue()))
-
-				if confirmed {
-					// TODO - Transferring the item and money should be guarded by some kind of global session transaction
-					if item.SetContainerId(store.GetId(), s.pc.GetId()) {
-						store.RemoveCash(item.GetValue())
-						s.pc.AddCash(item.GetValue())
-						s.WriteLineColor(types.ColorGreen, "Sold %s", item.GetName())
+				menu.AddAction("s", "Sell", func() bool {
+					if model.CountItemsIn(s.pc.GetId()) == 0 {
+						s.printError("You have nothing to sell")
 					} else {
-						s.printError("Transaction failed")
+						s.execMenu("Sell Items", func(menu *utils.Menu) {
+							items := model.ItemsIn(s.pc.GetId())
+							for i, item := range items {
+								menu.AddActionI(i, item.GetName(), func() bool {
+									confirmed := s.getConfirmation(fmt.Sprintf("Sell %s for %v? ", item.GetName(), item.GetValue()))
+									if confirmed && sellItem(s, s.pc, store, item) {
+										s.WriteLineColor(types.ColorGreen, "Sold %s", item.GetName())
+									}
+									return len(model.ItemsIn(s.pc.GetId())) > 0
+								})
+							}
+						})
 					}
-				} else {
-					s.printError("Sale canceled")
-				}
-			}
-		},
-	},
-	"store": {
-		exec: func(s *Session, arg string) {
-			store := model.StoreIn(s.pc.GetRoomId())
-			if store == nil {
-				s.printError("There is no store here")
-				return
-			}
-
-			s.WriteLine("\r\nStore cash: %v", store.GetCash())
-
-			items := model.ItemsIn(store.GetId())
-			if len(items) == 0 {
-				s.WriteLine("This store is empty")
-			}
-
-			for i, item := range items {
-				s.WriteLine("[%v] %s - %v", i+1, item.GetName(), item.GetValue())
-			}
-
-			s.WriteLine("")
+					return true
+				})
+			})
 		},
 	},
 	"o": aAlias("open"),
@@ -461,12 +405,12 @@ var actions = map[string]action{
 				} else if index != -1 {
 					container := containers[index]
 
-					utils.ExecMenu(container.GetName(), s, func(menu *utils.Menu) {
+					s.execMenu(container.GetName(), func(menu *utils.Menu) {
 						menu.AddAction("d", "Deposit", func() bool {
 							if model.CountItemsIn(s.pc.GetId()) == 0 {
 								s.printError("You have nothing to deposit")
 							} else {
-								utils.ExecMenu(fmt.Sprintf("Deposit into %s", container.GetName()), s, func(menu *utils.Menu) {
+								s.execMenu(fmt.Sprintf("Deposit into %s", container.GetName()), func(menu *utils.Menu) {
 									for i, item := range model.ItemsIn(s.pc.GetId()) {
 										locItem := item
 										menu.AddActionI(i, item.GetName(), func() bool {
@@ -532,6 +476,15 @@ func handleLock(s *Session, arg string, locked bool) {
 	}
 }
 
-func aAlias(name string) action {
-	return action{alias: name}
+func sellItem(s *Session, seller types.Purchaser, buyer types.Purchaser, item types.Item) bool {
+	// TODO - Transferring the item and money needs be guarded in some kind of atomic transaction
+	if item.SetContainerId(buyer.GetId(), seller.GetId()) {
+		buyer.RemoveCash(item.GetValue())
+		seller.AddCash(item.GetValue())
+		return true
+	} else {
+		s.printError("Transaction failed")
+	}
+
+	return false
 }

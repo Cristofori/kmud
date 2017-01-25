@@ -332,3 +332,9 @@ type Store interface {
 	Nameable
 	Container
 }
+
+type Purchaser interface {
+	GetId() Id
+	AddCash(int)
+	RemoveCash(int)
+}

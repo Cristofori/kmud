@@ -87,6 +87,10 @@ func (self *Menu) AddActionI(index int, text string, handler func() bool) {
 	self.AddAction(strconv.Itoa(index+1), text, handler)
 }
 
+func (self *Menu) SetTitle(title string) {
+	self.title = title
+}
+
 func (self *Menu) OnExit(handler func()) {
 	self.exitHandler = handler
 }

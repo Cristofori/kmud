@@ -454,3 +454,7 @@ func (self *Session) printRoom(room types.Room) {
 
 	self.WriteLine(str)
 }
+
+func (s *Session) execMenu(title string, build func(*utils.Menu)) {
+	utils.ExecMenu(title, s, build)
+}
