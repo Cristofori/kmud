@@ -7,6 +7,20 @@ import (
 	"time"
 )
 
+func Test_ListenFunc(t *testing.T) {
+	tp := newTelnetProcessor()
+	runCount := 0
+	tp.listenFunc = func(TelnetCode, []byte) {
+		runCount += 1
+	}
+	header := BuildCommand(WILL, 25, IAC, WILL, ATCP, IAC, WILL, GMCP, IAC, WILL, CMP2, IAC, DO, TT, 24)
+	header = append(header, []byte("Rapture Runtime Environment v2.4.1")...)
+	tp.addBytes(header)
+	if runCount != 5 {
+		t.Fatalf("listenFunc did not trigger correctly on sample Achaea header, got %d times instead of %d", runCount, 5)
+	}
+}
+
 type fakeConn struct {
 	data []byte
 }
