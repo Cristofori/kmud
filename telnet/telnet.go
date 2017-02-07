@@ -14,6 +14,55 @@ var codeToByte map[TelnetCode]byte
 
 type TelnetCode int
 
+func init() {
+	byteToCode = map[byte]TelnetCode{}
+	codeToByte = map[TelnetCode]byte{}
+
+	codeToByte[NUL] = '\x00'
+	codeToByte[ECHO] = '\x01'
+	codeToByte[SGA] = '\x03'
+	codeToByte[ST] = '\x05'
+	codeToByte[TM] = '\x06'
+	codeToByte[BEL] = '\x07'
+	codeToByte[BS] = '\x08'
+	codeToByte[HT] = '\x09'
+	codeToByte[LF] = '\x0a'
+	codeToByte[FF] = '\x0c'
+	codeToByte[CR] = '\x0d'
+	codeToByte[TT] = '\x18'
+	codeToByte[WS] = '\x1F'
+	codeToByte[TS] = '\x20'
+	codeToByte[RFC] = '\x21'
+	codeToByte[LM] = '\x22'
+	codeToByte[EV] = '\x24'
+	codeToByte[SE] = '\xf0'
+	codeToByte[NOP] = '\xf1'
+	codeToByte[DM] = '\xf2'
+	codeToByte[BRK] = '\xf3'
+	codeToByte[IP] = '\xf4'
+	codeToByte[AO] = '\xf5'
+	codeToByte[AYT] = '\xf6'
+	codeToByte[EC] = '\xf7'
+	codeToByte[EL] = '\xf8'
+	codeToByte[GA] = '\xf9'
+	codeToByte[SB] = '\xfa'
+	codeToByte[WILL] = '\xfb'
+	codeToByte[WONT] = '\xfc'
+	codeToByte[DO] = '\xfd'
+	codeToByte[DONT] = '\xfe'
+	codeToByte[IAC] = '\xff'
+
+	codeToByte[CMP1] = '\x55'
+	codeToByte[CMP2] = '\x56'
+	codeToByte[AARD] = '\x66'
+	codeToByte[ATCP] = '\xc8'
+	codeToByte[GMCP] = '\xc9'
+
+	for enum, code := range codeToByte {
+		byteToCode[code] = enum
+	}
+}
+
 // Telnet wraps the given connection object, processing telnet codes from its byte
 // stream and interpreting them as necessary, making it possible to hand the connection
 // object off to other code so that it doesn't have to worry about telnet escape sequences
@@ -171,59 +220,6 @@ const (
 	GMCP TelnetCode = iota // Generic Mud Communication Protocol
 )
 
-func initLookups() {
-	if byteToCode != nil {
-		return
-	}
-
-	byteToCode = map[byte]TelnetCode{}
-	codeToByte = map[TelnetCode]byte{}
-
-	codeToByte[NUL] = '\x00'
-	codeToByte[ECHO] = '\x01'
-	codeToByte[SGA] = '\x03'
-	codeToByte[ST] = '\x05'
-	codeToByte[TM] = '\x06'
-	codeToByte[BEL] = '\x07'
-	codeToByte[BS] = '\x08'
-	codeToByte[HT] = '\x09'
-	codeToByte[LF] = '\x0a'
-	codeToByte[FF] = '\x0c'
-	codeToByte[CR] = '\x0d'
-	codeToByte[TT] = '\x18'
-	codeToByte[WS] = '\x1F'
-	codeToByte[TS] = '\x20'
-	codeToByte[RFC] = '\x21'
-	codeToByte[LM] = '\x22'
-	codeToByte[EV] = '\x24'
-	codeToByte[SE] = '\xf0'
-	codeToByte[NOP] = '\xf1'
-	codeToByte[DM] = '\xf2'
-	codeToByte[BRK] = '\xf3'
-	codeToByte[IP] = '\xf4'
-	codeToByte[AO] = '\xf5'
-	codeToByte[AYT] = '\xf6'
-	codeToByte[EC] = '\xf7'
-	codeToByte[EL] = '\xf8'
-	codeToByte[GA] = '\xf9'
-	codeToByte[SB] = '\xfa'
-	codeToByte[WILL] = '\xfb'
-	codeToByte[WONT] = '\xfc'
-	codeToByte[DO] = '\xfd'
-	codeToByte[DONT] = '\xfe'
-	codeToByte[IAC] = '\xff'
-
-	codeToByte[CMP1] = '\x55'
-	codeToByte[CMP2] = '\x56'
-	codeToByte[AARD] = '\x66'
-	codeToByte[ATCP] = '\xc8'
-	codeToByte[GMCP] = '\xc9'
-
-	for enum, code := range codeToByte {
-		byteToCode[code] = enum
-	}
-}
-
 type processorState int
 
 const (
@@ -252,8 +248,6 @@ type telnetProcessor struct {
 }
 
 func newTelnetProcessor() *telnetProcessor {
-	initLookups()
-
 	var tp telnetProcessor
 	tp.state = stateBase
 	tp.debug = false
@@ -376,8 +370,6 @@ func (self *telnetProcessor) subDataFinished(code TelnetCode) {
 }
 
 func ToString(bytes []byte) string {
-	initLookups()
-
 	str := ""
 	for _, b := range bytes {
 
