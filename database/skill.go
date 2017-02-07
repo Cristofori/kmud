@@ -8,20 +8,13 @@ import (
 type Skill struct {
 	DbObject `bson:",inline"`
 
-	Name     string
-	Power    int
-	Cost     int
-	Variance int
-	Speed    int
-	Effect   types.SkillEffect
+	Effects utils.Set
+	Name    string
 }
 
-func NewSkill(name string, power int) *Skill {
+func NewSkill(name string) *Skill {
 	skill := &Skill{
-		Name:     utils.FormatName(name),
-		Power:    power,
-		Effect:   types.DamageEffect,
-		Variance: 0,
+		Name: utils.FormatName(name),
 	}
 
 	dbinit(skill)
@@ -31,73 +24,38 @@ func NewSkill(name string, power int) *Skill {
 func (self *Skill) GetName() string {
 	self.ReadLock()
 	defer self.ReadUnlock()
-
 	return self.Name
 }
 
 func (self *Skill) SetName(name string) {
 	self.writeLock(func() {
-		self.Name = name
+		self.Name = utils.FormatName(name)
 	})
 }
 
-func (self *Skill) GetEffect() types.SkillEffect {
+func (self *Skill) AddEffect(id types.Id) {
+	self.writeLock(func() {
+		if self.Effects == nil {
+			self.Effects = utils.Set{}
+		}
+		self.Effects.Insert(id.Hex())
+	})
+}
+
+func (self *Skill) RemoveEffect(id types.Id) {
+	self.writeLock(func() {
+		self.Effects.Remove(id.Hex())
+	})
+}
+
+func (self *Skill) GetEffects() []types.Id {
 	self.ReadLock()
 	defer self.ReadUnlock()
-	return self.Effect
+	return idSetToList(self.Effects)
 }
 
-func (self *Skill) SetEffect(effect types.SkillEffect) {
-	self.writeLock(func() {
-		self.Effect = effect
-	})
-}
-
-func (self *Skill) GetPower() int {
+func (self *Skill) HasEffect(id types.Id) bool {
 	self.ReadLock()
 	defer self.ReadUnlock()
-	return self.Power
-}
-
-func (self *Skill) SetPower(power int) {
-	self.writeLock(func() {
-		self.Power = power
-	})
-}
-
-func (self *Skill) GetCost() int {
-	self.ReadLock()
-	defer self.ReadUnlock()
-	return self.Cost
-}
-
-func (self *Skill) SetCost(cost int) {
-	self.writeLock(func() {
-		self.Cost = cost
-	})
-}
-
-func (self *Skill) GetVariance() int {
-	self.ReadLock()
-	defer self.ReadUnlock()
-	return self.Variance
-}
-
-func (self *Skill) SetVariance(variance int) {
-	self.writeLock(func() {
-		self.Variance = variance
-	})
-}
-
-func (self *Skill) GetSpeed() int {
-	self.ReadLock()
-	defer self.ReadUnlock()
-
-	return self.Speed
-}
-
-func (self *Skill) SetSpeed(speed int) {
-	self.writeLock(func() {
-		self.Speed = speed
-	})
+	return self.Effects.Contains(id.Hex())
 }

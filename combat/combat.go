@@ -34,7 +34,7 @@ type combatQuery struct {
 	Ret       chan bool
 }
 
-type combatTick bool
+type combatTick struct{}
 
 func StartFight(attacker types.Character, skill types.Skill, defender types.Character) {
 	combatMessages <- combatStart{Attacker: attacker, Defender: defender, Skill: skill}
@@ -60,7 +60,7 @@ func init() {
 		throttler := utils.NewThrottler(combatInterval)
 		for {
 			throttler.Sync()
-			combatMessages <- combatTick(true)
+			combatMessages <- combatTick{}
 		}
 	}()
 
@@ -79,8 +79,8 @@ func init() {
 						if skill == nil {
 							power = utils.Random(1, 10)
 						} else {
-							power = skill.GetPower()
-							variance := utils.Random(-skill.GetVariance(), skill.GetVariance())
+							power = 10                      // skill.GetPower()
+							variance := utils.Random(-3, 3) // utils.Random(-skill.GetVariance(), skill.GetVariance())
 							power += variance
 						}
 

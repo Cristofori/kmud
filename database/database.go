@@ -130,6 +130,8 @@ func Retrieve(id types.Id, typ types.ObjectType) types.Object {
 		object = &Item{}
 	case types.SkillType:
 		object = &Skill{}
+	case types.EffectType:
+		object = &Effect{}
 	case types.StoreType:
 		object = &Store{}
 	case types.WorldType:

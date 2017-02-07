@@ -167,7 +167,6 @@ var actions = map[string]action{
 					sk := skill
 					menu.AddActionI(i, skill.GetName(), func() bool {
 						s.WriteLine("Skill: %v", sk.GetName())
-						s.WriteLine("  Damage: %v", sk.GetPower())
 						return true
 					})
 				}

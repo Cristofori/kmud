@@ -439,7 +439,7 @@ func init() {
 					npcs = model.GetNpcs()
 
 					menu.AddAction("n", "New", func() bool {
-						name := getNpcName(s)
+						name := s.getName("Desired NPC name: ", types.NpcType)
 						if name != "" {
 							model.CreateNpc(name, s.pc.GetRoomId(), nil)
 						}
@@ -449,7 +449,7 @@ func init() {
 					for i, npc := range npcs {
 						n := npc
 						menu.AddActionI(i, npc.GetName(), func() bool {
-							specificNpcMenu(s, n)
+							s.specificNpcMenu(n)
 							return true
 						})
 					}
@@ -607,7 +607,7 @@ func init() {
 			exec: func(self *command, s *Session, arg string) {
 				s.execMenu("Areas", func(menu *utils.Menu) {
 					menu.AddAction("n", "New", func() bool {
-						name := s.getRawUserInput("Area name: ")
+						name := s.getName("Area name: ", types.AreaType)
 						if name != "" {
 							model.CreateArea(name, s.currentZone())
 						}
@@ -617,7 +617,7 @@ func init() {
 					for i, area := range model.GetAreas(s.currentZone()) {
 						a := area
 						menu.AddActionI(i, area.GetName(), func() bool {
-							specificAreaMenu(s, a)
+							s.specificAreaMenu(a)
 							return true
 						})
 					}
@@ -764,30 +764,40 @@ func init() {
 			exec: func(self *command, s *Session, arg string) {
 				s.execMenu("Skills", func(menu *utils.Menu) {
 					menu.AddAction("n", "New", func() bool {
-						for {
-							name := s.getCleanUserInput("Skill name: ")
-
-							if name == "" {
-								break
-							}
-
-							skill := model.GetSkillByName(name)
-
-							if skill != nil {
-								s.printError("A skill with that name already exists")
-							} else {
-								model.CreateSkill(name)
-								break
-							}
+						name := s.getName("Skill name: ", types.SkillType)
+						if name != "" {
+							model.CreateSkill(name)
 						}
 						return true
 					})
 
-					skills := model.GetAllSkills()
-					for i, skill := range skills {
+					for i, skill := range model.GetAllSkills() {
 						sk := skill
 						menu.AddActionI(i, skill.GetName(), func() bool {
-							specificSkillMenu(s, sk)
+							s.specificSkillMenu(sk)
+							return true
+						})
+					}
+				})
+			},
+		},
+		"effects": {
+			admin: true,
+			exec: func(self *command, s *Session, arg string) {
+				s.execMenu("Effects", func(menu *utils.Menu) {
+					menu.AddAction("n", "New", func() bool {
+						name := s.getName("Effect name: ", types.EffectType)
+						if name != "" {
+							model.CreateEffect(name)
+						}
+						return true
+					})
+
+					effects := model.GetAllEffects()
+					for i, effect := range effects {
+						e := effect
+						menu.AddActionI(i, e.GetName(), func() bool {
+							s.specificEffectMenu(e)
 							return true
 						})
 					}
@@ -886,50 +896,99 @@ func init() {
 	}
 }
 
-func specificSkillMenu(s *Session, skill types.Skill) {
-	s.execMenu(fmt.Sprintf("Skill - %s", skill.GetName()), func(menu *utils.Menu) {
-		menu.AddAction("e", fmt.Sprintf("Effect - %v", skill.GetEffect()), func() bool {
+func (s *Session) specificSkillMenu(skill types.Skill) {
+	s.execMenu("", func(menu *utils.Menu) {
+		menu.SetTitle(fmt.Sprintf("Skill - %s", skill.GetName()))
+		menu.AddAction("n", "Name", func() bool {
 			return true
 		})
-		menu.AddAction("p", fmt.Sprintf("Power - %v", skill.GetPower()), func() bool {
+
+		menu.AddAction("e", "Effects", func() bool {
+			s.execMenu("", func(menu *utils.Menu) {
+				menu.SetTitle(fmt.Sprintf("%s - Effects", skill.GetName()))
+				effects := model.GetAllEffects()
+				for i, effect := range effects {
+					e := effect
+					menu.AddActionI(i, e.GetName(), func() bool {
+						s.specificEffectMenu(e)
+						return true
+					})
+				}
+			})
+			return true
+		})
+	})
+}
+
+func (s *Session) specificEffectMenu(effect types.Effect) {
+	s.execMenu("", func(menu *utils.Menu) {
+		menu.SetTitle(fmt.Sprintf("Effect - %s", effect.GetName()))
+		menu.AddAction("r", "Rename", func() bool {
+			name := s.getName("New name: ", types.EffectType)
+			if name != "" {
+				effect.SetName(name)
+			}
+			return true
+		})
+		menu.AddAction("t", fmt.Sprintf("Type - %v", effect.GetType()), func() bool {
+			s.execMenu("New Effect: ", func(menu *utils.Menu) {
+				menu.AddAction("h", "Hitpoint", func() bool {
+					effect.SetType(types.HitpointEffect)
+					return false
+				})
+				menu.AddAction("s", "Stun", func() bool {
+					effect.SetType(types.StunEffect)
+					return false
+				})
+			})
+			return true
+		})
+		menu.AddAction("p", fmt.Sprintf("Power - %v", effect.GetPower()), func() bool {
 			dmg, valid := s.getInt("New power: ", 0, 1000)
 			if valid {
-				skill.SetPower(dmg)
+				effect.SetPower(dmg)
 			}
 			return true
 		})
-		menu.AddAction("c", fmt.Sprintf("Cost - %v", skill.GetCost()), func() bool {
+		menu.AddAction("c", fmt.Sprintf("Cost - %v", effect.GetCost()), func() bool {
 			cost, valid := s.getInt("New cost: ", 0, 1000)
 			if valid {
-				skill.SetCost(cost)
+				effect.SetCost(cost)
 			}
 			return true
 		})
-		menu.AddAction("v", fmt.Sprintf("Variance - %v", skill.GetVariance()), func() bool {
+		menu.AddAction("v", fmt.Sprintf("Variance - %v", effect.GetVariance()), func() bool {
 			variance, valid := s.getInt("New variance: ", 0, 1000)
 			if valid {
-				skill.SetVariance(variance)
+				effect.SetVariance(variance)
 			}
 			return true
 		})
-		menu.AddAction("s", fmt.Sprintf("Speed - %v", skill.GetSpeed()), func() bool {
+		menu.AddAction("s", fmt.Sprintf("Speed - %v", effect.GetSpeed()), func() bool {
 			speed, valid := s.getInt("New speed: ", 0, 1000)
 			if valid {
-				skill.SetSpeed(speed)
+				effect.SetSpeed(speed)
+			}
+			return true
+		})
+		menu.AddAction("i", fmt.Sprintf("Time - %v", effect.GetTime()), func() bool {
+			time, valid := s.getInt("New time: ", 0, 1000)
+			if valid {
+				effect.SetTime(time)
 			}
 			return true
 		})
 		menu.AddAction("d", "Delete", func() bool {
-			model.DeleteSkill(skill.GetId())
+			model.DeleteSkill(effect.GetId())
 			return false
 		})
 	})
 }
 
-func specificNpcMenu(s *Session, npc types.NPC) {
+func (s *Session) specificNpcMenu(npc types.NPC) {
 	s.execMenu(npc.GetName(), func(menu *utils.Menu) {
 		menu.AddAction("r", "Rename", func() bool {
-			name := getNpcName(s)
+			name := s.getName("Desired NPC name: ", types.NpcType)
 			if name != "" {
 				npc.SetName(name)
 			}
@@ -970,7 +1029,8 @@ func specificNpcMenu(s *Session, npc types.NPC) {
 }
 
 func templateMenu(s *Session, template types.Template) {
-	s.execMenu(template.GetName(), func(menu *utils.Menu) {
+	s.execMenu("", func(menu *utils.Menu) {
+		menu.SetTitle(template.GetName())
 		menu.AddAction("c", "Create", func() bool {
 			item := model.CreateItem(template.GetId())
 			item.SetContainerId(s.pc.GetId(), nil)
@@ -1000,7 +1060,7 @@ func templateMenu(s *Session, template types.Template) {
 		})
 
 		menu.AddAction("n", "Name", func() bool {
-			name := s.getRawUserInput("New name: ")
+			name := s.getName("New name: ", types.TemplateType)
 			if name != "" {
 				template.SetName(name)
 			}
@@ -1090,25 +1150,6 @@ func quickRoom(s *Session, command string) {
 	s.GetRoom().SetExitEnabled(dir.Opposite(), true)
 }
 
-func getNpcName(s *Session) string {
-	name := ""
-	for {
-		name = s.getCleanUserInput("Desired NPC name: ")
-		char := model.GetNpcByName(name)
-
-		if name == "" {
-			return ""
-		} else if char != nil {
-			s.printError("That name is unavailable")
-		} else if err := utils.ValidateName(name); err != nil {
-			s.printError(err.Error())
-		} else {
-			break
-		}
-	}
-	return name
-}
-
 func whisper(self *command, s *Session, arg string) {
 	name, message := utils.Argify(arg)
 	if message == "" {
@@ -1124,13 +1165,12 @@ func whisper(self *command, s *Session, arg string) {
 	}
 }
 
-func specificAreaMenu(s *Session, area types.Area) {
+func (s *Session) specificAreaMenu(area types.Area) {
 	s.execMenu(area.GetName(), func(menu *utils.Menu) {
 		menu.AddAction("r", "Rename", func() bool {
-			newName := s.getRawUserInput("New name: ")
-
-			if newName != "" {
-				area.SetName(newName)
+			name := s.getName("New name: ", types.AreaType)
+			if name != "" {
+				area.SetName(name)
 			}
 			return true
 		})
@@ -1143,25 +1183,24 @@ func specificAreaMenu(s *Session, area types.Area) {
 			return false
 		})
 		menu.AddAction("s", "Spawners", func() bool {
-			spawnerMenu(s, area)
+			s.spawnerMenu(area)
 			return true
 		})
 	})
 }
 
-func spawnerMenu(s *Session, area types.Area) {
+func (s *Session) spawnerMenu(area types.Area) {
 	s.execMenu("Spawners", func(menu *utils.Menu) {
 		for i, spawner := range model.GetAreaSpawners(area.GetId()) {
 			sp := spawner
 			menu.AddActionI(i, spawner.GetName(), func() bool {
-				specificSpawnerMenu(s, sp)
+				s.specificSpawnerMenu(sp)
 				return true
 			})
 		}
 
 		menu.AddAction("n", "New", func() bool {
-			name := s.getRawUserInput("Name of spawned NPC: ")
-
+			name := s.getName("Name of spawned NPC: ", types.SpawnerType)
 			if name != "" {
 				model.CreateSpawner(name, area.GetId())
 			}
@@ -1170,12 +1209,12 @@ func spawnerMenu(s *Session, area types.Area) {
 	})
 }
 
-func specificSpawnerMenu(s *Session, spawner types.Spawner) {
+func (s *Session) specificSpawnerMenu(spawner types.Spawner) {
 	s.execMenu(fmt.Sprintf("Spawner - %s", spawner.GetName()), func(menu *utils.Menu) {
 		menu.AddAction("r", "Rename", func() bool {
-			newName := s.getRawUserInput("New name: ")
-			if newName != "" {
-				spawner.SetName(newName)
+			name := s.getName("New name: ", types.SpawnerType)
+			if name != "" {
+				spawner.SetName(name)
 			}
 			return true
 		})
@@ -1196,4 +1235,38 @@ func specificSpawnerMenu(s *Session, spawner types.Spawner) {
 			return true
 		})
 	})
+}
+
+func pickEffect(s *Session) types.Effect {
+	var chosenEffect types.Effect
+
+	s.execMenu("Effects", func(menu *utils.Menu) {
+		for i, effect := range model.GetAllEffects() {
+			e := effect
+			menu.AddActionI(i, effect.GetName(), func() bool {
+				chosenEffect = e
+				return false
+			})
+		}
+	})
+
+	return chosenEffect
+}
+
+func (s *Session) getName(prompt string, objectType types.ObjectType) string {
+	for {
+		name := s.getCleanUserInput(prompt)
+		if name == "" {
+			return ""
+		}
+
+		id := model.FindObjectByName(name, objectType)
+		if id == nil {
+			return name
+		} else if err := utils.ValidateName(name); err != nil {
+			s.printError(err.Error())
+		} else {
+			s.printError("That name is unavailable")
+		}
+	}
 }

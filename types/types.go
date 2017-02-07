@@ -24,6 +24,7 @@ const (
 	TemplateType ObjectType = "Template"
 	ItemType     ObjectType = "Item"
 	SkillType    ObjectType = "Skill"
+	EffectType   ObjectType = "Effect"
 	StoreType    ObjectType = "Store"
 	WorldType    ObjectType = "World"
 )
@@ -296,30 +297,50 @@ func (self ItemList) Swap(i, j int) {
 type Skill interface {
 	Object
 	Nameable
-	SetPower(int)
-	GetPower() int
-	SetCost(int)
-	GetCost() int
-	GetEffect() SkillEffect
-	SetEffect(SkillEffect)
-	GetVariance() int
-	SetVariance(int)
-	GetSpeed() int
-	SetSpeed(int)
+	GetEffects() []Id
+	AddEffect(Id)
+	RemoveEffect(Id)
+	HasEffect(Id) bool
 }
 
 type SkillList []Skill
 
-type SkillEffect string
+type EffectKind string
 
 const (
-	DamageEffect  SkillEffect = "damage"
-	DotEffect     SkillEffect = "dot"
-	HealingEffect SkillEffect = "heal"
-	HotEffect     SkillEffect = "hot"
+	HitpointEffect EffectKind = "hitpoint"
+	SilenceEffect  EffectKind = "silence"
+	StunEffect     EffectKind = "stun"
 )
 
 func (self SkillList) Names() []string {
+	names := make([]string, len(self))
+	for i, skill := range self {
+		names[i] = skill.GetName()
+	}
+	return names
+}
+
+type Effect interface {
+	Object
+	Nameable
+	SetPower(int)
+	GetPower() int
+	SetCost(int)
+	GetCost() int
+	GetType() EffectKind
+	SetType(EffectKind)
+	GetVariance() int
+	SetVariance(int)
+	GetSpeed() int
+	SetSpeed(int)
+	GetTime() int
+	SetTime(int)
+}
+
+type EffectList []Effect
+
+func (self EffectList) Names() []string {
 	names := make([]string, len(self))
 	for i, skill := range self {
 		names[i] = skill.GetName()

@@ -145,9 +145,6 @@ func (self *Pc) GetUserId() types.Id {
 
 func (self *Character) AddSkill(id types.Id) {
 	self.writeLock(func() {
-		if !self.HasSkill(id) {
-			return
-		}
 		if self.Skills == nil {
 			self.Skills = utils.Set{}
 		}

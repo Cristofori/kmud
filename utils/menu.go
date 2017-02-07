@@ -76,6 +76,10 @@ type action struct {
 }
 
 func (self *Menu) AddAction(key string, text string, handler func() bool) {
+	if self.HasAction(key) {
+		panic(fmt.Sprintf("Duplicate action added to menu: %s %s", key, text))
+	}
+
 	self.actions = append(self.actions,
 		action{key: strings.ToLower(key),
 			text:    text,

@@ -12,6 +12,10 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+func FindObjectByName(name string, objectType types.ObjectType) types.Id {
+	return db.FindOne(objectType, bson.M{"name": utils.FormatName(name)})
+}
+
 func CreateUser(name string, password string, admin bool) types.User {
 	return db.NewUser(name, password, admin)
 }
@@ -32,7 +36,7 @@ func UserCount() int {
 }
 
 func GetUserByName(username string) types.User {
-	id := db.FindOne(types.UserType, bson.M{"name": utils.FormatName(username)})
+	id := FindObjectByName(username, types.UserType)
 	if id != nil {
 		return GetUser(id)
 	}
@@ -72,7 +76,7 @@ func GetCharacterByName(name string) types.Character {
 }
 
 func GetPlayerCharacterByName(name string) types.PC {
-	id := db.FindOne(types.PcType, bson.M{"name": utils.FormatName(name)})
+	id := FindObjectByName(name, types.PcType)
 	if id != nil {
 		return GetPlayerCharacter(id)
 	}
@@ -80,7 +84,7 @@ func GetPlayerCharacterByName(name string) types.PC {
 }
 
 func GetNpcByName(name string) types.NPC {
-	id := db.FindOne(types.NpcType, bson.M{"name": utils.FormatName(name)})
+	id := FindObjectByName(name, types.NpcType)
 	if id != nil {
 		return GetNpc(id)
 	}
@@ -291,10 +295,10 @@ func DeleteZone(zoneId types.Id) {
 }
 
 func GetZoneByName(name string) types.Zone {
-	for _, id := range db.Find(types.ZoneType, bson.M{"name": utils.FormatName(name)}) {
+	id := FindObjectByName(name, types.ZoneType)
+	if id != nil {
 		return GetZone(id)
 	}
-
 	return nil
 }
 
@@ -321,7 +325,7 @@ func CreateArea(name string, zone types.Zone) (types.Area, error) {
 }
 
 func GetAreaByName(name string) types.Area {
-	id := db.FindOne(types.AreaType, bson.M{"name": utils.FormatName(name)})
+	id := FindObjectByName(name, types.AreaType)
 	if id != nil {
 		return GetArea(id)
 	}
@@ -675,7 +679,7 @@ func GetSkill(id types.Id) types.Skill {
 }
 
 func GetSkillByName(name string) types.Skill {
-	id := db.FindOne(types.SkillType, bson.M{"name": utils.FormatName(name)})
+	id := FindObjectByName(name, types.SkillType)
 	if id != nil {
 		return GetSkill(id)
 	}
@@ -700,11 +704,48 @@ func GetSkills(SkillIds []types.Id) types.SkillList {
 }
 
 func CreateSkill(name string) types.Skill {
-	return db.NewSkill(name, 10)
+	return db.NewSkill(name)
 }
 
 func DeleteSkill(id types.Id) {
 	db.DeleteObject(id)
+}
+
+func CreateEffect(name string) types.Effect {
+	return db.NewEffect(name)
+}
+
+func DeleteEffect(id types.Id) {
+	db.DeleteObject(id)
+}
+
+func GetAllEffects() types.EffectList {
+	ids := db.FindAll(types.EffectType)
+	effects := make(types.EffectList, len(ids))
+	for i, id := range ids {
+		effects[i] = GetEffect(id)
+	}
+	return effects
+}
+
+func GetEffects(EffectIds []types.Id) types.EffectList {
+	effects := make(types.EffectList, len(EffectIds))
+	for i, id := range EffectIds {
+		effects[i] = GetEffect(id)
+	}
+	return effects
+}
+
+func GetEffect(id types.Id) types.Effect {
+	return db.Retrieve(id, types.EffectType).(types.Effect)
+}
+
+func GetEffectByName(name string) types.Effect {
+	id := FindObjectByName(name, types.EffectType)
+	if id != nil {
+		return GetEffect(id)
+	}
+	return nil
 }
 
 func StoreIn(roomId types.Id) types.Store {
