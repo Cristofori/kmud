@@ -11,6 +11,7 @@ import (
 type Menu struct {
 	actions     []action
 	title       string
+	exit        bool
 	exitHandler func()
 }
 
@@ -22,6 +23,7 @@ func ExecMenu(title string, comm types.Communicable, build func(*Menu)) {
 	for {
 		var menu Menu
 		menu.title = title
+		menu.exit = false
 		build(&menu)
 
 		pageIndex = Bound(pageIndex, 0, pageCount-1)
@@ -58,7 +60,11 @@ func ExecMenu(title string, comm types.Communicable, build func(*Menu)) {
 			action := menu.getAction(input)
 
 			if action.handler != nil {
-				if !action.handler() {
+				action.handler()
+				if menu.exit {
+					if menu.exitHandler != nil {
+						menu.exitHandler()
+					}
 					return
 				}
 			} else if input != "?" && input != "help" {
@@ -72,10 +78,10 @@ type action struct {
 	key     string
 	text    string
 	data    types.Id
-	handler func() bool
+	handler func()
 }
 
-func (self *Menu) AddAction(key string, text string, handler func() bool) {
+func (self *Menu) AddAction(key string, text string, handler func()) {
 	if self.HasAction(key) {
 		panic(fmt.Sprintf("Duplicate action added to menu: %s %s", key, text))
 	}
@@ -87,12 +93,16 @@ func (self *Menu) AddAction(key string, text string, handler func() bool) {
 		})
 }
 
-func (self *Menu) AddActionI(index int, text string, handler func() bool) {
+func (self *Menu) AddActionI(index int, text string, handler func()) {
 	self.AddAction(strconv.Itoa(index+1), text, handler)
 }
 
 func (self *Menu) SetTitle(title string) {
 	self.title = title
+}
+
+func (self *Menu) Exit() {
+	self.exit = true
 }
 
 func (self *Menu) OnExit(handler func()) {

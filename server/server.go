@@ -174,14 +174,14 @@ func (self *connectionHandler) mainMenu() {
 		"MUD",
 		self,
 		func(menu *utils.Menu) {
-			menu.AddAction("l", "Login", func() bool {
+			menu.AddAction("l", "Login", func() {
 				self.user = login(self.conn)
-				return false
+				self.loggedIn()
 			})
 
-			menu.AddAction("n", "New user", func() bool {
+			menu.AddAction("n", "New user", func() {
 				self.user = newUser(self.conn)
-				return false
+				self.loggedIn()
 			})
 
 			menu.OnExit(func() {
@@ -202,32 +202,29 @@ func (self *connectionHandler) userMenu() {
 			})
 
 			if self.user.IsAdmin() {
-				menu.AddAction("a", "Admin", func() bool {
+				menu.AddAction("a", "Admin", func() {
 					self.adminMenu()
-					return true
 				})
 			}
 
-			menu.AddAction("n", "New character", func() bool {
+			menu.AddAction("n", "New character", func() {
 				self.pc = self.newPlayer()
-				return true
 			})
 
 			// TODO: Sort character list
 			chars := model.GetUserCharacters(self.user.GetId())
 
 			if len(chars) > 0 {
-				menu.AddAction("d", "Delete character", func() bool {
+				menu.AddAction("d", "Delete character", func() {
 					self.deleteMenu()
-					return true
 				})
 			}
 
 			for i, char := range chars {
 				c := char
-				menu.AddAction(strconv.Itoa(i+1), char.GetName(), func() bool {
+				menu.AddAction(strconv.Itoa(i+1), char.GetName(), func() {
 					self.pc = c
-					return false
+					self.launchSession()
 				})
 			}
 		})
@@ -242,10 +239,9 @@ func (self *connectionHandler) deleteMenu() {
 			chars := model.GetUserCharacters(self.user.GetId())
 			for i, char := range chars {
 				c := char
-				menu.AddAction(strconv.Itoa(i+1), char.GetName(), func() bool {
+				menu.AddAction(strconv.Itoa(i+1), char.GetName(), func() {
 					// TODO: Delete confirmation
 					model.DeleteCharacter(c.GetId())
-					return true
 				})
 			}
 		})
@@ -256,9 +252,8 @@ func (self *connectionHandler) adminMenu() {
 		"Admin",
 		self.user,
 		func(menu *utils.Menu) {
-			menu.AddAction("u", "Users", func() bool {
+			menu.AddAction("u", "Users", func() {
 				self.userAdminMenu()
-				return true
 			})
 		})
 }
@@ -275,9 +270,8 @@ func (self *connectionHandler) userAdminMenu() {
 			}
 
 			u := user
-			menu.AddAction(strconv.Itoa(i+1), user.GetName()+online, func() bool {
+			menu.AddAction(strconv.Itoa(i+1), user.GetName()+online, func() {
 				self.specificUserMenu(u)
-				return true
 			})
 		}
 	})
@@ -295,19 +289,18 @@ func (self *connectionHandler) specificUserMenu(user types.User) {
 		fmt.Sprintf("User: %s %s", user.GetName(), suffix),
 		self.user,
 		func(menu *utils.Menu) {
-			menu.AddAction("d", "Delete", func() bool {
+			menu.AddAction("d", "Delete", func() {
 				model.DeleteUser(user.GetId())
-				return false
+				menu.Exit()
 			})
 
-			menu.AddAction("a", fmt.Sprintf("Admin - %v", user.IsAdmin()), func() bool {
+			menu.AddAction("a", fmt.Sprintf("Admin - %v", user.IsAdmin()), func() {
 				u := model.GetUser(user.GetId())
 				u.SetAdmin(!u.IsAdmin())
-				return true
 			})
 
 			if user.IsOnline() {
-				menu.AddAction("w", "Watch", func() bool {
+				menu.AddAction("w", "Watch", func() {
 					if user == self.user {
 						self.user.WriteLine("You can't watch yourself!")
 					} else {
@@ -317,7 +310,6 @@ func (self *connectionHandler) specificUserMenu(user types.User) {
 						utils.GetRawUserInput(self.conn, "Type anything to stop watching\r\n", self.user.GetColorMode())
 						userConn.watcher.RemoveWatcher(self.conn)
 					}
-					return true
 				})
 			}
 		})
@@ -354,42 +346,49 @@ func (self *connectionHandler) Handle() {
 				r)
 		}()
 
-		for {
-			if self.user == nil {
-				self.mainMenu()
-				if self.user != nil {
-					self.user.SetOnline(true)
-					self.user.SetConnection(self.conn)
-
-					self.conn.DoWindowSize()
-					self.conn.DoTerminalType()
-
-					self.conn.Listen(func(code telnet.TelnetCode, data []byte) {
-						switch code {
-						case telnet.WS:
-							if len(data) != 4 {
-								fmt.Println("Malformed window size data:", data)
-								return
-							}
-
-							width := int((255 * data[0])) + int(data[1])
-							height := int((255 * data[2])) + int(data[3])
-							self.user.SetWindowSize(width, height)
-
-						case telnet.TT:
-							self.user.SetTerminalType(string(data))
-						}
-					})
-				}
-			} else if self.pc == nil {
-				self.userMenu()
-			} else {
-				session := session.NewSession(self.conn, self.user, self.pc)
-				session.Exec()
-				self.pc = nil
-			}
-		}
+		self.mainMenu()
 	}()
+}
+
+func (self *connectionHandler) loggedIn() {
+	if self.user == nil {
+		return
+	}
+
+	self.user.SetOnline(true)
+	self.user.SetConnection(self.conn)
+
+	self.conn.DoWindowSize()
+	self.conn.DoTerminalType()
+
+	self.conn.Listen(func(code telnet.TelnetCode, data []byte) {
+		switch code {
+		case telnet.WS:
+			if len(data) != 4 {
+				fmt.Println("Malformed window size data:", data)
+				return
+			}
+
+			width := int((255 * data[0])) + int(data[1])
+			height := int((255 * data[2])) + int(data[3])
+			self.user.SetWindowSize(width, height)
+
+		case telnet.TT:
+			self.user.SetTerminalType(string(data))
+		}
+	})
+
+	self.userMenu()
+}
+
+func (self *connectionHandler) launchSession() {
+	if self.pc == nil {
+		return
+	}
+
+	session := session.NewSession(self.conn, self.user, self.pc)
+	session.Exec()
+	self.pc = nil
 }
 
 func (self *Server) Start() {

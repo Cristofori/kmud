@@ -149,25 +149,22 @@ var actions = map[string]action{
 	"skillbook": {
 		exec: func(s *Session, arg string) {
 			s.execMenu("Skill Book", func(menu *utils.Menu) {
-				menu.AddAction("a", "Add", func() bool {
+				menu.AddAction("a", "Add", func() {
 					s.execMenu("Select a skill to add", func(menu *utils.Menu) {
 						for i, skill := range model.GetAllSkills() {
 							sk := skill
-							menu.AddActionI(i, skill.GetName(), func() bool {
+							menu.AddActionI(i, skill.GetName(), func() {
 								s.pc.AddSkill(sk.GetId())
-								return true
 							})
 						}
 					})
-					return true
 				})
 
 				skills := model.GetSkills(s.pc.GetSkills())
 				for i, skill := range skills {
 					sk := skill
-					menu.AddActionI(i, skill.GetName(), func() bool {
+					menu.AddActionI(i, skill.GetName(), func() {
 						s.WriteLine("Skill: %v", sk.GetName())
-						return true
 					})
 				}
 			})
@@ -340,44 +337,46 @@ var actions = map[string]action{
 
 			s.execMenu("", func(menu *utils.Menu) {
 				menu.SetTitle(fmt.Sprintf("%s - $%v", store.GetName(), store.GetCash()))
-				menu.AddAction("b", "Buy", func() bool {
+				menu.AddAction("b", "Buy", func() {
 					if model.CountItemsIn(store.GetId()) == 0 {
 						s.printError("This store has nothing to sell")
 					} else {
 						s.execMenu("Buy Items", func(menu *utils.Menu) {
 							items := model.ItemsIn(store.GetId())
 							for i, item := range items {
-								menu.AddActionI(i, item.GetName(), func() bool {
+								menu.AddActionI(i, item.GetName(), func() {
 									confirmed := s.getConfirmation(fmt.Sprintf("Buy %s for %v? ", item.GetName(), item.GetValue()))
 									if confirmed && sellItem(s, store, s.pc, item) {
 										s.WriteLineColor(types.ColorGreen, "Bought %s", item.GetName())
 									}
-									return len(model.ItemsIn(store.GetId())) > 0
+									if len(model.ItemsIn(store.GetId())) == 0 {
+										menu.Exit()
+									}
 								})
 							}
 						})
 					}
-					return true
 				})
 
-				menu.AddAction("s", "Sell", func() bool {
+				menu.AddAction("s", "Sell", func() {
 					if model.CountItemsIn(s.pc.GetId()) == 0 {
 						s.printError("You have nothing to sell")
 					} else {
 						s.execMenu("Sell Items", func(menu *utils.Menu) {
 							items := model.ItemsIn(s.pc.GetId())
 							for i, item := range items {
-								menu.AddActionI(i, item.GetName(), func() bool {
+								menu.AddActionI(i, item.GetName(), func() {
 									confirmed := s.getConfirmation(fmt.Sprintf("Sell %s for %v? ", item.GetName(), item.GetValue()))
 									if confirmed && sellItem(s, s.pc, store, item) {
 										s.WriteLineColor(types.ColorGreen, "Sold %s", item.GetName())
 									}
-									return len(model.ItemsIn(s.pc.GetId())) > 0
+									if len(model.ItemsIn(s.pc.GetId())) == 0 {
+										menu.Exit()
+									}
 								})
 							}
 						})
 					}
-					return true
 				})
 			})
 		},
@@ -405,37 +404,36 @@ var actions = map[string]action{
 					container := containers[index]
 
 					s.execMenu(container.GetName(), func(menu *utils.Menu) {
-						menu.AddAction("d", "Deposit", func() bool {
+						menu.AddAction("d", "Deposit", func() {
 							if model.CountItemsIn(s.pc.GetId()) == 0 {
 								s.printError("You have nothing to deposit")
 							} else {
 								s.execMenu(fmt.Sprintf("Deposit into %s", container.GetName()), func(menu *utils.Menu) {
 									for i, item := range model.ItemsIn(s.pc.GetId()) {
 										locItem := item
-										menu.AddActionI(i, item.GetName(), func() bool {
+										menu.AddActionI(i, item.GetName(), func() {
 											if locItem.SetContainerId(container.GetId(), s.pc.GetId()) {
 												s.WriteLine("Item deposited")
 											} else {
 												s.printError("Failed to deposit item")
 											}
-											return model.CountItemsIn(s.pc.GetId()) > 0
+											if model.CountItemsIn(s.pc.GetId()) == 0 {
+												menu.Exit()
+											}
 										})
 									}
 								})
 							}
-
-							return true
 						})
 
 						for i, item := range model.ItemsIn(container.GetId()) {
 							locItem := item
-							menu.AddActionI(i, item.GetName(), func() bool {
+							menu.AddActionI(i, item.GetName(), func() {
 								if locItem.SetContainerId(s.pc.GetId(), container.GetId()) {
 									s.WriteLine("Took %s from %s", locItem.GetName(), container.GetName())
 								} else {
 									s.printError("Failed to take item")
 								}
-								return true
 							})
 						}
 					})

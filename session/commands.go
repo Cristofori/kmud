@@ -69,24 +69,21 @@ func init() {
 					store := model.StoreIn(s.pc.GetRoomId())
 
 					if store != nil {
-						menu.AddAction("r", "Rename", func() bool {
+						menu.AddAction("r", "Rename", func() {
 							name := s.getCleanUserInput("New name: ")
 							if name != "" {
 								store.SetName("Name")
 							}
-							return true
 						})
-						menu.AddAction("d", "Delete", func() bool {
+						menu.AddAction("d", "Delete", func() {
 							model.DeleteStore(store.GetId())
-							return true
 						})
 					} else {
-						menu.AddAction("n", "New Store", func() bool {
+						menu.AddAction("n", "New Store", func() {
 							name := s.getCleanUserInput("Store name: ")
 							if name != "" {
 								model.CreateStore(name, s.pc.GetRoomId())
 							}
-							return true
 						})
 					}
 				})
@@ -105,25 +102,22 @@ func init() {
 				s.execMenu(
 					"Room",
 					func(menu *utils.Menu) {
-						menu.AddAction("t", fmt.Sprintf("Title - %s", s.GetRoom().GetTitle()), func() bool {
+						menu.AddAction("t", fmt.Sprintf("Title - %s", s.GetRoom().GetTitle()), func() {
 							title := s.getRawUserInput("Enter new title: ")
 							if title != "" {
 								s.GetRoom().SetTitle(title)
 							}
-							return true
 						})
 
-						menu.AddAction("d", "Description", func() bool {
+						menu.AddAction("d", "Description", func() {
 							description := s.getRawUserInput("Enter new description: ")
 							if description != "" {
 								s.GetRoom().SetDescription(description)
 							}
-							return true
 						})
 
-						menu.AddAction("e", "Exits", func() bool {
+						menu.AddAction("e", "Exits", func() {
 							toggleExitMenu(s)
-							return true
 						})
 
 						areaId := s.GetRoom().GetAreaId()
@@ -133,11 +127,10 @@ func init() {
 							areaName = area.GetName()
 						}
 
-						menu.AddAction("a", fmt.Sprintf("Area - %s", areaName), func() bool {
+						menu.AddAction("a", fmt.Sprintf("Area - %s", areaName), func() {
 							s.execMenu("Change Area", func(menu *utils.Menu) {
-								menu.AddAction("n", "None", func() bool {
+								menu.AddAction("n", "None", func() {
 									s.GetRoom().SetAreaId(nil)
-									return true
 								})
 
 								for i, area := range model.GetAreas(s.currentZone()) {
@@ -147,13 +140,11 @@ func init() {
 									}
 
 									a := area
-									menu.AddActionI(i, actionText, func() bool {
+									menu.AddActionI(i, actionText, func() {
 										s.GetRoom().SetAreaId(a.GetId())
-										return true
 									})
 								}
 							})
-							return true
 						})
 					})
 
@@ -438,19 +429,17 @@ func init() {
 					var npcs types.NPCList
 					npcs = model.GetNpcs()
 
-					menu.AddAction("n", "New", func() bool {
+					menu.AddAction("n", "New", func() {
 						name := s.getName("Desired NPC name: ", types.NpcType)
 						if name != "" {
 							model.CreateNpc(name, s.pc.GetRoomId(), nil)
 						}
-						return true
 					})
 
 					for i, npc := range npcs {
 						n := npc
-						menu.AddActionI(i, npc.GetName(), func() bool {
+						menu.AddActionI(i, npc.GetName(), func() {
 							s.specificNpcMenu(n)
-							return true
 						})
 					}
 				})
@@ -463,20 +452,18 @@ func init() {
 			usage: "Usage: /items",
 			exec: func(self *command, s *Session, arg string) {
 				s.execMenu("Items", func(menu *utils.Menu) {
-					menu.AddAction("n", "New", func() bool {
+					menu.AddAction("n", "New", func() {
 						name := s.getRawUserInput("Item name: ")
 						if name != "" {
 							template := model.CreateTemplate(name)
 							templateMenu(s, template)
 						}
-						return true
 					})
 
 					for i, template := range model.GetAllTemplates() {
 						t := template
-						menu.AddActionI(i, template.GetName(), func() bool {
+						menu.AddActionI(i, template.GetName(), func() {
 							templateMenu(s, t)
-							return true
 						})
 					}
 				})
@@ -606,19 +593,17 @@ func init() {
 			admin: true,
 			exec: func(self *command, s *Session, arg string) {
 				s.execMenu("Areas", func(menu *utils.Menu) {
-					menu.AddAction("n", "New", func() bool {
+					menu.AddAction("n", "New", func() {
 						name := s.getName("Area name: ", types.AreaType)
 						if name != "" {
 							model.CreateArea(name, s.currentZone())
 						}
-						return true
 					})
 
 					for i, area := range model.GetAreas(s.currentZone()) {
 						a := area
-						menu.AddActionI(i, area.GetName(), func() bool {
+						menu.AddActionI(i, area.GetName(), func() {
 							s.specificAreaMenu(a)
-							return true
 						})
 					}
 				})
@@ -763,19 +748,17 @@ func init() {
 			admin: true,
 			exec: func(self *command, s *Session, arg string) {
 				s.execMenu("Skills", func(menu *utils.Menu) {
-					menu.AddAction("n", "New", func() bool {
+					menu.AddAction("n", "New", func() {
 						name := s.getName("Skill name: ", types.SkillType)
 						if name != "" {
 							model.CreateSkill(name)
 						}
-						return true
 					})
 
 					for i, skill := range model.GetAllSkills() {
 						sk := skill
-						menu.AddActionI(i, skill.GetName(), func() bool {
+						menu.AddActionI(i, skill.GetName(), func() {
 							s.specificSkillMenu(sk)
-							return true
 						})
 					}
 				})
@@ -785,20 +768,18 @@ func init() {
 			admin: true,
 			exec: func(self *command, s *Session, arg string) {
 				s.execMenu("Effects", func(menu *utils.Menu) {
-					menu.AddAction("n", "New", func() bool {
+					menu.AddAction("n", "New", func() {
 						name := s.getName("Effect name: ", types.EffectType)
 						if name != "" {
 							model.CreateEffect(name)
 						}
-						return true
 					})
 
 					effects := model.GetAllEffects()
 					for i, effect := range effects {
 						e := effect
-						menu.AddActionI(i, e.GetName(), func() bool {
+						menu.AddActionI(i, e.GetName(), func() {
 							s.specificEffectMenu(e)
-							return true
 						})
 					}
 				})
@@ -809,8 +790,8 @@ func init() {
 			exec: func(self *command, s *Session, arg string) {
 				s.execMenu("Menu Test", func(menu *utils.Menu) {
 					for i := 0; i < 500; i++ {
-						menu.AddActionI(i, "Test Item", func() bool {
-							return false
+						menu.AddActionI(i, "Test Item", func() {
+							menu.Exit()
 						})
 					}
 				})
@@ -899,23 +880,21 @@ func init() {
 func (s *Session) specificSkillMenu(skill types.Skill) {
 	s.execMenu("", func(menu *utils.Menu) {
 		menu.SetTitle(fmt.Sprintf("Skill - %s", skill.GetName()))
-		menu.AddAction("n", "Name", func() bool {
-			return true
+		menu.AddAction("n", "Name", func() {
+			// TODO
 		})
 
-		menu.AddAction("e", "Effects", func() bool {
+		menu.AddAction("e", "Effects", func() {
 			s.execMenu("", func(menu *utils.Menu) {
 				menu.SetTitle(fmt.Sprintf("%s - Effects", skill.GetName()))
 				effects := model.GetAllEffects()
 				for i, effect := range effects {
 					e := effect
-					menu.AddActionI(i, e.GetName(), func() bool {
+					menu.AddActionI(i, e.GetName(), func() {
 						s.specificEffectMenu(e)
-						return true
 					})
 				}
 			})
-			return true
 		})
 	})
 }
@@ -923,84 +902,76 @@ func (s *Session) specificSkillMenu(skill types.Skill) {
 func (s *Session) specificEffectMenu(effect types.Effect) {
 	s.execMenu("", func(menu *utils.Menu) {
 		menu.SetTitle(fmt.Sprintf("Effect - %s", effect.GetName()))
-		menu.AddAction("r", "Rename", func() bool {
+		menu.AddAction("r", "Rename", func() {
 			name := s.getName("New name: ", types.EffectType)
 			if name != "" {
 				effect.SetName(name)
 			}
-			return true
 		})
-		menu.AddAction("t", fmt.Sprintf("Type - %v", effect.GetType()), func() bool {
+		menu.AddAction("t", fmt.Sprintf("Type - %v", effect.GetType()), func() {
 			s.execMenu("New Effect: ", func(menu *utils.Menu) {
-				menu.AddAction("h", "Hitpoint", func() bool {
+				menu.AddAction("h", "Hitpoint", func() {
 					effect.SetType(types.HitpointEffect)
-					return false
+					menu.Exit()
 				})
-				menu.AddAction("s", "Stun", func() bool {
+				menu.AddAction("s", "Stun", func() {
 					effect.SetType(types.StunEffect)
-					return false
+					menu.Exit()
 				})
 			})
-			return true
 		})
-		menu.AddAction("p", fmt.Sprintf("Power - %v", effect.GetPower()), func() bool {
+		menu.AddAction("p", fmt.Sprintf("Power - %v", effect.GetPower()), func() {
 			dmg, valid := s.getInt("New power: ", 0, 1000)
 			if valid {
 				effect.SetPower(dmg)
 			}
-			return true
 		})
-		menu.AddAction("c", fmt.Sprintf("Cost - %v", effect.GetCost()), func() bool {
+		menu.AddAction("c", fmt.Sprintf("Cost - %v", effect.GetCost()), func() {
 			cost, valid := s.getInt("New cost: ", 0, 1000)
 			if valid {
 				effect.SetCost(cost)
 			}
-			return true
 		})
-		menu.AddAction("v", fmt.Sprintf("Variance - %v", effect.GetVariance()), func() bool {
+		menu.AddAction("v", fmt.Sprintf("Variance - %v", effect.GetVariance()), func() {
 			variance, valid := s.getInt("New variance: ", 0, 1000)
 			if valid {
 				effect.SetVariance(variance)
 			}
-			return true
 		})
-		menu.AddAction("s", fmt.Sprintf("Speed - %v", effect.GetSpeed()), func() bool {
+		menu.AddAction("s", fmt.Sprintf("Speed - %v", effect.GetSpeed()), func() {
 			speed, valid := s.getInt("New speed: ", 0, 1000)
 			if valid {
 				effect.SetSpeed(speed)
 			}
-			return true
 		})
-		menu.AddAction("i", fmt.Sprintf("Time - %v", effect.GetTime()), func() bool {
+		menu.AddAction("i", fmt.Sprintf("Time - %v", effect.GetTime()), func() {
 			time, valid := s.getInt("New time: ", 0, 1000)
 			if valid {
 				effect.SetTime(time)
 			}
-			return true
 		})
-		menu.AddAction("d", "Delete", func() bool {
+		menu.AddAction("d", "Delete", func() {
 			model.DeleteSkill(effect.GetId())
-			return false
+			menu.Exit()
 		})
 	})
 }
 
 func (s *Session) specificNpcMenu(npc types.NPC) {
 	s.execMenu(npc.GetName(), func(menu *utils.Menu) {
-		menu.AddAction("r", "Rename", func() bool {
+		menu.AddAction("r", "Rename", func() {
 			name := s.getName("Desired NPC name: ", types.NpcType)
 			if name != "" {
 				npc.SetName(name)
 			}
-			return true
 		})
 
-		menu.AddAction("d", "Delete", func() bool {
+		menu.AddAction("d", "Delete", func() {
 			model.DeleteCharacter(npc.GetId())
-			return false
+			menu.Exit()
 		})
 
-		menu.AddAction("c", "Conversation", func() bool {
+		menu.AddAction("c", "Conversation", func() {
 			conversation := npc.GetConversation()
 
 			if conversation == "" {
@@ -1013,7 +984,6 @@ func (s *Session) specificNpcMenu(npc types.NPC) {
 			if newConversation != "" {
 				npc.SetConversation(newConversation)
 			}
-			return true
 		})
 
 		roamingState := "Off"
@@ -1021,9 +991,8 @@ func (s *Session) specificNpcMenu(npc types.NPC) {
 			roamingState = "On"
 		}
 
-		menu.AddAction("o", fmt.Sprintf("Roaming - %s", roamingState), func() bool {
+		menu.AddAction("o", fmt.Sprintf("Roaming - %s", roamingState), func() {
 			npc.SetRoaming(!npc.GetRoaming())
-			return true
 		})
 	})
 }
@@ -1031,56 +1000,49 @@ func (s *Session) specificNpcMenu(npc types.NPC) {
 func templateMenu(s *Session, template types.Template) {
 	s.execMenu("", func(menu *utils.Menu) {
 		menu.SetTitle(template.GetName())
-		menu.AddAction("c", "Create", func() bool {
+		menu.AddAction("c", "Create", func() {
 			item := model.CreateItem(template.GetId())
 			item.SetContainerId(s.pc.GetId(), nil)
 			s.WriteLine("Item created")
-			return true
 		})
 
-		menu.AddAction("d", "Delete", func() bool {
+		menu.AddAction("d", "Delete", func() {
 			items := model.GetTemplateItems(template.GetId())
 			if len(items) > 0 {
 				if !s.getConfirmation(fmt.Sprintf("%v associated items will also be deleted, proceed? ", len(items))) {
-					return true
+					return
 				}
 			}
-
 			model.DeleteTemplate(template.GetId())
-
-			return false
+			menu.Exit()
 		})
 
-		menu.AddAction("v", fmt.Sprintf("Value - %v", template.GetValue()), func() bool {
+		menu.AddAction("v", fmt.Sprintf("Value - %v", template.GetValue()), func() {
 			value, valid := s.getInt("New value: ", 0, math.MaxInt32)
 			if valid {
 				template.SetValue(value)
 			}
-			return true
 		})
 
-		menu.AddAction("n", "Name", func() bool {
+		menu.AddAction("n", "Name", func() {
 			name := s.getName("New name: ", types.TemplateType)
 			if name != "" {
 				template.SetName(name)
 			}
-			return true
 		})
 
-		menu.AddAction("w", fmt.Sprintf("Weight - %v", template.GetWeight()), func() bool {
+		menu.AddAction("w", fmt.Sprintf("Weight - %v", template.GetWeight()), func() {
 			weight, valid := s.getInt("New weight: ", 0, math.MaxInt32)
 			if valid {
 				template.SetWeight(weight)
 			}
-			return true
 		})
 
-		menu.AddAction("a", fmt.Sprintf("Capacity - %v", template.GetCapacity()), func() bool {
+		menu.AddAction("a", fmt.Sprintf("Capacity - %v", template.GetCapacity()), func() {
 			capacity, valid := s.getInt("New capacity: ", 0, math.MaxInt32)
 			if valid {
 				template.SetCapacity(capacity)
 			}
-			return true
 		})
 	})
 }
@@ -1094,8 +1056,8 @@ func toggleExitMenu(s *Session) {
 		return types.Colorize(types.ColorBlue, text)
 	}
 
-	toggleExit := func(direction types.Direction) func() bool {
-		return func() bool {
+	toggleExit := func(direction types.Direction, menu *utils.Menu) func() {
+		return func() {
 			room := s.GetRoom()
 
 			enable := !room.HasExit(direction)
@@ -1106,21 +1068,21 @@ func toggleExitMenu(s *Session) {
 			if otherRoom != nil {
 				otherRoom.SetExitEnabled(direction.Opposite(), enable)
 			}
-			return false
+			menu.Exit()
 		}
 	}
 
 	s.execMenu("Edit Exits", func(menu *utils.Menu) {
-		menu.AddAction("n", "North: "+onOrOff(types.DirectionNorth), toggleExit(types.DirectionNorth))
-		menu.AddAction("ne", "North East: "+onOrOff(types.DirectionNorthEast), toggleExit(types.DirectionNorthEast))
-		menu.AddAction("e", "East: "+onOrOff(types.DirectionEast), toggleExit(types.DirectionEast))
-		menu.AddAction("se", "South East: "+onOrOff(types.DirectionSouthEast), toggleExit(types.DirectionSouthEast))
-		menu.AddAction("s", "South: "+onOrOff(types.DirectionSouth), toggleExit(types.DirectionSouth))
-		menu.AddAction("sw", "South West: "+onOrOff(types.DirectionSouthWest), toggleExit(types.DirectionSouthWest))
-		menu.AddAction("w", "West: "+onOrOff(types.DirectionWest), toggleExit(types.DirectionWest))
-		menu.AddAction("nw", "North West: "+onOrOff(types.DirectionNorthWest), toggleExit(types.DirectionNorthWest))
-		menu.AddAction("u", "Up: "+onOrOff(types.DirectionUp), toggleExit(types.DirectionUp))
-		menu.AddAction("d", "Down: "+onOrOff(types.DirectionDown), toggleExit(types.DirectionDown))
+		menu.AddAction("n", "North: "+onOrOff(types.DirectionNorth), toggleExit(types.DirectionNorth, menu))
+		menu.AddAction("ne", "North East: "+onOrOff(types.DirectionNorthEast), toggleExit(types.DirectionNorthEast, menu))
+		menu.AddAction("e", "East: "+onOrOff(types.DirectionEast), toggleExit(types.DirectionEast, menu))
+		menu.AddAction("se", "South East: "+onOrOff(types.DirectionSouthEast), toggleExit(types.DirectionSouthEast, menu))
+		menu.AddAction("s", "South: "+onOrOff(types.DirectionSouth), toggleExit(types.DirectionSouth, menu))
+		menu.AddAction("sw", "South West: "+onOrOff(types.DirectionSouthWest), toggleExit(types.DirectionSouthWest, menu))
+		menu.AddAction("w", "West: "+onOrOff(types.DirectionWest), toggleExit(types.DirectionWest, menu))
+		menu.AddAction("nw", "North West: "+onOrOff(types.DirectionNorthWest), toggleExit(types.DirectionNorthWest, menu))
+		menu.AddAction("u", "Up: "+onOrOff(types.DirectionUp), toggleExit(types.DirectionUp, menu))
+		menu.AddAction("d", "Down: "+onOrOff(types.DirectionDown), toggleExit(types.DirectionDown, menu))
 	})
 }
 
@@ -1167,24 +1129,22 @@ func whisper(self *command, s *Session, arg string) {
 
 func (s *Session) specificAreaMenu(area types.Area) {
 	s.execMenu(area.GetName(), func(menu *utils.Menu) {
-		menu.AddAction("r", "Rename", func() bool {
+		menu.AddAction("r", "Rename", func() {
 			name := s.getName("New name: ", types.AreaType)
 			if name != "" {
 				area.SetName(name)
 			}
-			return true
 		})
-		menu.AddAction("d", "Delete", func() bool {
+		menu.AddAction("d", "Delete", func() {
 			answer := s.getRawUserInput("Are you sure? ")
 
 			if strings.ToLower(answer) == "y" {
 				model.DeleteArea(area.GetId())
 			}
-			return false
+			menu.Exit()
 		})
-		menu.AddAction("s", "Spawners", func() bool {
+		menu.AddAction("s", "Spawners", func() {
 			s.spawnerMenu(area)
-			return true
 		})
 	})
 }
@@ -1193,46 +1153,41 @@ func (s *Session) spawnerMenu(area types.Area) {
 	s.execMenu("Spawners", func(menu *utils.Menu) {
 		for i, spawner := range model.GetAreaSpawners(area.GetId()) {
 			sp := spawner
-			menu.AddActionI(i, spawner.GetName(), func() bool {
+			menu.AddActionI(i, spawner.GetName(), func() {
 				s.specificSpawnerMenu(sp)
-				return true
 			})
 		}
 
-		menu.AddAction("n", "New", func() bool {
+		menu.AddAction("n", "New", func() {
 			name := s.getName("Name of spawned NPC: ", types.SpawnerType)
 			if name != "" {
 				model.CreateSpawner(name, area.GetId())
 			}
-			return true
 		})
 	})
 }
 
 func (s *Session) specificSpawnerMenu(spawner types.Spawner) {
 	s.execMenu(fmt.Sprintf("Spawner - %s", spawner.GetName()), func(menu *utils.Menu) {
-		menu.AddAction("r", "Rename", func() bool {
+		menu.AddAction("r", "Rename", func() {
 			name := s.getName("New name: ", types.SpawnerType)
 			if name != "" {
 				spawner.SetName(name)
 			}
-			return true
 		})
 
-		menu.AddAction("c", fmt.Sprintf("Count - %v", spawner.GetCount()), func() bool {
+		menu.AddAction("c", fmt.Sprintf("Count - %v", spawner.GetCount()), func() {
 			count, valid := s.getInt("New count: ", 0, 1000)
 			if valid {
 				spawner.SetCount(count)
 			}
-			return true
 		})
 
-		menu.AddAction("h", fmt.Sprintf("Health - %v", spawner.GetHealth()), func() bool {
+		menu.AddAction("h", fmt.Sprintf("Health - %v", spawner.GetHealth()), func() {
 			health, valid := s.getInt("New hitpoint count: ", 0, 1000)
 			if valid {
 				spawner.SetHealth(health)
 			}
-			return true
 		})
 	})
 }
@@ -1243,9 +1198,9 @@ func pickEffect(s *Session) types.Effect {
 	s.execMenu("Effects", func(menu *utils.Menu) {
 		for i, effect := range model.GetAllEffects() {
 			e := effect
-			menu.AddActionI(i, effect.GetName(), func() bool {
+			menu.AddActionI(i, effect.GetName(), func() {
 				chosenEffect = e
-				return false
+				menu.Exit()
 			})
 		}
 	})

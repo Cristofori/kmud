@@ -15,9 +15,9 @@ func Test_Menu(t *testing.T) {
 	ExecMenu("Menu", &Comm, func(menu *Menu) {
 		called = true
 
-		menu.AddAction("a", "Apple", func() bool {
+		menu.AddAction("a", "Apple", func() {
 			handled = true
-			return false
+			menu.Exit()
 		})
 	})
 
