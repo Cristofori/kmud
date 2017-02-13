@@ -496,10 +496,14 @@ func Filter(list []string, pattern string) []string {
 	filtered := []string{}
 
 	for _, item := range list {
-		if strings.Contains(strings.ToLower(item), strings.ToLower(pattern)) {
+		if FilterItem(item, pattern) {
 			filtered = append(filtered, item)
 		}
 	}
 
 	return filtered
+}
+
+func FilterItem(item, pattern string) bool {
+	return strings.Contains(strings.ToLower(types.StripColors(item)), strings.ToLower(pattern))
 }

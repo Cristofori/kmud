@@ -8,6 +8,8 @@ import (
 	"github.com/Cristofori/kmud/types"
 )
 
+const decorator = "-=-=-"
+
 type Menu struct {
 	actions     []action
 	title       string
@@ -135,8 +137,20 @@ func (self *Menu) HasAction(key string) bool {
 	return action.key != ""
 }
 
+func filterActions(actions []action, filter string) []action {
+	var filtered []action
+
+	for _, action := range actions {
+		if FilterItem(action.text, filter) {
+			filtered = append(filtered, action)
+		}
+	}
+
+	return filtered
+}
+
 func (self *Menu) Print(comm types.Communicable, page int, filter string) int {
-	border := types.Colorize(types.ColorWhite, "-=-=-")
+	border := types.Colorize(types.ColorWhite, decorator)
 	title := types.Colorize(types.ColorBlue, self.title)
 	header := fmt.Sprintf("%s %s %s", border, title, border)
 
@@ -146,9 +160,10 @@ func (self *Menu) Print(comm types.Communicable, page int, filter string) int {
 
 	comm.WriteLine(header)
 
-	options := make([]string, len(self.actions))
+	filteredActions := filterActions(self.actions, filter)
+	options := make([]string, len(filteredActions))
 
-	for i, action := range self.actions {
+	for i, action := range filteredActions {
 		index := strings.Index(strings.ToLower(action.text), action.key)
 
 		actionText := ""
@@ -175,8 +190,6 @@ func (self *Menu) Print(comm types.Communicable, page int, filter string) int {
 
 		options[i] = fmt.Sprintf("  %s", actionText)
 	}
-
-	options = Filter(options, filter)
 
 	width, height := comm.GetWindowSize()
 	pages := Paginate(options, width, height/2)

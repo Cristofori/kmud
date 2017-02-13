@@ -790,7 +790,7 @@ func init() {
 			exec: func(self *command, s *Session, arg string) {
 				s.execMenu("Menu Test", func(menu *utils.Menu) {
 					for i := 0; i < 500; i++ {
-						menu.AddActionI(i, "Test Item", func() {
+						menu.AddActionI(i, fmt.Sprintf("Test Item %v", i), func() {
 							menu.Exit()
 						})
 					}
