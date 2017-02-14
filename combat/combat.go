@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Cristofori/kmud/events"
+	"github.com/Cristofori/kmud/model"
 	"github.com/Cristofori/kmud/types"
 	"github.com/Cristofori/kmud/utils"
 )
@@ -73,15 +74,19 @@ func init() {
 					d := info.Defender
 
 					if a.GetRoomId() == d.GetRoomId() {
-						var power int
+						power := 0
 						skill := info.Skill
 
 						if skill == nil {
 							power = utils.Random(1, 10)
 						} else {
-							power = 10                      // skill.GetPower()
-							variance := utils.Random(-3, 3) // utils.Random(-skill.GetVariance(), skill.GetVariance())
-							power += variance
+							effects := model.GetEffects(skill.GetEffects())
+							variance := 0
+							for _, e := range effects {
+								power += e.GetPower()
+								variance += e.GetVariance()
+							}
+							power += utils.Random(-variance, variance)
 						}
 
 						d.Hit(power)

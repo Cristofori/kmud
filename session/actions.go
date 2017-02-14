@@ -98,12 +98,12 @@ var actions = map[string]action{
 	"cast": {
 		exec: func(s *Session, arg string) {
 			usage := func() {
-				s.printError("Usage: cast <spell> [target]")
+				s.printError("Usage: cast <spell> <target>")
 			}
 
 			spell, targetName := utils.Argify(arg)
 
-			if spell == "" {
+			if spell == "" || targetName == "" {
 				usage()
 				return
 			}
@@ -123,19 +123,15 @@ var actions = map[string]action{
 			if skill != nil {
 				var target types.Character
 
-				if targetName == "" {
-					target = s.pc
-				} else {
-					charList := model.CharactersIn(s.pc.GetRoomId())
-					index := utils.BestMatch(targetName, charList.Names())
+				charList := model.CharactersIn(s.pc.GetRoomId())
+				index := utils.BestMatch(targetName, charList.Names())
 
-					if index == -1 {
-						s.printError("Target not found")
-					} else if index == -2 {
-						s.printError("Which target do you mean?")
-					} else {
-						target = charList[index]
-					}
+				if index == -1 {
+					s.printError("Target not found")
+				} else if index == -2 {
+					s.printError("Which target do you mean?")
+				} else {
+					target = charList[index]
 				}
 
 				if target != nil {

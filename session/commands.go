@@ -885,16 +885,51 @@ func (s *Session) specificSkillMenu(skill types.Skill) {
 		})
 
 		menu.AddAction("e", "Effects", func() {
+			effects := model.GetEffects(skill.GetEffects())
+
+			if len(effects) == 0 {
+				s.printError("This skill has no effects")
+			} else {
+				for _, effect := range effects {
+					s.WriteLine(effect.GetName())
+				}
+			}
+		})
+
+		menu.AddAction("a", "Add Effect", func() {
 			s.execMenu("", func(menu *utils.Menu) {
-				menu.SetTitle(fmt.Sprintf("%s - Effects", skill.GetName()))
+				menu.SetTitle(fmt.Sprintf("Choose an effect to add"))
 				effects := model.GetAllEffects()
-				for i, effect := range effects {
-					e := effect
-					menu.AddActionI(i, e.GetName(), func() {
-						s.specificEffectMenu(e)
-					})
+				index := 0
+				for _, effect := range effects {
+					if !skill.HasEffect(effect.GetId()) {
+						e := effect
+						menu.AddActionI(index, e.GetName(), func() {
+							skill.AddEffect(e.GetId())
+							menu.Exit()
+						})
+						index++
+					}
 				}
 			})
+		})
+
+		menu.AddAction("r", "Remove Effect", func() {
+			effects := model.GetEffects(skill.GetEffects())
+			if len(effects) == 0 {
+				s.printError("This skill has no effects")
+			} else {
+				s.execMenu("", func(menu *utils.Menu) {
+					menu.SetTitle("Choose an effect to remove")
+					for i, effect := range effects {
+						e := effect
+						menu.AddActionI(i, e.GetName(), func() {
+							skill.RemoveEffect(e.GetId())
+							menu.Exit()
+						})
+					}
+				})
+			}
 		})
 	})
 }
